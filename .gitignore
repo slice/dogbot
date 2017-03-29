@@ -1,4 +1,11 @@
-__pycache__
+# bot
 dog_config.py
-venv
 *.log
+
+# fab
+fabfile.py
+
+# python
+__pycache__
+*.pyc
+venv
