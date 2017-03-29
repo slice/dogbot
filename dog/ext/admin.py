@@ -3,8 +3,7 @@ import re
 import discord
 from time import monotonic
 from discord.ext import commands
-from dog import Cog
-from dog import checks
+from dog import Cog, checks
 from dog.haste import haste
 
 logger = logging.getLogger(__name__)
