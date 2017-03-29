@@ -35,7 +35,9 @@ stream.setLevel(logging.INFO)
 # handle from all logs
 root_logger.addHandler(stream)
 
-logging.getLogger('dog').info('bot starting')
+logger = logging.getLogger('dog')
+
+logger.info('bot starting')
 
 d = DogBot(command_prefix=cfg.prefix)
 d.run(cfg.token)
