@@ -6,6 +6,7 @@ except ModuleNotFoundError:
 import logging
 import asyncio
 import uvloop
+from os import listdir
 from dog import DogBot
 
 # uvloop for speedups
@@ -41,7 +42,9 @@ logger.info('bot starting')
 
 d = DogBot(command_prefix=cfg.prefix)
 
-for ext in cfg.exts:
+d_exts = [p.replace('.py', '') for p in listdir('dog/ext') if p != '__pycache__']
+
+for ext in d_exts:
     logger.info('loading extension dog.ext.%s', ext)
     d.load_extension(f'dog.ext.{ext}')
 
