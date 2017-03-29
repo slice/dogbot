@@ -5,6 +5,7 @@ from time import monotonic
 from discord.ext import commands
 from dog import Cog
 from dog import checks
+from dog.haste import haste
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,8 @@ class Admin(Cog):
             return
 
         if len(output) > room:
+            haste_url = await haste(output)
+            await self.bot.say(f'Full output: {haste_url}')
             output = output[:room] + '...'
 
         await self.bot.say(fmt_result.format(code, output or 'None'))
