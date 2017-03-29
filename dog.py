@@ -40,4 +40,9 @@ logger = logging.getLogger('dog')
 logger.info('bot starting')
 
 d = DogBot(command_prefix=cfg.prefix)
+
+for ext in cfg.exts:
+    logger.info('loading extension dog.ext.%s', ext)
+    d.load_extension(f'dog.ext.{ext}')
+
 d.run(cfg.token)
