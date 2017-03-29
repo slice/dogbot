@@ -4,7 +4,12 @@ except ModuleNotFoundError:
     print('err: dog_config.py not found')
 
 import logging
+import asyncio
+import uvloop
 from dog import DogBot
+
+# uvloop for speedups
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 # configure logging
 # set the root logger's info to INFO
