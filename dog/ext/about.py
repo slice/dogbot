@@ -16,7 +16,8 @@ class About(Cog):
             title='Dogbot',
             description=f'A nice Discord bot by {maker.mention} ({maker.id}).'
             ' Available on GitHub [here](https://github.com/sliceofcode/dogbot)!')
-        embed.add_field(name='Git revision', value=git_revision)
+        embed.add_field(name='Git revision', value=f'[{git_revision}](https://github.com/'
+                        f'sliceofcode/dogbot/commit/{git_revision})')
         embed.set_footer(text=f'{maker.name}#{maker.discriminator}',
                          icon_url=maker.avatar_url)
         await self.bot.say(embed=embed)
