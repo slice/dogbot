@@ -1,3 +1,4 @@
+import datetime
 import discord
 from subprocess import check_output
 from discord.ext import commands
@@ -28,15 +29,16 @@ class About(Cog):
         """ Shows participation info about the bot. """
         num_members = len(list(self.bot.get_all_members()))
         num_channels = len(list(self.bot.get_all_channels()))
-        num_emojis = len(list(self.bot.get_all_emojis()))
         num_servers = len(self.bot.servers)
+        uptime = str(datetime.datetime.utcnow() - self.bot.boot_time)[:-7]
 
-        embed = discord.Embed(title='Statistics')
+        embed = discord.Embed(title='Statistics',
+                              description='Statistics and participation information.')
         fields = {
             'Members': num_members,
             'Channels': num_channels,
-            'Emojis': num_emojis,
             'Servers': num_servers,
+            'Uptime': uptime,
         }
         for name, value in fields.items():
             embed.add_field(name=name, value=value)
