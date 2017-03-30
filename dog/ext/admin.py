@@ -1,3 +1,4 @@
+import inspect
 import logging
 import re
 import discord
@@ -64,6 +65,10 @@ class Admin(Cog):
 
         try:
             output = eval(code, env)
+
+            if inspect.isawaitable(output):
+                output = await output
+
             self.eval_last_result = output
             output = str(output)
         except Exception as e:
@@ -72,6 +77,7 @@ class Admin(Cog):
             return
 
         if len(output) > room:
+            logger.info('output too big, hasting')
             haste_url = await haste(output)
             await self.bot.say(f'Full output: {haste_url}')
             output = output[:room] + '...'
