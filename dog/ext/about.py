@@ -1,7 +1,7 @@
 import datetime
-import inspect
 import logging
 import discord
+import platform
 from subprocess import check_output
 from discord.ext import commands
 from dog import Cog, checks
@@ -22,6 +22,7 @@ class About(Cog):
             ' Available on GitHub [here](https://github.com/sliceofcode/dogbot)!')
         embed.add_field(name='Git revision', value=f'[{git_revision}](https://github.com/'
                         f'sliceofcode/dogbot/commit/{git_revision})')
+        embed.add_field(name='Python', value=platform.python_version())
         embed.set_footer(text=f'{maker.name}#{maker.discriminator}',
                          icon_url=maker.avatar_url)
         await self.bot.say(embed=embed)
