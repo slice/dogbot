@@ -1,3 +1,4 @@
+import inspect
 import datetime
 import discord
 from subprocess import check_output
@@ -22,6 +23,23 @@ class About(Cog):
         embed.set_footer(text=f'{maker.name}#{maker.discriminator}',
                          icon_url=maker.avatar_url)
         await self.bot.say(embed=embed)
+
+    @commands.command()
+    async def source(self, command: str):
+        """ Shows the source code of a command. """
+        cmd = self.bot.get_command(command)
+
+        if cmd is None:
+            await self.bot.say('No such command!')
+            return
+
+        sourcefile = inspect.getsourcefile(cmd.callback)
+        sourcelines = inspect.getsourcelines(cmd.callback)
+        short_path = '/'.join(sourcefile.split('/')[-2:])
+
+        root = 'https://github.com/sliceofcode/dogbot/tree/master/dog'
+        start = sourcelines[1]
+        await self.bot.say(f'{root}/{short_path}#L{start}')
 
     @commands.command()
     @checks.is_owner()
