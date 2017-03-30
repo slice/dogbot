@@ -26,7 +26,6 @@ discord_logger.setLevel(logging.DEBUG)
 file_handler = logging.FileHandler(filename='dog.log', encoding='utf-8',
                                    mode='w')
 file_handler.setFormatter(nice_fmt)
-discord_logger.addHandler(file_handler)
 
 # stream handler (stdout), only handle INFO+
 stream = logging.StreamHandler()
@@ -35,6 +34,7 @@ stream.setLevel(logging.INFO)
 
 # handle from all logs
 root_logger.addHandler(stream)
+root_logger.addHandler(file_handler)
 
 logger = logging.getLogger('dog')
 
