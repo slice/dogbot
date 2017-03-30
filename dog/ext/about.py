@@ -1,10 +1,12 @@
-import inspect
 import datetime
+import inspect
+import logging
 import discord
 from subprocess import check_output
 from discord.ext import commands
 from dog import Cog, checks
 
+logger = logging.getLogger(__name__)
 owner_id = '97104885337575424'
 
 class About(Cog):
@@ -35,6 +37,13 @@ class About(Cog):
 
         sourcefile = inspect.getsourcefile(cmd.callback)
         sourcelines = inspect.getsourcelines(cmd.callback)
+        logger.info('source: sourcefile is %s', sourcefile)
+
+        if 'site-packages' in sourcefile:
+            # bail
+            await self.bot.say('That command is built-in, and cannot be'
+                               ' shown.')
+            return
         short_path = '/'.join(sourcefile.split('/')[-2:])
 
         root = 'https://github.com/sliceofcode/dogbot/tree/master/dog'
