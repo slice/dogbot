@@ -1,6 +1,7 @@
 # bot
 dog_config.py
 *.log
+dog_blocked.json
 
 # fab
 fabfile.py

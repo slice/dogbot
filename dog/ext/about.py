@@ -1,3 +1,5 @@
+import os
+import json
 import datetime
 import logging
 import discord
@@ -15,6 +17,26 @@ class About(Cog):
         super().__init__(bot)
         self.client = MongoClient()
         self.coll = self.client.dog.feedback
+        self.blocked = []
+
+        # read blocked users from file
+        if os.path.isfile('dog_blocked.json'):
+            logger.info('found blocked, loading')
+            with open('dog_blocked.json', 'r') as f:
+                self.blocked = json.load(f)
+
+    def _blocked_save(self):
+        # save
+        logger.info('saving blocked users')
+        with open('dog_blocked.json', 'w') as f:
+            json.dump(self.blocked, f)
+
+    def not_blocked():
+        def predicate(ctx):
+            if ctx.cog is None:
+                return True
+            return ctx.message.author.id not in ctx.cog.blocked
+        return commands.check(predicate)
 
     @commands.command()
     async def about(self):
@@ -38,21 +60,70 @@ class About(Cog):
         """ Feedback commands for the bot. """
 
     @feedback.command(name='submit', pass_context=True)
+    @not_blocked()
     async def feedback_submit(self, ctx, *, feedback: str):
         """ Submits feedback. """
+        if len(feedback) > 500:
+            await self.bot.say('That feedback is too big! Keep it under 500 characters.')
+            return
+
         self.coll.insert_one({
             'user_id': ctx.message.author.id,
             'content': feedback,
             'when': datetime.datetime.utcnow()
         })
         await self.bot.say('Your feedback has been submitted.')
+        owner = discord.utils.get(list(self.bot.get_all_members()), id=owner_id)
+        new_feedback_fmt = """New feedback from {0.mention} (`{0.id}`)!
+
+```
+{1}
+```"""
+        await self.bot.send_message(owner, new_feedback_fmt.format(
+            ctx.message.author, feedback))
 
     @feedback.command(name='from', pass_context=True)
+    @checks.is_owner()
     async def feedback_from(self, ctx, who: discord.User):
         """ Fetches feedback from a specific person. """
         cursor = self.coll.find({'user_id': who.id})
         lines = '\n'.join(f'• {f["content"]}' for f in cursor)
-        await self.bot.say(lines)
+        if lines == '':
+            await self.bot.say('This user has no feedbacks.')
+        else:
+            await self.bot.say(lines)
+
+    @feedback.command(name='block')
+    @checks.is_owner()
+    async def feedback_block(self, who: discord.User):
+        """ Blocks someone from submitting feedback. """
+        self.blocked.append(who.id)
+        self._blocked_save()
+        await self.bot.say('\N{OK HAND SIGN}')
+        logger.info('blocked %s from using feedback', who.id)
+
+    @feedback.command(name='unblock')
+    @checks.is_owner()
+    async def feedback_unblock(self, who: discord.User):
+        """ Unblocks someone from submitting feedback. """
+        self.blocked.remove(who.id)
+        self._blocked_save()
+        await self.bot.say('\N{OK HAND SIGN}')
+        logger.info('unblocked %s from using feedback', who.id)
+
+    @feedback.command(name='purge')
+    @checks.is_owner()
+    async def feedback_purge(self, who: discord.User):
+        """ Purges all feedback from a specific person. """
+        result = self.coll.delete_many({'user_id': who.id})
+        await self.bot.say(f'Deleted {result.deleted_count} feedback(s).')
+
+    @feedback.command(name='stats')
+    @checks.is_owner()
+    async def feedback_stats(self):
+        """ Shows the amount of feedbacks sent. """
+        feedbacks = len(list(self.coll.find()))
+        await self.bot.say(f'A total of {feedbacks} feedbacks have been submitted.')
 
     @commands.command()
     @checks.is_owner()
