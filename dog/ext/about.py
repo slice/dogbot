@@ -9,10 +9,9 @@ from pymongo import MongoClient
 from subprocess import check_output
 from discord.ext import commands
 from dog import Cog, checks
-from dog_config import mongo_url
+from dog_config import mongo_url, owner_id, github
 
 logger = logging.getLogger(__name__)
-owner_id = '97104885337575424'
 
 class About(Cog):
     def __init__(self, bot):
@@ -52,18 +51,18 @@ class About(Cog):
         embed = discord.Embed(
             title='Dogbot',
             description=f'A nice Discord bot by {maker.mention} ({maker.id}).'
-            ' Available on GitHub [here](https://github.com/sliceofcode/dogbot)!')
+            f' Available on GitHub [here](https://github.com/{github})!')
         embed.add_field(name='Git revision', value=f'[{git_revision}](https://github.com/'
-                        f'sliceofcode/dogbot/commit/{git_revision})')
+                        f'{github}/commit/{git_revision})')
         embed.add_field(name='Python', value=platform.python_version())
         embed.set_footer(text=f'{maker.name}#{maker.discriminator}',
                          icon_url=maker.avatar_url)
         await self.bot.say(embed=embed)
 
-    @commands.command()
-    async def github(self):
+    @commands.command(name='github', aliases=['git', 'source', 'source_code'])
+    async def _github(self):
         """ Tells you my GitHub link! """
-        gh = 'https://github.com/sliceofcode/dogbot'
+        gh = f'https://github.com/{github}'
         await self.bot.say(f'I\'m on GitHub at {gh}. Feel free to use handy'
                            ' tidbits of my source code!')
 

@@ -2,6 +2,7 @@ import datetime
 import logging
 import discord
 from discord.ext import commands
+import dog_config as cfg
 
 logger = logging.getLogger(__name__)
 
@@ -9,6 +10,7 @@ class DogBot(commands.Bot):
     async def on_ready(self):
         self.boot_time = datetime.datetime.utcnow()
 
+        logger.info('owner id: %s', cfg.owner_id)
         logger.info('logged in as %s', self.user.id)
         print('logged in')
         print(f' name: {self.user.name}#{self.user.discriminator}')
