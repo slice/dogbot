@@ -1,5 +1,3 @@
-import os
-import json
 import datetime
 import logging
 import discord
@@ -21,25 +19,15 @@ class About(Cog):
 
         self.client = MongoClient(mongo_url)
         self.coll = self.client.dog.feedback
-        self.blocked = []
-
-        # read blocked users from file
-        if os.path.isfile('dog_blocked.json'):
-            logger.info('found blocked, loading')
-            with open('dog_blocked.json', 'r') as f:
-                self.blocked = json.load(f)
-
-    def _blocked_save(self):
-        # save
-        logger.info('saving blocked users')
-        with open('dog_blocked.json', 'w') as f:
-            json.dump(self.blocked, f)
+        self.blocked_coll = self.client.dog.feedback_blocked
 
     def not_blocked():
         def predicate(ctx):
             if ctx.cog is None:
                 return True
-            return ctx.message.author.id not in ctx.cog.blocked
+            blocked_coll = ctx.cog.blocked_coll
+            result = blocked_coll.find_one({'user_id': ctx.message.author.id})
+            return result is None
         return commands.check(predicate)
 
     @commands.command()
@@ -78,6 +66,7 @@ class About(Cog):
             await self.bot.say('That feedback is too big! Keep it under 500 characters.')
             return
 
+        logger.info('new feedback from %s: %s', ctx.message.author.id, feedback)
         self.coll.insert_one({
             'user_id': ctx.message.author.id,
             'content': feedback,
@@ -108,8 +97,7 @@ class About(Cog):
     @checks.is_owner()
     async def feedback_block(self, who: discord.User):
         """ Blocks someone from submitting feedback. """
-        self.blocked.append(who.id)
-        self._blocked_save()
+        self.blocked_coll.insert_one({'user_id': who.id})
         await self.bot.say('\N{OK HAND SIGN}')
         logger.info('blocked %s from using feedback', who.id)
 
@@ -124,8 +112,7 @@ class About(Cog):
     @checks.is_owner()
     async def feedback_unblock(self, who: discord.User):
         """ Unblocks someone from submitting feedback. """
-        self.blocked.remove(who.id)
-        self._blocked_save()
+        self.blocked_coll.delete_one({'user_id': who.id})
         await self.bot.say('\N{OK HAND SIGN}')
         logger.info('unblocked %s from using feedback', who.id)
 
