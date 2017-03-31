@@ -40,8 +40,11 @@ However, if you really want to...
 Create a `dog_config.py` file in the root of the repository.
 
 ```py
-token = 'Mjk...'
+token = '<your token...>'
 prefix = ['dog, ', 'd?', 'd!']
+mongo_url = 'localhost'
+owner_id = '<your id...>'
+github = '<your github username>/<repository name>'
 ```
 
 Specify your token and prefixes.
