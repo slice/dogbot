@@ -4,6 +4,7 @@ import datetime
 import logging
 import discord
 import platform
+from bson.objectid import ObjectId
 from pymongo import MongoClient
 from subprocess import check_output
 from discord.ext import commands
@@ -94,7 +95,7 @@ class About(Cog):
     async def feedback_from(self, ctx, who: discord.User):
         """ Fetches feedback from a specific person. """
         cursor = self.coll.find({'user_id': who.id})
-        lines = '\n'.join(f'• {f["content"]}' for f in cursor)
+        lines = '\n'.join(f'• `{f["_id"]}`, {f["content"]}' for f in cursor)
         if lines == '':
             await self.bot.say('This user has no feedbacks.')
         else:
@@ -108,6 +109,13 @@ class About(Cog):
         self._blocked_save()
         await self.bot.say('\N{OK HAND SIGN}')
         logger.info('blocked %s from using feedback', who.id)
+
+    @feedback.command(name='delete', aliases=['remove'])
+    @checks.is_owner()
+    async def feedback_delete(self, feedback_id: str):
+        """ Removes a specific feedback. """
+        self.coll.delete_one({'_id': ObjectId(feedback_id)})
+        await self.bot.say('Deleted.')
 
     @feedback.command(name='unblock')
     @checks.is_owner()
