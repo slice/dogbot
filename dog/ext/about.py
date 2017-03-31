@@ -9,6 +9,7 @@ from pymongo import MongoClient
 from subprocess import check_output
 from discord.ext import commands
 from dog import Cog, checks
+from dog_config import mongo_url
 
 logger = logging.getLogger(__name__)
 owner_id = '97104885337575424'
@@ -16,7 +17,10 @@ owner_id = '97104885337575424'
 class About(Cog):
     def __init__(self, bot):
         super().__init__(bot)
-        self.client = MongoClient()
+
+        logger.info('mongo url: %s', mongo_url)
+
+        self.client = MongoClient(mongo_url)
         self.coll = self.client.dog.feedback
         self.blocked = []
 
