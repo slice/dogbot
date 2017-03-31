@@ -55,6 +55,13 @@ class About(Cog):
                          icon_url=maker.avatar_url)
         await self.bot.say(embed=embed)
 
+    @commands.command()
+    async def github(self):
+        """ Tells you my GitHub link! """
+        gh = 'https://github.com/sliceofcode/dogbot'
+        await self.bot.say(f'I\'m on GitHub at {gh}. Feel free to use handy'
+                           ' tidbits of my source code!')
+
     @commands.group()
     async def feedback(self):
         """ Feedback commands for the bot. """
@@ -123,7 +130,7 @@ class About(Cog):
     async def feedback_stats(self):
         """ Shows the amount of feedbacks sent. """
         feedbacks = len(list(self.coll.find()))
-        await self.bot.say(f'A total of {feedbacks} feedbacks have been submitted.')
+        await self.bot.say(f'A total of {feedbacks} feedback(s) have been submitted.')
 
     @commands.command()
     @checks.is_owner()
