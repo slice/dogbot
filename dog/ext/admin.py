@@ -15,21 +15,21 @@ class Admin(Cog):
         self.eval_last_result = None
 
     @commands.command()
-    async def ping(self):
+    async def ping(self, ctx):
         """ You know what this does. """
         begin = monotonic()
-        msg = await self.bot.say('Pong!')
+        msg = await ctx.send('Pong!')
         end = monotonic()
         difference_ms = round((end - begin) * 1000, 2)
-        await self.bot.edit_message(msg, f'Pong! Took `{difference_ms}ms`.')
+        await msg.edit(content=f'Pong! (Took `{difference_ms}ms` to send.)')
 
     @commands.command()
-    async def prefixes(self):
+    async def prefixes(self, ctx):
         """ Lists the bot's prefixes. """
         prefixes = ', '.join([f'`{p}`' for p in self.bot.command_prefix])
-        await self.bot.say(f'My prefixes are: {prefixes}')
+        await ctx.send(f'My prefixes are: {prefixes}')
 
-    @commands.command(pass_context=True, name='eval')
+    @commands.command(name='eval')
     @checks.is_owner()
     async def _eval(self, ctx, *, code: str):
         """ Evaluates a Python expression. """
@@ -37,7 +37,7 @@ class Admin(Cog):
         match = code_regex.match(code)
         if match is None:
             logger.info('eval: tried to eval, no code (%s)', code)
-            await self.bot.say('No code was found. Surround it in backticks (\\`code\\`).')
+            await ctx.send('No code was found. Surround it in backticks (\\`code\\`).')
             return
         code = match.group(1)
 
@@ -47,8 +47,8 @@ class Admin(Cog):
             'bot': ctx.bot,
             'ctx': ctx,
             'msg': ctx.message,
-            'server': ctx.message.server,
-            'channel': ctx.message.channel,
+            'guild': ctx.guild,
+            'channel': ctx.guild,
             'me': ctx.message.author,
 
             'get': discord.utils.get,
@@ -73,16 +73,16 @@ class Admin(Cog):
             output = str(output)
         except Exception as e:
             name = type(e).__name__
-            await self.bot.say(fmt_exception.format(code, name, e))
+            await ctx.send(fmt_exception.format(code, name, e))
             return
 
         if len(output) > room:
             logger.info('output too big, hasting')
             haste_url = await haste(output)
-            await self.bot.say(f'Full output: {haste_url}')
+            await ctx.send(f'Full output: {haste_url}')
             output = output[:room] + '...'
 
-        await self.bot.say(fmt_result.format(code, output or 'None'))
+        await ctx.send(fmt_result.format(code, output or 'None'))
 
 def setup(bot):
     bot.add_cog(Admin(bot))

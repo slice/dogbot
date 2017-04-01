@@ -43,7 +43,7 @@ Create a `dog_config.py` file in the root of the repository.
 token = '<your token...>'
 prefix = ['dog, ', 'd?', 'd!']
 mongo_url = 'localhost'
-owner_id = '<your id...>'
+owner_id = <your id...>
 github = '<your github username>/<repository name>'
 ```
 
