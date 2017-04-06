@@ -18,6 +18,7 @@ root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
 
 # pretty formatting
+console_fmt = logging.Formatter('[%(levelname)s] %(name)s: %(message)s')
 nice_fmt = logging.Formatter('%(asctime)s '
                              '[%(name)s %(levelname)s] %(message)s')
 
@@ -30,7 +31,7 @@ file_handler.setFormatter(nice_fmt)
 
 # stream handler (stdout), only handle INFO+
 stream = logging.StreamHandler()
-stream.setFormatter(nice_fmt)
+stream.setFormatter(console_fmt)
 stream.setLevel(logging.INFO)
 
 # handle from all logs
