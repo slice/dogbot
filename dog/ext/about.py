@@ -71,20 +71,21 @@ class About(Cog):
 
         logger.info('new feedback from %s: %s',
                     ctx.message.author.id, feedback)
-        self.coll.insert_one({
+        inserted_id = self.coll.insert_one({
             'user_id': ctx.message.author.id,
             'content': feedback,
             'when': datetime.datetime.utcnow()
-        })
+        }).inserted_id
         await ctx.send('Your feedback has been submitted.')
         everyone = list(self.bot.get_all_members())
         owner = discord.utils.get(everyone, id=owner_id)
-        new_feedback_fmt = """New feedback from {0.mention} (`{0.id}`)!
+        new_feedback_fmt = """New feedback (`{2}`) by {0.mention} (`{0.id}`)!
 
 ```
 {1}
 ```"""
-        await owner.send(new_feedback_fmt.format(ctx.message.author, feedback))
+        await owner.send(new_feedback_fmt.format(
+            ctx.message.author, feedback, inserted_id))
 
     @feedback.command(name='from')
     @checks.is_owner()
