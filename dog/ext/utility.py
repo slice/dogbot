@@ -6,8 +6,10 @@ from dog import Cog
 
 class Utility(Cog):
     @commands.command()
-    async def avatar(self, ctx, target: discord.User):
+    async def avatar(self, ctx, target: discord.User=None):
         """ Shows someone's avatar. """
+        if target is None:
+            target = ctx.message.author
         await ctx.send(target.avatar_url)
 
     @commands.command()
