@@ -25,9 +25,14 @@ nice_fmt = logging.Formatter('%(asctime)s '
 # discord log should be DEBUG, but only in dog.log
 discord_logger = logging.getLogger('discord')
 discord_logger.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler(filename='dog.log', encoding='utf-8',
+file_handler = logging.FileHandler(filename='dog_debug.log', encoding='utf-8',
                                    mode='w')
 file_handler.setFormatter(nice_fmt)
+
+file_sane_handler = logging.FileHandler(filename='dog.log', encoding='utf-8',
+                                        mode='w')
+file_sane_handler.setFormatter(nice_fmt)
+file_sane_handler.setLevel(logging.INFO)
 
 # stream handler (stdout), only handle INFO+
 stream = logging.StreamHandler()
@@ -37,6 +42,7 @@ stream.setLevel(logging.INFO)
 # handle from all logs
 root_logger.addHandler(stream)
 root_logger.addHandler(file_handler)
+root_logger.addHandler(file_sane_handler)
 
 logger = logging.getLogger('dog')
 
