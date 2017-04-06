@@ -118,6 +118,7 @@ class About(Cog):
             f'My creator says: ```\n{message}\n```\nThank you for submitting'
             ' feedback!'
         )
+        await ctx.send('\N{OK HAND SIGN}')
 
     @feedback.command(name='block')
     @checks.is_owner()
