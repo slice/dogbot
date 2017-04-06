@@ -113,7 +113,7 @@ class About(Cog):
                            f' Their ID is `{memb}`.')
             return
         await memb.send(
-            f'Hey, {memb.mention}! My creator has responded to this feedback'
+            f'Hey, {memb.mention}! My creator has responded to the feedback'
             f' that you sent earlier! You said:```\n{feedback["content"]}\n```'
             f'My creator says: ```\n{message}\n```\nThank you for submitting'
             ' feedback!'
