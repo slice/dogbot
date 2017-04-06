@@ -11,6 +11,7 @@ from dog_config import mongo_url, owner_id, github
 
 logger = logging.getLogger(__name__)
 
+
 class About(Cog):
     def __init__(self, bot):
         super().__init__(bot)
@@ -40,8 +41,9 @@ class About(Cog):
             title='Dogbot',
             description=f'A nice Discord bot by {maker.mention} ({maker.id}).'
             f' Available on GitHub [here](https://github.com/{github})!')
-        embed.add_field(name='Git revision', value=f'[{git_revision}](https://github.com/'
-                        f'{github}/commit/{git_revision})')
+        rev_link = (f'[{git_revision}](https://github.com/{github}/commit/'
+                    f'{git_revision})')
+        embed.add_field(name='Git revision', value=rev_link)
         embed.add_field(name='Python', value=platform.python_version())
         embed.set_footer(text=f'{maker.name}#{maker.discriminator}',
                          icon_url=maker.avatar_url)
@@ -63,17 +65,20 @@ class About(Cog):
     async def feedback_submit(self, ctx, *, feedback: str):
         """ Submits feedback. """
         if len(feedback) > 500:
-            await self.bot.say('That feedback is too big! Keep it under 500 characters.')
+            await ctx.send('That feedback is too big! '
+                           'Keep it under 500 characters please!')
             return
 
-        logger.info('new feedback from %s: %s', ctx.message.author.id, feedback)
+        logger.info('new feedback from %s: %s',
+                    ctx.message.author.id, feedback)
         self.coll.insert_one({
             'user_id': ctx.message.author.id,
             'content': feedback,
             'when': datetime.datetime.utcnow()
         })
         await ctx.send('Your feedback has been submitted.')
-        owner = discord.utils.get(list(self.bot.get_all_members()), id=owner_id)
+        everyone = list(self.bot.get_all_members())
+        owner = discord.utils.get(everyone, id=owner_id)
         new_feedback_fmt = """New feedback from {0.mention} (`{0.id}`)!
 
 ```
@@ -127,7 +132,8 @@ class About(Cog):
     async def feedback_stats(self, ctx):
         """ Shows the amount of feedbacks sent. """
         feedbacks = len(list(self.coll.find()))
-        await ctx.send(f'A total of {feedbacks} feedback(s) have been submitted.')
+        await ctx.send(f'A total of {feedbacks} feedback(s) '
+                       'have been submitted.')
 
     @commands.command()
     @checks.is_owner()
@@ -138,8 +144,7 @@ class About(Cog):
         num_servers = len(self.bot.guilds)
         uptime = str(datetime.datetime.utcnow() - self.bot.boot_time)[:-7]
 
-        embed = discord.Embed(title='Statistics',
-                              description='Statistics and participation information.')
+        embed = discord.Embed(title='Statistics')
         fields = {
             'Members': num_members,
             'Channels': num_channels,
@@ -149,6 +154,7 @@ class About(Cog):
         for name, value in fields.items():
             embed.add_field(name=name, value=value)
         await ctx.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(About(bot))

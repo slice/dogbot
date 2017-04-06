@@ -9,6 +9,7 @@ from dog.haste import haste
 
 logger = logging.getLogger(__name__)
 
+
 class Admin(Cog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -37,7 +38,8 @@ class Admin(Cog):
         match = code_regex.match(code)
         if match is None:
             logger.info('eval: tried to eval, no code (%s)', code)
-            await ctx.send('No code was found. Surround it in backticks (\\`code\\`).')
+            await ctx.send('No code was found. '
+                           'Surround it in backticks (\\`code\\`), please!.')
             return
         code = match.group(1)
 
@@ -83,6 +85,7 @@ class Admin(Cog):
             output = output[:room] + '...'
 
         await ctx.send(fmt_result.format(code, output or 'None'))
+
 
 def setup(bot):
     bot.add_cog(Admin(bot))

@@ -3,6 +3,7 @@ import discord
 from discord.ext import commands
 from dog import Cog
 
+
 class Utility(Cog):
     @commands.command()
     async def avatar(self, ctx, target: discord.User):
@@ -18,9 +19,11 @@ class Utility(Cog):
         await ctx.send(
             f'{target.display_name} joined this server {target.joined_at}'
             f' ({diff(target.joined_at)} ago).\n'
-            f'They joined Discord on {target.created_at} ({diff(target.created_at)}'
+            f'They joined Discord on {target.created_at} '
+            f'({diff(target.created_at)}'
             ' ago).'
         )
+
 
 def setup(bot):
     bot.add_cog(Utility(bot))

@@ -18,7 +18,8 @@ root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
 
 # pretty formatting
-nice_fmt = logging.Formatter('%(asctime)s [%(name)s %(levelname)s] %(message)s')
+nice_fmt = logging.Formatter('%(asctime)s '
+                             '[%(name)s %(levelname)s] %(message)s')
 
 # discord log should be DEBUG, but only in dog.log
 discord_logger = logging.getLogger('discord')
@@ -42,7 +43,8 @@ logger.info('bot starting')
 
 d = DogBot(command_prefix=cfg.prefix)
 
-d_exts = [p.replace('.py', '') for p in listdir('dog/ext') if p != '__pycache__']
+exts = 'dog/ext'
+d_exts = [p.replace('.py', '') for p in listdir(exts) if p != '__pycache__']
 
 for ext in d_exts:
     logger.info('loading extension dog.ext.%s', ext)

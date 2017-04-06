@@ -6,6 +6,7 @@ import dog_config as cfg
 
 logger = logging.getLogger(__name__)
 
+
 class DogBot(commands.Bot):
     async def on_ready(self):
         self.boot_time = datetime.datetime.utcnow()
