@@ -97,6 +97,27 @@ class About(Cog):
         else:
             await ctx.send(lines)
 
+    @feedback.command(name='respond')
+    @checks.is_owner()
+    async def feedback_respond(self, ctx, feedback_id: str, message: str):
+        """ Responds to feedback. """
+        feedback = self.coll.find_one({'_id': ObjectId(feedback_id)})
+        if feedback is None:
+            await ctx.send('That feedback wasn\'t found!')
+            return
+        user_id = int(feedback['user_id'])
+        memb = discord.utils.get(list(self.bot.get_all_members()), id=user_id)
+        if not memb:
+            await ctx.send('I couldn\'t find the author of that feedback.'
+                           f' Their ID is `{memb}`.')
+            return
+        await memb.send(
+            f'Hey, {memb.mention}! My creator has responded to this feedback'
+            f' that you sent earlier! You said:```\n{feedback["content"]}\n```'
+            f'My creator says: ```\n{message}\n```\nThank you for submitting'
+            ' feedback!'
+        )
+
     @feedback.command(name='block')
     @checks.is_owner()
     async def feedback_block(self, ctx, who: discord.User):
