@@ -26,3 +26,9 @@ class DogBot(commands.Bot):
     async def on_command_error(self, ex, ctx):
         tb = traceback.format_exception(None, ex, ex.__traceback__)
         logger.error('command error: %s', ''.join(tb))
+
+        if isinstance(ex, commands.errors.BadArgument):
+            message = str(ex)
+            if not message.endswith('.'):
+                message = message + '.'
+            await ctx.send(f'Bad argument. {message}')
