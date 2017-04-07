@@ -13,11 +13,15 @@ class Utility(Cog):
         await ctx.send(target.avatar_url)
 
     @commands.command()
-    async def joined(self, ctx, target: discord.Member):
+    async def joined(self, ctx, target: discord.Member=None):
         """ Shows when someone joined this server and Discord. """
+        if target is None:
+            target = ctx.message.author
+
         def diff(date):
             now = datetime.datetime.utcnow()
             return str(now - date)[:-7]
+
         await ctx.send(
             f'{target.display_name} joined this server {target.joined_at}'
             f' ({diff(target.joined_at)} ago).\n'
