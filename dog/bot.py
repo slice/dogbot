@@ -23,7 +23,6 @@ class DogBot(commands.Bot):
         help_game = discord.Game(name=f'{short_prefix}help')
         await self.change_presence(game=help_game)
 
-    async def on_command_error(self, ex, context):
-        if isinstance(ex, commands.CommandError):
-            tb = traceback.format_exception(None, ex, ex.__traceback__)
-            logger.error('command error: %s', ''.join(tb))
+    async def on_command_error(self, ex, ctx):
+        tb = traceback.format_exception(None, ex, ex.__traceback__)
+        logger.error('command error: %s', ''.join(tb))
