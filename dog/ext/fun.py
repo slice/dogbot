@@ -29,5 +29,6 @@ class Fun(Cog):
             return
         await ctx.send(facts['facts'][0])
 
+
 def setup(bot):
     bot.add_cog(Fun(bot))
