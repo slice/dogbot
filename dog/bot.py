@@ -9,9 +9,11 @@ logger = logging.getLogger(__name__)
 
 
 class DogBot(commands.Bot):
-    async def on_ready(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.boot_time = datetime.datetime.utcnow()
 
+    async def on_ready(self):
         logger.info('owner id: %s', cfg.owner_id)
         logger.info('logged in as %s', self.user.id)
         print('logged in')
