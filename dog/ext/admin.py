@@ -1,3 +1,5 @@
+import os
+import sys
 import inspect
 import logging
 import re
@@ -23,6 +25,23 @@ class Admin(Cog):
         end = monotonic()
         difference_ms = round((end - begin) * 1000, 2)
         await msg.edit(content=f'Pong! (Took `{difference_ms}ms` to send.)')
+
+    @commands.command(aliases=['reboot'])
+    @commands.is_owner()
+    async def restart(self, ctx):
+        logger.info('COMMENCING REBOOT')
+        await ctx.message.add_reaction('\N{WAVING HAND SIGN}')
+        os.execv(sys.executable, ['python'] + sys.argv)
+        ctx.bot.logout()
+        sys.exit(0)
+
+    @commands.command(aliases=['die', 'getout', 'poweroff'])
+    @commands.is_owner()
+    async def shutdown(self, ctx):
+        logger.info('COMMENCING SHUTDOWN')
+        await ctx.message.add_reaction('\N{WAVING HAND SIGN}')
+        ctx.bot.logout()
+        sys.exit(0)
 
     @commands.command()
     async def prefixes(self, ctx):
