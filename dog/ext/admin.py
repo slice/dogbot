@@ -29,6 +29,7 @@ class Admin(Cog):
     @commands.command(aliases=['reboot'])
     @commands.is_owner()
     async def restart(self, ctx):
+        """ Reboots the bot. """
         logger.info('COMMENCING REBOOT')
         await ctx.message.add_reaction('\N{WAVING HAND SIGN}')
         os.execv(sys.executable, ['python'] + sys.argv)
@@ -38,6 +39,7 @@ class Admin(Cog):
     @commands.command(aliases=['die', 'getout', 'poweroff'])
     @commands.is_owner()
     async def shutdown(self, ctx):
+        """ Turns off the bot. """
         logger.info('COMMENCING SHUTDOWN')
         await ctx.message.add_reaction('\N{WAVING HAND SIGN}')
         ctx.bot.logout()

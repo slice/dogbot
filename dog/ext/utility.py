@@ -32,6 +32,7 @@ class Utility(Cog):
 
     @commands.command(name='calc')
     async def calc(self, ctx, *, expression: str):
+        """ Evaluates a math expression. """
         terp = Interpreter()
         result = terp.eval(expression)
         if result != '' and result is not None:
