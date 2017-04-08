@@ -30,13 +30,23 @@ class Admin(Cog):
         prefixes = ', '.join([f'`{p}`' for p in self.bot.command_prefix])
         await ctx.send(f'My prefixes are: {prefixes}')
 
+    def _reload_ext(self, ext):
+        self.bot.unload_extension(ext)
+        self.bot.load_extension(ext)
+
     @commands.command()
     @checks.is_owner()
     async def reload(self, ctx, ext: str):
         """ Reloads an extension. """
         try:
-            ctx.bot.unload_extension(f'dog.ext.{ext}')
-            ctx.bot.load_extension(f'dog.ext.{ext}')
+            if ext == 'all':
+                names = list(ctx.bot.extensions.keys())
+                logger.info('reloading %d extensions', len(names))
+                for name in names:
+                    self._reload_ext(name)
+            else:
+                logger.info('reloading %s', ext)
+                self._reload_ext(f'dog.ext.{ext}')
         except:
             logger.exception(f'failed reloading extension {ext}')
             await ctx.message.add_reaction('\N{CROSS MARK}')
