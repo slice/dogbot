@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class About(Cog):
     def __init__(self, bot):
-        self.bot = bot
+        super().__init__(self, bot)
         self.maker = None
 
     @commands.command()
