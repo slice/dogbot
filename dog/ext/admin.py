@@ -4,7 +4,7 @@ import re
 import discord
 from time import monotonic
 from discord.ext import commands
-from dog import Cog, checks
+from dog import Cog
 from dog.haste import haste
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class Admin(Cog):
         self.bot.load_extension(ext)
 
     @commands.command()
-    @checks.is_owner()
+    @commands.is_owner()
     async def reload(self, ctx, ext: str):
         """ Reloads an extension. """
         try:
@@ -54,7 +54,7 @@ class Admin(Cog):
             await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
     @commands.command(name='eval')
-    @checks.is_owner()
+    @commands.is_owner()
     async def _eval(self, ctx, *, code: str):
         """ Evaluates a Python expression. """
         code_regex = re.compile(r'`(.+)`')
@@ -62,7 +62,7 @@ class Admin(Cog):
         if match is None:
             logger.info('eval: tried to eval, no code (%s)', code)
             await ctx.send('No code was found. '
-                           'Surround it in backticks (\\`code\\`), please!.')
+                           'Surround it in backticks (\\`code\\`), please!')
             return
         code = match.group(1)
 

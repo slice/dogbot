@@ -48,7 +48,12 @@ logger = logging.getLogger('dog')
 
 logger.info('bot starting')
 
-d = DogBot(command_prefix=cfg.prefix)
+additional_options = getattr(cfg, 'options', {})
+additional_options.update({
+    'owner_id': getattr(cfg, 'owner_id', None)
+})
+logger.info('bot options: %s', additional_options)
+d = DogBot(command_prefix=cfg.prefix, **additional_options)
 
 exts = 'dog/ext'
 d_exts = [p.replace('.py', '') for p in listdir(exts) if p != '__pycache__']

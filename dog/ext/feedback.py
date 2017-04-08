@@ -4,7 +4,7 @@ from discord.ext import commands
 import logging
 from bson.objectid import ObjectId
 from pymongo import MongoClient
-from dog import Cog, checks
+from dog import Cog
 from dog_config import mongo_url, owner_id
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ class Feedback(Cog):
             ctx.message.author, feedback, inserted_id))
 
     @feedback.command(name='from')
-    @checks.is_owner()
+    @commands.is_owner()
     async def feedback_from(self, ctx, who: discord.User):
         """ Fetches feedback from a specific person. """
         cursor = self.coll.find({'user_id': who.id})
@@ -72,7 +72,7 @@ class Feedback(Cog):
             await ctx.send(lines)
 
     @feedback.command(name='respond')
-    @checks.is_owner()
+    @commands.is_owner()
     async def feedback_respond(self, ctx, feedback_id: str, *, message: str):
         """
         Responds to feedback.
@@ -100,7 +100,7 @@ class Feedback(Cog):
         await ctx.send('\N{OK HAND SIGN}')
 
     @feedback.command(name='block')
-    @checks.is_owner()
+    @commands.is_owner()
     async def feedback_block(self, ctx, who: discord.User):
         """ Blocks someone from submitting feedback. """
         self.blocked_coll.insert_one({'user_id': who.id})
@@ -108,14 +108,14 @@ class Feedback(Cog):
         logger.info('blocked %s from using feedback', who.id)
 
     @feedback.command(name='delete', aliases=['remove'])
-    @checks.is_owner()
+    @commands.is_owner()
     async def feedback_delete(self, ctx, feedback_id: str):
         """ Removes a specific feedback. """
         self.coll.delete_one({'_id': ObjectId(feedback_id)})
         await ctx.send('Deleted.')
 
     @feedback.command(name='unblock')
-    @checks.is_owner()
+    @commands.is_owner()
     async def feedback_unblock(self, ctx, who: discord.User):
         """ Unblocks someone from submitting feedback. """
         self.blocked_coll.delete_one({'user_id': who.id})
@@ -123,14 +123,14 @@ class Feedback(Cog):
         logger.info('unblocked %s from using feedback', who.id)
 
     @feedback.command(name='purge')
-    @checks.is_owner()
+    @commands.is_owner()
     async def feedback_purge(self, ctx, who: discord.User):
         """ Purges all feedback from a specific person. """
         result = self.coll.delete_many({'user_id': who.id})
         await ctx.send(f'Deleted {result.deleted_count} feedback(s).')
 
     @feedback.command(name='stats')
-    @checks.is_owner()
+    @commands.is_owner()
     async def feedback_stats(self, ctx):
         """ Shows the amount of feedbacks sent. """
         feedbacks = len(list(self.coll.find()))

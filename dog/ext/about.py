@@ -4,7 +4,7 @@ import discord
 import platform
 from subprocess import check_output
 from discord.ext import commands
-from dog import Cog, checks
+from dog import Cog
 from dog_config import client_id, owner_id, github
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class About(Cog):
                        ' tidbits of my source code!')
 
     @commands.command()
-    @checks.is_owner()
+    @commands.is_owner()
     async def stats(self, ctx):
         """ Shows participation info about the bot. """
         num_members = len(list(self.bot.get_all_members()))
