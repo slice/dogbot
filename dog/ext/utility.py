@@ -18,6 +18,7 @@ class Utility(Cog):
         await ctx.send(target.avatar_url)
 
     @commands.command()
+    @commands.guild_only()
     async def earliest(self, ctx):
         """ Shows who in this server had the earliest Discord join time. """
         members = {m: m.created_at for m in ctx.guild.members if not m.bot}
@@ -40,6 +41,7 @@ class Utility(Cog):
         await ctx.send(random.choice(args))
 
     @commands.command()
+    @commands.guild_only()
     async def joined(self, ctx, target: discord.Member=None):
         """
         Shows when someone joined this server and Discord.

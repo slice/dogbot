@@ -5,6 +5,7 @@ from dog import Cog
 
 class Mod(Cog):
     @commands.command()
+    @commands.guild_only()
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(kick_members=True)
     async def kick(self, ctx, member: discord.Member):
@@ -13,6 +14,7 @@ class Mod(Cog):
         await ctx.message.add_reaction('\N{OK HAND SIGN}')
 
     @commands.command()
+    @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(kick_members=True)
     async def ban(self, ctx, member: discord.Member, days: int = 0):
@@ -21,6 +23,7 @@ class Mod(Cog):
         await ctx.message.add_reaction('\N{OK HAND SIGN}')
 
     @commands.command()
+    @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     async def attentionseek(self, ctx, replace_with: str = '💩'):
         """
