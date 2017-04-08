@@ -40,7 +40,7 @@ class Admin(Cog):
         """ Reloads an extension. """
         try:
             if ext == 'all':
-                names = list(ctx.bot.extensions.keys())
+                names = ctx.bot.extensions.keys()
                 logger.info('reloading %d extensions', len(names))
                 for name in names:
                     self._reload_ext(name)
