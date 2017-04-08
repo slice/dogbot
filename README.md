@@ -35,6 +35,12 @@ I heavily prefer that you [invite Dogbot to your server](https://discordapp.com/
 
 However, if you really want to...
 
+### Requirements
+
+- Python 3.6 (not 3.5 or below)
+- Required Python modules (check `requirements.txt`, run `pip install -r requirements.txt`)
+- MongoDB
+
 ### Configuration
 
 Create a `dog_config.py` file in the root of the repository.
@@ -45,6 +51,7 @@ prefix = ['dog, ', 'd?', 'd!']
 mongo_url = 'localhost'
 owner_id = <your id...>
 github = '<your github username>/<repository name>'
+client_id = <bot's client id...>
 ```
 
 Specify your token and prefixes.
@@ -53,12 +60,6 @@ Note that some variables in the bot are hardcoded in and are not configurable.
 Please look for these occurrences in the code and replace them if applicable.
 
 I try to keep the code as readable as possible!
-
-### Requirements
-
-- Python 3.6 (not 3.5 or below)
-- Required Python modules (check `requirements.txt`, run `pip install -r requirements.txt`)
-- MongoDB
 
 ### Running
 
