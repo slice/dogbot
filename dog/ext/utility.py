@@ -8,7 +8,11 @@ from dog import Cog
 class Utility(Cog):
     @commands.command()
     async def avatar(self, ctx, target: discord.User=None):
-        """ Shows someone's avatar. """
+        """
+        Shows someone's avatar.
+
+        If no arguments were passed, your avatar is shown.
+        """
         if target is None:
             target = ctx.message.author
         await ctx.send(target.avatar_url)
@@ -26,7 +30,11 @@ class Utility(Cog):
 
     @commands.command()
     async def joined(self, ctx, target: discord.Member=None):
-        """ Shows when someone joined this server and Discord. """
+        """
+        Shows when someone joined this server and Discord.
+
+        If no arguments were passed, your information is shown.
+        """
         if target is None:
             target = ctx.message.author
 
