@@ -11,22 +11,29 @@ logger = logging.getLogger(__name__)
 
 
 class About(Cog):
+    def __init__(self, bot):
+        super().__init__(self, bot)
+        self.maker = None
+
     @commands.command()
     async def about(self, ctx):
         """ Shows information about the bot. """
         git_revision = check_output(['git', 'rev-parse', '--short', 'HEAD'])\
             .strip().decode('utf-8')
-        maker = await self.bot.get_user_info(owner_id)
+
+        if self.maker is None:
+            self.maker = await self.bot.get_user_info(owner_id)
+
         embed = discord.Embed(
             title='Dogbot',
-            description=f'A nice Discord bot by {maker.mention} ({maker.id}).'
+            description=f'A nice Discord bot by {self.maker.mention} ({self.maker.id}).'
             f' Available on GitHub [here](https://github.com/{github})!')
         rev_link = (f'[{git_revision}](https://github.com/{github}/commit/'
                     f'{git_revision})')
         embed.add_field(name='Git revision', value=rev_link)
         embed.add_field(name='Python', value=platform.python_version())
-        embed.set_footer(text=f'{maker.name}#{maker.discriminator}',
-                         icon_url=maker.avatar_url)
+        embed.set_footer(text=f'{self.maker.name}#{self.maker.discriminator}',
+                         icon_url=self.maker.avatar_url)
         await ctx.send(embed=embed)
 
     @commands.command(name='github', aliases=['git', 'source', 'source_code'])
