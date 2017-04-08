@@ -73,7 +73,7 @@ class Admin(Cog):
             'ctx': ctx,
             'msg': ctx.message,
             'guild': ctx.guild,
-            'channel': ctx.guild,
+            'channel': ctx.channel,
             'me': ctx.message.author,
 
             'get': discord.utils.get,
