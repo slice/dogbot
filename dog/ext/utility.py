@@ -17,6 +17,17 @@ class Utility(Cog):
             target = ctx.message.author
         await ctx.send(target.avatar_url)
 
+    @commands.command()
+    async def earliest(self, ctx):
+        """ Shows who in this server had the earliest Discord join time. """
+        members = {m: m.created_at for m in ctx.guild.members if not m.bot}
+        earliest_time = min(members.values())
+        for member, time in members.items():
+            if earliest_time == time:
+                msg = (f'{member.name}#{member.discriminator} was the earliest'
+                       f' to join Discord. They joined Discord at {time}.')
+                await ctx.send(msg)
+
     @commands.command(aliases=['random', 'choose'])
     async def pick(self, ctx, *args):
         """
