@@ -44,7 +44,7 @@ class Fun(Cog):
         logger.info('wacky: get: %s', who.avatar_url)
 
         async with ctx.channel.typing():
-            avatar_data = await _get_bytesio(who.avatar_url)
+            avatar_data = await _get_bytesio(who.avatar_url_as(format='png'))
 
             logger.info('wacky: enhancing...')
             im = Image.open(avatar_data)
