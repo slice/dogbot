@@ -1,3 +1,4 @@
+import random
 import datetime
 import discord
 from discord.ext import commands
@@ -11,6 +12,17 @@ class Utility(Cog):
         if target is None:
             target = ctx.message.author
         await ctx.send(target.avatar_url)
+
+    @commands.command(aliases=['random', 'choose'])
+    async def pick(self, ctx, *args):
+        """
+        Randomly picks things that you give it.
+
+        d?pick one two three
+            Makes the bot randomly pick from three words, and displays
+            the chosen word.
+        """
+        await ctx.send(random.choice(args))
 
     @commands.command()
     async def joined(self, ctx, target: discord.Member=None):
