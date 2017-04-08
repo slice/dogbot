@@ -1,6 +1,7 @@
 import random
 import datetime
 import discord
+from asteval import Interpreter
 from discord.ext import commands
 from dog import Cog
 
@@ -28,6 +29,15 @@ class Utility(Cog):
                 msg = (f'{member.name}#{member.discriminator} was the earliest'
                        f' to join Discord in this server. They joined Discord at {time}.')
                 await ctx.send(msg)
+
+    @commands.command(name='calc')
+    async def calc(self, ctx, *, expression: str):
+        terp = Interpreter()
+        result = terp.eval(expression)
+        if result != '' and result is not None:
+            await ctx.send(result)
+        else:
+            await ctx.send('Empty result.')
 
     @commands.command(aliases=['random', 'choose'])
     async def pick(self, ctx, *args):
