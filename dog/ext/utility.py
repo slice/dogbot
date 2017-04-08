@@ -25,7 +25,7 @@ class Utility(Cog):
         for member, time in members.items():
             if earliest_time == time:
                 msg = (f'{member.name}#{member.discriminator} was the earliest'
-                       f' to join Discord. They joined Discord at {time}.')
+                       f' to join Discord in this server. They joined Discord at {time}.')
                 await ctx.send(msg)
 
     @commands.command(aliases=['random', 'choose'])
