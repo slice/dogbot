@@ -100,8 +100,14 @@ class About(Cog):
 
     @feedback.command(name='respond')
     @checks.is_owner()
-    async def feedback_respond(self, ctx, feedback_id: str, message: str):
-        """ Responds to feedback. """
+    async def feedback_respond(self, ctx, feedback_id: str, *, message: str):
+        """
+        Responds to feedback.
+
+        d?feedback respond 58e5ae2f8dbfcf6a7fbf90de Thank you!
+            Responds to a feedback with the ID of 58e5ae2f8dbfcf6a7fbf90de
+            with the message "Thank you!"
+        """
         feedback = self.coll.find_one({'_id': ObjectId(feedback_id)})
         if feedback is None:
             await ctx.send('That feedback wasn\'t found!')
