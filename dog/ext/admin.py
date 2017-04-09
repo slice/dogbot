@@ -19,8 +19,8 @@ class Admin(Cog):
         self.eval_last_result = None
 
     def _restart(self):
+        logger.info('reboot: executable=%s argv=%s', sys.executable, sys.argv)
         os.execv(sys.executable, ['python'] + sys.argv)
-        sys.exit(0)
 
     @commands.command()
     @commands.is_owner()
