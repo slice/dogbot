@@ -1,6 +1,7 @@
 import logging
 import aiohttp
 import discord
+import tempfile
 from PIL import Image, ImageEnhance
 from discord.ext import commands
 from dog import Cog
@@ -54,7 +55,10 @@ class Fun(Cog):
             converter = ImageEnhance.Color(im)
             im = converter.enhance(50)
 
-            _path = '/tmp/image.jpg'
+            # ugh
+            _temp = next(tempfile._get_candidate_names())
+            _path = f'{tempfile._get_default_tempdir()}/{_temp}'
+
             logger.info('wacky: saving...')
             im.save(_path, format='jpeg', quality=0)
             logger.info('wacky: sending...')
