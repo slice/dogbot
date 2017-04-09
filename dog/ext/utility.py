@@ -19,7 +19,7 @@ class Utility(Cog):
             target = ctx.message.author
         await ctx.send(target.avatar_url)
 
-    def _make_earliest_embed(self, member):
+    def _make_joined_embed(self, member):
         embed = make_profile_embed(member)
         joined_dif = pretty_timedelta(datetime.datetime.utcnow() - member.created_at)
         embed.add_field(name='Joined Discord',
@@ -35,7 +35,7 @@ class Utility(Cog):
         earliest_time = min(members.values())
         for member, time in members.items():
             if earliest_time == time:
-                await ctx.send(embed=self._make_earliest_embed(member))
+                await ctx.send(embed=self._make_joined_embed(member))
 
     @commands.command(name='calc')
     async def calc(self, ctx, *, expression: str):
@@ -73,13 +73,14 @@ class Utility(Cog):
             now = datetime.datetime.utcnow()
             return pretty_timedelta(now - date)
 
-        await ctx.send(
-            f'{target.display_name} joined this server {american_datetime(target.joined_at)}'
-            f' ({diff(target.joined_at)} ago).\n'
-            f'They joined Discord on {american_datetime(target.created_at)} '
-            f'({diff(target.created_at)}'
-            ' ago).'
-        )
+        embed = self._make_joined_embed(target)
+        joined_dif = pretty_timedelta(datetime.datetime.utcnow() - target.joined_at)
+        embed.add_field(name='Joined this Server',
+                        value=(f'{joined_dif} ago\n' +
+                               american_datetime(target.joined_at)),
+                        inline=False)
+
+        await ctx.send(embed=embed)
 
 
 def setup(bot):
