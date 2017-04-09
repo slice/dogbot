@@ -22,6 +22,11 @@ class About(Cog):
         await ctx.send(link)
 
     @commands.command()
+    async def command_list(self, ctx):
+        """ Shows you my detailed list of commands. """
+        await ctx.send('https://github.com/sliceofcode/dogbot/wiki/Command-List')
+
+    @commands.command()
     async def about(self, ctx):
         """ Shows information about the bot. """
         git_revision = check_output(['git', 'rev-parse', '--short', 'HEAD'])\
