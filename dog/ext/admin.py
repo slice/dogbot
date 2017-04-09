@@ -23,6 +23,7 @@ class Admin(Cog):
         sys.exit(0)
 
     @commands.command()
+    @commands.is_owner()
     async def update(self, ctx):
         """ Updates dogbot from GitHub. """
         msg = await ctx.send('Fetching updates...')
