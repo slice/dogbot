@@ -62,7 +62,7 @@ class Fun(Cog):
             logger.info('wacky: saving...')
             im.save(_path, format='jpeg', quality=0)
             logger.info('wacky: sending...')
-            await ctx.send(file=open(_path, 'rb'), filename='x.jpg')
+            await ctx.send(file=discord.File(_path, 'result.jpg'))
 
             # close images
             avatar_data.close()
