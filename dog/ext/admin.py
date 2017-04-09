@@ -33,7 +33,6 @@ class Admin(Cog):
         logger.info('COMMENCING REBOOT')
         await ctx.message.add_reaction('\N{WAVING HAND SIGN}')
         os.execv(sys.executable, ['python'] + sys.argv)
-        ctx.bot.logout()
         sys.exit(0)
 
     @commands.command(aliases=['die', 'getout', 'poweroff'])
@@ -42,7 +41,6 @@ class Admin(Cog):
         """ Turns off the bot. """
         logger.info('COMMENCING SHUTDOWN')
         await ctx.message.add_reaction('\N{WAVING HAND SIGN}')
-        ctx.bot.logout()
         sys.exit(0)
 
     @commands.command()
