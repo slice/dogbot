@@ -20,7 +20,7 @@ class Admin(Cog):
 
     def _restart(self):
         logger.info('reboot: executable=%s argv=%s', sys.executable, sys.argv)
-        os.execv(sys.executable, ['python'] + sys.argv)
+        os.execv(sys.executable, [sys.argv])
 
     @commands.command()
     @commands.is_owner()
