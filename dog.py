@@ -10,11 +10,14 @@ except ModuleNotFoundError:
 
 import logging
 import asyncio
-import uvloop
 from dog import DogBot
 
-# uvloop for speedups
-asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+try:
+    import uvloop
+    # uvloop for speedups
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+except ModuleNotFoundError:
+    pass
 
 # configure logging
 # set the root logger's info to INFO
