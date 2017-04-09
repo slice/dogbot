@@ -32,7 +32,8 @@ class About(Cog):
 
         embed = discord.Embed(
             title='Dogbot',
-            description=f'A nice Discord bot by {self.maker.mention} ({self.maker.id}).'
+            description=f'A nice Discord bot by {self.maker.mention} '
+                        f'({self.maker.id}).'
             f' Available on GitHub [here](https://github.com/{github})!')
         rev_link = (f'[{git_revision}](https://github.com/{github}/commit/'
                     f'{git_revision})')

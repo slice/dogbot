@@ -26,6 +26,7 @@ async def _get_json(url):
     resp = await _get(url)
     return await resp.json()
 
+
 class Fun(Cog):
     @commands.command()
     async def shibe(self, ctx):
@@ -37,7 +38,7 @@ class Fun(Cog):
         await ctx.send((await _get_json(SHIBE_ENDPOINT))[0])
 
     @commands.command()
-    async def wacky(self, ctx, who: discord.Member = None):
+    async def wacky(self, ctx, who: discord.Member=None):
         """ Turns your avatar into... """
         if not who:
             who = ctx.message.author
