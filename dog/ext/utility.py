@@ -71,12 +71,12 @@ class Utility(Cog):
 
         def diff(date):
             now = datetime.datetime.utcnow()
-            return str(now - date)[:-7]
+            return pretty_timedelta(now - date)
 
         await ctx.send(
-            f'{target.display_name} joined this server {target.joined_at}'
+            f'{target.display_name} joined this server {american_datetime(target.joined_at)}'
             f' ({diff(target.joined_at)} ago).\n'
-            f'They joined Discord on {target.created_at} '
+            f'They joined Discord on {american_datetime(target.created_at)} '
             f'({diff(target.created_at)}'
             ' ago).'
         )
