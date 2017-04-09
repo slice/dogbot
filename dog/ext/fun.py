@@ -29,6 +29,7 @@ async def _get_json(url):
 
 class Fun(Cog):
     @commands.command()
+    @commands.cooldown(1, 2, commands.BucketType.user)
     async def shibe(self, ctx):
         """
         Woof!
@@ -38,6 +39,7 @@ class Fun(Cog):
         await ctx.send((await _get_json(SHIBE_ENDPOINT))[0])
 
     @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def wacky(self, ctx, who: discord.Member=None):
         """ Turns your avatar into... """
         if not who:
@@ -62,6 +64,7 @@ class Fun(Cog):
             avatar_data.close()
 
     @commands.command()
+    @commands.cooldown(1, 2, commands.BucketType.user)
     async def dogfact(self, ctx):
         """ Returns a random dog fact. """
         facts = await _get_json(DOGFACTS_ENDPOINT)
