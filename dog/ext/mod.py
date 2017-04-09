@@ -25,6 +25,7 @@ class Mod(Cog):
     @commands.command()
     @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
+    @commands.bot_has_permissions(manage_nicknames=True)
     async def attentionseek(self, ctx, replace_with: str='💩'):
         """
         Changes attention-seeking nicknames.
