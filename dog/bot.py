@@ -32,8 +32,7 @@ class DogBot(commands.Bot):
 
     async def config_is_set(self, guild, name):
         logger.info('checking config: %d:%s', guild.id, name)
-        value = await self.redis.get(f'{guild.id}:{name}')
-        return value is not None
+        return await self.redis.exists(f'{guild.id}:{name}')
 
     async def on_command_error(self, ex, ctx):
         tb = traceback.format_exception(None, ex, ex.__traceback__)
