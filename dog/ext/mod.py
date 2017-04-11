@@ -28,6 +28,31 @@ class Mod(Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(manage_roles=True)
     @checks.is_moderator()
+    async def unmute(self, ctx, member: discord.Member):
+        """ Unmutes someone manually. """
+        mute_role = discord.utils.get(ctx.guild.roles, name='Muted')
+
+        if not mute_role:
+            await ctx.send('\N{CROSS MARK} I can\'t find the "Muted" role.')
+            return
+
+        if mute_role not in member.roles:
+            await ctx.send(f'\N{SPEAKER} That person isn\'t muted.')
+            return
+
+        try:
+            await member.remove_roles(mute_role)
+            await ctx.send(f'\N{SPEAKER} Unmuted {member.name}#{member.discriminator}'
+                           f' (`{member.id}`)')
+        except discord.Forbidden:
+            await ctx.send('\N{CROSS MARK} I can\'t do that!')
+        except:
+            await ctx.send('\N{CROSS MARK} I failed to do that.')
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_roles=True)
+    @checks.is_moderator()
     async def mute(self, ctx, member: discord.Member, time: HumanTime):
         """
         Mutes someone for a certain amount of time.
