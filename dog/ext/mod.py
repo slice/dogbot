@@ -1,6 +1,8 @@
+import asyncio
 import discord
 from discord.ext import commands
-from dog import Cog
+from dog import Cog, checks
+from dog.humantime import HumanTime
 
 
 class Mod(Cog):
@@ -21,6 +23,39 @@ class Mod(Cog):
         """ Bans someone from the server. """
         await ctx.guild.ban(member, days)
         await ctx.message.add_reaction('\N{OK HAND SIGN}')
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_roles=True)
+    @checks.is_moderator()
+    async def mute(self, ctx, member: discord.Member, time: HumanTime):
+        """ Mutes someone for a certain amount of time. """
+        mute_role = discord.utils.get(ctx.guild.roles, name='Muted')
+
+        if not mute_role:
+            await ctx.send('\N{CROSS MARK} I can\'t find the "Muted" role.')
+            return
+
+        mute = '\N{SPEAKER WITH CANCELLATION STROKE}'
+        msg = await ctx.send(f'{mute} Muting {member.name}#{member.discriminator}'
+                             f' (`{member.id}`) for {time.seconds} seconds.')
+
+        try:
+            await member.add_roles(mute_role)
+        except discord.Forbidden:
+            await msg.edit(content='\N{CROSS MARK} I can\'t do that!'
+                           ' I might be too low on the role hierarchy,'
+                           ' or I need permissions.'
+                           ' Ensure that the "Muter" role is placed above'
+                           'the "Muted" role.')
+        except:
+            await msg.edit(content='\N{CROSS MARK} I failed to do that.')
+
+        async def unmute_task():
+            await asyncio.sleep(time.seconds)
+            await member.remove_roles(mute_role)
+
+        self.bot.loop.create_task(unmute_task())
 
     @commands.command()
     @commands.guild_only()
