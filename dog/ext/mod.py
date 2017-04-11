@@ -126,7 +126,8 @@ Example response: "announcements,corkboard,etc"
 
                 # say the channels that will be excluded
                 await ctx.send('For reference, here is the list of channels I'
-                               f' am excluding:\n\n{formatted_exclusions}')
+                               ' am excluding from being hidden while muted:'
+                               f'\n\n{formatted_exclusions}')
             else:
                 await ctx.send('Alright, I won\'t exclude any channels.')
 
@@ -141,7 +142,7 @@ Example response: "announcements,corkboard,etc"
                 # if the channel is in the exclusion list, just delete
                 # the overwrite
                 if channel in exclusion_list:
-                    await channel.set_permissions(mute_role, overwrite=None)
+                    await channel.set_permissions(mute_role, send_messages=False)
                 else:
                     await channel.set_permissions(mute_role,
                                                   overwrite=overwrite)
