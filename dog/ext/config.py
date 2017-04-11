@@ -9,7 +9,8 @@ class Config(Cog):
         super().__init__(*args, **kwargs)
 
         self.permitted_keys = [
-            'woof_command_enabled'
+            'woof_command_enabled',
+            'unmute_announce'
         ]
 
     @commands.group()

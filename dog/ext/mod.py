@@ -38,7 +38,7 @@ class Mod(Cog):
 
         mute = '\N{SPEAKER WITH CANCELLATION STROKE}'
         msg = await ctx.send(f'{mute} Muting {member.name}#{member.discriminator}'
-                             f' (`{member.id}`) for {time.seconds} seconds.')
+                             f' (`{member.id}`) for {time.seconds} second(s).')
 
         try:
             await member.add_roles(mute_role)
@@ -54,6 +54,9 @@ class Mod(Cog):
         async def unmute_task():
             await asyncio.sleep(time.seconds)
             await member.remove_roles(mute_role)
+            if await self.bot.config_is_set(ctx.guild, 'unmute_announce'):
+                await ctx.send(f'\N{SPEAKER} {member.name}#{member.discriminator}'
+                               f' (`{member.id}`) has been unmuted.')
 
         self.bot.loop.create_task(unmute_task())
 
