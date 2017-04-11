@@ -11,7 +11,7 @@ class Mod(Cog):
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(kick_members=True)
     async def kick(self, ctx, member: discord.Member):
-        """ Kicks someone from the server. """
+        """ Kicks someone. """
         await ctx.guild.kick(member)
         await ctx.message.add_reaction('\N{OK HAND SIGN}')
 
@@ -29,7 +29,7 @@ class Mod(Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @checks.is_moderator()
     async def unmute(self, ctx, member: discord.Member):
-        """ Unmutes someone manually. """
+        """ Instantly unmutes someone. """
         mute_role = discord.utils.get(ctx.guild.roles, name='Muted')
 
         if not mute_role:
@@ -56,6 +56,10 @@ class Mod(Cog):
     async def mute(self, ctx, member: discord.Member, time: HumanTime):
         """
         Mutes someone for a certain amount of time.
+
+        The "Muted" role must exist on the server in order for this to work.
+        The bot will not setup "Muted" channel overrides for you, you must
+        do it yourself.
 
         d?mute <someone> 5m
             Mutes someone for 5 minutes.
