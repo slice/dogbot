@@ -19,8 +19,12 @@ class Config(Cog):
         """ Manages server-specific configuration for the bot. """
 
     @config.command(name='set')
-    async def config_set(self, ctx, name: str, value: str):
+    async def config_set(self, ctx, name: str, value: str='on'):
         """ Sets a config field for this server. """
+
+        if len(value) > 1000:
+            await ctx.send('That value is too long! 1000 characters max.')
+            return
 
         if name not in self.permitted_keys:
             await ctx.send('That configuration value is not allowed.')
