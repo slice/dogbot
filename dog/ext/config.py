@@ -9,7 +9,7 @@ class Config(Cog):
         super().__init__(*args, **kwargs)
 
         self.permitted_keys = [
-            'woof_response'
+            'woof_command_enabled'
         ]
 
     @commands.group()

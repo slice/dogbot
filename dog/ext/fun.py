@@ -3,7 +3,7 @@ import aiohttp
 import discord
 from PIL import Image, ImageEnhance
 from discord.ext import commands
-from dog import Cog
+from dog import Cog, checks
 from io import BytesIO
 
 SHIBE_ENDPOINT = 'http://shibe.online/api/shibes?count=1&urls=true&httpsUrls=true'
@@ -27,6 +27,13 @@ async def _get_json(url):
     return await resp.json()
 
 class Fun(Cog):
+    @commands.command()
+    @commands.guild_only()
+    @checks.config_is_set('woof_command_enabled')
+    async def woof(self, ctx):
+        """ Sample command. """
+        await ctx.send('Woof!')
+
     @commands.command()
     async def shibe(self, ctx):
         """
