@@ -40,18 +40,17 @@ class Config(Cog):
         is_set = await self.bot.config_is_set(ctx.guild, name)
         await ctx.send('Yes, it is set.' if is_set else 'No, it is not set.')
 
-    @config.command(name='get')
-    async def config_get(self, ctx, name: str):
-        """ Fetches a config field for this server. """
+    @config.command(name='list', aliases=['ls'])
+    async def config_list(self, ctx):
+        """ Lists set configuration keys for this server. """
+        keys = [k.decode().split(':')[1] for k in await self.bot.redis.keys(f'{ctx.guild.id}:*')]
+        await ctx.send('Set configuration keys in this server: ' + ', '.join(keys))
 
-        result = await self.bot.redis.get(f'{ctx.guild.id}:{name}')
-
-        if result is not None:
-            result = result.decode()
-        else:
-            result = '`<nothing>`'
-
-        await ctx.send(f'`{name}`: {result}')
+    @config.command(name='remove', aliases=['rm', 'del'])
+    async def config_remove(self, ctx, name: str):
+        """ Removes a config field for this server. """
+        await self.bot.redis.delete(f'{ctx.guild.id}:{name}')
+        await ctx.send('\N{OK HAND SIGN}')
 
 def setup(bot):
     bot.add_cog(Config(bot))
