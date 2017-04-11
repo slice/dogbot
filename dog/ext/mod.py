@@ -55,9 +55,18 @@ class Mod(Cog):
     @checks.is_moderator()
     async def mute_setup(self, ctx):
         """
-        Sets up "Muted" channel overrides for all channels.
+        Sets up "Muted" permission overrides for all channels.
 
         If the "Muted" role was not found, it will be created.
+        By default, the permission overrides will deny the "Send Messages"
+        permission for the people with the "Muted" role. If you want to deny
+        the "Read Message" permissions for "Muted" people too, you must set
+        the "mutesetup_disallow_read" key. You can do this with
+            d?config set mutesetup_disallow_read
+        Then, run d?muted_setup. If you already did, you must re-run it.
+
+        Note: If you set that key, you will be prompted to provide a list of
+        channels that will be readable (but not writable) of "Muted" status.
         """
         mute_role = discord.utils.get(ctx.guild.roles, name='Muted')
 
@@ -82,12 +91,16 @@ class Mod(Cog):
         # be readable (but not writable) regardless of mute status
         if await self.bot.config_is_set(ctx.guild, 'mutesetup_disallow_read'):
             mute_options['read_messages'] = False
-            await ctx.send('Okay! Please provide a comma separated list of channel'
-                           ' names for me to **exclude from being hidden from users'
-                           ' while they are muted**. For example, you probably don\'t'
-                           ' want muted users to not be able to see #announcements!\n'
-                           '\nExample response: "announcements,corkboard,etc" **'
-                           'Do not mention the channel, or put spaces anywhere.**')
+            await ctx.send("""Okay! Please provide a comma separated list of channel
+names for me to **exclude from being hidden from users
+while they are muted**. For example, you probably don't
+want muted users to not be able to see a channel like
+#announcements!
+
+If you don't want to exclude any channels, just type "none" and send it.
+
+Example response: "announcements,corkboard,etc"
+**Do not mention the channel, or put spaces anywhere.**""")
 
             # use a check to only accept responses from the message author
             def predicate(m):
@@ -135,7 +148,8 @@ class Mod(Cog):
             except discord.Forbidden:
                 failed.append(channel.mention)
             else:
-                succeeded += 1
+                if channel not in exclusion_list:
+                    succeeded += 1
 
         if failed:
             await prg.edit(content=f'All done! I failed to edit **{len(failed)}**'
