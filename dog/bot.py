@@ -15,11 +15,11 @@ class DogBot(commands.Bot):
         self.boot_time = datetime.datetime.utcnow()
 
     async def on_ready(self):
+        logger.info('BOT IS READY')
         logger.info('owner id: %s', cfg.owner_id)
-        logger.info('logged in as %s', self.user.id)
-        print('logged in')
-        print(f' name: {self.user.name}#{self.user.discriminator}')
-        print(f' id:   {self.user.id}')
+        logger.info('logged in')
+        logger.info(f' name: {self.user.name}#{self.user.discriminator}')
+        logger.info(f' id:   {self.user.id}')
 
         # redis
         self.redis = await aioredis.create_redis(

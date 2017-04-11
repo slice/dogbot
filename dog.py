@@ -1,16 +1,23 @@
+import os
+import sys
+
 try:
     import dog_config as cfg
 except ModuleNotFoundError:
-    print('err: dog_config.py not found')
+    print('err: dog_config.py not found', file=sys.stderr)
+    print('err: please read the README.md file.', file=sys.stderr)
+    sys.exit(-1)
 
 import logging
 import asyncio
-import uvloop
-from os import listdir
 from dog import DogBot
 
-# uvloop for speedups
-asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+try:
+    import uvloop
+    # uvloop for speedups
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+except ModuleNotFoundError:
+    pass
 
 # configure logging
 # set the root logger's info to INFO
@@ -56,7 +63,7 @@ logger.info('bot options: %s', additional_options)
 d = DogBot(command_prefix=cfg.prefix, **additional_options)
 
 exts = 'dog/ext'
-d_exts = [p.replace('.py', '') for p in listdir(exts) if p != '__pycache__']
+d_exts = [p.replace('.py', '') for p in os.listdir(exts) if p != '__pycache__']
 
 for ext in d_exts:
     logger.info('loading extension dog.ext.%s', ext)

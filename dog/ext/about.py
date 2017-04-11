@@ -22,6 +22,11 @@ class About(Cog):
         await ctx.send(link)
 
     @commands.command()
+    async def command_list(self, ctx):
+        """ Shows you my detailed list of commands. """
+        await ctx.send('https://github.com/sliceofcode/dogbot/wiki/Command-List')
+
+    @commands.command()
     async def about(self, ctx):
         """ Shows information about the bot. """
         git_revision = check_output(['git', 'rev-parse', '--short', 'HEAD'])\
@@ -32,7 +37,8 @@ class About(Cog):
 
         embed = discord.Embed(
             title='Dogbot',
-            description=f'A nice Discord bot by {self.maker.mention} ({self.maker.id}).'
+            description=f'A nice Discord bot by {self.maker.mention} '
+                        f'({self.maker.id}).'
             f' Available on GitHub [here](https://github.com/{github})!')
         rev_link = (f'[{git_revision}](https://github.com/{github}/commit/'
                     f'{git_revision})')

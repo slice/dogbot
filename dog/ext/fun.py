@@ -1,6 +1,7 @@
 import logging
 import aiohttp
 import discord
+import tempfile
 from PIL import Image, ImageEnhance
 from discord.ext import commands
 from dog import Cog, checks
@@ -26,6 +27,7 @@ async def _get_json(url):
     resp = await _get(url)
     return await resp.json()
 
+
 class Fun(Cog):
     @commands.command()
     @commands.guild_only()
@@ -35,6 +37,7 @@ class Fun(Cog):
         await ctx.send('Woof!')
 
     @commands.command()
+    @commands.cooldown(1, 2, commands.BucketType.user)
     async def shibe(self, ctx):
         """
         Woof!
@@ -44,7 +47,8 @@ class Fun(Cog):
         await ctx.send((await _get_json(SHIBE_ENDPOINT))[0])
 
     @commands.command()
-    async def wacky(self, ctx, who: discord.Member = None):
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def wacky(self, ctx, who: discord.Member=None):
         """ Turns your avatar into... """
         if not who:
             who = ctx.message.author
@@ -58,16 +62,20 @@ class Fun(Cog):
             converter = ImageEnhance.Color(im)
             im = converter.enhance(50)
 
-            _path = '/tmp/image.jpg'
+            # ugh
+            _temp = next(tempfile._get_candidate_names())
+            _path = f'{tempfile._get_default_tempdir()}/{_temp}'
+
             logger.info('wacky: saving...')
             im.save(_path, format='jpeg', quality=0)
             logger.info('wacky: sending...')
-            await ctx.send(file=open(_path, 'rb'), filename='x.jpg')
+            await ctx.send(file=discord.File(_path, 'result.jpg'))
 
             # close images
             avatar_data.close()
 
     @commands.command()
+    @commands.cooldown(1, 2, commands.BucketType.user)
     async def dogfact(self, ctx):
         """ Returns a random dog fact. """
         facts = await _get_json(DOGFACTS_ENDPOINT)

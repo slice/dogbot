@@ -4,6 +4,7 @@ import discord
 from asteval import Interpreter
 from discord.ext import commands
 from dog import Cog
+from dog.util import pretty_timedelta, make_profile_embed, american_datetime
 
 
 class Utility(Cog):
@@ -18,6 +19,14 @@ class Utility(Cog):
             target = ctx.message.author
         await ctx.send(target.avatar_url)
 
+    def _make_joined_embed(self, member):
+        embed = make_profile_embed(member)
+        joined_dif = pretty_timedelta(datetime.datetime.utcnow() - member.created_at)
+        embed.add_field(name='Joined Discord',
+                        value=(f'{joined_dif} ago\n' +
+                               american_datetime(member.created_at)))
+        return embed
+
     @commands.command()
     @commands.guild_only()
     async def earliest(self, ctx):
@@ -26,9 +35,7 @@ class Utility(Cog):
         earliest_time = min(members.values())
         for member, time in members.items():
             if earliest_time == time:
-                msg = (f'{member.name}#{member.discriminator} was the earliest'
-                       f' to join Discord in this server. They joined Discord at {time}.')
-                await ctx.send(msg)
+                await ctx.send(embed=self._make_joined_embed(member))
 
     @commands.command(name='calc')
     async def calc(self, ctx, *, expression: str):
@@ -64,15 +71,16 @@ class Utility(Cog):
 
         def diff(date):
             now = datetime.datetime.utcnow()
-            return str(now - date)[:-7]
+            return pretty_timedelta(now - date)
 
-        await ctx.send(
-            f'{target.display_name} joined this server {target.joined_at}'
-            f' ({diff(target.joined_at)} ago).\n'
-            f'They joined Discord on {target.created_at} '
-            f'({diff(target.created_at)}'
-            ' ago).'
-        )
+        embed = self._make_joined_embed(target)
+        joined_dif = pretty_timedelta(datetime.datetime.utcnow() - target.joined_at)
+        embed.add_field(name='Joined this Server',
+                        value=(f'{joined_dif} ago\n' +
+                               american_datetime(target.joined_at)),
+                        inline=False)
+
+        await ctx.send(embed=embed)
 
 
 def setup(bot):

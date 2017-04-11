@@ -1,3 +1,4 @@
+import subprocess
 import os
 import sys
 import inspect
@@ -17,6 +18,20 @@ class Admin(Cog):
         super().__init__(*args, **kwargs)
         self.eval_last_result = None
 
+    def _restart(self):
+        logger.info('reboot: executable=%s argv=%s', sys.executable, sys.argv)
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+
+    @commands.command()
+    @commands.is_owner()
+    async def update(self, ctx):
+        """ Updates dogbot from GitHub. """
+        msg = await ctx.send('Fetching updates...')
+        subprocess.check_output(['git', 'pull'])
+        await msg.edit(content='Restarting...')
+        logger.info('UPDATE: COMMENCING REBOOT!')
+        self._restart()
+
     @commands.command()
     async def ping(self, ctx):
         """ You know what this does. """
@@ -32,9 +47,7 @@ class Admin(Cog):
         """ Reboots the bot. """
         logger.info('COMMENCING REBOOT')
         await ctx.message.add_reaction('\N{WAVING HAND SIGN}')
-        os.execv(sys.executable, ['python'] + sys.argv)
-        ctx.bot.logout()
-        sys.exit(0)
+        self._restart()
 
     @commands.command(aliases=['die', 'getout', 'poweroff'])
     @commands.is_owner()
@@ -42,7 +55,6 @@ class Admin(Cog):
         """ Turns off the bot. """
         logger.info('COMMENCING SHUTDOWN')
         await ctx.message.add_reaction('\N{WAVING HAND SIGN}')
-        ctx.bot.logout()
         sys.exit(0)
 
     @commands.command()

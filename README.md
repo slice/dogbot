@@ -61,6 +61,11 @@ Please look for these occurrences in the code and replace them if applicable.
 
 I try to keep the code as readable as possible!
 
+### Optional packages
+
+ - `uvloop`: Install this for possibly faster `asyncio`! Windows is not
+   supported.
+
 ### Running
 
 When you're done configuring, start `dog.py`.

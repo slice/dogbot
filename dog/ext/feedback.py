@@ -60,12 +60,30 @@ class Feedback(Cog):
         await owner.send(new_feedback_fmt.format(
             ctx.message.author, feedback, inserted_id))
 
+    def _repr_feedback(self, feedback, *, bullet=False, show_who=False, show_when=False):
+        bul = '• ' if bullet else ''
+        who = f'From <@{feedback["user_id"]}> ' if show_who else ''
+        when_delta = str(datetime.datetime.utcnow() - feedback["when"])
+        when = f' ({when_delta} ago)' if show_when else ''
+        return f'{bul}{who}`{feedback["_id"]}`, {feedback["content"]}{when}'
+
+    @feedback.command(name='recent')
+    @commands.is_owner()
+    async def feedback_recent(self, ctx, amount: int=5):
+        """ Shows recently submitted feedback. """
+        feedbacks = list(self.coll.find())
+        feedbacks.sort(key=lambda x: x['when'], reverse=True)
+        requested = feedbacks[:amount]
+        msg = '\n'.join(self._repr_feedback(f,
+                        bullet=True, show_who=True, show_when=True) for f in requested)
+        await ctx.send(msg)
+
     @feedback.command(name='from')
     @commands.is_owner()
     async def feedback_from(self, ctx, who: discord.User):
         """ Fetches feedback from a specific person. """
         cursor = self.coll.find({'user_id': who.id})
-        lines = '\n'.join(f'• `{f["_id"]}`, {f["content"]}' for f in cursor)
+        lines = '\n'.join(self._repr_feedback(f, bullet=True) for f in cursor)
         if lines == '':
             await ctx.send('This user has no feedbacks.')
         else:
@@ -136,6 +154,7 @@ class Feedback(Cog):
         feedbacks = len(list(self.coll.find()))
         await ctx.send(f'A total of {feedbacks} feedback(s) '
                        'have been submitted.')
+
 
 def setup(bot):
     bot.add_cog(Feedback(bot))
