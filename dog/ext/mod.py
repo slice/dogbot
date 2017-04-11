@@ -62,7 +62,8 @@ class Mod(Cog):
         mute_role = discord.utils.get(ctx.guild.roles, name='Muted')
 
         if not mute_role:
-            msg = await ctx.send('There is no "Muted" role, I\'ll set it up for you.')
+            msg = await ctx.send('There is no "Muted" role, I\'ll set it up '
+                                 'for you.')
             try:
                 mute_role = await ctx.guild.create_role(name='Muted')
             except discord.Forbidden:
@@ -73,27 +74,71 @@ class Mod(Cog):
         mute_options = {
             'send_messages': False
         }
+        exclusion_list = []
 
+        # beacuse we are disallowing read perms, there may be some channels
+        # that people will still need to look at, even when muted.
+        # so, prompt the moderator for a list of channels that will still
+        # be readable (but not writable) regardless of mute status
         if await self.bot.config_is_set(ctx.guild, 'mutesetup_disallow_read'):
             mute_options['read_messages'] = False
+            await ctx.send('Okay! Please provide a comma separated list of channel'
+                           ' names for me to **exclude from being hidden from users'
+                           ' while they are muted**. For example, you probably don\'t'
+                           ' want muted users to not be able to see #announcements!\n'
+                           '\nExample response: "announcements,corkboard,etc" **'
+                           'Do not mention the channel, or put spaces anywhere.**')
+
+            # use a check to only accept responses from the message author
+            def predicate(m):
+                return m.author.id == ctx.message.author.id
+            msg = await self.bot.wait_for('message', check=predicate)
+
+            # create an exclusion list from the message
+            exclusion_list = [discord.utils.get(ctx.guild.channels, name=c)
+                              for c in msg.content.split(',')]
+
+            # if discord.utils.get returned None at some point, then that
+            # means that one of the channels could not be found.
+            if None in exclusion_list:
+                await ctx.send('Sorry! I didn\'t find one of the channels '
+                               'you listed, or your exclusion list was '
+                               'invalid. Please try the command again.')
+                return
+
+            # format the exclusion list to look nice
+            formatted_exclusions = '\n'.join([f'• {c.mention}' for c in
+                                              exclusion_list])
+
+            # say the channels that will be excluded
+            await ctx.send('For reference, here is the list of channels I'
+                           f' am excluding:\n\n{formatted_exclusions}')
 
         failed = []
         succeeded = 0
 
+        prg = await ctx.send('Doing it...')
+
         for channel in ctx.guild.channels:
             overwrite = discord.PermissionOverwrite(**mute_options)
             try:
-                await channel.set_permissions(mute_role, overwrite=overwrite)
+                # if the channel is in the exclusion list, just delete
+                # the overwrite
+                if channel in exclusion_list:
+                    await channel.set_permissions(mute_role, overwrite=None)
+                else:
+                    await channel.set_permissions(mute_role,
+                                                  overwrite=overwrite)
             except discord.Forbidden:
                 failed.append(channel.mention)
             else:
                 succeeded += 1
 
         if failed:
-            await ctx.send(f'All done! I failed to edit **{len(failed)}**'
-                           f' channel(s): {", ".join(failed)}')
+            await prg.edit(content=f'All done! I failed to edit **{len(failed)}**'
+                                   f' channel(s): {", ".join(failed)}')
         else:
-            await ctx.send('All done! Everything went OK. I modified '
+            await prg.edit(content='All done! Everything went OK. I modified '
                            f'{succeeded} channel(s). Note: This server\'s'
                            f' default channel, {ctx.guild.default_channel.mention},'
                            f' can always be read, even if someone is muted.'
