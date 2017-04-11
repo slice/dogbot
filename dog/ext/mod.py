@@ -94,25 +94,28 @@ class Mod(Cog):
                 return m.author.id == ctx.message.author.id
             msg = await self.bot.wait_for('message', check=predicate)
 
-            # create an exclusion list from the message
-            exclusion_list = [discord.utils.get(ctx.guild.channels, name=c)
-                              for c in msg.content.split(',')]
+            if msg.content != "none":
+                # create an exclusion list from the message
+                exclusion_list = [discord.utils.get(ctx.guild.channels, name=c)
+                                  for c in msg.content.split(',')]
 
-            # if discord.utils.get returned None at some point, then that
-            # means that one of the channels could not be found.
-            if None in exclusion_list:
-                await ctx.send('Sorry! I didn\'t find one of the channels '
-                               'you listed, or your exclusion list was '
-                               'invalid. Please try the command again.')
-                return
+                # if discord.utils.get returned None at some point, then that
+                # means that one of the channels could not be found.
+                if None in exclusion_list:
+                    await ctx.send('Sorry! I didn\'t find one of the channels '
+                                   'you listed, or your exclusion list was '
+                                   'invalid. Please try the command again.')
+                    return
 
-            # format the exclusion list to look nice
-            formatted_exclusions = '\n'.join([f'• {c.mention}' for c in
-                                              exclusion_list])
+                # format the exclusion list to look nice
+                formatted_exclusions = '\n'.join([f'• {c.mention}' for c in
+                                                  exclusion_list])
 
-            # say the channels that will be excluded
-            await ctx.send('For reference, here is the list of channels I'
-                           f' am excluding:\n\n{formatted_exclusions}')
+                # say the channels that will be excluded
+                await ctx.send('For reference, here is the list of channels I'
+                               f' am excluding:\n\n{formatted_exclusions}')
+            else:
+                await ctx.send('Alright, I won\'t exclude any channels.')
 
         failed = []
         succeeded = 0
