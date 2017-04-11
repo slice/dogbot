@@ -48,6 +48,11 @@ class Config(Cog):
     async def config_list(self, ctx):
         """ Lists set configuration keys for this server. """
         keys = [k.decode().split(':')[1] for k in await self.bot.redis.keys(f'{ctx.guild.id}:*')]
+        if not keys:
+            await ctx.send('No set configuration keys in this server!'
+                           '\nTry running `d?config permitted` to see a list'
+                           ' of configurable keys.')
+            return
         await ctx.send('Set configuration keys in this server: ' + ', '.join(keys))
 
     @config.command(name='remove', aliases=['rm', 'del'])
