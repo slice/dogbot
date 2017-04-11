@@ -51,6 +51,56 @@ class Mod(Cog):
 
     @commands.command()
     @commands.guild_only()
+    @commands.bot_has_permissions(manage_channels=True)
+    @checks.is_moderator()
+    async def mute_setup(self, ctx):
+        """
+        Sets up "Muted" channel overrides for all channels.
+
+        If the "Muted" role was not found, it will be created.
+        """
+        mute_role = discord.utils.get(ctx.guild.roles, name='Muted')
+
+        if not mute_role:
+            msg = await ctx.send('There is no "Muted" role, I\'ll set it up for you.')
+            try:
+                mute_role = await ctx.guild.create_role(name='Muted')
+            except discord.Forbidden:
+                await msg.edit(content='I couldn\'t find the "Muted" role,'
+                                       'and I couldn\'t create it either!')
+                return
+
+        mute_options = {
+            'send_messages': False
+        }
+
+        if await self.bot.config_is_set(ctx.guild, 'mutesetup_disallow_read'):
+            mute_options['read_messages'] = False
+
+        failed = []
+        succeeded = 0
+
+        for channel in ctx.guild.channels:
+            overwrite = discord.PermissionOverwrite(**mute_options)
+            try:
+                await channel.set_permissions(mute_role, overwrite=overwrite)
+            except discord.Forbidden:
+                failed.append(channel.mention)
+            else:
+                succeeded += 1
+
+        if failed:
+            await ctx.send(f'All done! I failed to edit **{len(failed)}**'
+                           f' channel(s): {", ".join(failed)}')
+        else:
+            await ctx.send('All done! Everything went OK. I modified '
+                           f'{succeeded} channel(s). Note: This server\'s'
+                           f' default channel, {ctx.guild.default_channel.mention},'
+                           f' can always be read, even if someone is muted.'
+                           ' (This is a Discord thing.)')
+
+    @commands.command()
+    @commands.guild_only()
     @commands.bot_has_permissions(manage_roles=True)
     @checks.is_moderator()
     async def mute(self, ctx, member: discord.Member, time: HumanTime):

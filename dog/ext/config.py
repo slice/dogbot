@@ -10,7 +10,8 @@ class Config(Cog):
 
         self.permitted_keys = [
             'woof_command_enabled',
-            'unmute_announce'
+            'unmute_announce',
+            'mutesetup_disallow_read',
         ]
 
     @commands.group()
