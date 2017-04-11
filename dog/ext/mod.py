@@ -46,8 +46,8 @@ class Mod(Cog):
             await msg.edit(content='\N{CROSS MARK} I can\'t do that!'
                            ' I might be too low on the role hierarchy,'
                            ' or I need permissions.'
-                           ' Ensure that the "Muter" role is placed above'
-                           'the "Muted" role.')
+                           ' Ensure that the my bot role is placed above'
+                           ' the "Muted" role.')
         except:
             await msg.edit(content='\N{CROSS MARK} I failed to do that.')
 
