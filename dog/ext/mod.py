@@ -18,7 +18,7 @@ class Mod(Cog):
     @commands.command()
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
-    @commands.bot_has_permissions(kick_members=True)
+    @commands.bot_has_permissions(ban_members=True)
     async def ban(self, ctx, member: discord.Member, days: int=0):
         """ Bans someone from the server. """
         await ctx.guild.ban(member, days)
