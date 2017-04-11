@@ -56,5 +56,15 @@ class Config(Cog):
         await self.bot.redis.delete(f'{ctx.guild.id}:{name}')
         await ctx.send('\N{OK HAND SIGN}')
 
+    @config.command(name='get', aliases=['cat'])
+    async def config_get(self, ctx, name: str):
+        """ Views a config field for this server. """
+        if not await self.bot.config_is_set(ctx.guild, name):
+            await ctx.send('That config value is not set.')
+            return
+        else:
+            value = await self.bot.redis.get(f'{ctx.guild.id}:{name}')
+            await ctx.send(f'`{name}`: {value.decode()}')
+
 def setup(bot):
     bot.add_cog(Config(bot))
