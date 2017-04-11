@@ -1,3 +1,4 @@
+import aioredis
 import datetime
 import logging
 import discord
@@ -20,10 +21,19 @@ class DogBot(commands.Bot):
         print(f' name: {self.user.name}#{self.user.discriminator}')
         print(f' id:   {self.user.id}')
 
+        # redis
+        self.redis = await aioredis.create_redis(
+            (cfg.redis_url, 6379), loop=self.loop)
+
         # helpful game
         short_prefix = min(self.command_prefix, key=len)
         help_game = discord.Game(name=f'{short_prefix}help')
         await self.change_presence(game=help_game)
+
+    async def config_is_set(self, guild, name):
+        logger.info('checking config: %d:%s', guild.id, name)
+        value = await self.redis.get(f'{guild.id}:{name}')
+        return value is not None
 
     async def on_command_error(self, ex, ctx):
         tb = traceback.format_exception(None, ex, ex.__traceback__)

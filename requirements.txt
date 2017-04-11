@@ -3,3 +3,4 @@ uvloop
 pymongo
 Pillow
 asteval
+aioredis
