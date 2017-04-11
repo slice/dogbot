@@ -9,7 +9,7 @@ import dog_config as cfg
 logger = logging.getLogger(__name__)
 
 
-class DogBot(commands.Bot):
+class DogBot(commands.AutoShardedBot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.boot_time = datetime.datetime.utcnow()
