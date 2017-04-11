@@ -46,12 +46,18 @@ However, if you really want to...
 Create a `dog_config.py` file in the root of the repository.
 
 ```py
+# auth
 token = '<your token...>'
-prefix = ['dog, ', 'd?', 'd!']
-mongo_url = 'localhost'
 owner_id = <your id...>
-github = '<your github username>/<repository name>'
 client_id = <bot's client id...>
+
+# db
+mongo_url = 'localhost'
+redis_url = 'localhost'
+
+# cfg
+prefix = ['dog, ', 'd?', 'd!']
+github = '<your github username>/<repository name>'
 ```
 
 Specify your token and prefixes.
