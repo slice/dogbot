@@ -29,7 +29,16 @@ class Mod(Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @checks.is_moderator()
     async def mute(self, ctx, member: discord.Member, time: HumanTime):
-        """ Mutes someone for a certain amount of time. """
+        """
+        Mutes someone for a certain amount of time.
+
+        d?mute <someone> 5m
+            Mutes someone for 5 minutes.
+        d?mute <someone> 2h5m
+            Mutes someone for 2 hours and 5 minutes.
+        d?mute <someone> 5s
+            Mutes someone for 5 seconds.
+        """
         mute_role = discord.utils.get(ctx.guild.roles, name='Muted')
 
         if not mute_role:
