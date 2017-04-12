@@ -1,11 +1,17 @@
+import logging
 import asyncio
 import discord
 from discord.ext import commands
 from dog import Cog, checks
 from dog.humantime import HumanTime
 
+logger = logging.getLogger(__name__)
 
 class Mod(Cog):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.mute_tasks = {}
+
     @commands.command()
     @commands.guild_only()
     @commands.has_permissions(kick_members=True)
@@ -40,10 +46,15 @@ class Mod(Cog):
             await ctx.send(f'\N{SPEAKER} That person isn\'t muted.')
             return
 
+        if member in self.mute_tasks:
+            # cancel the mute task
+            logger.info('cancelling mute task for %d', member.id)
+            self.mute_tasks[member].cancel()
+
         try:
             await member.remove_roles(mute_role)
             await ctx.send(f'\N{SPEAKER} Unmuted {member.name}#{member.discriminator}'
-                           f' (`{member.id}`)')
+                           f' (`{member.id}`).')
         except discord.Forbidden:
             await ctx.send('\N{CROSS MARK} I can\'t do that!')
         except:
@@ -209,7 +220,8 @@ Example response: "announcements,corkboard,etc"
                 await ctx.send(f'\N{SPEAKER} {member.name}#{member.discriminator}'
                                f' (`{member.id}`) has been unmuted.')
 
-        self.bot.loop.create_task(unmute_task())
+        task = self.bot.loop.create_task(unmute_task())
+        self.mute_tasks[member] = task
 
     @commands.command()
     @commands.guild_only()
