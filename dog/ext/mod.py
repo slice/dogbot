@@ -182,8 +182,8 @@ Example response: "announcements,corkboard,etc"
         Mutes someone for a certain amount of time.
 
         The "Muted" role must exist on the server in order for this to work.
-        The bot will not setup "Muted" channel overrides for you, you must
-        do it yourself.
+        The bot can setup the "Muted" role and channel overrides for you
+        with the d?mute_setup command.
 
         d?mute <someone> 5m
             Mutes someone for 5 minutes.
