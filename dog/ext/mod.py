@@ -47,8 +47,8 @@ class Mod(Cog):
             return
 
         if member in self.mute_tasks:
-            # cancel the mute task
-            logger.info('cancelling mute task for %d', member.id)
+            # cancel the mute task, so they don't get unmuted when the
+            # task awakens
             self.mute_tasks[member].cancel()
 
         try:
