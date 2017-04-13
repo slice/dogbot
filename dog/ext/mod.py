@@ -12,6 +12,13 @@ class Mod(Cog):
         super().__init__(*args, **kwargs)
         self.mute_tasks = {}
 
+    async def on_message(self, message):
+        if await self.bot.config_is_set(message.guild, 'invisible_announce'):
+            if message.author.status is discord.Status.offline:
+                reply = ('Hey {0.mention}! You\'re invisible. Stop being '
+                         'invisible, please. Thanks.')
+                await message.channel.send(reply.format(message.author))
+
     @commands.command()
     @commands.guild_only()
     @commands.has_permissions(kick_members=True)

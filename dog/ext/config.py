@@ -12,6 +12,7 @@ class Config(Cog):
             'woof_command_enabled',
             'unmute_announce',
             'mutesetup_disallow_read',
+            'invisible_announce',
         ]
 
     @commands.group()
