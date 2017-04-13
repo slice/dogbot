@@ -31,7 +31,6 @@ class DogBot(commands.AutoShardedBot):
         await self.change_presence(game=help_game)
 
     async def config_is_set(self, guild, name):
-        logger.info('checking config: %d:%s', guild.id, name)
         return await self.redis.exists(f'{guild.id}:{name}')
 
     async def on_command_error(self, ex, ctx):
