@@ -55,6 +55,16 @@ class About(Cog):
         await ctx.send(f'I\'m on GitHub at {gh}. Feel free to use handy'
                        ' tidbits of my source code!')
 
+    @commands.command(aliases=['guilds'])
+    @commands.is_owner()
+    async def servers(self, ctx):
+        """ Shows what servers I am in. """
+        fmt = ('• {0.name} (`{0.id}`), {1} members (owner: {2.mention} '
+               '(`{2.id}`)')
+        guild_list = [fmt.format(guild, len(guild.members),
+                                 guild.owner) for guild in self.bot.guilds]
+        await ctx.send('\n'.join(guild_list))
+
     @commands.command()
     @commands.is_owner()
     async def stats(self, ctx):
