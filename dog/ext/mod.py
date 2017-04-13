@@ -13,6 +13,10 @@ class Mod(Cog):
         self.mute_tasks = {}
 
     async def on_message(self, message):
+        # do not handle invisibility in dms
+        if isinstance(message.channel, discord.abc.PrivateChannel):
+            return
+
         if await self.bot.config_is_set(message.guild, 'invisible_announce'):
             if message.author.status is discord.Status.offline:
                 reply = ('Hey {0.mention}! You\'re invisible. Stop being '
