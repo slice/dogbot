@@ -15,7 +15,33 @@ class Config(Cog):
             'invisible_announce',
         ]
 
-    @commands.group()
+    @commands.group(aliases=['gcfg'])
+    @commands.is_owner()
+    async def global_config(self, ctx):
+        """ Manages global configuration for the bot. """
+
+    @global_config.command(name='set')
+    async def global_config_set(self, ctx, name: str, value: str='on'):
+        """ Sets a config field. """
+        await self.bot.redis.set(name, value)
+        await ctx.send('\N{OK HAND SIGN}')
+
+    @global_config.command(name='remove', aliases=['rm', 'del', 'delete'])
+    async def global_config_remove(self, ctx, name: str):
+        """ Remove a config field. """
+        await self.bot.redis.delete(name)
+        await ctx.send('\N{OK HAND SIGN}')
+
+    @global_config.command(name='get', aliases=['cat'])
+    async def global_config_get(self, ctx, name: str):
+        """ Views a config field. """
+        value = await self.bot.redis.get(name)
+        if value is None:
+            await ctx.send(f'`{name}` is unset.')
+        else:
+            await ctx.send(f'`{name}`: {value.decode()}')
+
+    @commands.group(aliases=['cfg'])
     @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     async def config(self, ctx):
@@ -58,7 +84,7 @@ class Config(Cog):
             return
         await ctx.send('Set configuration keys in this server: ' + ', '.join(keys))
 
-    @config.command(name='remove', aliases=['rm', 'del'])
+    @config.command(name='remove', aliases=['rm', 'del', 'delete'])
     async def config_remove(self, ctx, name: str):
         """ Removes a config field for this server. """
         await self.bot.redis.delete(f'{ctx.guild.id}:{name}')
@@ -68,7 +94,7 @@ class Config(Cog):
     async def config_get(self, ctx, name: str):
         """ Views a config field for this server. """
         if not await self.bot.config_is_set(ctx.guild, name):
-            await ctx.send('That config value is not set.')
+            await ctx.send('That config field is not set.')
             return
         else:
             value = await self.bot.redis.get(f'{ctx.guild.id}:{name}')
