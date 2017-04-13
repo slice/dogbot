@@ -14,6 +14,17 @@ def config_is_set(name):
 
     return commands.check(_predicate)
 
+def global_config_is_set(name):
+    async def _predicate(ctx):
+        return await ctx.bot.redis.get(name) is not None
+
+    return commands.check(_predicate)
+
+def global_config_is_not_set(name):
+    async def _predicate(ctx):
+        return await ctx.bot.redis.get(name) is None
+
+    return commands.check(_predicate)
 
 def is_moderator():
     async def _predicate(ctx):

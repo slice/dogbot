@@ -4,7 +4,7 @@ from discord.ext import commands
 import logging
 from bson.objectid import ObjectId
 from pymongo import MongoClient
-from dog import Cog
+from dog import Cog, checks
 from dog_config import mongo_url, owner_id
 
 logger = logging.getLogger(__name__)
@@ -34,6 +34,7 @@ class Feedback(Cog):
         """ Feedback commands for the bot. """
 
     @feedback.command(name='submit')
+    @checks.global_config_is_not_set('feedback_disabled')
     @not_blocked()
     async def feedback_submit(self, ctx, *, feedback: str):
         """ Submits feedback. """
