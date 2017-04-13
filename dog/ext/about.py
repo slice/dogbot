@@ -63,7 +63,9 @@ class About(Cog):
                '(`{2.id}`)')
         guild_list = [fmt.format(guild, len(guild.members),
                                  guild.owner) for guild in self.bot.guilds]
-        await ctx.send('\n'.join(guild_list))
+        header = (f'I am currently present in {len(self.bot.guilds)} servers:\n'
+                  '\n')
+        await ctx.send(header + '\n'.join(guild_list))
 
     @commands.command()
     @commands.is_owner()
