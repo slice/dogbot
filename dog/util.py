@@ -35,4 +35,7 @@ def pretty_timedelta(delta):
     m, s = divmod(delta.seconds, 60)
     h, m = divmod(m, 60)
 
-    return '{}, {:02d}h{:02d}m{:02d}s'.format(big, h, m, s)
+    if big:
+        return '{}, {:02d}h{:02d}m{:02d}s'.format(big, h, m, s)
+    else:
+        return '{:02d}h{:02d}m{:02d}s'.format(h, m, s)
