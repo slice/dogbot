@@ -3,6 +3,7 @@ from discord.ext import commands
 from dog import Cog
 
 log = logging.getLogger(__name__)
+CONFIGKEYS_HELP = '<https://github.com/sliceofcode/dogbot/wiki/Configuration>'
 
 class Config(Cog):
     def __init__(self, *args, **kwargs):
@@ -56,7 +57,10 @@ class Config(Cog):
             return
 
         if name not in self.permitted_keys:
-            await ctx.send('That configuration value is not allowed.')
+            await ctx.send(
+                'Whoops! That configuration key is not allowed to be set.'
+                ' For a list of configurable config keys, execute'
+                f' `d?cfg permitted`. Visit {CONFIGKEYS_HELP} for descriptions.')
             return
 
         await self.bot.redis.set(f'{ctx.guild.id}:{name}', value)
@@ -65,7 +69,8 @@ class Config(Cog):
     @config.command(name='permitted')
     async def config_permitted(self, ctx):
         """ Views permitted configuration keys. """
-        await ctx.send(', '.join(self.permitted_keys))
+        header = f'Need descriptions? Check here: {CONFIGKEYS_HELP}\n\n'
+        await ctx.send(header + ', '.join(self.permitted_keys))
 
     @config.command(name='is_set')
     async def config_is_set(self, ctx, name: str):
