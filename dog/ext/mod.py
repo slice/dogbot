@@ -33,6 +33,29 @@ class Mod(Cog):
 
     @commands.command()
     @commands.guild_only()
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
+    @checks.is_moderator()
+    async def purge(self, ctx, amount: int):
+        """
+        Purges messages the last <n> messages.
+        """
+
+        # increase one because the command message they sent needs
+        # to be purged, too.
+        amount = amount + 1
+        if amount > 501:
+            await ctx.send('That number is too big! 500 is the max.')
+            return
+
+        # purge the channel
+        messages = await ctx.channel.purge(limit=amount)
+
+        # complete!
+        await ctx.send(f'Purge complete. Removed {len(messages)}/{amount}'
+                       ' messages.', delete_after=2.5)
+
+    @commands.command()
+    @commands.guild_only()
     @checks.is_moderator()
     async def disable(self, ctx, command: str):
         """
