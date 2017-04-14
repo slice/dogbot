@@ -5,6 +5,7 @@ import logging
 import discord
 import traceback
 from discord.ext import commands
+from dog import errors
 from dog.util import pretty_timedelta
 import dog_config as cfg
 
@@ -96,9 +97,6 @@ class DogBot(commands.AutoShardedBot):
         return await self.redis.exists(f'{guild.id}:{name}')
 
     async def on_command_error(self, ex, ctx):
-        tb = traceback.format_exception(None, ex, ex.__traceback__)
-        logger.error('command error: %s', ''.join(tb))
-
         if ctx.command:
             see_help = f'Run `d?help {ctx.command.name}` for more information.'
 
@@ -109,3 +107,10 @@ class DogBot(commands.AutoShardedBot):
             await ctx.send(f'Bad argument! {message} {see_help}')
         elif isinstance(ex, commands.errors.MissingRequiredArgument):
             await ctx.send(f'Uh oh! {ex} {see_help}')
+        elif isinstance(ex, commands.NoPrivateMessage):
+            await ctx.send('You can\'t do that in a private message.')
+        elif isinstance(ex, errors.InsufficientPermissions):
+            await ctx.send(f'{ex}')
+        else:
+            tb = traceback.format_exception(None, ex, ex.__traceback__)
+            logger.error('command error: %s', ''.join(tb))
