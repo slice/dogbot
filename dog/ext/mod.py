@@ -45,7 +45,7 @@ class Mod(Cog):
             await ctx.send('You must leave off the prefix.')
             return
         await self.bot.disable_command(ctx.guild, command)
-        await ctx.send('\N{OK HAND SIGN}')
+        await self.bot.ok(ctx)
 
     @commands.command()
     @commands.guild_only()
@@ -59,7 +59,7 @@ class Mod(Cog):
             await ctx.send('That command isn\'t disabled!')
             return
         await self.bot.enable_command(ctx.guild, command)
-        await ctx.send('\N{OK HAND SIGN}')
+        await self.bot.ok(ctx)
 
     @commands.command()
     @commands.guild_only()
@@ -80,8 +80,12 @@ class Mod(Cog):
     @commands.bot_has_permissions(kick_members=True)
     async def kick(self, ctx, member: discord.Member):
         """ Kicks someone. """
-        await ctx.guild.kick(member)
-        await ctx.message.add_reaction('\N{OK HAND SIGN}')
+        try:
+            await ctx.guild.kick(member)
+        except discord.Forbidden:
+            await ctx.send('I can\'t do that.')
+        else:
+            await self.bot.ok(ctx)
 
     @commands.command()
     @commands.guild_only()
@@ -89,8 +93,12 @@ class Mod(Cog):
     @commands.bot_has_permissions(ban_members=True)
     async def ban(self, ctx, member: discord.Member, days: int=0):
         """ Bans someone from the server. """
-        await ctx.guild.ban(member, delete_message_days=days)
-        await ctx.message.add_reaction('\N{OK HAND SIGN}')
+        try:
+            await ctx.guild.ban(member, delete_message_days=days)
+        except discord.Forbidden:
+            await ctx.send('I can\'t do that.')
+        else:
+            await self.bot.ok(ctx)
 
     def _embed_field_for(self, member):
         return f'{member.mention} {member.name}#{member.discriminator}'
@@ -245,6 +253,20 @@ Example response: "announcements,corkboard,etc"
                            f' default channel, {ctx.guild.default_channel.mention},'
                            f' can always be read, even if someone is muted.'
                            ' (This is a Discord thing.)')
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    async def vanity(self, ctx, name: str):
+        """
+        Creates a vanity role.
+
+        A vanity role is defined as a role with no permissions.
+        """
+        perms = discord.Permissions(permissions=0)
+        await ctx.guild.create_role(name=name, permissions=perms)
+        await self.bot.ok(ctx)
 
     @commands.command()
     @commands.guild_only()

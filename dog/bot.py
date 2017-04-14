@@ -47,6 +47,12 @@ class DogBot(commands.AutoShardedBot):
 
         await mod_log.send(*args, **kwargs)
 
+    async def ok(self, ctx):
+        try:
+            await ctx.message.add_reaction('\N{OK HAND SIGN}')
+        except discord.Forbidden:
+            await ctx.send('\N{OK HAND SIGN}')
+
     async def on_ready(self):
         logger.info('BOT IS READY')
         logger.info('owner id: %s', cfg.owner_id)

@@ -116,14 +116,14 @@ class Feedback(Cog):
             f'My creator says: ```\n{message}\n```\nThank you for submitting'
             ' feedback!'
         )
-        await ctx.send('\N{OK HAND SIGN}')
+        await self.bot.ok(ctx)
 
     @feedback.command(name='block')
     @commands.is_owner()
     async def feedback_block(self, ctx, who: discord.User):
         """ Blocks someone from submitting feedback. """
         self.blocked_coll.insert_one({'user_id': who.id})
-        await ctx.send('\N{OK HAND SIGN}')
+        await self.bot.ok(ctx)
         logger.info('blocked %s from using feedback', who.id)
 
     @feedback.command(name='delete', aliases=['remove'])
@@ -138,7 +138,7 @@ class Feedback(Cog):
     async def feedback_unblock(self, ctx, who: discord.User):
         """ Unblocks someone from submitting feedback. """
         self.blocked_coll.delete_one({'user_id': who.id})
-        await ctx.send('\N{OK HAND SIGN}')
+        await self.bot.ok(ctx)
         logger.info('unblocked %s from using feedback', who.id)
 
     @feedback.command(name='purge')

@@ -25,13 +25,13 @@ class Config(Cog):
     async def global_config_set(self, ctx, name: str, value: str='on'):
         """ Sets a config field. """
         await self.bot.redis.set(name, value)
-        await ctx.send('\N{OK HAND SIGN}')
+        await self.bot.ok(ctx)
 
     @global_config.command(name='remove', aliases=['rm', 'del', 'delete'])
     async def global_config_remove(self, ctx, name: str):
         """ Remove a config field. """
         await self.bot.redis.delete(name)
-        await ctx.send('\N{OK HAND SIGN}')
+        await self.bot.ok(ctx)
 
     @global_config.command(name='get', aliases=['cat'])
     async def global_config_get(self, ctx, name: str):
@@ -64,7 +64,7 @@ class Config(Cog):
             return
 
         await self.bot.redis.set(f'{ctx.guild.id}:{name}', value)
-        await ctx.send('\N{OK HAND SIGN}')
+        await self.bot.ok(ctx)
 
     @config.command(name='permitted')
     async def config_permitted(self, ctx):
@@ -93,7 +93,7 @@ class Config(Cog):
     async def config_remove(self, ctx, name: str):
         """ Removes a config field for this server. """
         await self.bot.redis.delete(f'{ctx.guild.id}:{name}')
-        await ctx.send('\N{OK HAND SIGN}')
+        await self.bot.ok(ctx)
 
     @config.command(name='get', aliases=['cat'])
     async def config_get(self, ctx, name: str):
