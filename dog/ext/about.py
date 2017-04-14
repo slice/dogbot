@@ -22,6 +22,14 @@ class About(Cog):
         link = discord.utils.oauth_url(client_id, permissions=perms)
         await ctx.send(link)
 
+    @commands.command(aliases=['helpme', 'support'])
+    async def wiki(self, ctx):
+        """ Need help using Dogbot? """
+        wiki = 'https://github.com/sliceofcode/dogbot/wiki'
+        invite = 'https://discord.gg/Ucs96UH'
+        await ctx.send(f'Need help with Dogbot? The wiki ({wiki}) has all'
+                       f' of your answers! Support server: {invite}')
+
     @commands.command()
     async def command_list(self, ctx):
         """ Shows you my detailed list of commands. """
