@@ -56,6 +56,23 @@ class Mod(Cog):
 
     @commands.command()
     @commands.guild_only()
+    @checks.bot_perms(manage_roles=True)
+    @checks.is_moderator()
+    async def block(self, ctx, someone: discord.Member):
+        """
+        Blocks someone from reading your channel.
+
+        This simply creates a channel permission overwrite which blocks
+        an individual from having Read Messages in this channel.
+        """
+        if ctx.channel == ctx.guild.default_channel:
+            await ctx.send('Members cannot be blocked from the default channel.')
+            return
+        await ctx.channel.set_permissions(someone, read_messages=False)
+        await self.bot.ok(ctx)
+
+    @commands.command()
+    @commands.guild_only()
     @checks.is_moderator()
     async def disable(self, ctx, command: str):
         """
