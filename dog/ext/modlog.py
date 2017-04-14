@@ -50,7 +50,7 @@ class Modlog(Cog):
     @commands.command()
     @commands.has_permissions(manage_guild=True)
     @commands.bot_has_permissions(manage_channels=True)
-    async def setup_modlog(self, ctx):
+    async def modlog_setup(self, ctx):
         """ Sets up the modlog. """
 
         if 'mod-log' in [c.name for c in ctx.guild.channels]:
