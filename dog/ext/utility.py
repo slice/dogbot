@@ -29,6 +29,12 @@ class Utility(Cog):
 
     @commands.command()
     @commands.guild_only()
+    async def default_channel(self, ctx):
+        """ Shows you the default channel. """
+        await ctx.send(ctx.guild.default_channel.mention)
+
+    @commands.command()
+    @commands.guild_only()
     async def earliest(self, ctx):
         """ Shows who in this server had the earliest Discord join time. """
         members = {m: m.created_at for m in ctx.guild.members if not m.bot}
