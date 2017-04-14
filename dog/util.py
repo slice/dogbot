@@ -16,6 +16,11 @@ def now():
 def ago(dt):
     return pretty_timedelta(datetime.datetime.utcnow() - dt)
 
+def truncate(text, desired_length):
+    if len(text) > desired_length:
+        return text[:desired_length - 3] + '...'
+    return text
+
 def pretty_timedelta(delta):
     big = ''
 
