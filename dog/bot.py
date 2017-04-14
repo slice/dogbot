@@ -93,7 +93,8 @@ class DogBot(commands.AutoShardedBot):
         tb = traceback.format_exception(None, ex, ex.__traceback__)
         logger.error('command error: %s', ''.join(tb))
 
-        see_help = f'Run `d?help {ctx.command.name}` for more information.'
+        if ctx.command:
+            see_help = f'Run `d?help {ctx.command.name}` for more information.'
 
         if isinstance(ex, commands.errors.BadArgument):
             message = str(ex)
