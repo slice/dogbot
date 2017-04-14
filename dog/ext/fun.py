@@ -44,7 +44,8 @@ class Fun(Cog):
 
         Grabs a random Shiba Inu picture from shibe.online.
         """
-        await ctx.send((await _get_json(SHIBE_ENDPOINT))[0])
+        async with ctx.channel.typing():
+            await ctx.send((await _get_json(SHIBE_ENDPOINT))[0])
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -78,11 +79,12 @@ class Fun(Cog):
     @commands.cooldown(1, 2, commands.BucketType.user)
     async def dogfact(self, ctx):
         """ Returns a random dog fact. """
-        facts = await _get_json(DOGFACTS_ENDPOINT)
-        if not facts['success']:
-            await ctx.send('I couldn\'t contact the Dog Facts API.')
-            return
-        await ctx.send(facts['facts'][0])
+        async with ctx.channel.typing():
+            facts = await _get_json(DOGFACTS_ENDPOINT)
+            if not facts['success']:
+                await ctx.send('I couldn\'t contact the Dog Facts API.')
+                return
+            await ctx.send(facts['facts'][0])
 
 
 def setup(bot):
