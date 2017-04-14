@@ -1,5 +1,5 @@
+import datetime
 import discord
-
 
 def make_profile_embed(member):
     embed = discord.Embed()
@@ -7,10 +7,14 @@ def make_profile_embed(member):
                      icon_url=member.avatar_url)
     return embed
 
-
 def american_datetime(datetime):
     return datetime.strftime('%m/%d/%Y %I:%M:%S %p')
 
+def now():
+    return american_datetime(datetime.datetime.utcnow()) + ' UTC'
+
+def ago(dt):
+    return pretty_timedelta(datetime.datetime.utcnow() - dt)
 
 def pretty_timedelta(delta):
     big = ''
