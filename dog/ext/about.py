@@ -53,7 +53,7 @@ class About(Cog):
                     f'{git_revision})')
         embed.add_field(name='Git revision', value=rev_link)
         embed.add_field(name='Python', value=platform.python_version())
-        embed.set_footer(text=f'{self.maker.name}#{self.maker.discriminator}',
+        embed.set_author(name=f'{self.maker.name}#{self.maker.discriminator}',
                          icon_url=self.maker.avatar_url)
         await ctx.send(embed=embed)
 
@@ -91,6 +91,7 @@ class About(Cog):
             'Channels': num_channels,
             'Servers': num_servers,
             'Uptime': uptime,
+            'Shards': len(self.bot.shards),
         }
         for name, value in fields.items():
             embed.add_field(name=name, value=value)
