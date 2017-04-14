@@ -189,10 +189,7 @@ If you don't want to exclude any channels, just type "none" and send it.
 Example response: "announcements,corkboard,etc"
 **Do not mention the channel, or put spaces anywhere.**""")
 
-            # use a check to only accept responses from the message author
-            def predicate(m):
-                return m.author.id == ctx.message.author.id
-            msg = await self.bot.wait_for('message', check=predicate)
+            msg = await self.bot.wait_for_response(ctx)
 
             if msg.content != "none":
                 # create an exclusion list from the message

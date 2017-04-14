@@ -61,9 +61,7 @@ class Modlog(Cog):
                        ' in #mod-log? Example response: `rolename1,rolename2`'
                        '\nTo grant no roles access, respond with "none".')
 
-        def check(m):
-            return m.author == ctx.author
-        msg = await self.bot.wait_for('message', check=check)
+        msg = await self.bot.wait_for_response(ctx)
 
         if msg.content == 'none':
             await ctx.send('Granting no roles access.')

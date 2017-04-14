@@ -27,6 +27,11 @@ class DogBot(commands.AutoShardedBot):
         logger.info('enabling %s in %d', command_name, guild.id)
         await self.redis.delete(f'disabled:{guild.id}:{command_name}')
 
+    async def wait_for_response(self, ctx):
+        def check(m):
+            return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+        return await self.wait_for('message', check=check)
+
     def has_prefix(self, haystack):
         for prefix in self.command_prefix:
             if haystack.startswith(prefix):
