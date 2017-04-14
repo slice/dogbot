@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from dog import Cog, util
+from dog import Cog, util, checks
 
 class Modlog(Cog):
     def _make_modlog_embed(self, **kwargs):
@@ -49,7 +49,7 @@ class Modlog(Cog):
 
     @commands.command()
     @commands.has_permissions(manage_guild=True)
-    @commands.bot_has_permissions(manage_channels=True)
+    @checks.bot_perms(manage_channels=True)
     async def modlog_setup(self, ctx):
         """ Sets up the modlog. """
 

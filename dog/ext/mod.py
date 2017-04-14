@@ -33,7 +33,7 @@ class Mod(Cog):
 
     @commands.command()
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
+    @checks.bot_perms(manage_messages=True, read_message_history=True)
     @checks.is_moderator()
     async def purge(self, ctx, amount: int):
         """
@@ -100,7 +100,7 @@ class Mod(Cog):
     @commands.command()
     @commands.guild_only()
     @commands.has_permissions(kick_members=True)
-    @commands.bot_has_permissions(kick_members=True)
+    @checks.bot_perms(kick_members=True)
     async def kick(self, ctx, member: discord.Member):
         """ Kicks someone. """
         try:
@@ -113,7 +113,7 @@ class Mod(Cog):
     @commands.command()
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
-    @commands.bot_has_permissions(ban_members=True)
+    @checks.bot_perms(ban_members=True)
     async def ban(self, ctx, member: discord.Member, days: int=0):
         """ Bans someone from the server. """
         try:
@@ -135,7 +135,7 @@ class Mod(Cog):
 
     @commands.command()
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_roles=True)
+    @checks.bot_perms(manage_roles=True)
     @checks.is_moderator()
     async def unmute(self, ctx, member: discord.Member):
         """ Instantly unmutes someone. """
@@ -160,8 +160,10 @@ class Mod(Cog):
                            f' (`{member.id}`).')
         except discord.Forbidden:
             await ctx.send('\N{CROSS MARK} I can\'t do that!')
+            return
         except:
             await ctx.send('\N{CROSS MARK} I failed to do that.')
+            return
 
         embed = self._make_action_embed(ctx.author, member,
                                         title='\N{SPEAKER} Member force-unmuted')
@@ -169,7 +171,7 @@ class Mod(Cog):
 
     @commands.command()
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_channels=True)
+    @checks.bot_perms(manage_channels=True)
     @checks.is_moderator()
     async def mute_setup(self, ctx):
         """
@@ -280,7 +282,7 @@ Example response: "announcements,corkboard,etc"
     @commands.command()
     @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
-    @commands.bot_has_permissions(manage_roles=True)
+    @checks.bot_perms(manage_roles=True)
     async def vanity(self, ctx, name: str):
         """
         Creates a vanity role.
@@ -293,7 +295,7 @@ Example response: "announcements,corkboard,etc"
 
     @commands.command()
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_roles=True)
+    @checks.bot_perms(manage_roles=True)
     @checks.is_moderator()
     async def mute(self, ctx, member: discord.Member, time: HumanTime):
         """
@@ -328,8 +330,10 @@ Example response: "announcements,corkboard,etc"
                            ' or I need permissions.'
                            ' Ensure that the my bot role is placed above'
                            ' the "Muted" role.')
+            return
         except:
             await msg.edit(content='\N{CROSS MARK} I failed to do that.')
+            return
 
         async def unmute_task():
             await asyncio.sleep(time.seconds)
@@ -348,7 +352,7 @@ Example response: "announcements,corkboard,etc"
     @commands.command()
     @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
-    @commands.bot_has_permissions(manage_nicknames=True)
+    @checks.bot_perms(manage_nicknames=True)
     async def attentionseek(self, ctx, replace_with: str='💩'):
         """
         Changes attention-seeking nicknames.
