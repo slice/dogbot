@@ -12,6 +12,14 @@ class Mod(Cog):
         super().__init__(*args, **kwargs)
         self.mute_tasks = {}
 
+    async def __global_check(self, ctx):
+        # do not handle guild-specific command disables in
+        # dms
+        if not isinstance(ctx.channel, discord.abc.GuildChannel):
+            return True
+
+        return not await self.bot.command_is_disabled(ctx.guild, ctx.command.name)
+
     async def on_message(self, message):
         # do not handle invisibility in dms
         if isinstance(message.channel, discord.abc.PrivateChannel):
@@ -22,6 +30,49 @@ class Mod(Cog):
                 reply = ('Hey {0.mention}! You\'re invisible. Stop being '
                          'invisible, please. Thanks.')
                 await message.channel.send(reply.format(message.author))
+
+    @commands.command()
+    @commands.guild_only()
+    @checks.is_moderator()
+    async def disable(self, ctx, command: str):
+        """
+        Disables a command in this server.
+
+        In order to disable a group, simply pass in the group's name.
+        For example: "d?disable feedback" will disable all feedback commands.
+        """
+        if self.bot.has_prefix(command):
+            await ctx.send('You must leave off the prefix.')
+            return
+        await self.bot.disable_command(ctx.guild, command)
+        await ctx.send('\N{OK HAND SIGN}')
+
+    @commands.command()
+    @commands.guild_only()
+    @checks.is_moderator()
+    async def enable(self, ctx, command: str):
+        """ Enables a command in this server. """
+        if self.bot.has_prefix(command):
+            await ctx.send('You must leave off the prefix.')
+            return
+        if not await self.bot.command_is_disabled(command):
+            await ctx.send('That command isn\'t disabled!')
+            return
+        await self.bot.enable_command(ctx.guild, command)
+        await ctx.send('\N{OK HAND SIGN}')
+
+    @commands.command()
+    @commands.guild_only()
+    @checks.is_moderator()
+    async def disabled(self, ctx):
+        """ Shows you disabled commands in this server. """
+        keys = await self.bot.redis.keys(f'disabled:{ctx.guild.id}:*')
+        disabled = ['d?' + k.decode().split(':')[2] for k in keys]
+
+        if not disabled:
+            await ctx.send('There are no disabled commands in this server.')
+        else:
+            await ctx.send(', '.join(disabled))
 
     @commands.command()
     @commands.guild_only()

@@ -14,6 +14,24 @@ class DogBot(commands.AutoShardedBot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.boot_time = datetime.datetime.utcnow()
+        self.redis = None
+
+    async def command_is_disabled(self, guild, command_name):
+        return await self.redis.exists(f'disabled:{guild.id}:{command_name}')
+
+    async def disable_command(self, guild, command_name):
+        logger.info('disabling %s in %d', command_name, guild.id)
+        await self.redis.set(f'disabled:{guild.id}:{command_name}', 'on')
+
+    async def enable_command(self, guild, command_name):
+        logger.info('enabling %s in %d', command_name, guild.id)
+        await self.redis.delete(f'disabled:{guild.id}:{command_name}')
+
+    def has_prefix(self, haystack):
+        for prefix in self.command_prefix:
+            if haystack.startswith(prefix):
+                return True
+        return False
 
     async def on_ready(self):
         logger.info('BOT IS READY')
