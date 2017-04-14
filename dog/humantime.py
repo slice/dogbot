@@ -26,3 +26,4 @@ def humantime_parse(htime):
 class HumanTime:
     def __init__(self, arg):
         self.seconds = humantime_parse(arg)
+        self.raw = arg

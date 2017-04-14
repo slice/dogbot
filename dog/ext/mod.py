@@ -2,7 +2,7 @@ import logging
 import asyncio
 import discord
 from discord.ext import commands
-from dog import Cog, checks
+from dog import Cog, checks, util
 from dog.humantime import HumanTime
 
 logger = logging.getLogger(__name__)
@@ -92,6 +92,16 @@ class Mod(Cog):
         await ctx.guild.ban(member, delete_message_days=days)
         await ctx.message.add_reaction('\N{OK HAND SIGN}')
 
+    def _embed_field_for(self, member):
+        return f'{member.mention} {member.name}#{member.discriminator}'
+
+    def _make_action_embed(self, executor, victim, **kwargs):
+        embed = discord.Embed(**kwargs)
+        embed.add_field(name='Who did it', value=self._embed_field_for(executor))
+        embed.add_field(name='Who was it', value=self._embed_field_for(victim))
+        embed.set_footer(text=util.now())
+        return embed
+
     @commands.command()
     @commands.guild_only()
     @commands.bot_has_permissions(manage_roles=True)
@@ -121,6 +131,10 @@ class Mod(Cog):
             await ctx.send('\N{CROSS MARK} I can\'t do that!')
         except:
             await ctx.send('\N{CROSS MARK} I failed to do that.')
+
+        embed = self._make_action_embed(ctx.author, member,
+                                        title='\N{SPEAKER} Member force-unmuted')
+        await self.bot.send_modlog(ctx.guild, embed=embed)
 
     @commands.command()
     @commands.guild_only()
@@ -284,6 +298,10 @@ Example response: "announcements,corkboard,etc"
 
         task = self.bot.loop.create_task(unmute_task())
         self.mute_tasks[member] = task
+
+        embed = self._make_action_embed(ctx.author, member, title=f'{mute} Member muted')
+        embed.add_field(name='Duration', value=f'{time.raw} ({time.seconds}s)')
+        await self.bot.send_modlog(ctx.guild, embed=embed)
 
     @commands.command()
     @commands.guild_only()
