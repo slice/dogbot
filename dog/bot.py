@@ -1,3 +1,4 @@
+import asyncio
 import aioredis
 import datetime
 import logging
@@ -14,7 +15,10 @@ class DogBot(commands.AutoShardedBot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.boot_time = datetime.datetime.utcnow()
-        self.redis = None
+        _loop = asyncio.get_event_loop()
+        _redis_coroutine = aioredis.create_redis(
+            (cfg.redis_url, 6379), loop=_loop)
+        self.redis = _loop.run_until_complete(_redis_coroutine)
 
     async def command_is_disabled(self, guild, command_name):
         return await self.redis.exists(f'disabled:{guild.id}:{command_name}')
@@ -59,10 +63,6 @@ class DogBot(commands.AutoShardedBot):
         logger.info('logged in')
         logger.info(f' name: {self.user.name}#{self.user.discriminator}')
         logger.info(f' id:   {self.user.id}')
-
-        # redis
-        self.redis = await aioredis.create_redis(
-            (cfg.redis_url, 6379), loop=self.loop)
 
         # helpful game
         short_prefix = min(self.command_prefix, key=len)
