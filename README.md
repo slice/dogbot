@@ -31,7 +31,7 @@ opening an issue if you notice something.
 
 ## Running your own
 
-I heavily prefer that you [invite Dogbot to your server](https://discordapp.com/oauth2/authorize?permissions=0&scope=bot&client_id=295770389584412683) instead of running your instance of Dogbot.
+I heavily prefer that you [invite Dogbot to your server](https://discordapp.com/oauth2/authorize?permissions=8&scope=bot&client_id=295770389584412683) instead of running your instance of Dogbot.
 
 However, if you really want to...
 
