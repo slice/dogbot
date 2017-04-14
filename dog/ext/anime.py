@@ -6,7 +6,6 @@ from discord.ext import commands
 
 class Anime(Cog):
     def _make_anime_embed(self, anime):
-        print(anime)
         embed = discord.Embed(title=anime.title)
         not_airing = anime.end_date == '0000-00-00' or anime.status != 'Finished Airing'
         embed.add_field(name='Score', value=anime.score)
@@ -15,7 +14,10 @@ class Anime(Cog):
         if not_airing:
             embed.add_field(name='Start date', value=anime.start_date)
         else:
-            embed.add_field(name='Aired', value=f'{anime.start_date} - {anime.end_date}')
+            aired_value = f'{anime.start_date} - {anime.end_date}'
+            if anime.start_date == anime.end_date:
+                aired_value = anime.start_date + ' (one day)'
+            embed.add_field(name='Aired', value=aired_value)
         synopsis = html.unescape(anime.synopsis).replace('<br />', '\n')[:2500]
         embed.add_field(name='Synopsis', value=util.truncate(synopsis, 1000), inline=False)
         embed.set_thumbnail(url=anime.image)
