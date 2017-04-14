@@ -33,6 +33,15 @@ class DogBot(commands.AutoShardedBot):
                 return True
         return False
 
+    async def send_modlog(self, guild, *args, **kwargs):
+        mod_log = discord.utils.get(guild.channels, name='mod-log')
+
+        # don't post to mod-log, couldn't find the channel
+        if mod_log is None:
+            return
+
+        await mod_log.send(*args, **kwargs)
+
     async def on_ready(self):
         logger.info('BOT IS READY')
         logger.info('owner id: %s', cfg.owner_id)

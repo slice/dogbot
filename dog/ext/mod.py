@@ -89,7 +89,7 @@ class Mod(Cog):
     @commands.bot_has_permissions(ban_members=True)
     async def ban(self, ctx, member: discord.Member, days: int=0):
         """ Bans someone from the server. """
-        await ctx.guild.ban(member, days)
+        await ctx.guild.ban(member, delete_message_days=days)
         await ctx.message.add_reaction('\N{OK HAND SIGN}')
 
     @commands.command()
