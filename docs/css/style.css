@@ -1,0 +1,138 @@
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: Roboto;
+  line-height: 1.5;
+}
+
+.badge {
+  margin-left: 0.5rem;
+  font-size: 1rem;
+  background: #ffbf00;
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.15rem;
+  display: inline-block;
+}
+
+section {
+  height: 100vh;
+}
+
+.feature-grid {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-flow: row wrap;
+      flex-flow: row wrap;
+}
+.feature-grid .feature {
+  margin: 0.25rem;
+  padding: 1rem;
+  border: solid 1px #ddd;
+  border-radius: 0.15rem;
+  font-size: 0.85em;
+  -webkit-transition: all 200ms;
+  transition: all 200ms;
+}
+.feature-grid .feature:hover {
+  border-color: #bbb;
+}
+.feature-grid .feature h2 {
+  margin: 0 0 0.5rem 0;
+}
+.feature-grid .feature p {
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+h2.big {
+  font-size: 1.8em;
+}
+
+.big {
+  font-size: 1.3em;
+}
+
+header.main {
+  font-size: 2.5em;
+  font-weight: 900;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+
+.tagline {
+  font-size: 1.2em;
+}
+
+.gray {
+  background-color: #eee;
+}
+
+i.fa {
+  margin-right: 0.5rem;
+  width: 1.1em;
+  text-align: center;
+}
+
+.links a {
+  display: block;
+  padding: 0.5rem 1rem;
+  border: solid 0.15rem #000;
+  color: #000;
+  border-radius: 0.15rem;
+  text-decoration: none;
+  -webkit-transition: all 150ms;
+  transition: all 150ms;
+  font-size: 0.9em;
+}
+.links a:not(:last-child) {
+  margin-bottom: 0.5rem;
+}
+.links a:hover {
+  background: #000;
+  color: #fff;
+}
+
+.two-parts {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+.two-parts.equal .right {
+  -webkit-box-flex: 1;
+      -ms-flex-positive: 1;
+          flex-grow: 1;
+}
+.two-parts .left, .two-parts .right {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -ms-flex-flow: column nowrap;
+      flex-flow: column nowrap;
+  -ms-flex-preferred-size: 0;
+      flex-basis: 0;
+}
+.two-parts .left {
+  -webkit-box-flex: 1;
+      -ms-flex-positive: 1;
+          flex-grow: 1;
+}
+.two-parts .right {
+  -webkit-box-flex: 2.5;
+      -ms-flex-positive: 2.5;
+          flex-grow: 2.5;
+}
