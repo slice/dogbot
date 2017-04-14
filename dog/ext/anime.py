@@ -18,6 +18,7 @@ class Anime(Cog):
             embed.add_field(name='Aired', value=f'{anime.start_date} - {anime.end_date}')
         synopsis = html.unescape(anime.synopsis).replace('<br />', '\n')[:2500]
         embed.add_field(name='Synopsis', value=util.truncate(synopsis, 1000), inline=False)
+        embed.set_thumbnail(url=anime.image)
         return embed
 
     @commands.command()
