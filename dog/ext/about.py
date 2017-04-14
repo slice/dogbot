@@ -18,7 +18,8 @@ class About(Cog):
     @commands.command(aliases=['invite'])
     async def oauth(self, ctx):
         """ Tells you my OAuth (invite) link! """
-        link = discord.utils.oauth_url(client_id)
+        perms = discord.Permissions(permissions=8)
+        link = discord.utils.oauth_url(client_id, permissions=perms)
         await ctx.send(link)
 
     @commands.command()
