@@ -31,9 +31,9 @@ class Modlog(Cog):
         embed = self._make_profile_embed(member, title=f'{ban_emote} Member banned')
         await self.bot.send_modlog(member.guild, embed=embed)
 
-    async def on_member_unban(self, member):
-        embed = self._make_profile_embed(member, title='\N{SMILING FACE WITH HALO} Member unbanned')
-        await self.bot.send_modlog(member.guild, embed=embed)
+    async def on_member_unban(self, guild, user):
+        embed = self._make_profile_embed(user, title='\N{SMILING FACE WITH HALO} Member unbanned')
+        await self.bot.send_modlog(guild, embed=embed)
 
     async def on_channel_create(self, channel):
         embed = self._make_modlog_embed(title='\N{SPARKLES} New channel')
