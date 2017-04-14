@@ -55,7 +55,7 @@ class Mod(Cog):
         if self.bot.has_prefix(command):
             await ctx.send('You must leave off the prefix.')
             return
-        if not await self.bot.command_is_disabled(command):
+        if not await self.bot.command_is_disabled(ctx.guild, command):
             await ctx.send('That command isn\'t disabled!')
             return
         await self.bot.enable_command(ctx.guild, command)
