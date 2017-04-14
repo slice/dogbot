@@ -26,7 +26,8 @@ class Anime(Cog):
     @commands.command()
     async def anime(self, ctx, *, query: str):
         """ Searches for anime on MyAnimeList. """
-        results = (await anime_search(query))[:20]
+        async with ctx.channel.typing():
+            results = (await anime_search(query))[:20]
 
         if len(results) > 1:
             choices = '\n'.join(f'{idx + 1}) {an.title}' for idx, an in enumerate(results))
