@@ -38,6 +38,9 @@ class Mod(Cog):
     async def purge(self, ctx, amount: int):
         """
         Purges messages the last <n> messages.
+
+        This includes the purge command message. The bot will send a message
+        upon completion, but will automatically be deleted.
         """
 
         # increase one because the command message they sent needs
@@ -64,6 +67,8 @@ class Mod(Cog):
 
         This simply creates a channel permission overwrite which blocks
         an individual from having Read Messages in this channel.
+
+        Any existing permission overwrites for the target is preserved.
         """
         if ctx.channel.is_default():
             await ctx.send('Members cannot be blocked from the default channel.')
@@ -135,7 +140,7 @@ class Mod(Cog):
     @commands.guild_only()
     @checks.is_moderator()
     async def disabled(self, ctx):
-        """ Shows you disabled commands in this server. """
+        """ Shows disabled commands in this server. """
         keys = await self.bot.redis.keys(f'disabled:{ctx.guild.id}:*')
         disabled = ['d?' + k.decode().split(':')[2] for k in keys]
 
@@ -162,7 +167,7 @@ class Mod(Cog):
     @commands.has_permissions(ban_members=True)
     @checks.bot_perms(ban_members=True)
     async def ban(self, ctx, member: discord.Member, days: int=0):
-        """ Bans someone from the server. """
+        """ Bans someone. """
         try:
             await ctx.guild.ban(member, delete_message_days=days)
         except discord.Forbidden:
