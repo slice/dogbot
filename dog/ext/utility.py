@@ -4,7 +4,7 @@ import discord
 from asteval import Interpreter
 from discord.ext import commands
 from dog import Cog
-from dog.util import pretty_timedelta, make_profile_embed, american_datetime
+from dog.utils import pretty_timedelta, make_profile_embed, american_datetime
 
 
 class Utility(Cog):

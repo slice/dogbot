@@ -6,7 +6,7 @@ import discord
 import traceback
 from discord.ext import commands
 from dog import errors
-from dog.util import pretty_timedelta
+from dog.utils import pretty_timedelta
 import dog_config as cfg
 
 logger = logging.getLogger(__name__)

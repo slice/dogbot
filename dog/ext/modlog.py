@@ -1,16 +1,16 @@
 import discord
 from discord.ext import commands
-from dog import Cog, util, checks
+from dog import Cog, utils, checks
 
 class Modlog(Cog):
     def _make_modlog_embed(self, **kwargs):
         embed = discord.Embed(**kwargs)
-        embed.set_footer(text=util.now())
+        embed.set_footer(text=utils.now())
         return embed
 
     def _make_profile_embed(self, member, **kwargs):
-        _registered = (f'{util.american_datetime(member.created_at)}'
-                       f' ({util.ago(member.created_at)} ago)')
+        _registered = (f'{utils.american_datetime(member.created_at)}'
+                       f' ({utils.ago(member.created_at)} ago)')
         embed = self._make_modlog_embed(**kwargs)
         embed.add_field(name='Member', value=f'{member.mention}'
                         f' {member.name}#{member.discriminator}')

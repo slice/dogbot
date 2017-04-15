@@ -2,7 +2,7 @@ import logging
 import asyncio
 import discord
 from discord.ext import commands
-from dog import Cog, checks, util
+from dog import Cog, checks, utils
 from dog.humantime import HumanTime
 
 logger = logging.getLogger(__name__)
@@ -147,7 +147,7 @@ class Mod(Cog):
         embed = discord.Embed(**kwargs)
         embed.add_field(name='Who did it', value=self._embed_field_for(executor))
         embed.add_field(name='Who was it', value=self._embed_field_for(victim))
-        embed.set_footer(text=util.now())
+        embed.set_footer(text=utils.now())
         return embed
 
     @commands.command()
