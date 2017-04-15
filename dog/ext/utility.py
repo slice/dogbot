@@ -1,3 +1,4 @@
+import re
 import random
 import datetime
 import discord
@@ -26,6 +27,26 @@ class Utility(Cog):
                         value=(f'{joined_dif} ago\n' +
                                american_datetime(member.created_at)))
         return embed
+
+    @commands.command()
+    async def jumbo(self, ctx, emoji: str):
+        """ Views a custom emoji at a big resolution. """
+
+        match = re.match(r'<:([a-z0-9A-Z]+):([0-9]+)>', emoji)
+        if not match:
+            await ctx.send('Not an custom emoji!')
+            return
+
+        # get emoji id
+        emoji_id = match.groups()[1]
+        emoji_cdn = 'https://discordapp.com/api/emojis/{}.png'
+
+        # create wrapping embed
+        wrapper_embed = discord.Embed()
+        wrapper_embed.set_image(url=emoji_cdn.format(emoji_id))
+
+        # send
+        await ctx.send(embed=wrapper_embed)
 
     @commands.command()
     @commands.guild_only()
