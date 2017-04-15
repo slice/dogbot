@@ -65,11 +65,41 @@ class Mod(Cog):
         This simply creates a channel permission overwrite which blocks
         an individual from having Read Messages in this channel.
         """
-        if ctx.channel == ctx.guild.default_channel:
+        if ctx.channel.is_default():
             await ctx.send('Members cannot be blocked from the default channel.')
             return
-        await ctx.channel.set_permissions(someone, read_messages=False)
+        existing_overwrite = ctx.channel.overwrites_for(someone)
+        existing_overwrite.read_messages = False
+        await ctx.channel.set_permissions(someone, overwrite=existing_overwrite)
         await self.bot.ok(ctx)
+
+    @commands.command()
+    @commands.guild_only()
+    @checks.bot_perms(manage_roles=True)
+    @checks.is_moderator()
+    async def unblock(self, ctx, someone: discord.Member):
+        """
+        Unblocks someone from reading your channel.
+
+        Does the opposite of d?block.
+        """
+        overwrites = ctx.channel.overwrites_for(someone)
+        can_read = overwrites.read_messages
+        if can_read is None or can_read:
+            # person isn't blocked
+            await ctx.send('That person isn\'t (specifically) blocked.')
+        elif not can_read:
+            # person is blocked
+            overwrites.read_messages = None
+            if overwrites.is_empty():
+                # overwrite is empty now, remove it
+                logger.info('overwrite is empty')
+                await ctx.channel.set_permissions(someone, overwrite=None)
+            else:
+                # overwrite still has stuff
+                logger.info('overwrite still has things!')
+                await ctx.channel.set_permissions(someone, overwrite=overwrites)
+            await self.bot.ok(ctx)
 
     @commands.command()
     @commands.guild_only()
