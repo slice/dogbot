@@ -4,7 +4,7 @@ import discord
 import platform
 from subprocess import check_output
 from discord.ext import commands
-from dog import Cog
+from dog import Cog, util
 from dog_config import client_id, owner_id, github
 
 logger = logging.getLogger(__name__)
@@ -87,11 +87,11 @@ class About(Cog):
 
         embed = discord.Embed(title='Statistics')
         fields = {
-            'Members': num_members,
-            'Channels': num_channels,
-            'Servers': num_servers,
+            'Members': util.commas(num_members),
+            'Channels': util.commas(num_channels),
+            'Servers': util.commas(num_servers),
             'Uptime': uptime,
-            'Shards': len(self.bot.shards),
+            'Shards': util.commas(len(self.bot.shards)),
         }
         for name, value in fields.items():
             embed.add_field(name=name, value=value)

@@ -1,3 +1,4 @@
+import locale
 import datetime
 import discord
 
@@ -20,6 +21,11 @@ def truncate(text, desired_length):
     if len(text) > desired_length:
         return text[:desired_length - 3] + '...'
     return text
+
+def commas(number):
+    # http://stackoverflow.com/a/1823101
+    locale.setlocale(locale.LC_ALL, 'en_US.utf8')
+    return locale.format('%d', number, grouping=True)
 
 def pretty_timedelta(delta):
     big = ''
