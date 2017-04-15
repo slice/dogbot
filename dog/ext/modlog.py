@@ -26,7 +26,7 @@ class Modlog(Cog):
         embed = self._make_modlog_embed(title=f'{delet_emote} Message deleted')
 
         # fields
-        embed.add_field(name='Member', value=self._member_repr(msg.author))
+        embed.add_field(name='Author', value=self._member_repr(msg.author))
         embed.add_field(name='Channel', value=f'{msg.channel.mention} {msg.channel.name}')
         embed.add_field(name='ID', value=msg.id)
 
