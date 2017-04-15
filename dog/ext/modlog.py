@@ -8,15 +8,37 @@ class Modlog(Cog):
         embed.set_footer(text=utils.now())
         return embed
 
+    def _member_repr(self, member):
+        return f'{member.mention} {member.name}#{member.discriminator}'
+
     def _make_profile_embed(self, member, **kwargs):
         _registered = (f'{utils.american_datetime(member.created_at)}'
                        f' ({utils.ago(member.created_at)} ago)')
         embed = self._make_modlog_embed(**kwargs)
-        embed.add_field(name='Member', value=f'{member.mention}'
-                        f' {member.name}#{member.discriminator}')
+        embed.add_field(name='Member', value=self._member_repr(member))
         embed.add_field(name='ID', value=member.id)
         embed.add_field(name='Registered on Discord', value=_registered)
         return embed
+
+    async def on_message_delete(self, msg):
+        # no it's not a typo
+        delet_emote = '<:DeletThis:213623030197256203>'
+        embed = self._make_modlog_embed(title=f'{delet_emote} Message deleted')
+
+        # fields
+        embed.add_field(name='Member', value=self._member_repr(msg.author))
+        embed.add_field(name='Channel', value=f'{msg.channel.mention} {msg.channel.name}')
+        embed.add_field(name='ID', value=msg.id)
+
+        if msg.attachments:
+            atts = [f'`{a["filename"]} ({a["width"]}×{a["height"]})`' for a
+                    in msg.attachments]
+            embed.add_field(name='Attachments', value=', '.join(atts))
+
+        # set message content
+        content = utils.truncate(msg.content, 1500)
+        embed.description = content
+        await self.bot.send_modlog(msg.guild, embed=embed)
 
     async def on_member_join(self, member):
         embed = self._make_profile_embed(member, title='\N{INBOX TRAY} Member joined')
