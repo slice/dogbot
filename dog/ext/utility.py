@@ -32,7 +32,7 @@ class Utility(Cog):
     async def jumbo(self, ctx, emoji: str):
         """ Views a custom emoji at a big resolution. """
 
-        match = re.match(r'<:([a-z0-9A-Z]+):([0-9]+)>', emoji)
+        match = re.match(r'<:([a-z0-9A-Z_-]+):([0-9]+)>', emoji)
         if not match:
             await ctx.send('Not an custom emoji!')
             return
