@@ -335,7 +335,7 @@ Example response: "announcements,corkboard,etc"
     @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     @checks.bot_perms(manage_roles=True)
-    async def vanity(self, ctx, name: str):
+    async def vanity(self, ctx, *, name: str):
         """
         Creates a vanity role.
 
