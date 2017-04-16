@@ -1,14 +1,54 @@
 import re
 import random
 import datetime
+import aiohttp
 import discord
 from asteval import Interpreter
 from discord.ext import commands
-from dog import Cog
+from dog import Cog, utils
 from dog.utils import pretty_timedelta, make_profile_embed, american_datetime
 
+async def jisho(query):
+    query_url = utils.urlescape(query)
+    JISHO_ENDPOINT = 'http://jisho.org/api/v1/search/words?keyword={}'
+    async with aiohttp.ClientSession() as session:
+        async with session.get(JISHO_ENDPOINT.format(query_url)) as resp:
+            data = await resp.json()
+
+            # failed, or no data
+            if data['meta']['status'] != 200 or not data['data']:
+                return None
+
+            return data['data']
 
 class Utility(Cog):
+    @commands.command()
+    async def jisho(self, ctx, query: str):
+        """ Looks up Jisho definitions. """
+        result = await jisho(query)
+        if not result:
+            await ctx.send('No results found.')
+            return
+        result = result[0]
+
+        embed = discord.Embed(title=query, description='')
+        for j in result['japanese']:
+            word = j['word'] if 'word' in j else query
+            embed.description += f'{word}: {j["reading"]}\n'
+        embed.description += '\n'
+        for sense in result['senses']:
+            restr = ', '.join(sense['restrictions'])
+            sense_value = ', '.join(sense['english_definitions'])
+            if sense['info']:
+                sense_value += f' ({", ".join(sense["info"])})'
+            if not sense['restrictions']:
+                # not restricted
+                embed.description += f'\N{BULLET} {sense_value}\n'
+            else:
+                embed.add_field(name=restr,
+                                value=sense_value, inline=False)
+        await ctx.send(embed=embed)
+
     @commands.command()
     async def avatar(self, ctx, target: discord.User=None):
         """
