@@ -152,10 +152,12 @@ Moderation:
       See [Moderator Log](https://github.com/sliceofcode/dogbot/wiki/Moderator-Log).
   enable:
     you_need: ['Dogbot Moderator']
+    usage: '<command>'
     description: >
       Enables a Dogbot command in this server.
   disable:
     you_need: ['Dogbot Moderator']
+    usage: '<command>'
     description: >
       Disables a Dogbot command in this server.
 Configuration:
