@@ -43,7 +43,7 @@ class About(Cog):
             .strip().decode('utf-8')
 
         if self.maker is None:
-            self.maker = await self.bot.get_user_info(owner_id)
+            self.maker = discord.utils.get(self.bot.get_all_members(), id=owner_id)
 
         embed = discord.Embed(
             title='Dogbot',
