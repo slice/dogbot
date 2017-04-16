@@ -50,6 +50,10 @@ General:
     aliases: ['random', 'choose']
     description: >
       Randomly picks from your choices.
+  jisho:
+    usage: '<word>'
+    description: >
+      Searches Jisho (Japanese dictionary) for word definitions.
   anime:
     usage: '<query>'
     description: >
