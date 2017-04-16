@@ -50,7 +50,6 @@ Create a `dog_config.py` file in the root of the repository.
 # auth
 token = '<your token...>'
 owner_id = <your id...>
-client_id = <bot's client id...>
 
 # db
 mongo_url = 'localhost'

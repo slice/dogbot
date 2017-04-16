@@ -5,7 +5,7 @@ import platform
 from subprocess import check_output
 from discord.ext import commands
 from dog import Cog, utils
-from dog_config import client_id, owner_id, github
+from dog_config import owner_id, github
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,7 @@ class About(Cog):
     async def oauth(self, ctx):
         """ Tells you my OAuth (invite) link! """
         perms = discord.Permissions(permissions=8)
+        client_id = (await self.bot.application_info()).id
         link = discord.utils.oauth_url(client_id, permissions=perms)
         await ctx.send(link)
 
