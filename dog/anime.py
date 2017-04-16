@@ -1,6 +1,6 @@
 from collections import namedtuple
 import xml.etree.ElementTree as ET
-import urllib.parse
+from dog import utils
 from dog_config import myanimelist
 import aiohttp
 
@@ -11,7 +11,7 @@ Anime = namedtuple('Anime', ('id title english synonyms episodes score type'
 
 async def anime_search(query):
     auth = aiohttp.BasicAuth(myanimelist['username'], myanimelist['password'])
-    query_url = urllib.parse.quote_plus(query)
+    query_url = utils.urlescape(query)
     results = []
     with aiohttp.ClientSession(auth=auth) as session:
         async with session.get(MAL_SEARCH + query_url) as resp:

@@ -1,3 +1,4 @@
+import urllib.parse
 import locale
 import datetime
 import discord
@@ -7,6 +8,9 @@ def make_profile_embed(member):
     embed.set_author(name=f'{member.name}#{member.discriminator}',
                      icon_url=member.avatar_url)
     return embed
+
+def urlescape(text):
+    return urllib.parse.quote_plus(text)
 
 def american_datetime(datetime):
     return datetime.strftime('%m/%d/%Y %I:%M:%S %p')

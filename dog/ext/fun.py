@@ -2,9 +2,10 @@ import logging
 import aiohttp
 import discord
 import tempfile
+from collections import namedtuple
 from PIL import Image, ImageEnhance
 from discord.ext import commands
-from dog import Cog, checks
+from dog import Cog, checks, utils
 from io import BytesIO
 
 SHIBE_ENDPOINT = 'http://shibe.online/api/shibes?count=1&urls=true&httpsUrls=true'
@@ -27,6 +28,21 @@ async def _get_json(url):
     resp = await _get(url)
     return await resp.json()
 
+UrbanDefinition = namedtuple('UrbanDefinition', [
+    'word', 'definition', 'thumbs_up', 'thumbs_down', 'example',
+    'permalink', 'author', 'defid', 'current_vote'
+])
+
+async def urban(word):
+    UD_ENDPOINT = 'http://api.urbandictionary.com/v0/define?term={}'
+    async with aiohttp.ClientSession() as session:
+        async with session.get(UD_ENDPOINT.format(utils.urlescape(word))) as resp:
+            json = await resp.json()
+            if json['result_type'] == 'no_results':
+                return None
+            else:
+                result = json['list'][0]
+                return UrbanDefinition(**result)
 
 class Fun(Cog):
     @commands.command()
@@ -35,6 +51,24 @@ class Fun(Cog):
     async def woof(self, ctx):
         """ Sample command. """
         await ctx.send('Woof!')
+
+    def make_urban_embed(self, urban):
+        embed = discord.Embed(title=urban.word, description=urban.definition)
+        embed.add_field(name='Example', value=urban.example, inline=False)
+        embed.add_field(name='\N{THUMBS UP SIGN}', value=utils.commas(urban.thumbs_up))
+        embed.add_field(name='\N{THUMBS DOWN SIGN}', value=utils.commas(urban.thumbs_down))
+        return embed
+
+    @commands.command()
+    @commands.cooldown(1, 2, commands.BucketType.user)
+    async def urban(self, ctx, *, word: str):
+        """ Finds UrbanDictionary definitions. """
+        async with ctx.channel.typing():
+            result = await urban(word)
+            if not result:
+                await ctx.send('No results!')
+            else:
+                await ctx.send(embed=self.make_urban_embed(result))
 
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
