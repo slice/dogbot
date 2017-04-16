@@ -55,6 +55,12 @@ owner_id = <your id...>
 mongo_url = 'localhost'
 redis_url = 'localhost'
 
+# myanimelist auth
+myanimelist = {
+  'username': '...',
+  'password': '...'
+}
+
 # cfg
 prefix = ['dog, ', 'd?', 'd!']
 github = '<your github username>/<repository name>'
