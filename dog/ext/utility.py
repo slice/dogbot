@@ -23,7 +23,7 @@ async def jisho(query):
 
 class Utility(Cog):
     @commands.command()
-    async def jisho(self, ctx, query: str):
+    async def jisho(self, ctx, *, query: str):
         """ Looks up Jisho definitions. """
         result = await jisho(query)
         if not result:
