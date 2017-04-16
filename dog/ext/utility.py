@@ -34,7 +34,7 @@ class Utility(Cog):
 
         match = re.match(r'<:([a-z0-9A-Z_-]+):([0-9]+)>', emoji)
         if not match:
-            await ctx.send('Not an custom emoji!')
+            await ctx.send('Not a custom emoji!')
             return
 
         # get emoji id
