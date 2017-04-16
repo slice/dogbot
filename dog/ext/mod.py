@@ -18,6 +18,15 @@ class Mod(Cog):
         if not isinstance(ctx.channel, discord.abc.GuildChannel):
             return True
 
+        banned_names = [
+            'Can\'t Use Dog', 'can\'t use dog', 'Dog Plonk', 'dog plonk',
+            'Banned from Dog', 'banned from dog'
+        ]
+
+        for banned_name in banned_names:
+            if discord.utils.get(ctx.author.roles, name=banned_name):
+                return False
+
         return not await self.bot.command_is_disabled(ctx.guild, ctx.command.name)
 
     async def on_message(self, message):
