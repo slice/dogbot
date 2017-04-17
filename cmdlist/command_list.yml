@@ -62,6 +62,25 @@ General:
     usage: '<query>'
     description: >
       Searches UrbanDictionary for word definitions.
+Tagging:
+  tag:
+    usage: '<name> [value]'
+    description: >
+      Creates, views, or overwrites a server-specific tag.
+      See [Tagging](https://github.com/sliceofcode/dogbot/wiki/Tagging).
+  tag delete:
+    you_need: ['to be able to touch that tag']
+    usage: '<name>'
+    aliases: ['remove', 'rm', 'del']
+    description: >
+      Deletes a server-specific tag.
+      See [Tagging](https://github.com/sliceofcode/dogbot/wiki/Tagging).
+  tag info:
+    usage: '<name>'
+    aliases: ['about']
+    description: >
+      Views information about a server-specific tag.
+      See [Tagging](https://github.com/sliceofcode/dogbot/wiki/Tagging).
 Moderation:
   attentionseek:
     you_need: ['Manage Server']

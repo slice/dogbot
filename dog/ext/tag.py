@@ -122,7 +122,7 @@ class Tagging(Cog):
         await self.delete_tag(ctx, name)
         await self.bot.ok(ctx, '\N{PUT LITTER IN ITS PLACE SYMBOL}')
 
-    @tag.command(name='info')
+    @tag.command(name='info', aliases=['about'])
     async def tag_info(self, ctx, name: str):
         """ Shows you information about a certain tag. """
         tag = await self.get_tag(ctx, name)
