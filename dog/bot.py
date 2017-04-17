@@ -52,11 +52,11 @@ class DogBot(commands.AutoShardedBot):
 
         await mod_log.send(*args, **kwargs)
 
-    async def ok(self, ctx):
+    async def ok(self, ctx, emoji='\N{OK HAND SIGN}'):
         try:
-            await ctx.message.add_reaction('\N{OK HAND SIGN}')
+            await ctx.message.add_reaction(emoji)
         except discord.Forbidden:
-            await ctx.send('\N{OK HAND SIGN}')
+            await ctx.send(emoji)
 
     async def on_ready(self):
         logger.info('BOT IS READY')

@@ -42,11 +42,14 @@ def bot_perms(**permissions):
         return True
     return commands.check(predicate)
 
+def is_dogbot_moderator(ctx):
+    names = [r.name for r in ctx.author.roles]
+    has_moderator_role = any([1 for name in names if name in mod_names])
+    has_manage_server = ctx.author.guild_permissions.manage_guild
+    is_server_owner = ctx.guild.owner == ctx.author
+    return has_moderator_role or has_manage_server or is_server_owner
+
 def is_moderator():
     async def _predicate(ctx):
-        names = [r.name for r in ctx.author.roles]
-        has_moderator_role = any([1 for name in names if name in mod_names])
-        has_manage_server = ctx.author.guild_permissions.manage_guild
-        is_server_owner = ctx.guild.owner == ctx.author
-        return has_moderator_role or has_manage_server or is_server_owner
+        return is_dogbot_moderator(ctx)
     return commands.check(_predicate)
