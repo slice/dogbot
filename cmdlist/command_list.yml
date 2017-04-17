@@ -38,6 +38,9 @@ General:
     usage: '<expression>'
     description: >
       Evaluates a simple math expression.
+    examples:
+      - usage: calc 1 + 1
+        description: Evaluates `1 + 1`.
   earliest:
     description: >
       Shows you who in this server was the earliest to join Discord.
@@ -73,6 +76,14 @@ Tagging:
     description: >
       Creates, views, or overwrites a server-specific tag.
       See [Tagging](https://github.com/sliceofcode/dogbot/wiki/Tagging).
+    examples:
+      - usage: tag information This is generic information.
+        description: >
+          Creates a tag named `information` with the content "This is generic
+          information."
+      - usage: tag hello Hello!
+        description: >
+          Creates a tag named `hello` with the content "Hello!"
   tag delete:
     you_need: ['to be able to touch that tag']
     usage: '<name>'
@@ -80,12 +91,18 @@ Tagging:
     description: >
       Deletes a server-specific tag.
       See [Tagging](https://github.com/sliceofcode/dogbot/wiki/Tagging).
+    examples:
+      - usage: tag delete name
+        description: Deletes a tag named `name`.
   tag info:
     usage: '<name>'
     aliases: ['tag about']
     description: >
       Views information about a server-specific tag.
       See [Tagging](https://github.com/sliceofcode/dogbot/wiki/Tagging).
+    examples:
+      - usage: tag info name
+        description: Shows information about a tag named `name`.
 Moderation:
   attentionseek:
     you_need: ['Manage Server']

@@ -9,7 +9,7 @@ pushd ../dogbot.wiki
 # commit push changes
 git pull
 git add .
-git commit -m "generate $(date)"
+git commit -m "generate"
 git push
 
 # come back

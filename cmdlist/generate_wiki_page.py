@@ -38,3 +38,8 @@ for section in data.keys():
             w()
 
         w(command['description'])
+
+        if 'examples' in command:
+            w('#### Examples')
+            for example in command['examples']:
+                w(f'- `d?{example["usage"]}`: {example["description"]}')
