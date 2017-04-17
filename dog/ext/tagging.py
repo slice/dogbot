@@ -1,3 +1,4 @@
+import re
 import datetime
 import discord
 from time import time as epoch
@@ -121,6 +122,23 @@ class Tagging(Cog):
 
         await self.delete_tag(ctx, name)
         await self.bot.ok(ctx, '\N{PUT LITTER IN ITS PLACE SYMBOL}')
+
+    @tag.command(name='markdown', aliases=['raw'])
+    async def tag_markdown(self, ctx, name: str):
+        """
+        Views the markdown of a tag.
+        """
+        tag = await self.get_tag(ctx, name)
+
+        if not tag:
+            await ctx.send('\N{CONFUSED FACE} Not found.')
+
+        content = tag.value
+        escape_regex = r'(`|\*|~|_|<|\\)'
+        # no, those two strings can't be together
+        content = re.sub(escape_regex, r'\\' + '\\1', content)
+
+        await ctx.send(content)
 
     @tag.command(name='info', aliases=['about'])
     async def tag_info(self, ctx, name: str):

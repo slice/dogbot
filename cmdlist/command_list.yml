@@ -103,6 +103,14 @@ Tagging:
     examples:
       - usage: tag info name
         description: Shows information about a tag named `name`.
+  tag markdown:
+    usage: '<name>'
+    aliases: ['tag raw']
+    description: >
+      Views the raw Markdown content of a tag.
+    examples:
+      - usage: tag markdown name
+        description: Shows the raw Markdown content of a tag named `name`.
 Moderation:
   attentionseek:
     you_need: ['Manage Server']
