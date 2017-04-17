@@ -1,3 +1,4 @@
+import textwrap
 import subprocess
 import os
 import sys
@@ -86,10 +87,10 @@ class Admin(Cog):
         else:
             await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
-    @commands.command(name='eval')
+    @commands.command(name='eval', aliases=['exec'])
     @commands.is_owner()
     async def _eval(self, ctx, *, code: str):
-        """ Evaluates a Python expression. """
+        """ Executes Python code. """
         code_regex = re.compile(r'`(.+)`')
         match = code_regex.match(code)
         if match is None:
@@ -116,31 +117,18 @@ class Admin(Cog):
         }
 
         fmt_exception = '```py\n>>> {}\n\n{}: {}```'
-        fmt_result = '```py\n>>> {}\n\n{}```'
-        room = 2000 - (10 + len(code) + 6 + 3)
 
         env.update(globals())
 
+        wrapped_code = 'async def _eval_code():\n' + textwrap.indent(code, '    ')
+
         try:
-            output = eval(code, env)
-
-            if inspect.isawaitable(output):
-                output = await output
-
-            self.eval_last_result = output
-            output = str(output)
+            exec(wrapped_code, env)
+            await env['_eval_code']()
         except Exception as e:
             name = type(e).__name__
             await ctx.send(fmt_exception.format(code, name, e))
             return
-
-        if len(output) > room:
-            logger.info('output too big, hasting')
-            haste_url = await haste(output)
-            await ctx.send(f'Full output: {haste_url}')
-            output = output[:room] + '...'
-
-        await ctx.send(fmt_result.format(code, output or 'None'))
 
 
 def setup(bot):
