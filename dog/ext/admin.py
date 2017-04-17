@@ -2,23 +2,16 @@ import textwrap
 import subprocess
 import os
 import sys
-import inspect
 import logging
-import re
 import discord
 from time import monotonic
 from discord.ext import commands
 from dog import Cog
-from dog.haste import haste
 
 logger = logging.getLogger(__name__)
 
 
 class Admin(Cog):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.eval_last_result = None
-
     def _restart(self):
         logger.info('reboot: executable=%s argv=%s', sys.executable, sys.argv)
         os.execv(sys.executable, [sys.executable] + sys.argv)
@@ -50,7 +43,7 @@ class Admin(Cog):
         await ctx.message.add_reaction('\N{WAVING HAND SIGN}')
         self._restart()
 
-    @commands.command(aliases=['die', 'getout', 'poweroff'])
+    @commands.command(aliases=['poweroff', 'halt'])
     @commands.is_owner()
     async def shutdown(self, ctx):
         """ Turns off the bot. """
@@ -103,8 +96,6 @@ class Admin(Cog):
 
             'get': discord.utils.get,
             'find': discord.utils.find,
-
-            '_': self.eval_last_result,
         }
 
         fmt_exception = '```py\n>>> {}\n\n{}: {}```'
@@ -116,7 +107,10 @@ class Admin(Cog):
 
         try:
             exec(wrapped_code, env)
-            await env['_eval_code']()
+            return_value = await env['_eval_code']()
+
+            if return_value is not None:
+                await ctx.send(return_value)
         except Exception as e:
             name = type(e).__name__
             await ctx.send(fmt_exception.format(code, name, e))
