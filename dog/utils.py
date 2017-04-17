@@ -32,27 +32,21 @@ def commas(number):
     return locale.format('%d', number, grouping=True)
 
 def pretty_timedelta(delta):
-    big = ''
-
-    if delta.days >= 7 and delta.days < 21:
-        weeks = round(delta.days / 7, 2)
-        plural = 's' if weeks == 0 or weeks > 1 else ''
-        big = f'{weeks} week{plural}'
-
-    # assume that a month is 31 days long, i am not trying
-    # to be aware
-    if delta.days >= 21 and delta.days < 365:
-        days = round(delta.days / 31, 2)
-        plural = 's' if days == 0 or days > 1 else ''
-        big = f'{days} month{plural}'
+    big_parts = []
 
     if delta.days >= 365:
-        years = round(delta.days / 365)
+        years = round(delta.days / 365, 2)
         plural = 's' if years == 0 or years > 1 else ''
-        big = f'{years} year{plural}'
+        big_parts.append(f'{years} year{plural}')
+
+    if delta.days >= 7 and delta.days < 365:
+        weeks = round(delta.days / 7, 2)
+        plural = 's' if weeks == 0 or weeks > 1 else ''
+        big_parts.append(f'{weeks} week{plural}')
 
     m, s = divmod(delta.seconds, 60)
     h, m = divmod(m, 60)
+    big = ', '.join(big_parts)
 
     if big:
         return '{}, {:02d}h{:02d}m{:02d}s'.format(big, h, m, s)
