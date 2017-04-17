@@ -40,7 +40,17 @@ class Mod(Cog):
                          'invisible, please. Thanks.')
                 await message.channel.send(reply.format(message.author))
 
-    @commands.command()
+    async def base_purge(self, ctx, limit, check=None):
+        # check if it's too much
+        if limit > 1000:
+            await ctx.send('Too many messages to purge. 1,000 is the maximum.')
+            return
+
+        msgs = await ctx.channel.purge(limit=limit, check=check)
+        await ctx.send(f'Purge complete. Removed {len(msgs)} messages.',
+                       delete_after=2.5)
+
+    @commands.group(invoke_without_command=True)
     @commands.guild_only()
     @checks.bot_perms(manage_messages=True, read_message_history=True)
     @checks.is_moderator()
@@ -51,20 +61,17 @@ class Mod(Cog):
         This includes the purge command message. The bot will send a message
         upon completion, but will automatically be deleted.
         """
+        await self.base_purge(ctx, amount)
 
-        # increase one because the command message they sent needs
-        # to be purged, too.
-        amount = amount + 1
-        if amount > 501:
-            await ctx.send('That number is too big! 500 is the max.')
-            return
+    @purge.command(name='by')
+    async def purge_by(self, ctx, target: discord.Member, amount: int):
+        """ Purges <n> messages from someone. """
+        await self.base_purge(ctx, amount, lambda m: m.author.id == target.id)
 
-        # purge the channel
-        messages = await ctx.channel.purge(limit=amount)
-
-        # complete!
-        await ctx.send(f'Purge complete. Removed {len(messages)}/{amount}'
-                       ' messages.', delete_after=2.5)
+    @purge.command(name='bot')
+    async def purge_bot(self, ctx, amount: int):
+        """ Purges <n> messages by bots. """
+        await self.base_purge(ctx, amount, lambda m: m.author.bot)
 
     @commands.command()
     @commands.guild_only()
