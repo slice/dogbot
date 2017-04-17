@@ -63,7 +63,7 @@ class Tagging(Cog):
         return False
 
     @commands.group(invoke_without_command=True)
-    async def tag(self, ctx, name: str, value: str=None):
+    async def tag(self, ctx, name: str, *, value: str=None):
         """
         Tag related operations.
 
