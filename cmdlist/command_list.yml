@@ -51,17 +51,22 @@ General:
     description: >
       Randomly picks from your choices.
   jisho:
-    usage: '<word>'
+    usage: '<word/phrase>'
     description: >
       Searches Jisho (Japanese dictionary) for word definitions.
   anime:
     usage: '<query>'
     description: >
-      Searches MyAnimeList for anime.
+      Searches MyAnimeList for anime. If multiple anime are found, you will be
+      prompted to pick from a list.
   urban:
     usage: '<query>'
     description: >
       Searches UrbanDictionary for word definitions.
+
+
+      The first definition found is shown, along with an example and its amount
+      of thumbs up and thumbs down.
 Tagging:
   tag:
     usage: '<name> [value]'
