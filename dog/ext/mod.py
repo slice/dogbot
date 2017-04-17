@@ -46,6 +46,9 @@ class Mod(Cog):
             await ctx.send('Too many messages to purge. 1,000 is the maximum.')
             return
 
+        # purge the actual command message too
+        limit += 1
+
         msgs = await ctx.channel.purge(limit=limit, check=check)
         await ctx.send(f'Purge complete. Removed {len(msgs)} messages.',
                        delete_after=2.5)
