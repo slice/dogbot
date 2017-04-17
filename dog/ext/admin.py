@@ -91,15 +91,6 @@ class Admin(Cog):
     @commands.is_owner()
     async def _eval(self, ctx, *, code: str):
         """ Executes Python code. """
-        code_regex = re.compile(r'`(.+)`')
-        match = code_regex.match(code)
-        if match is None:
-            logger.info('eval: tried to eval, no code (%s)', code)
-            await ctx.send('No code was found. '
-                           'Surround it in backticks (\\`code\\`), please!')
-            return
-        code = match.group(1)
-
         logger.info('eval: %s', code)
 
         env = {
@@ -120,7 +111,8 @@ class Admin(Cog):
 
         env.update(globals())
 
-        wrapped_code = 'async def _eval_code():\n' + textwrap.indent(code, '    ')
+        indented_code = textwrap.indent(code, '    ')
+        wrapped_code = 'async def _eval_code():\n' + indented_code
 
         try:
             exec(wrapped_code, env)
