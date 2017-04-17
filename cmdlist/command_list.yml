@@ -71,13 +71,13 @@ Tagging:
   tag delete:
     you_need: ['to be able to touch that tag']
     usage: '<name>'
-    aliases: ['remove', 'rm', 'del']
+    aliases: ['tag remove', 'tag rm', 'tag del']
     description: >
       Deletes a server-specific tag.
       See [Tagging](https://github.com/sliceofcode/dogbot/wiki/Tagging).
   tag info:
     usage: '<name>'
-    aliases: ['about']
+    aliases: ['tag about']
     description: >
       Views information about a server-specific tag.
       See [Tagging](https://github.com/sliceofcode/dogbot/wiki/Tagging).
