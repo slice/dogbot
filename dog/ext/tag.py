@@ -5,7 +5,7 @@ from collections import namedtuple
 from discord.ext import commands
 from dog import Cog, utils, checks
 
-Tag = namedtuple('Tag', 'value creator created_at')
+Tag = namedtuple('Tag', 'name value creator created_at uses')
 
 class Tagging(Cog):
     async def create_tag(self, ctx, name, value):
@@ -14,6 +14,7 @@ class Tagging(Cog):
         await self.bot.redis.set(f'{prefix}:value', value)
         await self.bot.redis.set(f'{prefix}:creator', ctx.author.id)
         await self.bot.redis.set(f'{prefix}:created_at', epoch())
+        await self.bot.redis.set(f'{prefix}:uses', 0)
 
     async def get_tag(self, ctx, name):
         prefix = f'tags:{ctx.guild.id}:{name}'
@@ -25,10 +26,11 @@ class Tagging(Cog):
         tag_value = (await self.bot.redis.get(f'{prefix}:value')).decode()
         creator_id = int((await self.bot.redis.get(f'{prefix}:creator')).decode())
         created_at = float((await self.bot.redis.get(f'{prefix}:created_at')).decode())
+        uses = int((await self.bot.redis.get(f'{prefix}:uses')).decode())
 
         creator = ctx.guild.get_member(creator_id) or creator_id
 
-        return Tag(value=tag_value, creator=creator,
+        return Tag(value=tag_value, creator=creator, uses=uses, name=name,
                    created_at=datetime.datetime.utcfromtimestamp(created_at))
 
     async def delete_tag(self, ctx, name):
@@ -37,6 +39,7 @@ class Tagging(Cog):
         await self.bot.redis.delete(f'{prefix}:value')
         await self.bot.redis.delete(f'{prefix}:creator')
         await self.bot.redis.delete(f'{prefix}:created_at')
+        await self.bot.redis.delete(f'{prefix}:uses')
 
     def can_touch_tag(self, ctx, tag):
         perms = ctx.author.guild_permissions
@@ -94,6 +97,7 @@ class Tagging(Cog):
             tag = await self.get_tag(ctx, name)
             if tag:
                 await ctx.send(tag.value)
+                await self.bot.redis.incr(f'tags:{ctx.guild.id}:{name}:uses')
             else:
                 await ctx.send('\N{CONFUSED FACE} Not found.')
 
@@ -124,12 +128,14 @@ class Tagging(Cog):
         tag = await self.get_tag(ctx, name)
 
         if tag:
-            embed = discord.Embed(title=f'Tag by {tag.creator.name}#{tag.creator.discriminator}')
+            embed = discord.Embed(title=tag.name)
             embed.description = tag.value
             embed.add_field(name='Created',
                             value=utils.american_datetime(tag.created_at) + ' UTC')
             embed.add_field(name='Created by',
                             value=tag.creator.mention, inline=False)
+            embed.add_field(name='Uses',
+                            value=tag.uses)
             await ctx.send(embed=embed)
         else:
             await ctx.send('\N{CONFUSED FACE} Not found.')
