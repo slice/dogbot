@@ -138,11 +138,23 @@ Moderation:
       Unmutes a muted member prematurely.
   purge:
     you_need: ['Dog Moderator']
-    bot_needs: ['Manage Messages', Read Message History']
+    bot_needs: ['Manage Messages', 'Read Message History']
     usage: '<n>'
     description: >
       Deletes the last `<n>` messages. The command message you sent will be
       deleted, too.
+  purge by:
+    you_need: ['Dog Moderator']
+    bot_needs: ['Manage Messages', 'Read Message History']
+    usage: '<who> <n>'
+    description: >
+      Deletes the last `<n>` messages from a specific person.
+  purge bot:
+    you_need: ['Dog Moderator']
+    bot_needs: ['Manage Messages', 'Read Message History']
+    usage: '<n>'
+    description: >
+      Deletes the last `<n>` messages from bots.
   mute_setup:
     you_need: ['Dog Moderator']
     bot_needs: ['Manage Messages']
