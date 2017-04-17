@@ -21,6 +21,11 @@ class Modlog(Cog):
         return embed
 
     async def on_message_delete(self, msg):
+        # no, i can't use and
+        if msg.author.bot:
+            if not await self.bot.config_is_set(msg.guild, 'modlog_filter_allow_bot'):
+                return
+
         # no it's not a typo
         delet_emote = '<:DeletThis:213623030197256203>'
         embed = self._make_modlog_embed(title=f'{delet_emote} Message deleted')

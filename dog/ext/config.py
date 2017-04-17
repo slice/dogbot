@@ -14,6 +14,7 @@ class Config(Cog):
             'unmute_announce',
             'mutesetup_disallow_read',
             'invisible_announce',
+            'modlog_filter_allow_bot'
         ]
 
     @commands.group(aliases=['gcfg'])
