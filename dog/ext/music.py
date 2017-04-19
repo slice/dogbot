@@ -92,6 +92,13 @@ class Music(Cog):
 
     @music.command()
     @commands.check(must_be_in_voice)
+    async def leave(self, ctx):
+        """ Leaves the voice channel. """
+        await ctx.guild.voice_client.disconnect()
+        await self.bot.ok(ctx)
+
+    @music.command()
+    @commands.check(must_be_in_voice)
     async def resume(self, ctx):
         """ Resumes the music. """
         ctx.guild.voice_client.resume()
