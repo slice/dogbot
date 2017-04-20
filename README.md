@@ -61,6 +61,9 @@ myanimelist = {
   'password': '...'
 }
 
+# reporting
+raven_client_url = '<sentry auth url>'
+
 # cfg
 prefix = ['dog, ', 'd?', 'd!']
 github = '<your github username>/<repository name>'

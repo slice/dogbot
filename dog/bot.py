@@ -4,6 +4,7 @@ import datetime
 import logging
 import discord
 import traceback
+import raven
 from discord.ext import commands
 from dog import errors
 from dog.utils import pretty_timedelta
@@ -20,6 +21,7 @@ class DogBot(commands.AutoShardedBot):
         _redis_coroutine = aioredis.create_redis(
             (cfg.redis_url, 6379), loop=_loop)
         self.redis = _loop.run_until_complete(_redis_coroutine)
+        self.sentry = raven.Client(cfg.raven_client_url)
 
     async def command_is_disabled(self, guild, command_name):
         return await self.redis.exists(f'disabled:{guild.id}:{command_name}')
@@ -110,7 +112,16 @@ class DogBot(commands.AutoShardedBot):
         elif isinstance(ex, commands.NoPrivateMessage):
             await ctx.send('You can\'t do that in a private message.')
         elif isinstance(ex, errors.InsufficientPermissions):
-            await ctx.send(f'{ex}')
-        else:
-            tb = traceback.format_exception(None, ex, ex.__traceback__)
-            logger.error('command error: %s', ''.join(tb))
+            await ctx.send(ex)
+        elif isinstance(ex, commands.errors.CommandInvokeError):
+            tb = ''.join(traceback.format_exception(
+                type(ex.original), ex.original,
+                ex.original.__traceback__
+            ))
+
+            header = f'Command error: {type(ex.original).__name__}: {ex.original}'
+            message = header + '\n' + str(tb)
+
+            # dispatch the message
+            self.sentry.captureMessage(message)
+            logger.error(message)

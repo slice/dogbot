@@ -23,6 +23,11 @@ async def jisho(query):
 
 class Utility(Cog):
     @commands.command()
+    @commands.is_owner()
+    async def exception(self, ctx, message: str='Test exception'):
+        raise RuntimeError(message)
+
+    @commands.command()
     async def jisho(self, ctx, *, query: str):
         """ Looks up Jisho definitions. """
         result = await jisho(query)

@@ -63,6 +63,9 @@ class Modlog(Cog):
         await self.bot.send_modlog(guild, embed=embed)
 
     async def on_channel_create(self, channel):
+        if isinstance(channel, discord.abc.DMChannel):
+            return
+
         embed = self._make_modlog_embed(title='\N{SPARKLES} New channel')
         embed.add_field(name='Channel', value=f'{channel.mention} {channel.name}')
         embed.add_field(name='ID', value=channel.id)
