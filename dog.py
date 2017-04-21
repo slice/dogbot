@@ -11,6 +11,7 @@ except ModuleNotFoundError:
 import logging
 import asyncio
 from dog import DogBot
+from discord.ext import commands
 
 try:
     import uvloop
@@ -63,7 +64,8 @@ additional_options.update({
     'owner_id': getattr(cfg, 'owner_id', None)
 })
 logger.info('bot options: %s', additional_options)
-d = DogBot(command_prefix=cfg.prefix, **additional_options)
+d = DogBot(command_prefix=commands.when_mentioned_or(*cfg.prefix),
+           **additional_options)
 
 exts = 'dog/ext'
 d_exts = [p.replace('.py', '') for p in os.listdir(exts) if p != '__pycache__']

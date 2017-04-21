@@ -68,7 +68,7 @@ class DogBot(commands.AutoShardedBot):
         logger.info(f' id:   {self.user.id}')
 
         # helpful game
-        short_prefix = min(self.command_prefix, key=len)
+        short_prefix = min(cfg.prefix, key=len)
         help_game = discord.Game(name=f'{short_prefix}help')
         await self.change_presence(game=help_game)
 
