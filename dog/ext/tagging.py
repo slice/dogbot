@@ -103,6 +103,16 @@ class Tagging(Cog):
             else:
                 await ctx.send('\N{CONFUSED FACE} Not found.')
 
+    @tag.command(name='list', aliases=['ls'])
+    async def tag_list(self, ctx):
+        """ Lists tags in this server. """
+        tags = [t.decode().split(':')[2] for t in
+                await self.bot.redis.keys(f'tags:{ctx.guild.id}:*:value')]
+        try:
+            await ctx.send(f'**{len(tags)} tag(s):** ' + ', '.join(tags))
+        except discord.HTTPException:
+            await ctx.send('\N{PENSIVE FACE} Too many tags to display!')
+
     @tag.command(name='delete', aliases=['rm', 'remove', 'del'])
     async def tag_delete(self, ctx, name: str):
         """
