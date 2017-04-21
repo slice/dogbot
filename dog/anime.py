@@ -14,8 +14,11 @@ async def anime_search(query):
     query_url = utils.urlescape(query)
     results = []
     with aiohttp.ClientSession(auth=auth) as session:
-        async with session.get(MAL_SEARCH + query_url) as resp:
-            tree = ET.fromstring(await resp.text())
-            for anime_tag in tree.findall('entry'):
-                results.append(Anime(**{a.tag: a.text for a in list(anime_tag)}))
+        try:
+            async with session.get(MAL_SEARCH + query_url) as resp:
+                tree = ET.fromstring(await resp.text())
+                for anime_tag in tree.findall('entry'):
+                    results.append(Anime(**{a.tag: a.text for a in list(anime_tag)}))
+        except:
+            return None
     return results

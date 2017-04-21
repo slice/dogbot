@@ -28,7 +28,11 @@ class Anime(Cog):
     async def anime(self, ctx, *, query: str):
         """ Searches for anime on MyAnimeList. """
         async with ctx.channel.typing():
-            results = (await anime_search(query))[:20]
+            results = (await anime_search(query))
+            if results is None:
+                await ctx.send('\N{PENSIVE FACE} Found nothing.')
+                return
+            results = results[:20]
 
         if len(results) > 1:
             choices = '\n'.join(f'{idx + 1}) {an.title}' for idx, an in enumerate(results))
