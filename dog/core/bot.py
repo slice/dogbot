@@ -6,8 +6,8 @@ import discord
 import traceback
 import raven
 from discord.ext import commands
-from dog import errors
-from dog.utils import pretty_timedelta
+from . import errors
+from .utils import pretty_timedelta
 import dog_config as cfg
 
 logger = logging.getLogger(__name__)

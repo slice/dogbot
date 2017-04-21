@@ -1,6 +1,7 @@
 import html
 import discord
-from dog import Cog, utils
+from dog import Cog
+from dog.core import utils
 from dog.anime import anime_search
 from discord.ext import commands
 

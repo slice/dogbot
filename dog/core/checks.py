@@ -1,4 +1,4 @@
-from dog.errors import InsufficientPermissions
+from .errors import InsufficientPermissions
 from discord.ext import commands
 
 mod_names = [

@@ -1,2 +1,2 @@
-from .bot import DogBot
-from .cog import Cog
+from .core.bot import DogBot
+from .core.cog import Cog

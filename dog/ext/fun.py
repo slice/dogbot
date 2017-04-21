@@ -5,7 +5,8 @@ import tempfile
 from collections import namedtuple
 from PIL import Image, ImageEnhance
 from discord.ext import commands
-from dog import Cog, checks, utils
+from dog import Cog
+from dog.core import checks, utils
 from io import BytesIO
 
 SHIBE_ENDPOINT = 'http://shibe.online/api/shibes?count=1&urls=true&httpsUrls=true'

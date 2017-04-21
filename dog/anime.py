@@ -1,6 +1,6 @@
 from collections import namedtuple
 import xml.etree.ElementTree as ET
-from dog import utils
+from dog.core import utils
 from dog_config import myanimelist
 import aiohttp
 

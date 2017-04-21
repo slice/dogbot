@@ -4,7 +4,8 @@ import discord
 from time import time as epoch
 from collections import namedtuple
 from discord.ext import commands
-from dog import Cog, utils, checks
+from dog import Cog
+from dog.core import utils, checks
 
 Tag = namedtuple('Tag', 'name value creator created_at uses')
 

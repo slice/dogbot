@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
-from dog import Cog, utils, checks
+from dog import Cog
+from dog.core import utils, checks
 
 class Modlog(Cog):
     def _make_modlog_embed(self, **kwargs):
@@ -63,7 +64,7 @@ class Modlog(Cog):
         await self.bot.send_modlog(guild, embed=embed)
 
     async def on_channel_create(self, channel):
-        if isinstance(channel, discord.abc.DMChannel):
+        if isinstance(channel, discord.DMChannel):
             return
 
         embed = self._make_modlog_embed(title='\N{SPARKLES} New channel')

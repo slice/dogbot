@@ -4,7 +4,8 @@ import discord
 import platform
 from subprocess import check_output
 from discord.ext import commands
-from dog import Cog, utils
+from dog import Cog
+from dog.core import utils
 from dog_config import owner_id, github
 
 logger = logging.getLogger(__name__)

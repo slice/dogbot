@@ -5,7 +5,8 @@ import youtube_dl
 import discord
 from bs4 import BeautifulSoup
 from discord.ext import commands
-from dog import Cog, utils
+from dog import Cog
+from dog.core import utils
 
 YouTubeResult = namedtuple('YouTubeResult', 'name url')
 logger = logging.getLogger(__name__)

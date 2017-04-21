@@ -5,8 +5,8 @@ import aiohttp
 import discord
 from asteval import Interpreter
 from discord.ext import commands
-from dog import Cog, utils
-from dog.utils import pretty_timedelta, make_profile_embed, american_datetime
+from dog import Cog
+from dog.core import utils
 
 async def jisho(query):
     query_url = utils.urlescape(query)
@@ -66,11 +66,11 @@ class Utility(Cog):
         await ctx.send(target.avatar_url)
 
     def _make_joined_embed(self, member):
-        embed = make_profile_embed(member)
-        joined_dif = pretty_timedelta(datetime.datetime.utcnow() - member.created_at)
+        embed = utils.make_profile_embed(member)
+        joined_dif = utils.pretty_timedelta(datetime.datetime.utcnow() - member.created_at)
         embed.add_field(name='Joined Discord',
                         value=(f'{joined_dif} ago\n' +
-                               american_datetime(member.created_at)))
+                               utils.american_datetime(member.created_at)))
         return embed
 
     @commands.command()
@@ -143,13 +143,13 @@ class Utility(Cog):
 
         def diff(date):
             now = datetime.datetime.utcnow()
-            return pretty_timedelta(now - date)
+            return utils.pretty_timedelta(now - date)
 
         embed = self._make_joined_embed(target)
-        joined_dif = pretty_timedelta(datetime.datetime.utcnow() - target.joined_at)
+        joined_dif = utils.pretty_timedelta(datetime.datetime.utcnow() - target.joined_at)
         embed.add_field(name='Joined this Server',
                         value=(f'{joined_dif} ago\n' +
-                               american_datetime(target.joined_at)),
+                               utils.american_datetime(target.joined_at)),
                         inline=False)
 
         await ctx.send(embed=embed)

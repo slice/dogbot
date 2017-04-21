@@ -4,7 +4,8 @@ from discord.ext import commands
 import logging
 from bson.objectid import ObjectId
 from pymongo import MongoClient
-from dog import Cog, checks
+from dog import Cog
+from dog.core import checks
 from dog_config import mongo_url, owner_id
 
 logger = logging.getLogger(__name__)
