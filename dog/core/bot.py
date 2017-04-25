@@ -1,4 +1,5 @@
 import asyncio
+import aiohttp
 import aioredis
 import datetime
 import logging
@@ -16,12 +17,24 @@ logger = logging.getLogger(__name__)
 class DogBot(commands.AutoShardedBot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # boot time (for uptime)
         self.boot_time = datetime.datetime.utcnow()
+
+        # hack because __init__ cannot be async
         _loop = asyncio.get_event_loop()
         _redis_coroutine = aioredis.create_redis(
             (cfg.redis_url, 6379), loop=_loop)
+
+        # aioredis connection
         self.redis = _loop.run_until_complete(_redis_coroutine)
+
+        # sentry connection for reporting exceptions
         self.sentry = raven.Client(cfg.raven_client_url)
+
+        # asyncio task that POSTs to bots.discord.pw with the guild count every
+        # 10 minutes
+        self.report_task = None
 
     async def command_is_disabled(self, guild, command_name):
         return await self.redis.exists(f'disabled:{guild.id}:{command_name}')
@@ -71,6 +84,28 @@ class DogBot(commands.AutoShardedBot):
         short_prefix = min(cfg.prefix, key=len)
         help_game = discord.Game(name=f'{short_prefix}help')
         await self.change_presence(game=help_game)
+
+        async def report_guilds_task():
+            ENDPOINT = f'https://bots.discord.pw/api/bots/{self.user.id}/stats'
+            while True:
+                guilds = len(self.guilds)
+                data = {'server_count': guilds}
+                headers = {'Authorization': cfg.discordpw_token}
+                logger.info('POSTing guild count to abal\'s website...')
+                async with aiohttp.ClientSession() as cs:
+                    # HTTP POST to the endpoint
+                    async with cs.post(ENDPOINT, json=data, headers=headers)\
+                            as resp:
+                        if resp.status != 200:
+                            logger.warn('Failed to post guild count...')
+                            logger.warn('Resp: %s', await resp.text())
+                        else:
+                            logger.info('Posted guild count successfully!'
+                                        ' (%d guilds)', guilds)
+                await asyncio.sleep(60 * 10)  # only report every 10 minutes
+
+        logger.info('Creating bots.discord.pw task')
+        self.report_task = self.loop.create_task(report_guilds_task())
 
     async def monitor_send(self, *args, **kwargs):
         monitor_channels = getattr(cfg, 'owner_monitor_channels', [])
