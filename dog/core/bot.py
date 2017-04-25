@@ -120,27 +120,37 @@ class DogBot(commands.AutoShardedBot):
 
     async def notify_think_is_collection(self, guild):
         COLL_ISSUES = f'https://github.com/{cfg.github}/issues'
-        COLLECTION_MESSAGE = ("Hi there! Somebody added me to this server,"
-                              " but my algorithms tell me that this is a bot"
-                              " collection! (A server dedicated to keeping"
-                              " loads of bots in one place, which I don't like"
-                              "!) If this server is not a bot collection, "
-                              "please open an issue here: <" + COLL_ISSUES +
-                              "> and I'll try to get back to you as soon as"
-                              " possible (make sure to include the name of"
-                              " your server so I can whitelist you)! Thanks!")
+        COLL_HDR_PUBLIC = "Hi there! Somebody added me to this server, "
+        COLL_HDR_PRIVATE = ("Hi there! Somebody added me to your server, "
+                            f"{guild.name} (`{guild.id}`), ")
+        COLL_REST = ("but my algorithms tell me that this is a bot"
+                     " collection! (A server dedicated to keeping"
+                     " loads of bots in one place, which I don't like"
+                     "!) If this server is not a bot collection, "
+                     "please open an issue here: <" + COLL_ISSUES +
+                     "> and I'll try to get back to you as soon as"
+                     " possible (make sure to include the name of"
+                     " your server so I can whitelist you)! Thanks!")
 
         try:
-            await guild.default_channel.send(COLLECTION_MESSAGE)
+            await guild.default_channel.send(COLL_HDR_PUBLIC + COLL_REST)
             logger.info('Notified %s (%d) that they were a collection.',
                         guild.name, guild.id)
         except discord.Forbidden:
-            logger.info('Couldn\'t send to default channel, going to loop.')
-            for channel in guild.channels:
-                can_speak = channel.permissions_for(guild.me).send_messages
-                if can_speak:
-                    await channel.send(COLLECTION_MESSAGE)
-                    return
+            logger.info('Couldn\'t send to default channel. DMing owner!')
+            try:
+                await guild.owner.send(COLL_HDR_PRIVATE + COLL_REST)
+            except discord.Forbidden:
+                logger.info('Couldn\'t DM the owner of the guild. Looping.')
+                for channel in guild.channels:
+                    # ignore voice channels
+                    if not isinstance(channel, discord.TextChannel):
+                        continue
+                    can_speak = channel.permissions_for(guild.me).send_messages
+                    if can_speak:
+                        await channel.send(COLL_HDR_PUBLIC + COLL_REST)
+                        return
+                logger.info('Couldn\'t inform the server at all. Giving up.')
 
     async def on_guild_join(self, g):
         diff = pretty_timedelta(datetime.datetime.utcnow() - g.created_at)
