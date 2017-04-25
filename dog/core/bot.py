@@ -53,7 +53,7 @@ class DogBot(commands.AutoShardedBot):
         return await self.wait_for('message', check=check)
 
     def has_prefix(self, haystack):
-        for prefix in self.command_prefix:
+        for prefix in list(cfg.prefix):
             if haystack.startswith(prefix):
                 return True
         return False
