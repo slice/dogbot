@@ -7,7 +7,7 @@ import discord
 import traceback
 import raven
 from discord.ext import commands
-from . import errors
+from . import errors, botcollection
 from .utils import pretty_timedelta
 import dog_config as cfg
 
@@ -112,17 +112,62 @@ class DogBot(commands.AutoShardedBot):
         channels = [self.get_channel(c) for c in monitor_channels]
 
         # no monitor channels
-        if not channels:
+        if not channels or not any(channels):
             return
 
         for channel in channels:
             await channel.send(*args, **kwargs)
 
+    async def notify_think_is_collection(self, guild):
+        COLL_ISSUES = f'https://github.com/{cfg.github}/issues'
+        COLLECTION_MESSAGE = ("Hi there! Somebody added me to this server,"
+                              " but my algorithms tell me that this is a bot"
+                              " collection! (A server dedicated to keeping"
+                              " loads of bots in one place, which I don't like"
+                              "!) If this server is not a bot collection, "
+                              "please open an issue here: <" + COLL_ISSUES +
+                              "> and I'll try to get back to you as soon as"
+                              " possible (make sure to include the name of"
+                              " your server so I can whitelist you)! Thanks!")
+
+        try:
+            await guild.default_channel.send(COLLECTION_MESSAGE)
+            logger.info('Notified %s (%d) that they were a collection.',
+                        guild.name, guild.id)
+        except discord.Forbidden:
+            logger.info('Couldn\'t send to default channel, going to loop.')
+            for channel in guild.channels:
+                can_speak = channel.permissions_for(guild.me).send_messages
+                if can_speak:
+                    await channel.send(COLLECTION_MESSAGE)
+                    return
+
     async def on_guild_join(self, g):
         diff = pretty_timedelta(datetime.datetime.utcnow() - g.created_at)
+        ratio = botcollection.user_to_bot_ratio(g)
+
+        if botcollection.is_bot_collection(g):
+            # uh oh!
+            logger.info('I think %s (%d) by %s is a bot collection! Leaving.',
+                        g.name, g.id, str(g.owner))
+
+            # notify that i'm leaving a collection
+            await self.notify_think_is_collection(g)
+
+            # leave it
+            await g.leave()
+
+            # monitor
+            fmt = (f'\N{FACE WITH ROLLING EYES} Left bot collection {g.name}'
+                   f' (`{g.id}`), owned by {g.owner.mention} (`{g.owner.id}`)'
+                   f' Created {diff} ago, user to bot ratio: {ratio}')
+            return await self.monitor_send(fmt)
+
+        # monitor
         fmt = (f'\N{SMIRKING FACE} Added to new guild "{g.name}" (`{g.id}`)'
                f', {len(g.members)} members, owned by {g.owner.mention}'
-               f' (`{g.owner.id}`). This guild was created {diff} ago.')
+               f' (`{g.owner.id}`). This guild was created {diff} ago.'
+               f' User to bot ratio: {ratio}')
         await self.monitor_send(fmt)
 
     async def on_guild_remove(self, g):
