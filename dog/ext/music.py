@@ -1,15 +1,25 @@
-from collections import namedtuple
+"""
+Dogbot owner only music extension.
+"""
+
 import logging
+from collections import namedtuple
+
 import aiohttp
-import youtube_dl
 import discord
+import youtube_dl
 from bs4 import BeautifulSoup
 from discord.ext import commands
+
 from dog import Cog
 from dog.core import utils
 
-YouTubeResult = namedtuple('YouTubeResult', 'name url')
+class YouTubeResult(namedtuple('YouTubeResult', 'name url')):
+    """ Represents results from YouTube search. """
+    pass
+
 logger = logging.getLogger(__name__)
+
 
 class YouTubeDLSource(discord.FFmpegPCMAudio):
     def __init__(self, url):
@@ -24,7 +34,11 @@ class YouTubeDLSource(discord.FFmpegPCMAudio):
         info = ytdl.extract_info(url, download=False)
         super().__init__(info['url'])
 
-async def youtube_search(query):
+
+async def youtube_search(query: str):
+    """
+    Searches YouTube for videos. Returns a list of :class:`YouTubeResult`.
+    """
     query_escaped = utils.urlescape(query)
     url = f'https://www.youtube.com/results?q={query_escaped}'
     watch = 'https://www.youtube.com{}'
@@ -36,6 +50,7 @@ async def youtube_search(query):
             nodes = soup.find_all('a', {'class': 'yt-uix-tile-link'})
             return [YouTubeResult(name=n.contents[0],
                     url=watch.format(n['href'])) for n in nodes]
+
 
 class Music(Cog):
     def __init__(self, bot):
@@ -49,10 +64,10 @@ class Music(Cog):
         """ Music bot! Owner only. """
         pass
 
-    async def must_be_in_voice(ctx):
+    async def must_be_in_voice(ctx: commands.Context):
         return ctx.guild.voice_client is not None
 
-    async def cannot_be_playing(ctx):
+    async def cannot_be_playing(ctx: commands.Context):
         return not ctx.guild.voice_client.is_playing()
 
     @music.command()
@@ -105,7 +120,7 @@ class Music(Cog):
         ctx.guild.voice_client.resume()
         await self.bot.ok(ctx, '\N{BLACK RIGHT-POINTING TRIANGLE}')
 
-    def advance(self, ctx, error):
+    def advance(self, ctx: commands.Context, error):
         if error:
             print(error)
 
@@ -157,7 +172,7 @@ class Music(Cog):
 
         if len(results) > 1:
             lst = '\n'.join([f'{idx + 1}) **{utils.truncate(r.name, 50)}**'
-                            for idx, r in enumerate(results)])
+                             for idx, r in enumerate(results)])
             await ctx.send(f'Pick one, or `cancel`.\n\n{lst}')
             while True:
                 msg = await self.bot.wait_for_response(ctx)

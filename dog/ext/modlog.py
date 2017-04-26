@@ -1,7 +1,13 @@
+"""
+Contains the moderator log.
+"""
+
 import discord
 from discord.ext import commands
+
 from dog import Cog
-from dog.core import utils, checks
+from dog.core import checks, utils
+
 
 class Modlog(Cog):
     def _make_modlog_embed(self, **kwargs):
@@ -9,10 +15,10 @@ class Modlog(Cog):
         embed.set_footer(text=utils.now())
         return embed
 
-    def _member_repr(self, member):
+    def _member_repr(self, member: discord.Member):
         return f'{member.mention} {member.name}#{member.discriminator}'
 
-    def _make_profile_embed(self, member, **kwargs):
+    def _make_profile_embed(self, member: discord.Member, **kwargs):
         _registered = (f'{utils.american_datetime(member.created_at)}'
                        f' ({utils.ago(member.created_at)} ago)')
         embed = self._make_modlog_embed(**kwargs)
@@ -21,7 +27,7 @@ class Modlog(Cog):
         embed.add_field(name='Registered on Discord', value=_registered)
         return embed
 
-    async def on_message_delete(self, msg):
+    async def on_message_delete(self, msg: discord.Message):
         # no, i can't use and
         if msg.author.bot:
             if not await self.bot.config_is_set(msg.guild, 'modlog_filter_allow_bot'):
@@ -46,20 +52,20 @@ class Modlog(Cog):
         embed.description = content
         await self.bot.send_modlog(msg.guild, embed=embed)
 
-    async def on_member_join(self, member):
+    async def on_member_join(self, member: discord.Member):
         embed = self._make_profile_embed(member, title='\N{INBOX TRAY} Member joined')
         await self.bot.send_modlog(member.guild, embed=embed)
 
-    async def on_member_remove(self, member):
+    async def on_member_remove(self, member: discord.Member):
         embed = self._make_profile_embed(member, title='\N{OUTBOX TRAY} Member removed')
         await self.bot.send_modlog(member.guild, embed=embed)
 
-    async def on_member_ban(self, member):
+    async def on_member_ban(self, member: discord.Member):
         ban_emote = '<:Banhammer:243818902881042432>'
         embed = self._make_profile_embed(member, title=f'{ban_emote} Member banned')
         await self.bot.send_modlog(member.guild, embed=embed)
 
-    async def on_member_unban(self, guild, user):
+    async def on_member_unban(self, guild: discord.Guild, user: discord.User):
         embed = self._make_profile_embed(user, title='\N{SMILING FACE WITH HALO} Member unbanned')
         await self.bot.send_modlog(guild, embed=embed)
 
@@ -115,6 +121,7 @@ class Modlog(Cog):
         ch = await ctx.guild.create_text_channel('mod-log', overwrites=overwrites)
 
         await ctx.send(f'Created {ch.mention}!')
+
 
 def setup(bot):
     bot.add_cog(Modlog(bot))

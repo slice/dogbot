@@ -1,14 +1,20 @@
-import re
-import random
+"""
+Contains utility commands that help you get stuff done.
+"""
+
 import datetime
+import random
+import re
+
 import aiohttp
 import discord
 from asteval import Interpreter
 from discord.ext import commands
+
 from dog import Cog
 from dog.core import utils
 
-async def jisho(query):
+async def jisho(query: str):
     query_url = utils.urlescape(query)
     JISHO_ENDPOINT = 'http://jisho.org/api/v1/search/words?keyword={}'
     async with aiohttp.ClientSession() as session:

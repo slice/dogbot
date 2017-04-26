@@ -1,7 +1,9 @@
-import urllib.parse
-import locale
 import datetime
+import locale
+import urllib.parse
+
 import discord
+
 
 def make_profile_embed(member):
     embed = discord.Embed()
@@ -9,27 +11,34 @@ def make_profile_embed(member):
                      icon_url=member.avatar_url)
     return embed
 
+
 def urlescape(text):
     return urllib.parse.quote_plus(text)
+
 
 def american_datetime(datetime):
     return datetime.strftime('%m/%d/%Y %I:%M:%S %p')
 
+
 def now():
     return american_datetime(datetime.datetime.utcnow()) + ' UTC'
 
+
 def ago(dt):
     return pretty_timedelta(datetime.datetime.utcnow() - dt)
+
 
 def truncate(text, desired_length):
     if len(text) > desired_length:
         return text[:desired_length - 3] + '...'
     return text
 
+
 def commas(number):
     # http://stackoverflow.com/a/1823101
     locale.setlocale(locale.LC_ALL, 'en_US.utf8')
     return locale.format('%d', number, grouping=True)
+
 
 def pretty_timedelta(delta):
     big_parts = []

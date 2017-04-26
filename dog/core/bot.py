@@ -1,20 +1,24 @@
 import asyncio
-import aiohttp
-import aioredis
 import datetime
 import logging
-import discord
 import traceback
+
+import aiohttp
+import aioredis
+import discord
 import raven
 from discord.ext import commands
-from . import errors, botcollection
-from .utils import pretty_timedelta
+
 import dog_config as cfg
+
+from . import botcollection, errors
+from .utils import pretty_timedelta
 
 logger = logging.getLogger(__name__)
 
 
 class DogBot(commands.AutoShardedBot):
+    """ The main DogBot bot. It is automatically sharded. """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -36,26 +40,50 @@ class DogBot(commands.AutoShardedBot):
         # 10 minutes
         self.report_task = None
 
-    async def command_is_disabled(self, guild, command_name):
+    async def command_is_disabled(self, guild: discord.Guild, command_name: str):
+        """ Returns whether a command is disabled in a guild. """
         return await self.redis.exists(f'disabled:{guild.id}:{command_name}')
 
-    async def disable_command(self, guild, command_name):
+    async def disable_command(self, guild: discord.Guild, command_name: str):
+        """ Disables a command in a guild. """
         logger.info('disabling %s in %d', command_name, guild.id)
         await self.redis.set(f'disabled:{guild.id}:{command_name}', 'on')
 
-    async def enable_command(self, guild, command_name):
+    async def enable_command(self, guild: discord.Guild, command_name: str):
+        """ Enables a command in a guild. """
         logger.info('enabling %s in %d', command_name, guild.id)
         await self.redis.delete(f'disabled:{guild.id}:{command_name}')
 
-    async def wait_for_response(self, ctx):
+    async def wait_for_response(self, ctx: commands.Context):
+        """
+        Waits for a message response from the message author, then returns the
+        new message.
+
+        The message we are waiting for will only be accepted if it was sent by
+        the original command invoker, and it was sent in the same channel as
+        the command message.
+        """
         def check(m):
             return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
         return await self.wait_for('message', check=check)
 
-    def has_prefix(self, haystack):
-        return any([haystack.startswith(p) for p in cfg.prefixes])
+    def has_prefix(self, text: str):
+        """
+        Checks if text starts with a bot prefix.
 
-    async def send_modlog(self, guild, *args, **kwargs):
+        .. NOTE::
+
+            This does not rely on `command_prefix`, but rather the list of
+            prefixes present in `dog_config`.
+        """
+        return any([text.startswith(p) for p in cfg.prefixes])
+
+    async def send_modlog(self, guild: discord.Guild, *args, **kwargs):
+        """
+        Sends a message to the #mod-log channel of a guild.
+
+        If there is no #mod-log channel, no message is sent.
+        """
         mod_log = discord.utils.get(guild.channels, name='mod-log')
 
         # don't post to mod-log, couldn't find the channel
@@ -64,18 +92,24 @@ class DogBot(commands.AutoShardedBot):
 
         await mod_log.send(*args, **kwargs)
 
-    async def ok(self, ctx, emoji='\N{OK HAND SIGN}'):
+    async def ok(self, ctx: commands.Context, emoji: str='\N{OK HAND SIGN}'):
+        """
+        Adds a reaction to the command message, or sends it to the channel if
+        we can't add reactions. This should be used as feedback to commands,
+        just like how most bots send out `:ok_hand:` when a command completes
+        successfully.
+        """
         try:
             await ctx.message.add_reaction(emoji)
         except discord.Forbidden:
             await ctx.send(emoji)
 
     async def on_ready(self):
-        logger.info('BOT IS READY')
-        logger.info('owner id: %s', cfg.owner_id)
-        logger.info('logged in')
-        logger.info(f' name: {self.user.name}#{self.user.discriminator}')
-        logger.info(f' id:   {self.user.id}')
+        logger.info('*** Bot is ready! ***')
+        logger.info('Owner ID: %s', cfg.owner_id)
+        logger.info('Logged in!')
+        logger.info(f' Name: {self.user.name}#{self.user.discriminator}')
+        logger.info(f' ID:   {self.user.id}')
 
         # helpful game
         short_prefix = min(cfg.prefixes, key=len)
@@ -94,8 +128,8 @@ class DogBot(commands.AutoShardedBot):
                     async with cs.post(ENDPOINT, json=data, headers=headers)\
                             as resp:
                         if resp.status != 200:
-                            logger.warn('Failed to post guild count...')
-                            logger.warn('Resp: %s', await resp.text())
+                            logger.warning('Failed to post guild count...')
+                            logger.warning('Resp: %s', await resp.text())
                         else:
                             logger.info('Posted guild count successfully!'
                                         ' (%d guilds)', guilds)
@@ -105,6 +139,13 @@ class DogBot(commands.AutoShardedBot):
         self.report_task = self.loop.create_task(report_guilds_task())
 
     async def monitor_send(self, *args, **kwargs):
+        """
+        Sends a message to the monitoring channel.
+
+        The monitoring channel is a channel usually only visible to the bot
+        owner that will have messages like "New guild!" and "Left guild..."
+        sent to it.
+        """
         monitor_channels = getattr(cfg, 'owner_monitor_channels', [])
         channels = [self.get_channel(c) for c in monitor_channels]
 
@@ -115,7 +156,16 @@ class DogBot(commands.AutoShardedBot):
         for channel in channels:
             await channel.send(*args, **kwargs)
 
-    async def notify_think_is_collection(self, guild):
+    async def notify_think_is_collection(self, guild: discord.Guild):
+        """
+        Notifies a guild that they are a collection.
+
+        Steps are taken in order to notify a guild:
+        - Send it to the default channel, but if that doesn't work, then
+        - DM the owner of the guild, but if that doesn't work, then
+        - Loop through all channels in the guild and message the first sendable
+          one that we find.
+        """
         COLL_ISSUES = f'https://github.com/{cfg.github}/issues'
         COLL_HDR_PUBLIC = "Hi there! Somebody added me to this server, "
         COLL_HDR_PRIVATE = ("Hi there! Somebody added me to your server, "
@@ -182,7 +232,16 @@ class DogBot(commands.AutoShardedBot):
                f' (`{g.id}`)!')
         await self.monitor_send(fmt)
 
-    async def config_is_set(self, guild, name):
+    async def config_is_set(self, guild: discord.Guild, name: str):
+        """
+        Returns whether a configuration key for a guild is set or not.
+
+        .. NOTE::
+
+            This does not look at the value of a configuration key; it just
+            checks if it exists. In Dogbot, a configuration key existing
+            signifies that it is set.
+        """
         return await self.redis.exists(f'{guild.id}:{name}')
 
     async def on_command_error(self, ex, ctx):

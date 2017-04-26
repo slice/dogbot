@@ -1,16 +1,22 @@
-import re
+"""
+Extension that implements tags, a way to store pieces of useful text for later.
+"""
+
 import datetime
-import discord
-from time import time as epoch
+import re
 from collections import namedtuple
+from time import time as epoch
+
+import discord
 from discord.ext import commands
+
 from dog import Cog
-from dog.core import utils, checks
+from dog.core import checks, utils
 
 Tag = namedtuple('Tag', 'name value creator created_at uses')
 
 class Tagging(Cog):
-    async def create_tag(self, ctx, name, value):
+    async def create_tag(self, ctx: commands.Context, name: str, value: str):
         prefix = f'tags:{ctx.guild.id}:{name}'
 
         await self.bot.redis.set(f'{prefix}:value', value)
@@ -18,7 +24,7 @@ class Tagging(Cog):
         await self.bot.redis.set(f'{prefix}:created_at', epoch())
         await self.bot.redis.set(f'{prefix}:uses', 0)
 
-    async def get_tag(self, ctx, name):
+    async def get_tag(self, ctx: commands.Context, name: str):
         prefix = f'tags:{ctx.guild.id}:{name}'
 
         # check if the tag actually exists
@@ -35,7 +41,7 @@ class Tagging(Cog):
         return Tag(value=tag_value, creator=creator, uses=uses, name=name,
                    created_at=datetime.datetime.utcfromtimestamp(created_at))
 
-    async def delete_tag(self, ctx, name):
+    async def delete_tag(self, ctx: commands.Context, name: str):
         prefix = f'tags:{ctx.guild.id}:{name}'
 
         await self.bot.redis.delete(f'{prefix}:value')
@@ -43,7 +49,7 @@ class Tagging(Cog):
         await self.bot.redis.delete(f'{prefix}:created_at')
         await self.bot.redis.delete(f'{prefix}:uses')
 
-    def can_touch_tag(self, ctx, tag):
+    def can_touch_tag(self, ctx: commands.Context, tag: str):
         perms = ctx.author.guild_permissions
 
         # they can manage the server
@@ -168,6 +174,7 @@ class Tagging(Cog):
             await ctx.send(embed=embed)
         else:
             await ctx.send('\N{CONFUSED FACE} Not found.')
+
 
 def setup(bot):
     bot.add_cog(Tagging(bot))

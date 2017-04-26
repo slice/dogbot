@@ -1,7 +1,13 @@
-import logging
+"""
+Contains commands that relate to server moderation and management.
+"""
+
 import asyncio
+import logging
+
 import discord
 from discord.ext import commands
+
 from dog import Cog
 from dog.core import checks, utils
 from dog.humantime import HumanTime
@@ -13,7 +19,7 @@ class Mod(Cog):
         super().__init__(*args, **kwargs)
         self.mute_tasks = {}
 
-    async def __global_check(self, ctx):
+    async def __global_check(self, ctx: commands.Context):
         # do not handle guild-specific command disables in
         # dms
         if not isinstance(ctx.channel, discord.abc.GuildChannel):
@@ -30,7 +36,7 @@ class Mod(Cog):
 
         return not await self.bot.command_is_disabled(ctx.guild, ctx.command.name)
 
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         # do not handle invisibility in dms
         if isinstance(message.channel, discord.abc.PrivateChannel):
             return
@@ -41,7 +47,7 @@ class Mod(Cog):
                          'invisible, please. Thanks.')
                 await message.channel.send(reply.format(message.author))
 
-    async def base_purge(self, ctx, limit, check=None):
+    async def base_purge(self, ctx: commands.Context, limit: int, check=None):
         # check if it's too much
         if limit > 1000:
             await ctx.send('Too many messages to purge. 1,000 is the maximum.')

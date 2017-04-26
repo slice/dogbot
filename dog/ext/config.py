@@ -1,5 +1,14 @@
+"""
+Contains commands that have to do with configuring the bot for your server.
+
+This extension also contains commands that globally configure the bot, but only
+the owner can use those.
+"""
+
 import logging
+
 from discord.ext import commands
+
 from dog import Cog
 
 log = logging.getLogger(__name__)

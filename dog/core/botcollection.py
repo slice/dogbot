@@ -1,4 +1,8 @@
-def user_to_bot_ratio(guild):
+import discord
+
+
+def user_to_bot_ratio(guild: discord.Guild):
+    """ Calculates the user to bot ratio for a guild. """
     bots = len(list(filter(lambda u: u.bot, guild.members)))
     users = len(list(filter(lambda u: not u.bot, guild.members)))
 
@@ -6,7 +10,8 @@ def user_to_bot_ratio(guild):
     return ratio
 
 
-def is_bot_collection(guild):
+def is_bot_collection(guild: discord.Guild):
+    """ Returns a bool indicating whether a guild is a collection. """
     # keywords in the guild name
     for keyword in ('bot collection', 'bot hell'):
         if keyword in guild.name.lower():

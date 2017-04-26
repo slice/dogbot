@@ -1,5 +1,11 @@
+import asyncio
+import logging
 import os
 import sys
+
+from discord.ext import commands
+
+from dog import DogBot
 
 try:
     import dog_config as cfg
@@ -8,10 +14,6 @@ except ModuleNotFoundError:
     print('err: please read the README.md file.', file=sys.stderr)
     sys.exit(-1)
 
-import logging
-import asyncio
-from dog import DogBot
-from discord.ext import commands
 
 try:
     import uvloop
@@ -68,7 +70,7 @@ d = DogBot(command_prefix=commands.when_mentioned_or(*cfg.prefixes),
            **additional_options)
 
 exts = 'dog/ext'
-d_exts = [p.replace('.py', '') for p in os.listdir(exts) if p != '__pycache__']
+d_exts = [p.replace('.py', '') for p in os.listdir(exts) if p != '__pycache__' and p != '__init__.py']
 
 for ext in d_exts:
     logger.info('loading extension dog.ext.%s', ext)

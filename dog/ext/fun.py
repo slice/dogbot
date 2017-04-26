@@ -1,31 +1,37 @@
+"""
+Contains fun commands that don't serve any purpose!
+"""
+
 import logging
-import aiohttp
-import discord
 import tempfile
 from collections import namedtuple
-from PIL import Image, ImageEnhance
+from io import BytesIO
+
+import aiohttp
+import discord
 from discord.ext import commands
+from PIL import Image, ImageEnhance
+
 from dog import Cog
 from dog.core import checks, utils
-from io import BytesIO
 
 SHIBE_ENDPOINT = 'http://shibe.online/api/shibes?count=1&urls=true&httpsUrls=true'
 DOGFACTS_ENDPOINT = 'https://dog-api.kinduff.com/api/facts'
 
 logger = logging.getLogger(__name__)
 
-async def _get(url):
+async def _get(url: str):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             return response
 
-async def _get_bytesio(url):
+async def _get_bytesio(url: str):
     # can't use _get for some reason
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
             return BytesIO(await resp.read())
 
-async def _get_json(url):
+async def _get_json(url: str):
     resp = await _get(url)
     return await resp.json()
 
@@ -34,7 +40,7 @@ UrbanDefinition = namedtuple('UrbanDefinition', [
     'permalink', 'author', 'defid', 'current_vote'
 ])
 
-async def urban(word):
+async def urban(word: str):
     UD_ENDPOINT = 'http://api.urbandictionary.com/v0/define?term={}'
     async with aiohttp.ClientSession() as session:
         async with session.get(UD_ENDPOINT.format(utils.urlescape(word))) as resp:
@@ -53,7 +59,7 @@ class Fun(Cog):
         """ Sample command. """
         await ctx.send('Woof!')
 
-    def make_urban_embed(self, urban):
+    def make_urban_embed(self, urban: UrbanDefinition):
         embed = discord.Embed(title=urban.word, description=urban.definition)
         embed.add_field(name='Example', value=urban.example, inline=False)
         embed.add_field(name='\N{THUMBS UP SIGN}', value=utils.commas(urban.thumbs_up))

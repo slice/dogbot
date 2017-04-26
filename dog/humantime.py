@@ -1,8 +1,23 @@
+"""
+Contains humantime parsing. Humantime is a human-friendly way of specifying
+time durations.
+
+Example:
+
+1hr50m: 1 hour, 50 minutes
+5mo2w: 5 months, 2 weeks
+"""
+
 import re
 
-def humantime_parse(htime):
-    regex = re.compile(r"(?P<month>(\d+)(?:mo))?(?P<week>(\d+)w)?(?P<day>(\d+)(?:d))?(?P<hour>(\d+)(?:h))?(?P<minute>(\d+)(?:m))?(?P<second>(\d+)(?:s))?")
-    match = regex.match(htime)
+humantime_patt = re.compile(r"(?P<month>(\d+)(?:mo))?(?P<week>(\d+)w)?(?P<day>"
+                            r"(\d+)(?:d))?(?P<hour>(\d+)(?:h))?(?P<minute>(\d+"
+                            r")(?:m))?(?P<second>(\d+)(?:s))?")
+
+
+def humantime_parse(htime: str):
+    """ Parses a humantime string, and returns it as seconds. """
+    match = humantime_patt.match(htime)
     if not match.groups():
         return 0
     grps = []
@@ -22,6 +37,7 @@ def humantime_parse(htime):
     seconds += (grps[9] or 0) * 60  # minute
     seconds += (grps[11] or 0)  # seconds
     return seconds
+
 
 class HumanTime:
     def __init__(self, arg):

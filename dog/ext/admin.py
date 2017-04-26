@@ -1,13 +1,23 @@
-import textwrap
-import subprocess
-import os
-import sys
+"""
+Commands that are used to administrate the bot itself, not for your servers.
+It also contains some utility commands that are used to check the health of the
+bot, like d?ping.
+
+Debugging commands like d?eval are also in this extension.
+"""
+
 import logging
-import discord
+import os
+import subprocess
+import sys
+import textwrap
 from time import monotonic
+
+import discord
 from discord.ext import commands
-from dog import Cog
+
 import dog_config as cfg
+from dog import Cog
 
 logger = logging.getLogger(__name__)
 

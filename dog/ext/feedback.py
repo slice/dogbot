@@ -1,9 +1,16 @@
-import discord
+"""
+Contains feedback commands that are used to submit bot feedback to the owner of
+the bot.
+"""
+
 import datetime
-from discord.ext import commands
 import logging
+
+import discord
 from bson.objectid import ObjectId
+from discord.ext import commands
 from pymongo import MongoClient
+
 from dog import Cog
 from dog.core import checks
 from dog_config import mongo_url, owner_id
@@ -22,7 +29,7 @@ class Feedback(Cog):
         self.blocked_coll = self.client.dog.feedback_blocked
 
     def not_blocked():
-        def predicate(ctx):
+        def predicate(ctx: commands.Context):
             if ctx.cog is None:
                 return True
             blocked_coll = ctx.cog.blocked_coll

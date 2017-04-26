@@ -1,12 +1,19 @@
+"""
+Contains commands that shows information about the bot itself, like statistics,
+and who made me.
+"""
+
 import datetime
 import logging
-import discord
 import platform
 from subprocess import check_output
+
+import discord
 from discord.ext import commands
+
 from dog import Cog
 from dog.core import utils
-from dog_config import owner_id, github
+from dog_config import github, owner_id
 
 logger = logging.getLogger(__name__)
 

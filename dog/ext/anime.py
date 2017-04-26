@@ -1,9 +1,16 @@
+"""
+Contains commands that relate to finding and showing anime.
+"""
+
 import html
+
 import discord
-from dog import Cog
-from dog.core import utils
-from dog.anime import anime_search
 from discord.ext import commands
+
+from dog import Cog
+from dog.anime import anime_search
+from dog.core import utils
+
 
 class Anime(Cog):
     def _make_anime_embed(self, anime):
