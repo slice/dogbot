@@ -115,5 +115,6 @@ class Config(Cog):
             value = await self.bot.redis.get(f'{ctx.guild.id}:{name}')
             await ctx.send(f'`{name}`: {value.decode()}')
 
+
 def setup(bot):
     bot.add_cog(Config(bot))

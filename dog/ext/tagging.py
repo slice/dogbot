@@ -24,7 +24,7 @@ class Tagging(Cog):
         await self.bot.redis.set(f'{prefix}:created_at', epoch())
         await self.bot.redis.set(f'{prefix}:uses', 0)
 
-    async def get_tag(self, ctx: commands.Context, name: str):
+    async def get_tag(self, ctx: commands.Context, name: str) -> Tag:
         prefix = f'tags:{ctx.guild.id}:{name}'
 
         # check if the tag actually exists
@@ -49,7 +49,7 @@ class Tagging(Cog):
         await self.bot.redis.delete(f'{prefix}:created_at')
         await self.bot.redis.delete(f'{prefix}:uses')
 
-    def can_touch_tag(self, ctx: commands.Context, tag: str):
+    def can_touch_tag(self, ctx: commands.Context, tag: str) -> bool:
         perms = ctx.author.guild_permissions
 
         # they can manage the server

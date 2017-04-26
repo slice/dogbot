@@ -5,6 +5,7 @@ Contains utility commands that help you get stuff done.
 import datetime
 import random
 import re
+from typing import Dict, Any
 
 import aiohttp
 import discord
@@ -14,7 +15,9 @@ from discord.ext import commands
 from dog import Cog
 from dog.core import utils
 
-async def jisho(query: str):
+
+async def jisho(query: str) -> Dict[Any, Any]:
+    """ Searches Jisho, and returns definition data as a `dict`. """
     query_url = utils.urlescape(query)
     JISHO_ENDPOINT = 'http://jisho.org/api/v1/search/words?keyword={}'
     async with aiohttp.ClientSession() as session:
@@ -26,6 +29,7 @@ async def jisho(query: str):
                 return None
 
             return data['data']
+
 
 class Utility(Cog):
     @commands.command()

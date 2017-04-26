@@ -15,10 +15,10 @@ class Modlog(Cog):
         embed.set_footer(text=utils.now())
         return embed
 
-    def _member_repr(self, member: discord.Member):
+    def _member_repr(self, member: discord.Member) -> str:
         return f'{member.mention} {member.name}#{member.discriminator}'
 
-    def _make_profile_embed(self, member: discord.Member, **kwargs):
+    def _make_profile_embed(self, member: discord.Member, **kwargs) -> discord.Embed:
         _registered = (f'{utils.american_datetime(member.created_at)}'
                        f' ({utils.ago(member.created_at)} ago)')
         embed = self._make_modlog_embed(**kwargs)

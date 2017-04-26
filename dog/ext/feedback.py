@@ -29,7 +29,7 @@ class Feedback(Cog):
         self.blocked_coll = self.client.dog.feedback_blocked
 
     def not_blocked():
-        def predicate(ctx: commands.Context):
+        def predicate(ctx: commands.Context) -> bool:
             if ctx.cog is None:
                 return True
             blocked_coll = ctx.cog.blocked_coll

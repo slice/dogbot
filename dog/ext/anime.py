@@ -8,12 +8,12 @@ import discord
 from discord.ext import commands
 
 from dog import Cog
-from dog.anime import anime_search
+from dog.anime import anime_search, Anime
 from dog.core import utils
 
 
 class Anime(Cog):
-    def _make_anime_embed(self, anime):
+    def _make_anime_embed(self, anime: Anime) -> discord.Embed:
         embed = discord.Embed(title=anime.title)
         not_airing = anime.end_date == '0000-00-00' or anime.status != 'Finished Airing'
         embed.add_field(name='Score', value=anime.score)
@@ -56,6 +56,7 @@ class Anime(Cog):
             await ctx.send(embed=self._make_anime_embed(results[choice - 1]))
         else:
             await ctx.send(embed=self._make_anime_embed(results[0]))
+
 
 def setup(bot):
     bot.add_cog(Anime(bot))

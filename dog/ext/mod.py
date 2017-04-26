@@ -14,6 +14,7 @@ from dog.humantime import HumanTime
 
 logger = logging.getLogger(__name__)
 
+
 class Mod(Cog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

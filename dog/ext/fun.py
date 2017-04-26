@@ -6,6 +6,7 @@ import logging
 import tempfile
 from collections import namedtuple
 from io import BytesIO
+from typing import Dict, Any
 
 import aiohttp
 import discord
@@ -20,18 +21,21 @@ DOGFACTS_ENDPOINT = 'https://dog-api.kinduff.com/api/facts'
 
 logger = logging.getLogger(__name__)
 
-async def _get(url: str):
+
+async def _get(url: str) -> aiohttp.ClientResponse:
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             return response
 
-async def _get_bytesio(url: str):
+
+async def _get_bytesio(url: str) -> BytesIO:
     # can't use _get for some reason
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
             return BytesIO(await resp.read())
 
-async def _get_json(url: str):
+
+async def _get_json(url: str) -> Dict[Any, Any]:
     resp = await _get(url)
     return await resp.json()
 
@@ -40,7 +44,8 @@ UrbanDefinition = namedtuple('UrbanDefinition', [
     'permalink', 'author', 'defid', 'current_vote'
 ])
 
-async def urban(word: str):
+
+async def urban(word: str) -> UrbanDefinition:
     UD_ENDPOINT = 'http://api.urbandictionary.com/v0/define?term={}'
     async with aiohttp.ClientSession() as session:
         async with session.get(UD_ENDPOINT.format(utils.urlescape(word))) as resp:
@@ -51,6 +56,7 @@ async def urban(word: str):
                 result = json['list'][0]
                 return UrbanDefinition(**result)
 
+
 class Fun(Cog):
     @commands.command()
     @commands.guild_only()
@@ -59,7 +65,7 @@ class Fun(Cog):
         """ Sample command. """
         await ctx.send('Woof!')
 
-    def make_urban_embed(self, urban: UrbanDefinition):
+    def make_urban_embed(self, urban: UrbanDefinition) -> discord.Embed:
         embed = discord.Embed(title=urban.word, description=urban.definition)
         embed.add_field(name='Example', value=urban.example, inline=False)
         embed.add_field(name='\N{THUMBS UP SIGN}', value=utils.commas(urban.thumbs_up))

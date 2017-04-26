@@ -4,6 +4,7 @@ Dogbot owner only music extension.
 
 import logging
 from collections import namedtuple
+from typing import List
 
 import aiohttp
 import discord
@@ -14,11 +15,12 @@ from discord.ext import commands
 from dog import Cog
 from dog.core import utils
 
+logger = logging.getLogger(__name__)
+
+
 class YouTubeResult(namedtuple('YouTubeResult', 'name url')):
     """ Represents results from YouTube search. """
     pass
-
-logger = logging.getLogger(__name__)
 
 
 class YouTubeDLSource(discord.FFmpegPCMAudio):
@@ -35,7 +37,7 @@ class YouTubeDLSource(discord.FFmpegPCMAudio):
         super().__init__(info['url'])
 
 
-async def youtube_search(query: str):
+async def youtube_search(query: str) -> List[YouTubeResult]:
     """
     Searches YouTube for videos. Returns a list of :class:`YouTubeResult`.
     """

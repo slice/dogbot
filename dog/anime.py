@@ -3,6 +3,7 @@
 import logging
 import xml.etree.ElementTree as ET
 from collections import namedtuple
+from typing import List
 
 import aiohttp
 
@@ -18,7 +19,7 @@ Anime = namedtuple('Anime', ('id title english synonyms episodes score type'
 """"""
 
 
-async def anime_search(query: str):
+async def anime_search(query: str) -> List[Anime]:
     """ Searches for anime on MyAnimeList. Returns a list of `Anime` instances. """
     auth = aiohttp.BasicAuth(myanimelist['username'], myanimelist['password'])
     query_url = utils.urlescape(query)
