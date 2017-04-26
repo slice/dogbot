@@ -43,13 +43,17 @@ class Anime(Cog):
 
         if len(results) > 1:
             choices = '\n'.join(f'{idx + 1}) {an.title}' for idx, an in enumerate(results))
-            await ctx.send('Too many results! Pick one:\n\n' + choices)
+            await ctx.send('Too many results! Pick one (or `stop`):\n\n' + choices)
             choice = 0
 
             while True:
                 msg = await self.bot.wait_for_response(ctx)
+                if msg.content == 'cancel' or msg.content == 'stop':
+                    return
                 try:
                     choice = int(msg.content)
+                    if choice < 1 or choice > len(results):
+                        raise ValueError
                     break
                 except ValueError:
                     await ctx.send('Invalid choice. Try again.')
