@@ -3,6 +3,9 @@ dog_config.py
 *.log
 dog_blocked.json
 
+# docs
+documentation/build
+
 # idea
 .idea
 

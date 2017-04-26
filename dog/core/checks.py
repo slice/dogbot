@@ -51,8 +51,8 @@ def bot_perms(**permissions):
         @checks.bot_perms(ban_members=True)
 
     If we do not have all permissions listed, then a special exception is
-    thrown: :class:`errors.InsufficientPermissions`. This is so that it can be
-    caught in `on_command_error`, and display a nice error message.
+    thrown: `dog.core.errors.InsufficientPermissions`. This is so that
+    it can be caught in `on_command_error`, and display a nice error message.
     """
     async def predicate(ctx):
         my_perms = ctx.guild.me.permissions_in(ctx.channel)

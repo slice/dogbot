@@ -15,10 +15,11 @@ MAL_SEARCH = 'https://myanimelist.net/api/anime/search.xml?q='
 
 Anime = namedtuple('Anime', ('id title english synonyms episodes score type'
                              ' status start_date end_date synopsis image'))
+""""""
 
 
 async def anime_search(query: str):
-    """ Searches for anime on MyAnimeList. Returns a list of Anime instances. """
+    """ Searches for anime on MyAnimeList. Returns a list of `Anime` instances. """
     auth = aiohttp.BasicAuth(myanimelist['username'], myanimelist['password'])
     query_url = utils.urlescape(query)
     results = []

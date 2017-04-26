@@ -18,7 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 class DogBot(commands.AutoShardedBot):
-    """ The main DogBot bot. It is automatically sharded. """
+    """
+    The main DogBot bot. It is automatically sharded. All parameters are passed
+    to the constructor of :class:`discord.commands.AutoShardedBot`.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -73,8 +76,8 @@ class DogBot(commands.AutoShardedBot):
 
         .. NOTE::
 
-            This does not rely on `command_prefix`, but rather the list of
-            prefixes present in `dog_config`.
+            This does not rely on `discord.commands.ext.Bot.command_prefix`,
+            but rather the list of prefixes present in `dog_config`.
         """
         return any([text.startswith(p) for p in cfg.prefixes])
 
@@ -82,7 +85,8 @@ class DogBot(commands.AutoShardedBot):
         """
         Sends a message to the #mod-log channel of a guild.
 
-        If there is no #mod-log channel, no message is sent.
+        If there is no #mod-log channel, no message is sent. All parameters are
+        passed to `send()`.
         """
         mod_log = discord.utils.get(guild.channels, name='mod-log')
 
@@ -145,6 +149,8 @@ class DogBot(commands.AutoShardedBot):
         The monitoring channel is a channel usually only visible to the bot
         owner that will have messages like "New guild!" and "Left guild..."
         sent to it.
+
+        All parameters are passed to `send()`.
         """
         monitor_channels = getattr(cfg, 'owner_monitor_channels', [])
         channels = [self.get_channel(c) for c in monitor_channels]
@@ -161,10 +167,12 @@ class DogBot(commands.AutoShardedBot):
         Notifies a guild that they are a collection.
 
         Steps are taken in order to notify a guild:
+
         - Send it to the default channel, but if that doesn't work, then
         - DM the owner of the guild, but if that doesn't work, then
         - Loop through all channels in the guild and message the first sendable
           one that we find.
+
         """
         COLL_ISSUES = f'https://github.com/{cfg.github}/issues'
         COLL_HDR_PUBLIC = "Hi there! Somebody added me to this server, "

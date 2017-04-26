@@ -2,10 +2,20 @@
 Contains humantime parsing. Humantime is a human-friendly way of specifying
 time durations.
 
-Example:
+Examples:
 
-1hr50m: 1 hour, 50 minutes
-5mo2w: 5 months, 2 weeks
+- 1hr50m: 1 hour and 50 minutes
+- 5mo2w: 5 months and 2 weeks
+- 3mo2w5d2h5m1s 3 months, 2 weeks, 5 days, 2 hours, 5 minutes, and 1 second
+
+List of specifiers:
+
+- `mo`: Month(s)
+- `w`: Week(s)
+- `d`: Day(s)
+- `h`: Hour(s)
+- `m`: Minute(s)
+- `s`: Second(s)
 """
 
 import re
@@ -15,7 +25,7 @@ humantime_patt = re.compile(r"(?P<month>(\d+)(?:mo))?(?P<week>(\d+)w)?(?P<day>"
                             r")(?:m))?(?P<second>(\d+)(?:s))?")
 
 
-def humantime_parse(htime: str):
+def humantime_parse(htime: str) -> int:
     """ Parses a humantime string, and returns it as seconds. """
     match = humantime_patt.match(htime)
     if not match.groups():
