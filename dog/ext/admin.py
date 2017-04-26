@@ -7,6 +7,7 @@ import discord
 from time import monotonic
 from discord.ext import commands
 from dog import Cog
+import dog_config as cfg
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ class Admin(Cog):
     @commands.command()
     async def prefixes(self, ctx):
         """ Lists the bot's prefixes. """
-        prefixes = ', '.join([f'`{p}`' for p in self.bot.command_prefix])
+        prefixes = ', '.join([f'`{p}`' for p in cfg.prefixes])
         await ctx.send(f'My prefixes are: {prefixes}')
 
     def _reload_ext(self, ext):

@@ -53,10 +53,7 @@ class DogBot(commands.AutoShardedBot):
         return await self.wait_for('message', check=check)
 
     def has_prefix(self, haystack):
-        for prefix in list(cfg.prefix):
-            if haystack.startswith(prefix):
-                return True
-        return False
+        return any([haystack.startswith(p) for p in cfg.prefixes])
 
     async def send_modlog(self, guild, *args, **kwargs):
         mod_log = discord.utils.get(guild.channels, name='mod-log')
@@ -81,7 +78,7 @@ class DogBot(commands.AutoShardedBot):
         logger.info(f' id:   {self.user.id}')
 
         # helpful game
-        short_prefix = min(cfg.prefix, key=len)
+        short_prefix = min(cfg.prefixes, key=len)
         help_game = discord.Game(name=f'{short_prefix}help')
         await self.change_presence(game=help_game)
 

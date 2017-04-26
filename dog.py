@@ -64,7 +64,7 @@ additional_options.update({
     'owner_id': getattr(cfg, 'owner_id', None)
 })
 logger.info('bot options: %s', additional_options)
-d = DogBot(command_prefix=commands.when_mentioned_or(*cfg.prefix),
+d = DogBot(command_prefix=commands.when_mentioned_or(*cfg.prefixes),
            **additional_options)
 
 exts = 'dog/ext'

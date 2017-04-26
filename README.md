@@ -66,7 +66,7 @@ raven_client_url = '<sentry auth url>'
 discordpw_token = '<bots.discord.pw api token>'
 
 # cfg
-prefix = ['dog, ', 'd?', 'd!']
+prefixes = ['dog, ', 'd?', 'd!']
 github = '<your github username>/<repository name>'
 ```
 
