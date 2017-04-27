@@ -1,0 +1,68 @@
+"""
+Specific utilites relevant to the Dogbot support server.
+"""
+
+import logging
+import discord
+from discord.ext import commands
+from dog import Cog
+
+log = logging.getLogger(__name__)
+
+def is_dogbot_support(msg):
+    return msg.guild.id == 302247144201388032
+
+class Doghouse(Cog):
+    @commands.group(aliases=['dh'])
+    @commands.check(is_dogbot_support)
+    async def doghouse(self, ctx):
+        """ Useful commands for Dogbot support. """
+        pass
+
+    def get_subbed_role(self, ctx: commands.Context) -> discord.Role:
+        return discord.utils.get(ctx.guild.roles, name='subbed')
+
+    @doghouse.command()
+    @commands.is_owner()
+    async def post(self, ctx, *, message: str):
+        """ Posts something to subscribers. """
+        subbed = self.get_subbed_role(ctx)
+        channel = discord.utils.get(ctx.guild.channels, name='announcements')
+
+        # temporarily make the role mentionable
+        # see https://github.com/Rapptz/RoboDanny/blob/master/cogs/api.py#L383-L420
+        await subbed.edit(mentionable=True)
+
+        # send the actual message
+        await channel.send('{}: {}'.format(subbed.mention, message))
+
+        # revert back
+        await subbed.edit(mentionable=False)
+        await self.bot.ok(ctx)
+
+    @doghouse.command(aliases=['sub'])
+    async def subscribe(self, ctx):
+        """
+        Subscribe to things like polls.
+
+        Want to influence Dogbot's future? Subscribe to participate
+        in bikeshedding and other stuff.
+        """
+        await ctx.message.author.add_roles(self.get_subbed_role(ctx))
+        await self.bot.ok(ctx)
+
+    @doghouse.command(aliases=['unsub'])
+    async def unsubscribe(self, ctx):
+        """ Unsubscribes to some alerts. """
+        await ctx.message.author.remove_roles(self.get_subbed_role(ctx))
+        await self.bot.ok(ctx)
+
+    @doghouse.command()
+    async def info(self, ctx):
+        """ What's this? """
+        await ctx.send('This command group provides useful utilities '
+                       'to those in the Dogbot Support server! You '
+                       'can run `d?help doghouse`')
+
+def setup(bot):
+    bot.add_cog(Doghouse(bot))
