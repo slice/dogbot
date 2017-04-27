@@ -27,7 +27,7 @@ class Doghouse(Cog):
     async def post(self, ctx, *, message: str):
         """ Posts something to subscribers. """
         subbed = self.get_subbed_role(ctx)
-        channel = discord.utils.get(ctx.guild.channels, name='announcements')
+        channel = discord.utils.get(ctx.guild.channels, name='subscribers')
 
         # temporarily make the role mentionable
         # see https://github.com/Rapptz/RoboDanny/blob/master/cogs/api.py#L383-L420
