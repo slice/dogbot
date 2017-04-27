@@ -85,6 +85,10 @@ class Music(Cog):
         msg = await ctx.send('\N{RUNNER} Connecting to voice...')
         if ctx.guild.voice_client is not None and ctx.guild.voice_client.is_connected():
             return await msg.edit(content='\N{CONFUSED FACE} I\'m already connected!')
+        if ctx.author.voice is None:
+            return await msg.edit(content='\N{CONFUSED FACE} I can\'t join '
+                                          'you if you aren\'t in a voice '
+                                          'channel!')
         await ctx.author.voice.channel.connect()
         await msg.edit(content='\N{OK HAND SIGN}')
 
