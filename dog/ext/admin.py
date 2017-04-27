@@ -34,7 +34,7 @@ class Admin(Cog):
         msg = await ctx.send('Fetching updates...')
         subprocess.check_output(['git', 'pull'])
         await msg.edit(content='Restarting...')
-        logger.info('UPDATE: COMMENCING REBOOT!')
+        logger.info('Update: Commencing reboot!')
         self._restart()
 
     @commands.command()

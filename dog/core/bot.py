@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import logging
 import traceback
+from typing import List, Any
 
 import aiohttp
 import aioredis
@@ -42,6 +43,45 @@ class DogBot(commands.AutoShardedBot):
         # asyncio task that POSTs to bots.discord.pw with the guild count every
         # 10 minutes
         self.report_task = None
+
+    async def pick_from_list(self, ctx: commands.Context, choices: List[Any]) -> Any:
+        """ Shows the user a list of items to pick from. Returns the picked item. """
+        # format list of stuff
+        choices_list = '\n'.join('`{:03d}`: {}'.format(index + 1, value)
+                                 for index, value in enumerate(choices))
+
+        # send list of stuff
+        await ctx.send('Pick one, or send `cancel`.\n\n' + choices_list)
+        picked = None
+
+        while True:
+            # wait for a message
+            msg = await self.wait_for_response(ctx)
+
+            # user wants to cancel?
+            if msg.content == 'cancel':
+                break
+
+            try:
+                chosen_index = int(msg.content) - 1
+            except ValueError:
+                # they didn't enter a valid number
+                await ctx.send('That wasn\'t a number! Send a message that '
+                               'solely contains the number of the item that '
+                               'you want.')
+                continue
+
+            if chosen_index < 0 or chosen_index > len(choices) - 1:
+                # out of range
+                await ctx.send('Invalid choice! Send a message that solely '
+                               'contains the number of the item that you '
+                               'want.')
+            else:
+                # they chose correctly
+                picked = choices[chosen_index]
+                break
+
+        return picked
 
     async def command_is_disabled(self, guild: discord.Guild, command_name: str):
         """ Returns whether a command is disabled in a guild. """

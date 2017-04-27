@@ -39,25 +39,13 @@ class Anime(Cog):
             if results is None:
                 await ctx.send('\N{PENSIVE FACE} Found nothing.')
                 return
-            results = results[:20]
+            results = results[:10]
 
         if len(results) > 1:
-            choices = '\n'.join(f'{idx + 1}) {an.title}' for idx, an in enumerate(results))
-            await ctx.send('Too many results! Pick one (or `stop`):\n\n' + choices)
-            choice = 0
-
-            while True:
-                msg = await self.bot.wait_for_response(ctx)
-                if msg.content == 'cancel' or msg.content == 'stop':
-                    return
-                try:
-                    choice = int(msg.content)
-                    if choice < 1 or choice > len(results):
-                        raise ValueError
-                    break
-                except ValueError:
-                    await ctx.send('Invalid choice. Try again.')
-            await ctx.send(embed=self._make_anime_embed(results[choice - 1]))
+            choice = await self.bot.pick_from_list(ctx, results[:20])
+            if choice is None:
+                return
+            await ctx.send(embed=self._make_anime_embed(choice))
         else:
             await ctx.send(embed=self._make_anime_embed(results[0]))
 

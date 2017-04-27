@@ -14,10 +14,11 @@ logger = logging.getLogger(__name__)
 
 MAL_SEARCH = 'https://myanimelist.net/api/anime/search.xml?q='
 
-Anime = namedtuple('Anime', ('id title english synonyms episodes score type'
-                             ' status start_date end_date synopsis image'))
-""""""
-
+class Anime(namedtuple('Anime', ('id title english synonyms episodes score type'
+                                 ' status start_date end_date synopsis image'))):
+    def __str__(self):
+        english = ' ({0.english})'.format(self) if self.english is not None else ''
+        return '{0.title}{1}, {0.episodes} episode(s)'.format(self, english)
 
 async def anime_search(query: str) -> List[Anime]:
     """ Searches for anime on MyAnimeList. Returns a list of `Anime` instances. """
