@@ -176,16 +176,17 @@ class Music(Cog):
     @commands.check(must_be_in_voice)
     async def search(self, ctx, *, query: str):
         """ Searches YouTube for videos. """
-        results = (await youtube_search(query))[:5]
+        async with ctx.channel.typing():
+            results = (await youtube_search(query))[:5]
 
-        if len(results) > 1:
-            result = await self.bot.pick_from_list(ctx, results)
-            if result is None:
-                return
-        else:
-            result = results[0]
+            if len(results) > 1:
+                result = await self.bot.pick_from_list(ctx, results)
+                if result is None:
+                    return
+            else:
+                result = results[0]
 
-        await self._play_yt(ctx, result.url)
+            await self._play_yt(ctx, result.url)
 
     @music.command()
     @commands.check(must_be_in_voice)
