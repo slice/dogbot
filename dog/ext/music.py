@@ -20,7 +20,9 @@ logger = logging.getLogger(__name__)
 
 class YouTubeResult(namedtuple('YouTubeResult', 'name url')):
     """ Represents results from YouTube search. """
-    pass
+
+    def __str__(self):
+        return '{0.name} (<{0.url}>)'.format(self)
 
 
 class YouTubeDLSource(discord.FFmpegPCMAudio):
@@ -173,26 +175,13 @@ class Music(Cog):
         results = (await youtube_search(query))[:5]
 
         if len(results) > 1:
-            lst = '\n'.join([f'{idx + 1}) **{utils.truncate(r.name, 50)}**'
-                             for idx, r in enumerate(results)])
-            await ctx.send(f'Pick one, or `cancel`.\n\n{lst}')
-            while True:
-                msg = await self.bot.wait_for_response(ctx)
-
-                if msg.content == 'cancel':
-                    return
-
-                num = int(msg.content)
-
-                if num < 1 or num > len(results):
-                    await ctx.send('\N{PENSIVE FACE} Invalid choice.')
-                else:
-                    link = results[num - 1]
-                    break
+            result = await self.bot.pick_from_list(ctx, results)
+            if result is None:
+                return
         else:
-            link = results[0]
+            result = results[0]
 
-        await self._play_yt(ctx, link.url)
+        await self._play_yt(ctx, result.url)
 
     @music.command()
     @commands.check(must_be_in_voice)
