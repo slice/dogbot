@@ -60,6 +60,7 @@ class DogBot(commands.AutoShardedBot):
 
             # user wants to cancel?
             if msg.content == 'cancel':
+                await ctx.send('Canceled selection.')
                 break
 
             try:
