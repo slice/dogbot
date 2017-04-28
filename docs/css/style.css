@@ -92,6 +92,11 @@ header.main {
   -webkit-transform: rotate(3deg);
           transform: rotate(3deg);
 }
+.card .profile {
+  width: 100px;
+  border-radius: 100%;
+  margin-bottom: 0.5rem;
+}
 
 .window-list .window {
   margin-bottom: 1rem;
