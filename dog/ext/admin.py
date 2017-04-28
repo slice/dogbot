@@ -13,6 +13,7 @@ import sys
 import textwrap
 from time import monotonic
 
+import aiohttp
 import discord
 from discord.ext import commands
 
@@ -45,6 +46,16 @@ class Admin(Cog):
         end = monotonic()
         difference_ms = round((end - begin) * 1000, 2)
         await msg.edit(content=f'Pong! (Took `{difference_ms}ms` to send.)')
+
+    @commands.command()
+    @commands.is_owner()
+    async def set_avatar(self, ctx, *, url: str):
+        """ Sets the bot's avatar. """
+        async with aiohttp.ClientSession() as se:
+            async with se.get(url) as resp:
+                avatar_data = await resp.read()
+                await self.bot.user.edit(avatar=avatar_data)
+                await self.bot.ok(ctx)
 
     @commands.command(aliases=['reboot'])
     @commands.is_owner()
