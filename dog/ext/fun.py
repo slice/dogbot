@@ -89,7 +89,12 @@ class Fun(Cog):
         Grabs a random Shiba Inu picture from shibe.online.
         """
         async with ctx.channel.typing():
-            await ctx.send((await _get_json(self.bot.session, SHIBE_ENDPOINT))[0])
+            try:
+                resp = await _get_json(self.bot.session, SHIBE_ENDPOINT)
+            except aiohttp.ClientError:
+                return await ctx.send('\N{DISAPPOINTED FACE} Failed to contact the shibe API.')
+            dog_url = resp[0]
+            await ctx.send(embed=discord.Embed().set_image(url=dog_url))
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -124,7 +129,10 @@ class Fun(Cog):
     async def dogfact(self, ctx):
         """ Returns a random dog fact. """
         async with ctx.channel.typing():
-            facts = await _get_json(self.bot.session, DOGFACTS_ENDPOINT)
+            try:
+                facts = await _get_json(self.bot.session, DOGFACTS_ENDPOINT)
+            except aiohttp.ClientError:
+                return await ctx.send('\N{DISAPPOINTED FACE} Failed to get a dog fact.')
             if not facts['success']:
                 await ctx.send('I couldn\'t contact the Dog Facts API.')
                 return
