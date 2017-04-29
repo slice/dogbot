@@ -53,17 +53,23 @@ class About(Cog):
         if self.maker is None:
             self.maker = discord.utils.get(self.bot.get_all_members(), id=owner_id)
 
+        birthday = self.bot.user.created_at.strftime('%B %m (born %Y)')
+
         embed = discord.Embed(
             title='Dogbot',
-            description=f'A nice Discord bot by {self.maker.mention} '
-                        f'({self.maker.id}).'
-            f' Available on GitHub [here](https://github.com/{github})!')
+            description=f'A handy Discord bot by {self.maker.mention} ({self.maker.id}).')
         rev_link = (f'[{git_revision}](https://github.com/{github}/commit/'
                     f'{git_revision})')
         embed.add_field(name='Git revision', value=rev_link)
-        embed.add_field(name='Python', value=platform.python_version())
+        embed.add_field(name='GitHub repository',
+                        value='[{0}](https://www.github.com/{0})'.format(github))
+        embed.add_field(name='Birthday', value=birthday)
         embed.set_author(name=f'{self.maker.name}#{self.maker.discriminator}',
                          icon_url=self.maker.avatar_url)
+        pyversion = platform.python_version()
+        version = discord.__version__
+        embed.set_footer(text='Python {} \N{EM DASH} Discord.py {}'.format(pyversion, version),
+                         icon_url='http://i.imgur.com/v1dAbXi.png')
         await ctx.send(embed=embed)
 
     @commands.command(name='github', aliases=['git', 'source', 'source_code'])
