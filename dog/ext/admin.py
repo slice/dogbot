@@ -78,25 +78,18 @@ class Admin(Cog):
         prefixes = ', '.join([f'`{p}`' for p in cfg.prefixes])
         await ctx.send(f'My prefixes are: {prefixes}')
 
-    def _reload_ext(self, ext):
-        self.bot.unload_extension(ext)
-        self.bot.load_extension(ext)
-
     @commands.command()
     @commands.is_owner()
     async def reload(self, ctx, ext: str):
         """ Reloads an extension. """
         try:
             if ext == 'all':
-                names = ctx.bot.extensions.keys()
-                logger.info('reloading %d extensions', len(names))
-                for name in names:
-                    self._reload_ext(name)
+                self.bot.reload_all_extensions()
             else:
-                logger.info('reloading %s', ext)
-                self._reload_ext(f'dog.ext.{ext}')
+                logger.info('Individual reload: %s', ext)
+                self.bot.reload_extension(f'dog.ext.{ext}')
         except:
-            logger.exception(f'failed reloading extension {ext}')
+            logger.exception(f'Failed reloading extension {ext}')
             await ctx.message.add_reaction('\N{CROSS MARK}')
         else:
             await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')

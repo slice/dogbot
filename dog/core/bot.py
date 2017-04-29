@@ -47,6 +47,19 @@ class DogBot(commands.AutoShardedBot):
         # 10 minutes
         self.report_task = None
 
+    def reload_extension(self, name: str):
+        """ Reloads an extension. """
+        self.unload_extension(name)
+        self.load_extension(name)
+
+    def reload_all_extensions(self):
+        """ Reloads all extensions. """
+        names = self.extensions.keys()
+        logger.info('Reloading all extensions (%d)', len(names))
+        for name in names:
+            logger.info('Reloading %s', name)
+            self.reload_extension(name)
+
     async def pick_from_list(self, ctx: commands.Context, choices: List[Any]) -> Any:
         """ Shows the user a list of items to pick from. Returns the picked item. """
         # format list of stuff
