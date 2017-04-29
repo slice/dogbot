@@ -51,11 +51,10 @@ class Admin(Cog):
     @commands.is_owner()
     async def set_avatar(self, ctx, *, url: str):
         """ Sets the bot's avatar. """
-        async with aiohttp.ClientSession() as se:
-            async with se.get(url) as resp:
-                avatar_data = await resp.read()
-                await self.bot.user.edit(avatar=avatar_data)
-                await self.bot.ok(ctx)
+        async with self.bot.session.get(url) as resp:
+            avatar_data = await resp.read()
+            await self.bot.user.edit(avatar=avatar_data)
+            await self.bot.ok(ctx)
 
     @commands.command(aliases=['reboot'])
     @commands.is_owner()

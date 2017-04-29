@@ -35,7 +35,7 @@ class Anime(Cog):
     async def anime(self, ctx, *, query: str):
         """ Searches for anime on MyAnimeList. """
         async with ctx.channel.typing():
-            results = (await anime_search(query))
+            results = (await anime_search(self.bot.session, query))
             if results is None:
                 await ctx.send('\N{PENSIVE FACE} Found nothing.')
                 return

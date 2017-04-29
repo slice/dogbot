@@ -37,6 +37,9 @@ class DogBot(commands.AutoShardedBot):
         # aioredis connection
         self.redis = _loop.run_until_complete(_redis_coroutine)
 
+        # aiohttp session used for fetching data
+        self.session = aiohttp.ClientSession()
+
         # sentry connection for reporting exceptions
         self.sentry = raven.Client(cfg.raven_client_url)
 
@@ -168,16 +171,14 @@ class DogBot(commands.AutoShardedBot):
                 data = {'server_count': guilds}
                 headers = {'Authorization': cfg.discordpw_token}
                 logger.info('POSTing guild count to abal\'s website...')
-                async with aiohttp.ClientSession() as cs:
-                    # HTTP POST to the endpoint
-                    async with cs.post(ENDPOINT, json=data, headers=headers)\
-                            as resp:
-                        if resp.status != 200:
-                            logger.warning('Failed to post guild count...')
-                            logger.warning('Resp: %s', await resp.text())
-                        else:
-                            logger.info('Posted guild count successfully!'
-                                        ' (%d guilds)', guilds)
+                # HTTP POST to the endpoint
+                async with self.session.post(ENDPOINT, json=data, headers=headers) as resp:
+                    if resp.status != 200:
+                        logger.warning('Failed to post guild count...')
+                        logger.warning('Resp: %s', await resp.text())
+                    else:
+                        logger.info('Posted guild count successfully!'
+                                    ' (%d guilds)', guilds)
                 await asyncio.sleep(60 * 10)  # only report every 10 minutes
 
         logger.info('Creating bots.discord.pw task')

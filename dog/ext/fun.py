@@ -22,21 +22,19 @@ DOGFACTS_ENDPOINT = 'https://dog-api.kinduff.com/api/facts'
 logger = logging.getLogger(__name__)
 
 
-async def _get(url: str) -> aiohttp.ClientResponse:
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            return response
+async def _get(session: aiohttp.ClientSession, url: str) -> aiohttp.ClientResponse:
+    async with session.get(url) as response:
+        return response
 
 
-async def _get_bytesio(url: str) -> BytesIO:
+async def _get_bytesio(session: aiohttp.ClientSession, url: str) -> BytesIO:
     # can't use _get for some reason
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as resp:
-            return BytesIO(await resp.read())
+    async with session.get(url) as resp:
+        return BytesIO(await resp.read())
 
 
-async def _get_json(url: str) -> Dict[Any, Any]:
-    resp = await _get(url)
+async def _get_json(session: aiohttp.ClientSession, url: str) -> Dict[Any, Any]:
+    resp = await _get(session, url)
     return await resp.json()
 
 UrbanDefinition = namedtuple('UrbanDefinition', [
@@ -45,16 +43,15 @@ UrbanDefinition = namedtuple('UrbanDefinition', [
 ])
 
 
-async def urban(word: str) -> UrbanDefinition:
+async def urban(session: aiohttp.ClientSession, word: str) -> UrbanDefinition:
     UD_ENDPOINT = 'http://api.urbandictionary.com/v0/define?term={}'
-    async with aiohttp.ClientSession() as session:
-        async with session.get(UD_ENDPOINT.format(utils.urlescape(word))) as resp:
-            json = await resp.json()
-            if json['result_type'] == 'no_results':
-                return None
-            else:
-                result = json['list'][0]
-                return UrbanDefinition(**result)
+    async with session.get(UD_ENDPOINT.format(utils.urlescape(word))) as resp:
+        json = await resp.json()
+        if json['result_type'] == 'no_results':
+            return None
+        else:
+            result = json['list'][0]
+            return UrbanDefinition(**result)
 
 
 class Fun(Cog):
@@ -77,7 +74,7 @@ class Fun(Cog):
     async def urban(self, ctx, *, word: str):
         """ Finds UrbanDictionary definitions. """
         async with ctx.channel.typing():
-            result = await urban(word)
+            result = await urban(self.bot.session, word)
             if not result:
                 await ctx.send('No results!')
             else:
@@ -92,7 +89,7 @@ class Fun(Cog):
         Grabs a random Shiba Inu picture from shibe.online.
         """
         async with ctx.channel.typing():
-            await ctx.send((await _get_json(SHIBE_ENDPOINT))[0])
+            await ctx.send((await _get_json(self.bot.session, SHIBE_ENDPOINT))[0])
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -103,7 +100,7 @@ class Fun(Cog):
         logger.info('wacky: get: %s', who.avatar_url)
 
         async with ctx.channel.typing():
-            avatar_data = await _get_bytesio(who.avatar_url_as(format='png'))
+            avatar_data = await _get_bytesio(self.bot.session, who.avatar_url_as(format='png'))
 
             logger.info('wacky: enhancing...')
             im = Image.open(avatar_data)
@@ -127,7 +124,7 @@ class Fun(Cog):
     async def dogfact(self, ctx):
         """ Returns a random dog fact. """
         async with ctx.channel.typing():
-            facts = await _get_json(DOGFACTS_ENDPOINT)
+            facts = await _get_json(self.bot.session, DOGFACTS_ENDPOINT)
             if not facts['success']:
                 await ctx.send('I couldn\'t contact the Dog Facts API.')
                 return

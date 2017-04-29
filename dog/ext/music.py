@@ -39,7 +39,7 @@ class YouTubeDLSource(discord.FFmpegPCMAudio):
         super().__init__(info['url'])
 
 
-async def youtube_search(query: str) -> List[YouTubeResult]:
+async def youtube_search(session: aiohttp.ClientSession, query: str) -> List[YouTubeResult]:
     """
     Searches YouTube for videos. Returns a list of :class:`YouTubeResult`.
     """
@@ -47,13 +47,12 @@ async def youtube_search(query: str) -> List[YouTubeResult]:
     url = f'https://www.youtube.com/results?q={query_escaped}'
     watch = 'https://www.youtube.com{}'
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as resp:
-            text = await resp.text()
-            soup = BeautifulSoup(text, 'html.parser')
-            nodes = soup.find_all('a', {'class': 'yt-uix-tile-link'})
-            return [YouTubeResult(name=n.contents[0],
-                    url=watch.format(n['href'])) for n in nodes]
+    async with session.get(url) as resp:
+        text = await resp.text()
+        soup = BeautifulSoup(text, 'html.parser')
+        nodes = soup.find_all('a', {'class': 'yt-uix-tile-link'})
+        return [YouTubeResult(name=n.contents[0],
+                url=watch.format(n['href'])) for n in nodes]
 
 
 class Music(Cog):
@@ -177,7 +176,7 @@ class Music(Cog):
     async def search(self, ctx, *, query: str):
         """ Searches YouTube for videos. """
         async with ctx.channel.typing():
-            results = (await youtube_search(query))[:5]
+            results = (await youtube_search(self.bot.session, query))[:5]
 
             if len(results) > 1:
                 result = await self.bot.pick_from_list(ctx, results)

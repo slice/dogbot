@@ -9,8 +9,14 @@ from dog import Cog
 
 log = logging.getLogger(__name__)
 
+
 def is_dogbot_support(msg):
     return msg.guild.id == 302247144201388032
+
+
+def get_subbed_role(ctx: commands.Context) -> discord.Role:
+    return discord.utils.get(ctx.guild.roles, name='subbed')
+
 
 class Doghouse(Cog):
     @commands.group(aliases=['dh'])
@@ -19,14 +25,11 @@ class Doghouse(Cog):
         """ Useful commands for Dogbot support. """
         pass
 
-    def get_subbed_role(self, ctx: commands.Context) -> discord.Role:
-        return discord.utils.get(ctx.guild.roles, name='subbed')
-
     @doghouse.command()
     @commands.is_owner()
     async def post(self, ctx, *, message: str):
         """ Posts something to subscribers. """
-        subbed = self.get_subbed_role(ctx)
+        subbed = get_subbed_role(ctx)
         channel = discord.utils.get(ctx.guild.channels, name='subscribers')
 
         # temporarily make the role mentionable
@@ -48,13 +51,13 @@ class Doghouse(Cog):
         Want to influence Dogbot's future? Subscribe to participate
         in bikeshedding and other stuff.
         """
-        await ctx.message.author.add_roles(self.get_subbed_role(ctx))
+        await ctx.message.author.add_roles(get_subbed_role(ctx))
         await self.bot.ok(ctx)
 
     @doghouse.command(aliases=['unsub'])
     async def unsubscribe(self, ctx):
         """ Unsubscribes to some alerts. """
-        await ctx.message.author.remove_roles(self.get_subbed_role(ctx))
+        await ctx.message.author.remove_roles(get_subbed_role(ctx))
         await self.bot.ok(ctx)
 
     @doghouse.command()
@@ -63,6 +66,7 @@ class Doghouse(Cog):
         await ctx.send('This command group provides useful utilities '
                        'to those in the Dogbot Support server! You '
                        'can run `d?help doghouse`')
+
 
 def setup(bot):
     bot.add_cog(Doghouse(bot))

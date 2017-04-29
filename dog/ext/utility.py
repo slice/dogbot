@@ -16,19 +16,18 @@ from dog import Cog
 from dog.core import utils
 
 
-async def jisho(query: str) -> Dict[Any, Any]:
+async def jisho(session: aiohttp.ClientSession, query: str) -> Dict[Any, Any]:
     """ Searches Jisho, and returns definition data as a `dict`. """
     query_url = utils.urlescape(query)
     JISHO_ENDPOINT = 'http://jisho.org/api/v1/search/words?keyword={}'
-    async with aiohttp.ClientSession() as session:
-        async with session.get(JISHO_ENDPOINT.format(query_url)) as resp:
-            data = await resp.json()
+    async with session.get(JISHO_ENDPOINT.format(query_url)) as resp:
+        data = await resp.json()
 
-            # failed, or no data
-            if data['meta']['status'] != 200 or not data['data']:
-                return None
+        # failed, or no data
+        if data['meta']['status'] != 200 or not data['data']:
+            return None
 
-            return data['data']
+        return data['data']
 
 
 class Utility(Cog):
@@ -40,7 +39,7 @@ class Utility(Cog):
     @commands.command()
     async def jisho(self, ctx, *, query: str):
         """ Looks up Jisho definitions. """
-        result = await jisho(query)
+        result = await jisho(self.bot.session, query)
         if not result:
             await ctx.send('No results found.')
             return
