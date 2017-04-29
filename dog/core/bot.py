@@ -1,6 +1,8 @@
 import asyncio
 import datetime
+import importlib
 import logging
+import sys
 import traceback
 from typing import List, Any
 
@@ -52,13 +54,33 @@ class DogBot(commands.AutoShardedBot):
         self.unload_extension(name)
         self.load_extension(name)
 
+    def perform_full_reload(self):
+        """ Fully reloads Dogbot.
+
+        This reloads all Dogbot related modules, and all
+        extensions.
+        """
+        logger.info('*** Performing full reload! ***')
+        self.reload_all_extensions()
+        self.reload_modules()
+
     def reload_all_extensions(self):
         """ Reloads all extensions. """
         names = self.extensions.keys()
-        logger.info('Reloading all extensions (%d)', len(names))
+        logger.info('Reloading all %d extensions', len(names))
         for name in names:
-            logger.info('Reloading %s', name)
+            logger.info('Reloading extension: %s', name)
             self.reload_extension(name)
+
+    def reload_modules(self):
+        """ Reloads all Dogbot related modules. """
+        # get applicable modules to reload
+        modules = {k: m for k, m in sys.modules.items() if 'dog' in k and 'ext' not in k and
+                   k != 'dog'}
+        for name, module in modules.items():
+            logger.info('Reloading bot module: %s', name)
+            importlib.reload(module)
+        logger.info('Finished reloading bot modules!')
 
     async def pick_from_list(self, ctx: commands.Context, choices: List[Any]) -> Any:
         """ Shows the user a list of items to pick from. Returns the picked item. """

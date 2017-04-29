@@ -6,6 +6,7 @@ bot, like d?ping.
 Debugging commands like d?eval are also in this extension.
 """
 
+import importlib
 import logging
 import os
 import subprocess
@@ -13,7 +14,6 @@ import sys
 import textwrap
 from time import monotonic
 
-import aiohttp
 import discord
 from discord.ext import commands
 
@@ -93,11 +93,11 @@ class Admin(Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def reload(self, ctx, ext: str):
-        """ Reloads an extension. """
+    async def reload(self, ctx, ext: str = None):
+        """ Reloads the bot/extensions of the bot. """
         try:
-            if ext == 'all':
-                self.bot.reload_all_extensions()
+            if ext is None:
+                self.bot.perform_full_reload()
             else:
                 logger.info('Individual reload: %s', ext)
                 self.bot.reload_extension(f'dog.ext.{ext}')

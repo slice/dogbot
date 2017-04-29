@@ -22,8 +22,6 @@ class Feedback(Cog):
     def __init__(self, bot):
         super().__init__(bot)
 
-        logger.info('mongo url: %s', mongo_url)
-
         self.client = MongoClient(mongo_url)
         self.coll = self.client.dog.feedback
         self.blocked_coll = self.client.dog.feedback_blocked
