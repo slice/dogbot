@@ -200,6 +200,11 @@ class DogBot(commands.AutoShardedBot):
         await self.change_presence(game=help_game)
 
         async def report_guilds_task():
+            # bail if we don't have the token
+            if not hasattr(cfg, 'discordpw_token'):
+                logger.warning('Not going to submit guild count, no discord.pw token.')
+                return
+
             ENDPOINT = f'https://bots.discord.pw/api/bots/{self.user.id}/stats'
             while True:
                 guilds = len(self.guilds)
