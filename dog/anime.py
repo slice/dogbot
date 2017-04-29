@@ -8,7 +8,7 @@ from typing import List
 import aiohttp
 
 from dog.core import utils
-from dog_config import myanimelist
+import dog_config as cfg
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,8 @@ class Anime(namedtuple('Anime', ('id title english synonyms episodes score type'
 
 async def anime_search(session: aiohttp.ClientSession, query: str) -> List[Anime]:
     """ Searches for anime on MyAnimeList. Returns a list of `Anime` instances. """
-    auth = aiohttp.BasicAuth(myanimelist['username'], myanimelist['password'])
+    mal_auth = getattr(cfg, 'myanimelist', {})
+    auth = aiohttp.BasicAuth(mal_auth['username'], mal_auth['password'])
     query_url = utils.urlescape(query)
     results = []
     try:

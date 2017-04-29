@@ -3,6 +3,7 @@ Contains commands that relate to finding and showing anime.
 """
 
 import html
+import logging
 
 import discord
 from discord.ext import commands
@@ -10,6 +11,10 @@ from discord.ext import commands
 from dog import Cog
 from dog.anime import anime_search, Anime
 from dog.core import utils
+
+import dog_config as cfg
+
+logger = logging.getLogger(__name__)
 
 
 class Anime(Cog):
@@ -51,4 +56,7 @@ class Anime(Cog):
 
 
 def setup(bot):
+    if not hasattr(cfg, 'myanimelist'):
+        logger.warning('No "myanimelist" attribute on config, not adding Anime cog.')
+        return
     bot.add_cog(Anime(bot))

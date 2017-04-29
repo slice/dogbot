@@ -55,7 +55,7 @@ owner_id = <your id...>
 mongo_url = 'localhost'
 redis_url = 'localhost'
 
-# myanimelist auth
+# myanimelist auth (optional)
 myanimelist = {
   'username': '...',
   'password': '...'
@@ -63,8 +63,7 @@ myanimelist = {
 
 # reporting
 raven_client_url = '<sentry auth url>'  # (or empty string)
-# discordpw_token = '<bots.discord.pw api token>'
-# (optional)
+discordpw_token = '<bots.discord.pw api token>'  # (optional)
 
 # cfg
 prefixes = ['dog, ', 'd?']
