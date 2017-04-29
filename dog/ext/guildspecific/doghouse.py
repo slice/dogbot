@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 
 def is_dogbot_support(msg):
-    return msg.guild.id == 302247144201388032
+    return msg.guild.id == 302247144201388032 and isinstance(msg.channel, discord.TextChannel)
 
 
 def get_subbed_role(ctx: commands.Context) -> discord.Role:
