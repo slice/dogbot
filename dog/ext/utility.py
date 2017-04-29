@@ -137,6 +137,8 @@ class Utility(Cog):
             Makes the bot randomly pick from three words, and displays
             the chosen word.
         """
+        if not args:
+            return await ctx.send('\N{CONFUSED FACE} I can\'t choose from an empty list!')
         await ctx.send(random.choice(args))
 
     @commands.command()
