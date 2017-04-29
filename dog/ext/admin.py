@@ -30,13 +30,26 @@ class Admin(Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def update(self, ctx):
+    async def update(self, ctx, is_hot: str = None):
         """ Updates dogbot from GitHub. """
         msg = await ctx.send('Fetching updates...')
+
+        # $ git pull
         subprocess.check_output(['git', 'pull'])
-        await msg.edit(content='Restarting...')
-        logger.info('Update: Commencing reboot!')
-        self._restart()
+
+        if is_hot is not None:
+            await msg.edit(content='Reloading extensions...')
+            try:
+                self.bot.reload_all_extensions()
+            except Exception as e:
+                await msg.edit(content='An error has occurred.')
+                logger.exception('Failed to hotpatch')
+            else:
+                await msg.edit(content='Hotpatch successful.')
+        else:
+            await msg.edit(content='Restarting...')
+            logger.info('Update: Commencing reboot!')
+            self._restart()
 
     @commands.command()
     async def ping(self, ctx):
