@@ -62,11 +62,12 @@ myanimelist = {
 }
 
 # reporting
-raven_client_url = '<sentry auth url>'
-discordpw_token = '<bots.discord.pw api token>'
+raven_client_url = '<sentry auth url>'  # (or empty string)
+# discordpw_token = '<bots.discord.pw api token>'
+# (optional)
 
 # cfg
-prefixes = ['dog, ', 'd?', 'd!']
+prefixes = ['dog, ', 'd?']
 github = '<your github username>/<repository name>'
 ```
 
