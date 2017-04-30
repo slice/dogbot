@@ -81,6 +81,8 @@ class Utility(Cog):
                     return await ctx.send('\N{PENSIVE FACE} Google gave me nothing.')
 
                 def formatter(result):
+                    if result is None:
+                        return ''
                     desc = f' - {result.description}' if result.description else ''
                     return f'\N{BULLET} **{result.title}**{desc} ({result.url})'
                 results_text = '\n'.join(map(formatter, results))
