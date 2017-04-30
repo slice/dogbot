@@ -30,6 +30,10 @@ General:
     usage: '[someone=yourself]'
     description: >
       Glitches/color shifts someone's avatar badly.
+  google:
+    usage: '<query>'
+    description: >
+      Searches Google.
   avatar:
     usage: '[someone=yourself]'
     description: >
