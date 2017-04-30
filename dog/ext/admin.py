@@ -34,8 +34,9 @@ class Admin(Cog):
         """ Updates dogbot from GitHub. """
         msg = await ctx.send('Fetching updates...')
 
-        # $ git pull
-        subprocess.check_output(['git', 'pull'])
+        # update from github
+        subprocess.check_output(['git', 'fetch', '--all'])
+        subprocess.check_output(['git', 'reset', '--hard', 'origin/master'])
 
         if is_hot is not None:
             await msg.edit(content='Reloading extensions...')
