@@ -30,8 +30,13 @@ General:
     usage: '[someone=yourself]'
     description: >
       Glitches/color shifts someone's avatar badly.
+  jumbo:
+    usage: '<:customemojihere:>'
+    description: >
+      Enlarges a custom emoji.
   google:
     usage: '<query>'
+    aliases: ['goog', 'g']
     description: >
       Searches Google.
   avatar:
