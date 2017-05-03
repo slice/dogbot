@@ -1,3 +1,7 @@
+"""
+The core Dogbot bot.
+"""
+
 import asyncio
 import datetime
 import importlib
@@ -8,6 +12,7 @@ from typing import Any, List
 
 import aiohttp
 import aioredis
+import asyncpg
 import discord
 import raven
 from discord.ext import commands
@@ -32,12 +37,15 @@ class DogBot(commands.AutoShardedBot):
         self.boot_time = datetime.datetime.utcnow()
 
         # hack because __init__ cannot be async
-        _loop = asyncio.get_event_loop()
-        _redis_coroutine = aioredis.create_redis(
-            (cfg.redis_url, 6379), loop=_loop)
+        loop = asyncio.get_event_loop()
+        redis_coroutine = aioredis.create_redis(
+            (cfg.redis_url, 6379), loop=loop)
 
         # aioredis connection
-        self.redis = _loop.run_until_complete(_redis_coroutine)
+        self.redis = loop.run_until_complete(redis_coroutine)
+
+        # asyncpg
+        self.pg = loop.run_until_complete(asyncpg.connect(**cfg.postgresql_auth))
 
         # aiohttp session used for fetching data
         self.session = aiohttp.ClientSession()

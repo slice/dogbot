@@ -52,6 +52,12 @@ owner_id = <your id...>
 
 # db
 redis_url = 'localhost'
+postgresql_auth = {
+  'user': '...',
+  'password': '...',
+  'database': 'dogbot',
+  'host': '127.0.0.1'
+}
 
 # myanimelist auth (optional)
 myanimelist = {

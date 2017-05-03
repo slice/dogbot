@@ -5,3 +5,4 @@ aioredis
 youtube_dl
 beautifulsoup4
 raven
+asyncpg
