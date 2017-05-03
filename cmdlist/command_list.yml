@@ -259,9 +259,3 @@ Configuration:
     you_need: ['Manage Server']
     description: >
       Shows you the list of permitted configuration keys.
-Feedback:
-  feedback submit:
-    usage: '<text>'
-    description: >
-      Submits bot feedback. Use for support, questions, feature requests,
-      suggestions, and more.
