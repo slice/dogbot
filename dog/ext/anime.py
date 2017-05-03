@@ -8,11 +8,10 @@ import logging
 import discord
 from discord.ext import commands
 
-from dog import Cog
-from dog.anime import anime_search, Anime
-from dog.core import utils
-
 import dog_config as cfg
+from dog import Cog
+from dog.anime import Anime, anime_search
+from dog.core import utils
 
 logger = logging.getLogger(__name__)
 

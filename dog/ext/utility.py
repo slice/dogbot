@@ -6,7 +6,7 @@ import datetime
 import random
 import re
 from collections import namedtuple
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 import aiohttp
 import discord

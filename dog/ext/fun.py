@@ -6,7 +6,7 @@ import logging
 import tempfile
 from collections import namedtuple
 from io import BytesIO
-from typing import Dict, Any
+from typing import Any, Dict
 
 import aiohttp
 import discord

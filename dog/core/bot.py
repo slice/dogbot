@@ -4,7 +4,7 @@ import importlib
 import logging
 import sys
 import traceback
-from typing import List, Any
+from typing import Any, List
 
 import aiohttp
 import aioredis

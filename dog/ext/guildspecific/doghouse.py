@@ -3,8 +3,10 @@ Specific utilites relevant to the Dogbot support server.
 """
 
 import logging
+
 import discord
 from discord.ext import commands
+
 from dog import Cog
 
 log = logging.getLogger(__name__)
