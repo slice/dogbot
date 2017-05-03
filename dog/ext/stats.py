@@ -75,7 +75,7 @@ class Stats(Cog):
         for index, record in enumerate(records):
             medal = medals[index] if index < 3 else ''
             td = utils.ago(record['last_used'])
-            used = 'Used {} times (last used {})'.format(utils.commas(record['times_used']), td)
+            used = 'Used {} time(s) (last used {})'.format(utils.commas(record['times_used']), td)
             embed.add_field(name=medal + record['command_name'], value=used, inline=False)
 
         await ctx.send(embed=embed)
