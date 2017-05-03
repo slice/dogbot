@@ -73,8 +73,5 @@ def pretty_timedelta(delta):
     m, s = divmod(delta.seconds, 60)
     h, m = divmod(m, 60)
     big = ', '.join(big_parts)
-
-    if big:
-        return '{}, {:02d}h{:02d}m{:02d}s'.format(big, h, m, s)
-    else:
-        return '{:02d}h{:02d}m{:02d}s'.format(h, m, s)
+    hms = '{}{}{}'.format(f'{h}h' if h else '', f'{m}m' if m else '', f'{s}s' if s else '')
+    return '{}, {} ago'.format(big, hms) if big else (f'{hms} ago' if hms else 'just now')

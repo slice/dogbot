@@ -132,7 +132,7 @@ class Utility(Cog):
         embed = utils.make_profile_embed(member)
         joined_dif = utils.pretty_timedelta(datetime.datetime.utcnow() - member.created_at)
         embed.add_field(name='Joined Discord',
-                        value=(f'{joined_dif} ago\n' +
+                        value=(f'{joined_dif}\n' +
                                utils.american_datetime(member.created_at)))
         return embed
 
@@ -213,7 +213,7 @@ class Utility(Cog):
         embed = self._make_joined_embed(target)
         joined_dif = utils.pretty_timedelta(datetime.datetime.utcnow() - target.joined_at)
         embed.add_field(name='Joined this Server',
-                        value=(f'{joined_dif} ago\n' +
+                        value=(f'{joined_dif}\n' +
                                utils.american_datetime(target.joined_at)),
                         inline=False)
 

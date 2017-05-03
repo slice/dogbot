@@ -307,13 +307,13 @@ class DogBot(commands.AutoShardedBot):
             # monitor
             fmt = (f'\N{FACE WITH ROLLING EYES} Left bot collection {g.name}'
                    f' (`{g.id}`), owned by {g.owner.mention} (`{g.owner.id}`)'
-                   f' Created {diff} ago, user to bot ratio: {ratio}')
+                   f' Created {diff}, user to bot ratio: {ratio}')
             return await self.monitor_send(fmt)
 
         # monitor
         fmt = (f'\N{SMIRKING FACE} Added to new guild "{g.name}" (`{g.id}`)'
                f', {len(g.members)} members, owned by {g.owner.mention}'
-               f' (`{g.owner.id}`). This guild was created {diff} ago.'
+               f' (`{g.owner.id}`). This guild was created {diff}.'
                f' User to bot ratio: {ratio}')
         await self.monitor_send(fmt)
 
