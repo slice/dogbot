@@ -16,7 +16,7 @@ from dog.core import utils
 logger = logging.getLogger(__name__)
 
 
-async def get_statistics(pg: asyncpg.connection.Connection, ctx: commands.Context) -> \
+async def get_statistics(pg: asyncpg.connection.Connection, command_name: str) -> \
         Union[List[asyncpg.Record], None]:
     """
     Fetches statistics for a specific ``discord.ext.commands.Context``.
@@ -24,7 +24,7 @@ async def get_statistics(pg: asyncpg.connection.Connection, ctx: commands.Contex
     If no record was found, ``None`` is returned.
     """
     return await pg.fetchrow('SELECT * FROM command_statistics WHERE command_name = $1',
-                             str(ctx.command))
+                             command_name)
 
 
 async def update_statistics(pg: asyncpg.connection.Connection, ctx: commands.Context):
@@ -34,7 +34,7 @@ async def update_statistics(pg: asyncpg.connection.Connection, ctx: commands.Con
     If no record was found for a command, it is created. Otherwise, the ``times_used`` and
     ``last_used`` fields are updated.
     """
-    row = await get_statistics(pg, ctx)
+    row = await get_statistics(pg, str(ctx.command))
 
     if row is None:
         # first time command is being used, insert it into the database
@@ -58,7 +58,7 @@ class Stats(Cog):
         """ Shows commands statistics. """
 
         if command:
-            record = await get_statistics(self.bot.pg, ctx)
+            record = await get_statistics(self.bot.pg, command)
             if not record:
                 return await ctx.send('There are no statistics for that command.')
             embed = discord.Embed(title=f'Statistics for `{command}`')
