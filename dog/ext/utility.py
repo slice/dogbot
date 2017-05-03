@@ -102,7 +102,8 @@ class Utility(Cog):
         embed = discord.Embed(title=query, description='')
         for j in result['japanese']:
             word = j['word'] if 'word' in j else query
-            embed.description += f'{word}: {j["reading"]}\n'
+            only_word = str(word) + '\n'
+            embed.description += f'{word}: {j["reading"]}\n' if 'reading' in j else only_word
         embed.description += '\n'
         for sense in result['senses']:
             restr = ', '.join(sense['restrictions'])
