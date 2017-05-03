@@ -51,6 +51,9 @@ async def update_statistics(pg: asyncpg.connection.Connection, ctx: commands.Con
 
 class Stats(Cog):
     async def on_command_completion(self, ctx):
+        if any(['is_owner' in fun.__qualname__ for fun in ctx.command.checks]):
+            logger.info('Not tracking %s, it\'s an owner command!', ctx.command)
+            return
         await update_statistics(self.bot.pg, ctx)
 
     @commands.command(aliases=['cstats'])
