@@ -398,8 +398,9 @@ Example response: "announcements,corkboard,etc"
             return
 
         mute = '\N{SPEAKER WITH CANCELLATION STROKE}'
+        sec = utils.commas(time.seconds)
         msg = await ctx.send(f'{mute} Muting {member.name}#{member.discriminator}'
-                             f' (`{member.id}`) for {time.seconds} second(s).')
+                             f' (`{member.id}`) for {time.raw} ({sec} seconds).')
 
         try:
             await member.add_roles(mute_role)
