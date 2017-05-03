@@ -13,17 +13,15 @@ def user_to_bot_ratio(guild: discord.Guild):
 def is_bot_collection(guild: discord.Guild):
     """ Returns a bool indicating whether a guild is a collection. """
     # keywords in the guild name
-    for keyword in ('bot collection', 'bot hell'):
-        if keyword in guild.name.lower():
-            return True
+    if any([keyword in guild.name.lower() for keyword in ('bot collection', 'bot hell')]):
+        return True
 
-    # special guilds that shouldn't be classified as a
-    # bot collection
+    # special guilds that shouldn't be classified as a bot collection
     if guild.id in (110373943822540800, 228317351672545290):
         return False
 
+    # ratio too big!
     if user_to_bot_ratio(guild) >= 5:
-        # ratio too big!
         return True
 
     return False
