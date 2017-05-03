@@ -40,6 +40,7 @@ However, if you really want to...
 - Python 3.6 (not 3.5 or below)
 - Required Python modules (check `requirements.txt`, run `pip install -r requirements.txt`)
 - Redis
+- Postgresql
 
 ### Configuration
 
