@@ -6,7 +6,6 @@ bot, like d?ping.
 Debugging commands like d?eval are also in this extension.
 """
 
-import importlib
 import logging
 import os
 import subprocess
@@ -19,15 +18,17 @@ from discord.ext import commands
 
 import dog_config as cfg
 from dog import Cog
+from dog.haste import haste
 
 logger = logging.getLogger(__name__)
 
 
-class Admin(Cog):
-    def _restart(self):
-        logger.info('reboot: executable=%s argv=%s', sys.executable, sys.argv)
-        os.execv(sys.executable, [sys.executable] + sys.argv)
+def _restart():
+    logger.info('reboot: executable=%s argv=%s', sys.executable, sys.argv)
+    os.execv(sys.executable, [sys.executable] + sys.argv)
 
+
+class Admin(Cog):
     @commands.command()
     @commands.is_owner()
     async def update(self, ctx, is_hot: str = None):
@@ -50,7 +51,7 @@ class Admin(Cog):
         else:
             await msg.edit(content='Restarting...')
             logger.info('Update: Commencing reboot!')
-            self._restart()
+            _restart()
 
     @commands.command()
     async def ping(self, ctx):
@@ -76,7 +77,7 @@ class Admin(Cog):
         """ Reboots the bot. """
         logger.info('COMMENCING REBOOT')
         await ctx.message.add_reaction('\N{WAVING HAND SIGN}')
-        self._restart()
+        _restart()
 
     @commands.command(aliases=['poweroff', 'halt'])
     @commands.is_owner()
@@ -107,6 +108,20 @@ class Admin(Cog):
             await ctx.message.add_reaction('\N{CROSS MARK}')
         else:
             await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
+
+    @commands.command()
+    @commands.is_owner()
+    async def sql(self, ctx, *, query: str):
+        """ Executes SQL queries. """
+        # ew i know
+        sql = subprocess.run(['psql', '-d', 'dogbot', '-c', query], stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        if sql.stderr != b'':
+            return await ctx.send('Something went wrong!\n```{}\n```'.format(sql.stderr.decode()))
+        if len(sql.stdout) > 1992:
+            await ctx.send(await haste(self.bot.session, sql.stdout.decode()))
+        else:
+            await ctx.send('```\n{}\n```'.format(sql.stdout.decode()))
 
     @commands.command(name='eval', aliases=['exec'])
     @commands.is_owner()
