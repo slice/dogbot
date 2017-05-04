@@ -242,6 +242,7 @@ class DogBot(commands.AutoShardedBot):
 
         All parameters are passed to `send()`.
         """
+        logger.info('Monitor sending.')
         monitor_channels = getattr(cfg, 'owner_monitor_channels', [])
         channels = [self.get_channel(c) for c in monitor_channels]
 
@@ -249,8 +250,11 @@ class DogBot(commands.AutoShardedBot):
         if not channels or not any(channels):
             return
 
-        for channel in channels:
-            await channel.send(*args, **kwargs)
+        try:
+            for channel in channels:
+                await channel.send(*args, **kwargs)
+        except discord.Forbidden:
+            logger.warning('Forbidden to send to monitoring channel -- ignoring.')
 
     async def notify_think_is_collection(self, guild: discord.Guild):
         """
@@ -301,6 +305,8 @@ class DogBot(commands.AutoShardedBot):
         diff = pretty_timedelta(datetime.datetime.utcnow() - g.created_at)
         ratio = botcollection.user_to_bot_ratio(g)
 
+        logger.info('New guild: %s (%d)', g.name, g.id)
+
         if botcollection.is_bot_collection(g):
             # uh oh!
             logger.info('I think %s (%d) by %s is a bot collection! Leaving.',
@@ -331,9 +337,14 @@ class DogBot(commands.AutoShardedBot):
                            'please join the support server: https://discord.gg/3dd7czT Thanks!')
 
         # send welcome message to first available channel
-        for channel in g.channels:
-            if channel.permissions_for(g.me).send_messages:
+        logger.info('Initial message - iterating over channels...')
+        for channel in sorted(g.channels, key=lambda c: c.position):
+            can_send = channel.permissions_for(g.me).send_messages 
+            if can_send and isinstance(channel, discord.TextChannel):
+                logger.info('I can send in #%s - sending it there!', channel.name)
                 return await channel.send(WELCOME_MESSAGE)
+            else:
+                logger.info('Can\'t send in "%s", moving on...', channel.name)
 
     async def on_guild_remove(self, g):
         fmt = (f'\N{LOUDLY CRYING FACE} Removed from guild "{g.name}"'
