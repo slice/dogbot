@@ -164,6 +164,44 @@ Moderation:
     usage: '<n>'
     description: >
       Deletes the last `<n>` messages from bots.
+  purge attachments:
+    you_need: ['Dog Moderator']
+    bot_needs: ['Manage Messages', 'Read Message History']
+    usage: '<n>'
+    description: >
+      Deletes the last `<n>` messages containing attachments.
+  purge embeds:
+    you_need: ['Dog Moderator']
+    bot_needs: ['Manage Messages', 'Read Message History']
+    usage: '<n>'
+    description: >
+      Deletes the last `<n>` messages containing embeds.
+  purge dog:
+    you_need: ['Dog Moderator']
+    bot_needs: ['Manage Messages', 'Read Message History']
+    usage: '<n>'
+    description: >
+      Deletes the last `<n>` messages from Dogbot.
+  who_kicked:
+    you_need: ['Dog Moderator']
+    bot_needs: ['View Audit Logs']
+    usage: '<user>'
+    description: >
+      Checks the audit log for who kicked a user.
+
+
+      You may only specify the ID of a user, or their username and DiscordTag.
+      The latter looks like `slice#0594`.
+  who_banned:
+    you_need: ['Dog Moderator']
+    bot_needs: ['View Audit Logs']
+    usage: '<user>'
+    description: >
+      Checks the audit log for who banned a user.
+
+
+      You may only specify the ID of a user, or their username and DiscordTag.
+      The latter looks like `slice#0594`.
   mute_setup:
     you_need: ['Dog Moderator']
     bot_needs: ['Manage Messages']
