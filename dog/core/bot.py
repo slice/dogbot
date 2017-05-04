@@ -325,6 +325,16 @@ class DogBot(commands.AutoShardedBot):
                f' User to bot ratio: {ratio}')
         await self.monitor_send(fmt)
 
+        WELCOME_MESSAGE = ('\N{DOG FACE} Woof! Hey there! I\'m Dogbot! To get a list of all of my '
+                           'commands, type `d?help` in chat, so I can DM you my commands! If you '
+                           'need help, need to report a bug, or just want to request a feature, '
+                           'please join the support server: https://discord.gg/3dd7czT Thanks!')
+
+        # send welcome message to first available channel
+        for channel in g.channels:
+            if channel.permissions_for(g.me).send_messages:
+                return await channel.send(WELCOME_MESSAGE)
+
     async def on_guild_remove(self, g):
         fmt = (f'\N{LOUDLY CRYING FACE} Removed from guild "{g.name}"'
                f' (`{g.id}`)!')
