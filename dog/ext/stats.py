@@ -4,7 +4,7 @@ Statistics extension.
 
 import datetime
 import logging
-from typing import Union, List
+from typing import List, Union
 
 import asyncpg
 import discord

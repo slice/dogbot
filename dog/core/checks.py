@@ -42,6 +42,10 @@ def global_config_is_not_set(name: str):
     return commands.check(_predicate)
 
 
+def _beautify_permission_code(p):
+    return p.replace('_', ' ').replace('guild', 'server').title()
+
+
 def bot_perms(**permissions):
     """
     Check: Checks if we have all permissions listed.
@@ -62,8 +66,8 @@ def bot_perms(**permissions):
         # if we don't have all of the permissions we need, raise an error
         if not all(does_match.values()):
             # which permissions we don't have (which we need)
-            failing = [p for p in does_match.keys() if not does_match[p]]
-            raise InsufficientPermissions('Insufficient permissions: ' +
+            failing = [_beautify_permission_code(p) for p in does_match.keys() if not does_match[p]]
+            raise InsufficientPermissions('I need these permissions to do that: ' +
                                           ', '.join(failing))
         return True
     return commands.check(predicate)
