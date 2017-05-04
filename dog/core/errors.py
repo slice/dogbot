@@ -1,3 +1,7 @@
+"""
+Errors raised by Dogbot.
+"""
+
 from discord.ext import commands
 
 

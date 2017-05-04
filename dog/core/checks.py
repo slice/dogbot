@@ -58,7 +58,7 @@ def bot_perms(**permissions):
         my_perms = ctx.guild.me.permissions_in(ctx.channel)
         # use a dict comprehension so if we are missing a permission we can
         # trace it back to which permission we don't have
-        does_match = {perm: getattr(my_perms, perm, False) for perm in permissions.keys()}
+        does_match = {perm: getattr(my_perms, perm, False) for perm in permissions}
         # if we don't have all of the permissions we need, raise an error
         if not all(does_match.values()):
             # which permissions we don't have (which we need)

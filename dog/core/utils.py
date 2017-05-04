@@ -17,13 +17,13 @@ def urlescape(text: str):
     return urllib.parse.quote_plus(text)
 
 
-def american_datetime(datetime):
+def american_datetime(dt):
     """
     Formats a `datetime.datetime` to the American style: ::
 
         MONTH/DAY/YEAR HOUR/MINUTE/SECOND [AM/PM]
     """
-    return datetime.strftime('%m/%d/%Y %I:%M:%S %p')
+    return dt.strftime('%m/%d/%Y %I:%M:%S %p')
 
 
 def now():
