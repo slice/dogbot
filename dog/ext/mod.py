@@ -78,29 +78,69 @@ class Mod(Cog):
         await self.base_purge(ctx, amount)
 
     @purge.command(name='by')
-    async def purge_by(self, ctx, target: discord.Member, amount: int=5):
+    async def purge_by(self, ctx, target: discord.Member, amount: int = 5):
         """ Purges <n> messages from someone. """
         await self.base_purge(ctx, amount, lambda m: m.author.id == target.id)
 
     @purge.command(name='dog')
-    async def purge_dog(self, ctx, amount: int=5):
+    async def purge_dog(self, ctx, amount: int = 5):
         """ Purges <n> messages by me (dogbot). """
         await self.base_purge(ctx, amount, lambda m: m.author.id == self.bot.user.id)
 
     @purge.command(name='embeds')
-    async def purge_embeds(self, ctx, amount: int=5):
+    async def purge_embeds(self, ctx, amount: int = 5):
         """ Purges <n> messages containing embeds. """
         await self.base_purge(ctx, amount, lambda m: len(m.embeds) != 0)
 
     @purge.command(name='attachments')
-    async def purge_attachments(self, ctx, amount: int=5):
+    async def purge_attachments(self, ctx, amount: int = 5):
         """ Purges <n> messages containing attachments. """
         await self.base_purge(ctx, amount, lambda m: len(m.attachments) != 0)
 
     @purge.command(name='bot')
-    async def purge_bot(self, ctx, amount: int=5):
+    async def purge_bot(self, ctx, amount: int = 5):
         """ Purges <n> messages by bots. """
         await self.base_purge(ctx, amount, lambda m: m.author.bot)
+
+    async def _check_who_action(self, ctx, action, target, action_past_tense):
+        al_action = getattr(discord.AuditLogAction, action)
+        try:
+            target_id = int(target)
+        except ValueError:
+            target_id = None
+        async for entry in ctx.guild.audit_logs(limit=None):
+            if (entry.target.id == target_id or str(entry.target) == target) and entry.action == al_action:
+                fmt = '{0} (`{0.id}`) has {3} {1} (`{1.id}`). Reason: {2}'
+                return await ctx.send(fmt.format(entry.user, entry.target,
+                                                 f'"{entry.reason}"' if entry.reason else
+                                                 'No reason was provided.', action_past_tense))
+        await ctx.send('I couldn\'t find the data from the audit logs. Sorry!')
+
+    @commands.command()
+    @commands.guild_only()
+    @checks.bot_perms(view_audit_logs=True)
+    @checks.is_moderator()
+    async def who_banned(self, ctx, *, someone: str):
+        """
+        Checks who banned a user.
+
+        You may only specify the ID of the user (looks like: 305470090822811668), or
+        the username and DiscordTag of a user (looks like: slice#0594).
+        """
+        await self._check_who_action(ctx, 'ban', someone, 'banned')
+
+    @commands.command()
+    @commands.guild_only()
+    @checks.bot_perms(view_audit_logs=True)
+    @checks.is_moderator()
+    async def who_kicked(self, ctx, *, someone: str):
+        """
+        Checks who kicked a user.
+
+        You may only specify the ID of the user (looks like: 305470090822811668), or
+        the username and DiscordTag of a user (looks like: slice#0594).
+        """
+        await self._check_who_action(ctx, 'kick', someone, 'kicked')
 
     @commands.command()
     @commands.guild_only()
