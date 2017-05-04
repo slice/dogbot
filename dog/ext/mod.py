@@ -48,7 +48,7 @@ class Mod(Cog):
                          'invisible, please. Thanks.')
                 await message.channel.send(reply.format(message.author))
 
-    async def base_purge(self, ctx: commands.Context, limit: int, check=None):
+    async def base_purge(self, ctx: commands.Context, limit: int, check=None, **kwargs):
         # check if it's too much
         if limit > 1000:
             await ctx.send('Too many messages to purge. 1,000 is the maximum.')
@@ -57,8 +57,8 @@ class Mod(Cog):
         # purge the actual command message too
         limit += 1
 
-        msgs = await ctx.channel.purge(limit=limit, check=check)
-        await ctx.send(f'Purge complete. Removed {len(msgs)} messages.',
+        msgs = await ctx.channel.purge(limit=limit, check=check, **kwargs)
+        await ctx.send(f'Purge complete. Removed {len(msgs)} message(s).',
                        delete_after=2.5)
 
     @commands.group(invoke_without_command=True)
@@ -71,16 +71,34 @@ class Mod(Cog):
 
         This includes the purge command message. The bot will send a message
         upon completion, but will automatically be deleted.
+
+        Note: The <n> that you specify will be the amount of messages checked,
+              not deleted. This only applies to purge subcommands.
         """
         await self.base_purge(ctx, amount)
 
     @purge.command(name='by')
-    async def purge_by(self, ctx, target: discord.Member, amount: int):
+    async def purge_by(self, ctx, target: discord.Member, amount: int=5):
         """ Purges <n> messages from someone. """
         await self.base_purge(ctx, amount, lambda m: m.author.id == target.id)
 
+    @purge.command(name='dog')
+    async def purge_dog(self, ctx, amount: int=5):
+        """ Purges <n> messages by me (dogbot). """
+        await self.base_purge(ctx, amount, lambda m: m.author.id == self.bot.user.id)
+
+    @purge.command(name='embeds')
+    async def purge_embeds(self, ctx, amount: int=5):
+        """ Purges <n> messages containing embeds. """
+        await self.base_purge(ctx, amount, lambda m: len(m.embeds) != 0)
+
+    @purge.command(name='attachments')
+    async def purge_attachments(self, ctx, amount: int=5):
+        """ Purges <n> messages containing attachments. """
+        await self.base_purge(ctx, amount, lambda m: len(m.attachments) != 0)
+
     @purge.command(name='bot')
-    async def purge_bot(self, ctx, amount: int):
+    async def purge_bot(self, ctx, amount: int=5):
         """ Purges <n> messages by bots. """
         await self.base_purge(ctx, amount, lambda m: m.author.bot)
 
