@@ -15,6 +15,17 @@ General:
     description: >
       Shows my OAuth (invitation) link.
     aliases: ['invite']
+  rps:
+    usage: '<opponent>'
+    description: >
+      Plays rock, paper, scissors with somebody.
+  rps exclude:
+    description: >
+      Excludes yourself from RPS games. If people pester you with RPS games,
+      run this command so that people may no longer challenge you in RPS.
+  rps include:
+    description: >
+      Includes yourself in RPS games. Does the opposite of `rps exclude`.
   stats:
     description: >
       Shows my statistics, like how many channels, servers, and server members
