@@ -1,14 +1,17 @@
 ---
-version: '2'
+version: '3.2'
 services:
   bot:
     build: .
     volumes:
       - .:/src
     depends_on:
-      - redis
       - postgres
   postgres:
-    image: 'postgres:alpine'
+    build: ./db/
+    volumes:
+      - ./pgdata:/pgdata
+    environment:
+      - PGDATA=/pgdata
   redis:
     image: 'redis:alpine'

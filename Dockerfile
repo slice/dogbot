@@ -1,6 +1,8 @@
 FROM python:latest
 
-ADD ./schema.sql /docker-entrypoint-initdb.d/dogbot-schema.sql
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
 
 WORKDIR /src
 ADD ./requirements.txt /src/requirements.txt

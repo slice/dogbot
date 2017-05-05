@@ -51,9 +51,7 @@ def truncate(text: str, desired_length: int):
 
 def commas(number: int):
     """ Adds American-style commas to an `int`. """
-    # http://stackoverflow.com/a/1823101
-    locale.setlocale(locale.LC_ALL, 'en_US.utf8')
-    return locale.format('%d', number, grouping=True)
+    return '{:,d}'.format(number)
 
 
 def pretty_timedelta(delta):
