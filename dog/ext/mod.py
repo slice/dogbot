@@ -131,6 +131,24 @@ class Mod(Cog):
                                                  'No reason was provided.', action_past_tense))
         await ctx.send('I couldn\'t find the data from the audit logs. Sorry!')
 
+    async def on_member_join(self, member):
+        if not await self.bot.config_is_set(member.guild, 'welcome_message'):
+            return
+
+        welcome_message = (await self.bot.redis.get(f'{member.guild.id}:welcome_message')).decode()
+
+        transformations = {
+            '%{mention}': member.mention,
+            '%{user}': str(member),
+            '%{server}': member.guild.name,
+            '%{id}': str(member.id)
+        }
+
+        for var, value in transformations.items():
+            welcome_message = welcome_message.replace(var, value)
+
+        await member.guild.default_channel.send(welcome_message)
+
     @commands.command()
     @commands.guild_only()
     @checks.bot_perms(view_audit_logs=True)

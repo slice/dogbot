@@ -23,7 +23,8 @@ class Config(Cog):
             'unmute_announce',
             'mutesetup_disallow_read',
             'invisible_announce',
-            'modlog_filter_allow_bot'
+            'modlog_filter_allow_bot',
+            'welcome_message'
         ]
 
     @commands.group(aliases=['gcfg'])
