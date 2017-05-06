@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 
 class RPS(Cog):
-    async def rps_is_being_excluded(self, who: discord.User) -> bool:
+    async def rps_is_being_excluded(self, who: discord.Member) -> bool:
         """ Returns whether a person is being excluded from RPS. """
         return await self.bot.pg.fetchrow('SELECT * FROM rps_exclusions WHERE user_id = $1',
                                           who.id) is not None
@@ -24,22 +24,26 @@ class RPS(Cog):
         if await self.rps_is_being_excluded(opponent):
             return await ctx.send('That person chose to be excluded from RPS.')
 
-        progress_message = await ctx.send('Waiting for {} to choose...'.format(ctx.author.mention))
+        progress_message = await ctx.send('Waiting for {} to choose...'.format(ctx.author))
 
         def rps_check(who: discord.Member):
             """ Returns a check that checks for a DM from a person. """
+
             def rps_predicate(reaction, adder):
                 is_original_person = adder.id == who.id
                 is_in_dm = isinstance(reaction.message.channel, discord.DMChannel)
                 return is_original_person and is_in_dm
+
             return rps_predicate
 
         async def rps_get_choice(who: discord.Member) -> str:
             """ Sends someone the instructional message, then waits for a choice. """
             desc = ('React with what you want to play. If you don\'t wish to be challenged to RPS, '
-                    'type `d?rps exclude` to exclude yourself from future games.')
+                    'type `d?rps exclude` to exclude yourself from being challenged.')
+            desc_prefix = ('You have been challenged by {}!\n\n'.format(ctx.author.mention) if who.id == opponent.id
+                           else 'Because you initiated the game, you go first.\n\n')
             embed = discord.Embed(title='Rock, paper, scissors!',
-                                  description=desc)
+                                  description=desc_prefix + desc)
             msg = await who.send(embed=embed)
             translate = {
                 '\N{NEW MOON SYMBOL}': 'rock',
