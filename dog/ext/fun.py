@@ -3,7 +3,6 @@ Contains fun commands that don't serve any purpose!
 """
 
 import logging
-import tempfile
 from collections import namedtuple
 from io import BytesIO
 from typing import Any, Dict
@@ -44,6 +43,7 @@ UrbanDefinition = namedtuple('UrbanDefinition', [
 
 
 async def urban(session: aiohttp.ClientSession, word: str) -> UrbanDefinition:
+    """ Queries UrbanDictionary for a definition. """
     UD_ENDPOINT = 'http://api.urbandictionary.com/v0/define?term={}'
     async with session.get(UD_ENDPOINT.format(utils.urlescape(word))) as resp:
         json = await resp.json()
@@ -54,6 +54,7 @@ async def urban(session: aiohttp.ClientSession, word: str) -> UrbanDefinition:
 
 
 def make_urban_embed(d: UrbanDefinition) -> discord.Embed:
+    """ Makes a ``discord.Embed`` from an ``UrbanDefinition``. """
     embed = discord.Embed(title=d.word, description=d.definition)
     embed.add_field(name='Example', value=d.example, inline=False)
     embed.add_field(name='\N{THUMBS UP SIGN}', value=utils.commas(d.thumbs_up))
@@ -104,22 +105,18 @@ class Fun(Cog):
         logger.info('wacky: get: %s', who.avatar_url)
 
         async with ctx.channel.typing():
-            avatar_data = await _get_bytesio(self.bot.session, who.avatar_url_as(format='png'))
+            avatar_url = who.avatar_url_as(format='png')
+            with await _get_bytesio(self.bot.session, avatar_url) as avatar_data:
+                im = Image.open(avatar_data)
+                converter = ImageEnhance.Color(im)
+                im = converter.enhance(50)
 
-            logger.info('wacky: enhancing...')
-            im = Image.open(avatar_data)
-            converter = ImageEnhance.Color(im)
-            im = converter.enhance(50)
+                with BytesIO() as bio:
+                    im.save(bio, format='jpeg', quality=0)
+                    bio.seek(0)
+                    await ctx.send(file=discord.File(bio, 'result.jpg'))
 
-            with BytesIO() as bio:
-                logger.info('wacky: saving...')
-                im.save(bio, format='jpeg', quality=0)
-                logger.info('wacky: sending...')
-                bio.seek(0)
-                await ctx.send(file=discord.File(bio, 'result.jpg'))
-
-            # close images
-            avatar_data.close()
+                im.close()
 
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
