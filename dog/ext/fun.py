@@ -111,14 +111,12 @@ class Fun(Cog):
             converter = ImageEnhance.Color(im)
             im = converter.enhance(50)
 
-            # ugh
-            _temp = next(tempfile._get_candidate_names())
-            _path = f'{tempfile._get_default_tempdir()}/{_temp}'
-
-            logger.info('wacky: saving...')
-            im.save(_path, format='jpeg', quality=0)
-            logger.info('wacky: sending...')
-            await ctx.send(file=discord.File(_path, 'result.jpg'))
+            with BytesIO() as bio:
+                logger.info('wacky: saving...')
+                im.save(bio, format='jpeg', quality=0)
+                logger.info('wacky: sending...')
+                bio.seek(0)
+                await ctx.send(file=discord.File(bio, 'result.jpg'))
 
             # close images
             avatar_data.close()
