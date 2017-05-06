@@ -7,13 +7,6 @@ administrative or utility purposes, and some are just for fun!
 Dogbot is currently undergoing steady development. I try to add new features
 everyday, so please bear with me and submit feedback if something goes wrong!
 
-## Submitting feedback
-
-Run `dog, feedback submit <feedback text here...>` to submit feedback to the
-bot. This feedback goes directly to me, so **please, please, please** do not
-abuse this in any way. Doing so will get you blocked from submitting important
-feedback!
-
 ## Uptime and disclaimer
 
 I try to keep Dogbot running 24/7. However, please don't complain when the bot
@@ -31,9 +24,9 @@ opening an issue if you notice something.
 
 ## Running your own
 
-I heavily prefer that you [invite Dogbot to your server](https://discordapp.com/oauth2/authorize?permissions=8&scope=bot&client_id=295770389584412683) instead of running your instance of Dogbot.
+I heavily prefer that you [invite Dogbot to your server](https://discordapp.com/oauth2/authorize?permissions=402730176&scope=bot&client_id=295770389584412683) instead of running your instance of Dogbot.
 
-However, if you really want to...
+However, if you really want to run Dogbot yourself, follow the instructions below:
 
 ### Requirements
 
