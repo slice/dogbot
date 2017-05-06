@@ -1,8 +1,22 @@
 import datetime
-import locale
 import urllib.parse
+from html.parser import HTMLParser
 
 import discord
+
+
+class MLStripper(HTMLParser):
+    def __init__(self):
+        self.reset()
+        self.strict = False
+        self.convert_charrefs = True
+        self.fed = []
+
+    def handle_data(self, d):
+        self.fed.append(d)
+
+    def get_data(self):
+        return ''.join(self.fed)
 
 
 def make_profile_embed(member: discord.Member):
@@ -10,6 +24,13 @@ def make_profile_embed(member: discord.Member):
     embed = discord.Embed()
     embed.set_author(name=str(member), icon_url=member.avatar_url)
     return embed
+
+
+def strip_tags(text: str):
+    """ Strips HTML tags from text. """
+    s = MLStripper()
+    s.feed(text)
+    return s.get_data()
 
 
 def urlescape(text: str):

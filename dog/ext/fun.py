@@ -9,6 +9,7 @@ from typing import Any, Dict
 
 import aiohttp
 import discord
+import random
 from discord.ext import commands
 from PIL import Image, ImageEnhance
 
@@ -17,6 +18,7 @@ from dog.core import checks, utils
 
 SHIBE_ENDPOINT = 'http://shibe.online/api/shibes?count=1&urls=true&httpsUrls=true'
 DOGFACTS_ENDPOINT = 'https://dog-api.kinduff.com/api/facts'
+GOOGLE_COMPLETE = 'https://www.google.com/complete/search'
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +71,28 @@ class Fun(Cog):
     async def woof(self, ctx):
         """ A sample, secret command. """
         await ctx.send('Woof!')
+
+    @commands.command()
+    async def complete(self, ctx, *, text: str):
+        """ Pushes text through Google's search autocomplete. """
+        async with ctx.channel.typing():
+            payload = {
+                'q': text,
+                'client': 'hp',
+                'hl': 'en',
+                'gs_rn': 64,
+                'gs_ri': 'hp',
+                'cp': 5,
+                'gs_id': 'w',
+                'xhr': 't'
+            }
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Geck'
+                              'o) Chrome/58.0.3029.96 Safari/537.36'
+            }
+            async with self.bot.session.get(GOOGLE_COMPLETE, headers=headers, params=payload) as resp:
+                result = random.choice((await resp.json())[1])[0]
+                await ctx.send(utils.strip_tags(result))
 
     @commands.command()
     @commands.is_owner()
