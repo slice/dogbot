@@ -67,8 +67,13 @@ class Fun(Cog):
     @commands.guild_only()
     @checks.config_is_set('woof_command_enabled')
     async def woof(self, ctx):
-        """ Sample command. """
+        """ A sample, secret command. """
         await ctx.send('Woof!')
+
+    @commands.command()
+    async def say(self, ctx, *, text: str):
+        """ Makes the bot say something. """
+        await ctx.send(text)
 
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
@@ -84,9 +89,9 @@ class Fun(Cog):
     @commands.cooldown(1, 2, commands.BucketType.user)
     async def shibe(self, ctx):
         """
-        Woof!
+        Posts a random Shiba Inu picture.
 
-        Grabs a random Shiba Inu picture from shibe.online.
+        The pictures are from shibe.online.
         """
         async with ctx.channel.typing():
             try:
@@ -99,7 +104,7 @@ class Fun(Cog):
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def wacky(self, ctx, who: discord.Member=None):
-        """ Turns your avatar into... """
+        """ Applies some wacky effects to your avatar. """
         if not who:
             who = ctx.message.author
         logger.info('wacky: get: %s', who.avatar_url)
@@ -121,7 +126,7 @@ class Fun(Cog):
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
     async def dogfact(self, ctx):
-        """ Returns a random dog fact. """
+        """ Returns a random dog-related fact. """
         async with ctx.channel.typing():
             try:
                 facts = await _get_json(self.bot.session, DOGFACTS_ENDPOINT)

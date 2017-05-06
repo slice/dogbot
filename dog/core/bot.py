@@ -363,6 +363,13 @@ class DogBot(commands.AutoShardedBot):
         """
         return await self.redis.exists(f'{guild.id}:{name}')
 
+    async def on_message(self, msg):
+        # do not process messages from other bots
+        if msg.author.bot:
+            return
+
+        await self.process_commands(msg)
+
     async def on_command_error(self, ex, ctx):
         if ctx.command:
             see_help = f'Run `d?help {ctx.command.name}` for more information.'

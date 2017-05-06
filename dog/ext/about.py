@@ -23,9 +23,9 @@ class About(Cog):
         super().__init__(bot)
         self.maker = None
 
-    @commands.command(aliases=['invite'])
-    async def oauth(self, ctx):
-        """ Tells you my OAuth (invite) link! """
+    @commands.command(aliases=['oauth'])
+    async def invite(self, ctx):
+        """ Tells you my invite (OAuth) link. """
         perms = discord.Permissions(permissions=8)
         client_id = (await self.bot.application_info()).id
         link = discord.utils.oauth_url(client_id, permissions=perms)
@@ -44,7 +44,7 @@ class About(Cog):
         """ Shows you my detailed list of commands. """
         await ctx.send('https://github.com/sliceofcode/dogbot/wiki/Command-List')
 
-    @commands.command()
+    @commands.command(aliases=['info'])
     async def about(self, ctx):
         """ Shows information about the bot. """
         git_revision = check_output(['git', 'rev-parse', '--short', 'HEAD'])\
@@ -72,27 +72,14 @@ class About(Cog):
                          icon_url='http://i.imgur.com/v1dAbXi.png')
         await ctx.send(embed=embed)
 
-    @commands.command(name='github', aliases=['git', 'source', 'source_code'])
+    @commands.command(name='github', aliases=['source'])
     async def _github(self, ctx):
-        """ Tells you my GitHub link! """
+        """ Tells you my GitHub link. """
         gh = f'https://github.com/{github}'
         await ctx.send(f'I\'m on GitHub at {gh}. Feel free to use handy'
                        ' tidbits of my source code!')
 
-    @commands.command(aliases=['guilds'])
-    @commands.is_owner()
-    async def servers(self, ctx):
-        """ Shows what servers I am in. """
-        fmt = ('• {0.name} (`{0.id}`), {1} members (owner: {2.mention} '
-               '(`{2.id}`)')
-        guild_list = [fmt.format(guild, len(guild.members),
-                                 guild.owner) for guild in self.bot.guilds]
-        header = (f'I am currently present in {len(self.bot.guilds)} servers:\n'
-                  '\n')
-        await ctx.send(header + '\n'.join(guild_list))
-
     @commands.command()
-    @commands.is_owner()
     async def stats(self, ctx):
         """ Shows participation info about the bot. """
         num_members = len(list(self.bot.get_all_members()))
