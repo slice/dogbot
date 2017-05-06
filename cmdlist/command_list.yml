@@ -91,6 +91,10 @@ General:
     description: >
       Searches MyAnimeList for anime. If multiple anime are found, you will be
       prompted to pick from a list.
+  remind:
+    usage: '<humantime> <text>'
+    description: >
+      Reminds you after a certain amount of time.
   urban:
     usage: '<query>'
     description: >

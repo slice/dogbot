@@ -2,6 +2,7 @@
 Contains utility commands that help you get stuff done.
 """
 
+import asyncio
 import datetime
 import operator
 import random
@@ -17,6 +18,7 @@ from discord.ext import commands
 
 from dog import Cog
 from dog.core import utils
+from dog.humantime import HumanTime
 
 
 class GoogleResult(namedtuple('Google', 'title description url')):
@@ -257,6 +259,16 @@ class Utility(Cog):
         if not args:
             return await ctx.send('\N{CONFUSED FACE} I can\'t choose from an empty list!')
         await ctx.send(random.choice(args))
+
+    @commands.command(aliases=['timer'])
+    async def remind(self, ctx, time: HumanTime, *, reminder: str):
+        """ Reminds you in a certain amount of time. """
+        if time.seconds >= 604800:
+            return await ctx.send('That time is too long. One week maximum.')
+        await ctx.send('Got your reminder. I\'ll remind you in {0.raw} ({0.seconds} second(s)).'
+                       .format(time))
+        await asyncio.sleep(time.seconds)
+        await ctx.author.send('**Ring!** {}'.format(reminder))
 
     @commands.command()
     @commands.guild_only()
