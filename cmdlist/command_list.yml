@@ -9,12 +9,16 @@ General:
       Gives you a link to my command page.
   github:
     description: >
-      Shows my GitHub link.
-    aliases: ['git', 'source', 'source_code']
-  oauth:
+      Shows my GitHub link, which contains my source code.
+    aliases: ['source']
+  invite:
     description: >
-      Shows my OAuth (invitation) link.
-    aliases: ['invite']
+      Shows my invite (OAuth) link.
+    aliases: ['oauth']
+  say:
+    usage: '<text>'
+    description: >
+      Makes the bot say something.
   rps:
     usage: '<opponent>'
     description: >
