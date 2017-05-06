@@ -78,26 +78,41 @@ class Mod(Cog):
         await self.base_purge(ctx, amount)
 
     @purge.command(name='by')
+    @commands.guild_only()
+    @checks.bot_perms(manage_messages=True, read_message_history=True)
+    @checks.is_moderator()
     async def purge_by(self, ctx, target: discord.Member, amount: int = 5):
         """ Purges <n> messages from someone. """
         await self.base_purge(ctx, amount, lambda m: m.author.id == target.id)
 
     @purge.command(name='dog')
+    @commands.guild_only()
+    @checks.bot_perms(manage_messages=True, read_message_history=True)
+    @checks.is_moderator()
     async def purge_dog(self, ctx, amount: int = 5):
         """ Purges <n> messages by me (dogbot). """
         await self.base_purge(ctx, amount, lambda m: m.author.id == self.bot.user.id)
 
     @purge.command(name='embeds')
+    @commands.guild_only()
+    @checks.bot_perms(manage_messages=True, read_message_history=True)
+    @checks.is_moderator()
     async def purge_embeds(self, ctx, amount: int = 5):
         """ Purges <n> messages containing embeds. """
         await self.base_purge(ctx, amount, lambda m: len(m.embeds) != 0)
 
     @purge.command(name='attachments')
+    @commands.guild_only()
+    @checks.bot_perms(manage_messages=True, read_message_history=True)
+    @checks.is_moderator()
     async def purge_attachments(self, ctx, amount: int = 5):
         """ Purges <n> messages containing attachments. """
         await self.base_purge(ctx, amount, lambda m: len(m.attachments) != 0)
 
     @purge.command(name='bot')
+    @commands.guild_only()
+    @checks.bot_perms(manage_messages=True, read_message_history=True)
+    @checks.is_moderator()
     async def purge_bot(self, ctx, amount: int = 5):
         """ Purges <n> messages by bots. """
         await self.base_purge(ctx, amount, lambda m: m.author.bot)
