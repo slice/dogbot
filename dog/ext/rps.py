@@ -58,10 +58,13 @@ class RPS(Cog):
                     return translate[reaction.emoji]
 
         # get their choices
-        initiator_choice = await rps_get_choice(ctx.author)
-        await progress_message.edit(content='Waiting for the opponent ({}) to choose...'.format(
-            opponent))
-        opponent_choice = await rps_get_choice(opponent)
+        try:
+            initiator_choice = await rps_get_choice(ctx.author)
+            await progress_message.edit(content='Waiting for the opponent ({}) to choose...'.format(
+                opponent))
+            opponent_choice = await rps_get_choice(opponent)
+        except discord.Forbidden:
+            return await progress_message.edit(content='I failed to DM the initiator or the opponent.')
 
         # delete the original message, because edited mentions do not notify
         # the user
