@@ -126,7 +126,10 @@ class Utility(Cog):
                                  for index, votes in poll_results.items())
         fmt = 'The poll has concluded. Result: **{}**\n\n{}'
         embed.description = fmt.format(winning_choice, poll_summary)
-        await poll_msg.clear_reactions()
+        try:
+            await poll_msg.clear_reactions()
+        except discord.Forbidden:
+            pass
         await poll_msg.edit(embed=embed)
 
     @commands.command(aliases=['goog', 'g'])
