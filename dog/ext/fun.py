@@ -71,6 +71,7 @@ class Fun(Cog):
         await ctx.send('Woof!')
 
     @commands.command()
+    @commands.is_owner()
     async def say(self, ctx, *, text: str):
         """ Makes the bot say something. """
         await ctx.send(text)
