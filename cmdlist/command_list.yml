@@ -15,6 +15,11 @@ General:
     description: >
       Shows my invite (OAuth) link.
     aliases: ['oauth']
+  poll:
+    usage: ' <conclude_on_votes> <title> <choices...>'
+    description: >
+      Creates a poll. The `conclude_on_votes` parameter specifies how many votes are required
+      until the poll ends.
   say:
     usage: '<text>'
     description: >

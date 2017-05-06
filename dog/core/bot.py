@@ -18,6 +18,7 @@ import raven
 from discord.ext import commands
 
 import dog_config as cfg
+from dog.core import utils
 
 from . import botcollection, errors
 from .utils import pretty_timedelta
@@ -93,8 +94,7 @@ class DogBot(commands.AutoShardedBot):
     async def pick_from_list(self, ctx: commands.Context, choices: List[Any]) -> Any:
         """ Shows the user a list of items to pick from. Returns the picked item. """
         # format list of stuff
-        choices_list = '\n'.join('`{:03d}`: {}'.format(index + 1, value)
-                                 for index, value in enumerate(choices))
+        choices_list = utils.format_list(choices)
 
         # send list of stuff
         await ctx.send('Pick one, or send `cancel`.\n\n' + choices_list)

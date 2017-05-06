@@ -3,6 +3,7 @@ Contains utility commands that help you get stuff done.
 """
 
 import datetime
+import operator
 import random
 import re
 from collections import namedtuple
@@ -67,8 +68,66 @@ async def google(session: aiohttp.ClientSession, query: str) -> List[GoogleResul
 class Utility(Cog):
     @commands.command()
     @commands.is_owner()
-    async def exception(self, ctx, message: str='Test exception'):
+    async def exception(self, ctx, message: str = 'Test exception'):
+        """ Creates an exception. """
         raise RuntimeError(message)
+
+    @commands.command()
+    async def poll(self, ctx, conclude_on_votes: int, title: str, *choices: str):
+        """
+        Creates a poll.
+
+        `conclude_on_votes` specifies how many votes are required in order to end the poll. Users
+        vote on the poll with reactions.
+        """
+
+        if conclude_on_votes < 1:
+            raise commands.errors.BadArgument('Invalid `conclude_on_votes` parameter. It must be '
+                                              'greater than zero.')
+
+        if not choices:
+            # XXX: Can't use commands.errors.MissingRequiredArgument because we need to specify an
+            #      object that Discord.py can `.name`.
+            raise commands.errors.BadArgument('You need to specify some choices.')
+
+        member_count = len(ctx.guild.members)
+        if conclude_on_votes > member_count:
+            raise commands.errors.BadArgument('There aren\'t that many people on the server. '
+                                              f'({conclude_on_votes} > {member_count})')
+
+        embed = discord.Embed(title=f'Poll by {ctx.author}: {title}',
+                              description=utils.format_list(choices))
+
+        poll_msg = await ctx.send(embed=embed)
+
+        for i in range(len(choices)):
+            await poll_msg.add_reaction(f'{i + 1}\u20e3')
+
+        poll_results = {index: 0 for index, _ in enumerate(choices)}
+        has_voted = []
+
+        while True:
+            total_votes = sum(votes for votes in poll_results.values())
+            if total_votes == conclude_on_votes:
+                break
+
+            def message_check(reaction, adder):
+                has_not_voted = adder.id not in has_voted
+                is_poll_message = reaction.message.id == poll_msg.id
+                not_bot = not adder.bot
+                return has_not_voted and is_poll_message and not_bot
+
+            reaction, adder = await self.bot.wait_for('reaction_add', check=message_check)
+            poll_results[int(reaction.emoji[0]) - 1] += 1
+            has_voted.append(adder)
+
+        winning_choice = choices[max(poll_results.items(), key=operator.itemgetter(1))[0]]
+        poll_summary = '\n'.join(f'{choices[index]} \N{EM DASH} **{votes}** vote(s)'
+                                 for index, votes in poll_results.items())
+        fmt = 'The poll has concluded. Result: **{}**\n\n{}'
+        embed.description = fmt.format(winning_choice, poll_summary)
+        await poll_msg.clear_reactions()
+        await poll_msg.edit(embed=embed)
 
     @commands.command(aliases=['goog', 'g'])
     async def google(self, ctx, *, query: str):

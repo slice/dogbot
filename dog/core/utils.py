@@ -26,6 +26,11 @@ def american_datetime(dt):
     return dt.strftime('%m/%d/%Y %I:%M:%S %p')
 
 
+def format_list(lst):
+    return '\n'.join('`{:03d}`: {}'.format(index + 1, value)
+                     for index, value in enumerate(lst))
+
+
 def now():
     """ Returns an American-formatted datetime with a "UTC" suffix. """
     return american_datetime(datetime.datetime.utcnow()) + ' UTC'
