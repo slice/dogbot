@@ -370,6 +370,15 @@ class DogBot(commands.AutoShardedBot):
 
         await self.process_commands(msg)
 
+    async def handle_forbidden(self, ctx):
+        cant_respond = ("Hey! I can't respond because I don't have the `Send Messages` "
+                        "permission in the channel that you just sent that command in. Please "
+                        "ask a server moderator/administrator to sort this out for you, if "
+                        "applicable. If you are a server moderator/administrator, please fix "
+                        "my permissions!")
+        if not ctx.guild.me.permissions_in(ctx.channel).send_messages and ctx.command:
+            await ctx.message.author.send(cant_respond)
+
     async def on_command_error(self, ex, ctx):
         if ctx.command:
             see_help = f'Run `d?help {ctx.command.name}` for more information.'
@@ -386,6 +395,9 @@ class DogBot(commands.AutoShardedBot):
         elif isinstance(ex, errors.InsufficientPermissions):
             await ctx.send(ex)
         elif isinstance(ex, commands.errors.CommandInvokeError):
+            if isinstance(ex.original, discord.Forbidden):
+                return await self.handle_forbidden(ctx)
+
             tb = ''.join(traceback.format_exception(
                 type(ex.original), ex.original,
                 ex.original.__traceback__
