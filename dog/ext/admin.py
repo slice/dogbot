@@ -123,42 +123,6 @@ class Admin(Cog):
         else:
             await ctx.send('```\n{}\n```'.format(sql.stdout.decode()))
 
-    @commands.command(name='eval', aliases=['exec'])
-    @commands.is_owner()
-    async def _eval(self, ctx, *, code: str):
-        """ Executes Python code. """
-        logger.info('eval: %s', code)
-
-        env = {
-            'bot': ctx.bot,
-            'ctx': ctx,
-            'msg': ctx.message,
-            'guild': ctx.guild,
-            'channel': ctx.channel,
-            'me': ctx.message.author,
-
-            'get': discord.utils.get,
-            'find': discord.utils.find,
-        }
-
-        fmt_exception = '```py\n>>> {}\n\n{}: {}```'
-
-        env.update(globals())
-
-        indented_code = textwrap.indent(code, '    ')
-        wrapped_code = 'async def _eval_code():\n' + indented_code
-
-        try:
-            exec(wrapped_code, env)
-            return_value = await env['_eval_code']()
-
-            if return_value is not None:
-                await ctx.send(return_value)
-        except Exception as e:
-            name = type(e).__name__
-            await ctx.send(fmt_exception.format(code, name, e))
-            return
-
 
 def setup(bot):
     bot.add_cog(Admin(bot))
