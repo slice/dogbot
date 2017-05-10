@@ -27,6 +27,15 @@ async def get_statistics(pg: asyncpg.connection.Connection, command_name: str) -
                              command_name)
 
 
+async def last_used(pg: asyncpg.connection.Connection) -> datetime.datetime:
+    """
+    Returns a ``datetime.datetime`` of the latest usage.
+    """
+    row = await pg.fetchrow('SELECT * FROM command_statistics WHERE command_name != '
+                            '\'command_stats\' ORDER BY last_used DESC')
+    return row['last_used']
+
+
 async def update_statistics(pg: asyncpg.connection.Connection, ctx: commands.Context):
     """
     Updates command statistics for a specific ``discord.ext.commands.Context``.
@@ -74,6 +83,8 @@ class Stats(Cog):
 
         medals = [':first_place:', ':second_place:', ':third_place:']
         embed = discord.Embed(title='Most used commands')
+        lu = utils.ago(await last_used(self.bot.pg))
+        embed.set_footer(text=f'Last command usage was {lu}')
 
         for index, record in enumerate(records):
             medal = medals[index] if index < 3 else ''
