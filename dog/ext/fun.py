@@ -91,8 +91,11 @@ class Fun(Cog):
                               'o) Chrome/58.0.3029.96 Safari/537.36'
             }
             async with self.bot.session.get(GOOGLE_COMPLETE, headers=headers, params=payload) as resp:
-                result = random.choice((await resp.json())[1])[0]
-                await ctx.send(utils.strip_tags(result))
+                try:
+                    result = random.choice((await resp.json())[1])[0]
+                    await ctx.send(utils.strip_tags(result))
+                except IndexError:
+                    await ctx.send('No results.')
 
     @commands.command()
     @commands.is_owner()
