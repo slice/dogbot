@@ -65,6 +65,53 @@ class Stats(Cog):
             return
         await update_statistics(self.bot.pg, ctx)
 
+    @commands.command()
+    async def stats(self, ctx):
+        """ Shows participation info about the bot. """
+
+        # member stats
+        all_members = list(self.bot.get_all_members())
+        num_members = len(all_members)
+        num_online = len([m for m in all_members if m.status == discord.Status.online])
+        num_idle = len([m for m in all_members if m.status == discord.Status.idle])
+        num_dnd = len([m for m in all_members if m.status == discord.Status.offline])
+        num_offline = len([m for m in all_members if m.status == discord.Status.dnd])
+
+        # channel stats
+        all_channels = list(self.bot.get_all_channels())
+        num_channels = len(all_channels)
+        num_voice_channels = len([c for c in all_channels if isinstance(c, discord.VoiceChannel)])
+        num_text_channels = len([c for c in all_channels if isinstance(c, discord.TextChannel)])
+
+        # other stats
+        num_emojis = len(self.bot.emojis)
+        num_emojis_managed = len([e for e in self.bot.emojis if e.managed])
+        num_servers = len(self.bot.guilds)
+        member_counts = [len(g.members) for g in self.bot.guilds]
+        average_member_count = int(sum(member_counts) / len(member_counts))
+        uptime = str(datetime.datetime.utcnow() - self.bot.boot_time)[:-7]
+
+        cm = lambda v: utils.commas(v)
+
+        embed = discord.Embed(title='Statistics')
+        embed.set_footer(text=f'Booted at {utils.american_datetime(self.bot.boot_time)} UTC')
+        fields = {
+            'Members': f'{cm(num_members)} total, {cm(num_online)} online\n{cm(num_dnd)} DnD, '
+                       f'{cm(num_idle)} idle\n{cm(num_offline)} offline',
+            'Channels': f'{cm(num_channels)} total\n'
+                        f'{cm(num_voice_channels)} voice channel(s)\n'
+                        f'{cm(num_text_channels)} text channel(s)\n',
+            'Emoji': f'{cm(num_emojis)} total\n{cm(num_emojis_managed)} managed',
+            'Servers': f'{cm(num_servers)} total\n{cm(average_member_count)} average members\n'
+                       f'{cm(max(member_counts))} max, {cm(min(member_counts))} min',
+            'Uptime': uptime,
+            'Total Shards': cm(len(self.bot.shards)),
+        }
+        for name, value in fields.items():
+            embed.add_field(name=name, value=value)
+        await ctx.send(embed=embed)
+
+
     @commands.command(aliases=['cstats'])
     async def command_stats(self, ctx, *, command: str=None):
         """ Shows commands statistics. """

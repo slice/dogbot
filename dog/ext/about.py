@@ -79,26 +79,6 @@ class About(Cog):
         await ctx.send(f'I\'m on GitHub at {gh}. Feel free to use handy'
                        ' tidbits of my source code!')
 
-    @commands.command()
-    async def stats(self, ctx):
-        """ Shows participation info about the bot. """
-        num_members = len(list(self.bot.get_all_members()))
-        num_channels = len(list(self.bot.get_all_channels()))
-        num_servers = len(self.bot.guilds)
-        uptime = str(datetime.datetime.utcnow() - self.bot.boot_time)[:-7]
-
-        embed = discord.Embed(title='Statistics')
-        fields = {
-            'Members': utils.commas(num_members),
-            'Channels': utils.commas(num_channels),
-            'Servers': utils.commas(num_servers),
-            'Uptime': uptime,
-            'Shards': utils.commas(len(self.bot.shards)),
-        }
-        for name, value in fields.items():
-            embed.add_field(name=name, value=value)
-        await ctx.send(embed=embed)
-
 
 def setup(bot):
     bot.add_cog(About(bot))
