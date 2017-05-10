@@ -39,10 +39,10 @@ class About(Cog):
         await ctx.send(f'Need help with Dogbot? The wiki ({wiki}) has all'
                        f' of your answers! Support server: {invite}')
 
-    @commands.command()
+    @commands.command(hidden=True)
     async def command_list(self, ctx):
         """ Shows you my detailed list of commands. """
-        await ctx.send('https://github.com/sliceofcode/dogbot/wiki/Command-List')
+        await ctx.send('The command list has been deprecated in favor of my `d?help` command.')
 
     @commands.command(aliases=['info'])
     async def about(self, ctx):
