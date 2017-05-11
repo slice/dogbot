@@ -379,7 +379,7 @@ class DogBot(commands.AutoShardedBot):
         if not ctx.guild.me.permissions_in(ctx.channel).send_messages and ctx.command:
             await ctx.message.author.send(cant_respond)
 
-    async def on_command_error(self, ex, ctx):
+    async def on_command_error(self, ctx, ex):
         if ctx.command:
             see_help = f'Run `d?help {ctx.command.name}` for more information.'
 

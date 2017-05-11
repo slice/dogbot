@@ -74,7 +74,7 @@ class Fun(Cog):
 
     @commands.command()
     async def complete(self, ctx, *, text: str):
-        """ Pushes text through Google's search autocomplete. """
+        """ Pushes text through Google search's autocomplete. """
         async with ctx.channel.typing():
             payload = {
                 'q': text,
