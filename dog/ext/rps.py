@@ -30,7 +30,7 @@ class RPS(Cog):
             """ Returns a check that checks for a DM from a person. """
 
             def rps_predicate(reaction, adder):
-                is_original_person = adder.id == who.id
+                is_original_person = adder == who
                 is_in_dm = isinstance(reaction.message.channel, discord.DMChannel)
                 return is_original_person and is_in_dm
 
@@ -41,7 +41,7 @@ class RPS(Cog):
             desc = ('React with what you want to play. If you don\'t wish to be challenged to RPS, '
                     'type `d?rps exclude` to exclude yourself from being challenged.')
             desc_prefix = ('You have been challenged by {}!\n\n'.format(ctx.author.mention)
-                if who.id == opponent.id else 'Because you initiated the game, you go first.\n\n')
+                if who == opponent else 'Because you initiated the game, you go first.\n\n')
             embed = discord.Embed(title='Rock, paper, scissors!',
                                   description=desc_prefix + desc)
             msg = await who.send(embed=embed)

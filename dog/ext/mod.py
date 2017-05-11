@@ -83,7 +83,7 @@ class Mod(Cog):
     @checks.is_moderator()
     async def purge_by(self, ctx, target: discord.Member, amount: int = 5):
         """ Purges <n> messages from someone. """
-        await self.base_purge(ctx, amount, lambda m: m.author.id == target.id)
+        await self.base_purge(ctx, amount, lambda m: m.author == target)
 
     @purge.command(name='dog')
     @commands.guild_only()
@@ -91,7 +91,7 @@ class Mod(Cog):
     @checks.is_moderator()
     async def purge_dog(self, ctx, amount: int = 5):
         """ Purges <n> messages by me (dogbot). """
-        await self.base_purge(ctx, amount, lambda m: m.author.id == self.bot.user.id)
+        await self.base_purge(ctx, amount, lambda m: m.author == self.bot.user)
 
     @purge.command(name='embeds')
     @commands.guild_only()

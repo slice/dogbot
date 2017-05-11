@@ -57,11 +57,11 @@ class Tagging(Cog):
             return True
 
         # they own the server
-        if ctx.author.guild.owner.id == ctx.author.id:
+        if ctx.author.guild.owner == ctx.author:
             return True
 
         # they created the tag
-        if tag.creator.id == ctx.author.id:
+        if tag.creator == ctx.author:
             return True
 
         # is dogbot moderator

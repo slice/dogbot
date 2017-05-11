@@ -154,7 +154,7 @@ class DogBot(commands.AutoShardedBot):
         the command message.
         """
         def check(m):
-            return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+            return m.channel.id == ctx.channel.id and m.author == ctx.author
         return await self.wait_for('message', check=check)
 
     def has_prefix(self, text: str):
