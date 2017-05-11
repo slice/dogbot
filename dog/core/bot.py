@@ -413,6 +413,12 @@ class DogBot(commands.AutoShardedBot):
         if not ctx.guild.me.permissions_in(ctx.channel).send_messages and ctx.command:
             await ctx.message.author.send(cant_respond)
 
+    async def on_command(self, ctx):
+        author = ctx.message.author
+        checks = [c.__qualname__.split('.')[0] for c in ctx.command.checks]
+        logger.info('Command invocation by %s (%d) "%s" checks=%s', author, author.id,
+                    ctx.message.content, ','.join(checks) or '(none)')
+
     async def on_command_error(self, ctx, ex):
         if ctx.command:
             see_help = f'Run `d?help {ctx.command.name}` for more information.'

@@ -30,20 +30,18 @@ root_logger.setLevel(logging.INFO)
 # formatters
 console_fmt = logging.Formatter('[%(levelname)s] %(name)s: %(message)s')
 nice_fmt = logging.Formatter('%(asctime)s '
-                             '[%(name)s %(levelname)s] %(message)s')
+                             '[%(name)s %(levelname)s] %(message)s', '%m/%d/%Y %I:%M:%S %p')
 
 # discord log should be DEBUG, but only in dog.log
 discord_logger = logging.getLogger('discord')
 discord_logger.setLevel(logging.DEBUG)
 
 # debug file handler, includes debug
-file_handler = logging.FileHandler(filename='dog_debug.log', encoding='utf-8',
-                                   mode='w')
+file_handler = logging.FileHandler(filename='dog_debug.log', encoding='utf-8')
 file_handler.setFormatter(nice_fmt)
 
 # main file handler, only info
-file_sane_handler = logging.FileHandler(filename='dog.log', encoding='utf-8',
-                                        mode='w')
+file_sane_handler = logging.FileHandler(filename='dog.log', encoding='utf-8')
 file_sane_handler.setFormatter(nice_fmt)
 file_sane_handler.setLevel(logging.INFO)
 
