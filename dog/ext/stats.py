@@ -55,13 +55,11 @@ async def update_statistics(pg: asyncpg.connection.Connection, ctx: commands.Con
         update = ('UPDATE command_statistics SET times_used = times_used + 1, last_used = $2 '
                   'WHERE command_name = $1')
         await pg.execute(update, str(ctx.command), datetime.datetime.utcnow())
-        logger.info('Increment usage for %s', ctx.command)
 
 
 class Stats(Cog):
     async def on_command_completion(self, ctx):
         if any(['is_owner' in fun.__qualname__ for fun in ctx.command.checks]):
-            logger.info('Not tracking %s, it\'s an owner command!', ctx.command)
             return
         await update_statistics(self.bot.pg, ctx)
 
