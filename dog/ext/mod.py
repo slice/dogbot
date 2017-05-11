@@ -271,10 +271,10 @@ class Mod(Cog):
     @commands.guild_only()
     @commands.has_permissions(kick_members=True)
     @checks.bot_perms(kick_members=True)
-    async def kick(self, ctx, member: discord.Member):
+    async def kick(self, ctx, member: discord.Member, *, reason: str = None):
         """ Kicks someone. """
         try:
-            await ctx.guild.kick(member)
+            await ctx.guild.kick(member, reason=reason)
         except discord.Forbidden:
             await ctx.send('I can\'t do that.')
         else:
@@ -284,10 +284,14 @@ class Mod(Cog):
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @checks.bot_perms(ban_members=True)
-    async def ban(self, ctx, member: discord.Member, days: int=0):
-        """ Bans someone. """
+    async def ban(self, ctx, member: discord.Member, delete_days: int, *, reason: str = None):
+        """
+        Bans someone.
+
+        If you don't want to delete any message, specify 0 for delete_days.
+        """
         try:
-            await ctx.guild.ban(member, delete_message_days=days)
+            await ctx.guild.ban(member, delete_message_days=delete_days, reason=reason)
         except discord.Forbidden:
             await ctx.send('I can\'t do that.')
         else:
