@@ -10,7 +10,6 @@ import logging
 import os
 import subprocess
 import sys
-import textwrap
 from time import monotonic
 
 import discord
@@ -104,7 +103,9 @@ class Admin(Cog):
                 logger.info('Individual reload: %s', ext)
                 self.bot.reload_extension(f'dog.ext.{ext}')
         except:
-            logger.exception(f'Failed reloading extension {ext}')
+            # perform_full_reload() handles exceptions for us
+            if ext:
+                logger.exception('Failed reloading extension: %s', ext)
             await ctx.message.add_reaction('\N{CROSS MARK}')
         else:
             await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')

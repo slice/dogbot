@@ -6,18 +6,19 @@ import asyncio
 import datetime
 import importlib
 import logging
+import os
 import sys
 import traceback
 from typing import Any, List
 
 import aiohttp
-import aioredis
-import asyncpg
 import discord
-import raven
 from discord.ext import commands
 
+import aioredis
+import asyncpg
 import dog_config as cfg
+import raven
 from dog.core import utils
 
 from . import botcollection, errors
@@ -58,6 +59,36 @@ class DogBot(commands.AutoShardedBot):
         # 10 minutes
         self.report_task = None
 
+        # load core extensions
+        self.load_exts_recursively('dog/core/ext', 'Core recursive load')
+
+        # list of extensions to reload (this means that new extensions are not picked up)
+        # this is here so we can d?reload even if an syntax error occurs and it won't be present
+        # in self.extensions
+        self._exts_to_load = list(self.extensions.keys()).copy()
+
+    def load_exts_recursively(self, directory: str, prefix: str = 'Recursive load'):
+        """ Loads extensions from a directory recursively. """
+        def ext_filter(f):
+            return f not in ('__init__.py', '__pycache__') and not f.endswith('.pyc')
+
+        exts = []
+
+        # walk the ext directory to find extensions
+        for path, _, files in os.walk(directory):
+            # replace the base path/like/this to path.like.this
+            # add the filename at the end, but without the .py
+            # filter out stuff we don't need
+            exts += [path.replace('/', '.') + '.' + file.replace('.py', '')
+                     for file in filter(ext_filter, files)]
+
+        for ext in exts:
+            logger.info('%s: %s', prefix, ext)
+            self.load_extension(ext)
+
+        # update exts to load
+        self._exts_to_load = list(self.extensions.keys()).copy()
+
     def reload_extension(self, name: str):
         """ Reloads an extension. """
         self.unload_extension(name)
@@ -75,11 +106,14 @@ class DogBot(commands.AutoShardedBot):
 
     def reload_all_extensions(self):
         """ Reloads all extensions. """
-        names = self.extensions.keys()
-        logger.info('Reloading all %d extensions', len(names))
-        for name in names:
-            logger.info('Reloading extension: %s', name)
-            self.reload_extension(name)
+        logger.info('Reloading all %d extensions', len(self._exts_to_load))
+        for name in self._exts_to_load:
+            try:
+                logger.info('Reloading extension: %s', name)
+                self.reload_extension(name)
+            except:
+                logger.exception('While reloading all: Failed extension reload for %s', name)
+                raise
 
     def reload_modules(self):
         """ Reloads all Dogbot related modules. """

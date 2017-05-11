@@ -59,7 +59,7 @@ root_logger.addHandler(file_sane_handler)
 
 logger = logging.getLogger('dog')
 
-logger.info('bot starting')
+logger.info('Bot is starting...')
 
 # gather additional options from the configuration file
 additional_options = getattr(cfg, 'options', {})
@@ -67,24 +67,11 @@ additional_options.update({
     'owner_id': getattr(cfg, 'owner_id', None)
 })
 
-logger.info('bot options: %s', additional_options)
+logger.info('Bot options: %s', additional_options)
 
 # create dogbot instance
 d = DogBot(command_prefix=commands.when_mentioned_or(*cfg.prefixes),
            **additional_options)
 
-def ext_filter(f):
-    return f not in ('__init__.py', '__pycache__') and not f.endswith('.pyc')
-
-exts = []
-
-# walk the ext directory to find extensions
-for path, dirs, files in os.walk('dog/ext'):
-    exts += [path.replace('/', '.') + '.' + file.replace('.py', '')
-             for file in filter(ext_filter, files)]
-
-for ext in exts:
-    logger.info('Initial extension load: %s', ext)
-    d.load_extension(ext)
-
+d.load_exts_recursively('dog/ext', 'Initial recursive load')
 d.run(cfg.token)

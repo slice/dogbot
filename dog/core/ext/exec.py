@@ -118,12 +118,16 @@ class Exec(Cog):
                 # couldn't add the reaction, ignore
                 log.warning('Failed to add reaction to eval message, ignoring.')
 
-            if ret is None:
-                if value:
-                    await ctx.send('```py\n{}\n```'.format(value))
-            else:
-                self.last_result = ret
-                await ctx.send('```py\n{}{}\n```'.format(value, ret))
+            try:
+                if ret is None:
+                    if value:
+                        await ctx.send('```py\n{}\n```'.format(value))
+                else:
+                    self.last_result = ret
+                    await ctx.send('```py\n{}{}\n```'.format(value, ret))
+            except discord.HTTPException:
+                # too long
+                await ctx.send('Result was too long.')
 
 
 def setup(bot):
