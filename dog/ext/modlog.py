@@ -31,7 +31,8 @@ class Modlog(Cog):
         embed = self._make_modlog_embed(**kwargs)
         embed.add_field(name='Member', value=self._member_repr(member))
         embed.add_field(name='ID', value=member.id)
-        embed.add_field(name='Registered on Discord', value=_registered)
+        if not kwargs.get('omit_registered', False):
+            embed.add_field(name='Registered on Discord', value=_registered)
         return embed
 
     def _make_message_embed(self, msg: discord.Message, **kwargs) -> discord.Embed:
@@ -61,6 +62,29 @@ class Modlog(Cog):
                         inline=False)
         await self.bot.send_modlog(before.guild, embed=embed)
 
+    def _make_member_changed_embed(self, attr: str, before, after, **kwargs) -> discord.Embed:
+        b = getattr(before, attr, None)
+        a = getattr(after, attr, None)
+        verb = 'added' if not b and a else 'removed' if b and not a else 'changed'
+        emoji = kwargs.get('emoji', '\N{CUSTOMS}')
+        pretty_attr = kwargs.get('pretty_attr', attr.title())
+        embed = self._make_profile_embed(after, omit_registered=True,
+                                         title=f'{emoji} {pretty_attr} {verb}')
+        embed.add_field(name=kwargs.get('before_title', 'From'),
+                        value=b or f'<no {attr}>', inline=False)
+        embed.add_field(name=kwargs.get('after_title', 'To'),
+                        value=a or f'<no {attr}>', inline=False)
+        return embed
+
+    async def on_member_update(self, before: discord.Member, after: discord.Member):
+        if before.nick != after.nick:
+            embed = self._make_member_changed_embed('nick', before, after, pretty_attr='Nickname')
+            await self.bot.send_modlog(before.guild, embed=embed)
+        elif before.name != after.name:
+            embed = self._make_member_changed_embed('name', before, after, pretty_attr='Username',
+                                                    emoji='\N{NAME BADGE}')
+            await self.bot.send_modlog(before.guild, embed=embed)
+
     async def on_message_delete(self, msg: discord.Message):
         if (not is_publicly_visible(msg.channel) or
                 await self.bot.config_is_set(msg.guild, 'modlog_notrack_deletes')):
@@ -77,7 +101,7 @@ class Modlog(Cog):
 
         if msg.attachments:
             def description(a):
-                if "width" in a:
+                if 'width' in a:
                     # is a picture
                     after = f'({a["width"]}×{a["height"]})'
                 else:
@@ -125,7 +149,7 @@ class Modlog(Cog):
         await self.bot.send_modlog(channel.guild, embed=embed)
 
     @commands.command()
-    async def is_public(self, ctx, channel: discord.TextChannel = None):
+    async def is_public(self, ctx, channel: discord.TextChannel=None):
         """
         Checks if a channel is public.
 
