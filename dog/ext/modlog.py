@@ -130,7 +130,7 @@ class Modlog(Cog):
         delete events for private channels.
         """
         channel = channel if channel else ctx.channel
-        public = 'This channel {} public to @\u200beveryone.'
+        public = f'{channel.mention} {{}} public to @\u200beveryone.'
         await ctx.send(public.format('is' if is_publicly_visible(channel) else '**is not**'))
 
     @commands.command()
