@@ -37,12 +37,18 @@ class Modlog(Cog):
         return embed
 
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
+        if await self.bot.config_is_set(before.guild, 'modlog_notrack_edits'):
+            return
+
         embed = self._make_message_embed(before, title=f'\N{MEMO} Message edited')
         embed.add_field(name='Before', value=utils.truncate(before.content, 1024), inline=False)
         embed.add_field(name='After', value=utils.truncate(after.content, 1024), inline=False)
         await self.bot.send_modlog(before.guild, embed=embed)
 
     async def on_message_delete(self, msg: discord.Message):
+        if await self.bot.config_is_set(msg.guild, 'modlog_notrack_deletes'):
+            return
+
         # no, i can't use and
         if msg.author.bot:
             if not await self.bot.config_is_set(msg.guild, 'modlog_filter_allow_bot'):

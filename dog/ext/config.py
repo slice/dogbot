@@ -24,7 +24,9 @@ class Config(Cog):
             'mutesetup_disallow_read',
             'invisible_announce',
             'modlog_filter_allow_bot',
-            'welcome_message'
+            'welcome_message',
+            'modlog_notrack_deletes',
+            'modlog_notrack_edits'
         ]
 
     @commands.group(aliases=['gcfg'])
