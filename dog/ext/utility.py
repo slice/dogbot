@@ -4,6 +4,7 @@ Contains utility commands that help you get stuff done.
 
 import asyncio
 import datetime
+import logging
 import operator
 import random
 import re
@@ -12,13 +13,15 @@ from typing import Any, Dict, List
 
 import aiohttp
 import discord
-from asteval import Interpreter
-from bs4 import BeautifulSoup
 from discord.ext import commands
 
+from asteval import Interpreter
+from bs4 import BeautifulSoup
 from dog import Cog
 from dog.core import utils
 from dog.humantime import HumanTime
+
+logger = logging.getLogger(__name__)
 
 
 class GoogleResult(namedtuple('Google', 'title description url')):
@@ -120,6 +123,13 @@ class Utility(Cog):
                 return has_not_voted and is_poll_message and not_bot
 
             reaction, adder = await self.bot.wait_for('reaction_add', check=message_check)
+
+            # check if it was a number emoji
+            if len(reaction.emoji) != 2 or reaction.emoji[1] != '\u20e3':
+                logger.info('Ignoring invalid poll reaction -- reaction=%s, len(reaction)=%d',
+                            reaction.emoji, len(reaction.emoji))
+                continue
+
             poll_results[int(reaction.emoji[0]) - 1] += 1
             has_voted.append(adder)
 
