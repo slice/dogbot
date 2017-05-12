@@ -29,7 +29,7 @@ async def get_statistics(pg: asyncpg.connection.Connection, command_name: str) -
 
 async def last_used(pg: asyncpg.connection.Connection) -> datetime.datetime:
     """
-    Returns a ``datetime.datetime`` of the latest usage.
+    Returns a `datetime.datetime` of the latest usage.
     """
     row = await pg.fetchrow('SELECT * FROM command_statistics WHERE command_name != '
                             '\'command_stats\' ORDER BY last_used DESC')
@@ -38,7 +38,7 @@ async def last_used(pg: asyncpg.connection.Connection) -> datetime.datetime:
 
 async def update_statistics(pg: asyncpg.connection.Connection, ctx: commands.Context):
     """
-    Updates command statistics for a specific ``discord.ext.commands.Context``.
+    Updates command statistics for a specific `discord.ext.commands.Context`.
 
     If no record was found for a command, it is created. Otherwise, the ``times_used`` and
     ``last_used`` fields are updated.
@@ -69,11 +69,14 @@ class Stats(Cog):
 
         # member stats
         all_members = list(self.bot.get_all_members())
+        def filter_members_by_status(status):
+            return len([m for m in all_members if m.status == status])
         num_members = len(all_members)
-        num_online = len([m for m in all_members if m.status == discord.Status.online])
-        num_idle = len([m for m in all_members if m.status == discord.Status.idle])
-        num_dnd = len([m for m in all_members if m.status == discord.Status.offline])
-        num_offline = len([m for m in all_members if m.status == discord.Status.dnd])
+        num_online = filter_members_by_status(discord.Status.online)
+        num_idle = filter_members_by_status(discord.Status.idle)
+        num_dnd = filter_members_by_status(discord.Status.dnd)
+        num_offline = filter_members_by_status(discord.Status.offline)
+        perc_online = f'{round(num_online / num_members * 100, 2)}% is online'
 
         # channel stats
         all_channels = list(self.bot.get_all_channels())
@@ -95,7 +98,7 @@ class Stats(Cog):
         embed.set_footer(text=f'Booted at {utils.american_datetime(self.bot.boot_time)} UTC')
         fields = {
             'Members': f'{cm(num_members)} total, {cm(num_online)} online\n{cm(num_dnd)} DnD, '
-                       f'{cm(num_idle)} idle\n{cm(num_offline)} offline',
+                       f'{cm(num_idle)} idle\n{cm(num_offline)} offline\n\n{perc_online}',
             'Channels': f'{cm(num_channels)} total\n'
                         f'{cm(num_voice_channels)} voice channel(s)\n'
                         f'{cm(num_text_channels)} text channel(s)\n',
