@@ -49,7 +49,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'Dog'
+project = 'Dogbot'
 copyright = '2017, sliceofcode'
 author = 'sliceofcode'
 
@@ -156,8 +156,7 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
-
-
-
-# Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/3/': None}
+# Configuration for intersphinx: refer to the Python standard library.
+intersphinx_mapping = {
+    'https://docs.python.org/3/': None
+}

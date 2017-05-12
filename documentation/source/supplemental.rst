@@ -10,6 +10,16 @@ They also don't have their own package *yet*.
 .. automodule:: dog.humantime
   :members:
 
+`dog.ext.stats`
+===========
+
+.. NOTE::
+   Although this is an extension, it has been included because it contains some handy module-level
+   functions.
+
+.. automodule:: dog.ext.stats
+  :members:
+
 `dog.haste`
 ===========
 
