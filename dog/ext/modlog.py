@@ -27,6 +27,21 @@ class Modlog(Cog):
         embed.add_field(name='Registered on Discord', value=_registered)
         return embed
 
+    def _make_message_embed(self, msg: discord.Message, **kwargs) -> discord.Embed:
+        embed = self._make_modlog_embed(**kwargs)
+        if kwargs.get('add_content', False):
+            embed.description = msg.content
+        embed.add_field(name='Author', value=self._member_repr(msg.author))
+        embed.add_field(name='Channel', value=f'{msg.channel.mention} {msg.channel.name}')
+        embed.add_field(name='ID', value=msg.id)
+        return embed
+
+    async def on_message_edit(self, before: discord.Message, after: discord.Message):
+        embed = self._make_message_embed(before, title=f'\N{MEMO} Message edited')
+        embed.add_field(name='Before', value=utils.truncate(before.content, 1024), inline=False)
+        embed.add_field(name='After', value=utils.truncate(after.content, 1024), inline=False)
+        await self.bot.send_modlog(before.guild, embed=embed)
+
     async def on_message_delete(self, msg: discord.Message):
         # no, i can't use and
         if msg.author.bot:
@@ -35,12 +50,7 @@ class Modlog(Cog):
 
         # no it's not a typo
         delet_emote = '<:DeletThis:213623030197256203>'
-        embed = self._make_modlog_embed(title=f'{delet_emote} Message deleted')
-
-        # fields
-        embed.add_field(name='Author', value=self._member_repr(msg.author))
-        embed.add_field(name='Channel', value=f'{msg.channel.mention} {msg.channel.name}')
-        embed.add_field(name='ID', value=msg.id)
+        embed = self._make_message_embed(msg, title=f'{delet_emote} Message deleted')
 
         if msg.attachments:
             def description(a):
@@ -56,8 +66,7 @@ class Modlog(Cog):
             embed.add_field(name='Attachments', value=', '.join(atts))
 
         # set message content
-        content = utils.truncate(msg.content, 1500)
-        embed.description = content
+        embed.description = msg.content  # description limit = 2048, message content limit = 2000
         await self.bot.send_modlog(msg.guild, embed=embed)
 
     async def on_member_join(self, member: discord.Member):
