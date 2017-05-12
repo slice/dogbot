@@ -47,6 +47,9 @@ class Modlog(Cog):
         if before.author.bot:
             return
 
+        if before.content == after.content:
+            return
+
         if (not is_publicly_visible(before.channel) or
                 await self.bot.config_is_set(before.guild, 'modlog_notrack_edits')):
             return
