@@ -9,6 +9,13 @@ from dog import Cog
 from dog.core import checks, utils
 
 
+def is_publicly_visible(channel: discord.TextChannel) -> bool:
+    """ Returns whether a channel is publicly visible with the default role. """
+    everyone_overwrite = discord.utils.find(lambda t: t[0].name == '@everyone',
+                                            channel.overwrites)
+    return everyone_overwrite is None or everyone_overwrite[1].read_messages is not False
+
+
 class Modlog(Cog):
     def _make_modlog_embed(self, **kwargs):
         embed = discord.Embed(**kwargs)
@@ -37,16 +44,23 @@ class Modlog(Cog):
         return embed
 
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
-        if await self.bot.config_is_set(before.guild, 'modlog_notrack_edits'):
+        if before.author.bot:
+            return
+
+        if (not is_publicly_visible(before.channel) or
+                await self.bot.config_is_set(before.guild, 'modlog_notrack_edits')):
             return
 
         embed = self._make_message_embed(before, title=f'\N{MEMO} Message edited')
-        embed.add_field(name='Before', value=utils.truncate(before.content, 1024), inline=False)
-        embed.add_field(name='After', value=utils.truncate(after.content, 1024), inline=False)
+        embed.add_field(name='Before', value=utils.truncate(before.content or '<empty>', 1024),
+                        inline=False)
+        embed.add_field(name='After', value=utils.truncate(after.content or '<empty>', 1024),
+                        inline=False)
         await self.bot.send_modlog(before.guild, embed=embed)
 
     async def on_message_delete(self, msg: discord.Message):
-        if await self.bot.config_is_set(msg.guild, 'modlog_notrack_deletes'):
+        if (not is_publicly_visible(msg.channel) or
+                await self.bot.config_is_set(msg.guild, 'modlog_notrack_deletes')):
             return
 
         # no, i can't use and
@@ -106,6 +120,18 @@ class Modlog(Cog):
         embed.add_field(name='Channel', value=f'{channel.name}')
         embed.add_field(name='ID', value=channel.id)
         await self.bot.send_modlog(channel.guild, embed=embed)
+
+    @commands.command()
+    async def is_public(self, ctx, channel: discord.TextChannel = None):
+        """
+        Checks if a channel is public.
+
+        This command is in the Modlog cog because the modlog does not process message edit and
+        delete events for private channels.
+        """
+        channel = channel if channel else ctx.channel
+        public = 'This channel {} public to @\u200beveryone.'
+        await ctx.send(public.format('is' if is_publicly_visible(channel) else '**is not**'))
 
     @commands.command()
     @commands.has_permissions(manage_guild=True)
