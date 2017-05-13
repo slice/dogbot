@@ -78,6 +78,7 @@ class Utility(Cog):
         raise RuntimeError(message)
 
     @commands.command()
+    @commands.guild_only()
     async def poll(self, ctx, conclude_on_votes: int, title: str, *choices: str):
         """
         Creates a poll.
