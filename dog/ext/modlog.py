@@ -3,10 +3,13 @@ Contains the moderator log.
 """
 
 import discord
+import logging
 from discord.ext import commands
 
 from dog import Cog
 from dog.core import checks, utils
+
+logger = logging.getLogger(__name__)
 
 
 def is_publicly_visible(channel: discord.TextChannel) -> bool:
@@ -46,13 +49,19 @@ class Modlog(Cog):
 
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
         if before.author.bot:
+            logger.info('Refusing to track message edit, message was authored by a bot. mid=%d',
+                        before.id)
             return
 
         if before.content == after.content:
+            logger.info('Refusing to track message edit, content was not changed. mid=%d',
+                        before.id)
             return
 
         if (not is_publicly_visible(before.channel) or
                 await self.bot.config_is_set(before.guild, 'modlog_notrack_edits')):
+            logger.info('Refusing to track message edit, disabled or not visible. mid=%d, gid=%d',
+                        before.id, before.guild.id)
             return
 
         embed = self._make_message_embed(before, title=f'\N{MEMO} Message edited')
@@ -78,9 +87,11 @@ class Modlog(Cog):
 
     async def on_member_update(self, before: discord.Member, after: discord.Member):
         if before.nick != after.nick:
+            logger.info('Tracking member nickname update mid=%d', before.id)
             embed = self._make_member_changed_embed('nick', before, after, pretty_attr='Nickname')
             await self.bot.send_modlog(before.guild, embed=embed)
         elif before.name != after.name:
+            logger.info('Tracking member username update mid=%d', before.id)
             embed = self._make_member_changed_embed('name', before, after, pretty_attr='Username',
                                                     emoji='\N{NAME BADGE}')
             await self.bot.send_modlog(before.guild, embed=embed)
@@ -88,11 +99,15 @@ class Modlog(Cog):
     async def on_message_delete(self, msg: discord.Message):
         if (not is_publicly_visible(msg.channel) or
                 await self.bot.config_is_set(msg.guild, 'modlog_notrack_deletes')):
+            logger.info('Refusing to track message delete, disabled or not visible. mid=%d, gid=%d',
+                        msg.id, msg.guild.id)
             return
 
         # no, i can't use and
         if msg.author.bot:
             if not await self.bot.config_is_set(msg.guild, 'modlog_filter_allow_bot'):
+                logger.info('Refusing to track message delete, it was a bot message. mid=%d',
+                            msg.id)
                 return
 
         # no it's not a typo

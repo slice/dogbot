@@ -79,7 +79,7 @@ class DogBot(commands.AutoShardedBot):
             # replace the base path/like/this to path.like.this
             # add the filename at the end, but without the .py
             # filter out stuff we don't need
-            exts += [path.replace('/', '.') + '.' + file.replace('.py', '')
+            exts += [path.replace('/', '.').replace('\\', '.') + '.' + file.replace('.py', '')
                      for file in filter(ext_filter, files)]
 
         for ext in exts:
@@ -209,12 +209,14 @@ class DogBot(commands.AutoShardedBot):
         If there is no #mod-log channel, no message is sent. All parameters are
         passed to `send()`.
         """
-        mod_log = discord.utils.get(guild.channels, name='mod-log')
+        mod_log = discord.utils.get(guild.text_channels, name='mod-log')
 
         # don't post to mod-log, couldn't find the channel
         if mod_log is None:
+            logger.info('Not sending to modlog for gid=%d, no modlog channel.', guild.id)
             return
 
+        logger.info('Sending to modlog. cid=%d, gid=%d', mod_log.id, guild.id)
         await mod_log.send(*args, **kwargs)
 
     async def ok(self, ctx: commands.Context, emoji: str='\N{OK HAND SIGN}'):
