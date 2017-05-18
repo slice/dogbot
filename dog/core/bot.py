@@ -209,7 +209,15 @@ class DogBot(commands.AutoShardedBot):
         If there is no #mod-log channel, no message is sent. All parameters are
         passed to `send()`.
         """
-        mod_log = discord.utils.get(guild.text_channels, name='mod-log')
+        try:
+            key = 'modlog_channel_id'
+            manual_id = int(await self.config_get(guild, key))
+            manual_mod_log = discord.utils.get(guild.text_channels, id=manual_id)
+        except Exception as e:
+            manual_mod_log = None
+            pass
+
+        mod_log = manual_mod_log or discord.utils.get(guild.text_channels, name='mod-log')
 
         # don't post to mod-log, couldn't find the channel
         if mod_log is None:
@@ -386,6 +394,12 @@ class DogBot(commands.AutoShardedBot):
         fmt = (f'\N{LOUDLY CRYING FACE} Removed from guild "{g.name}"'
                f' (`{g.id}`)!')
         await self.monitor_send(fmt)
+
+    async def config_get(self, guild: discord.Guild, name: str):
+        """
+        Returns configuration data for a guild.
+        """
+        return (await self.redis.get(f'{guild.id}:{name}')).decode()
 
     async def config_is_set(self, guild: discord.Guild, name: str):
         """

@@ -110,9 +110,8 @@ class Modlog(Cog):
                             msg.id)
                 return
 
-        # no it's not a typo
-        delet_emote = '<:DeletThis:213623030197256203>'
-        embed = self._make_message_embed(msg, title=f'{delet_emote} Message deleted')
+        delete_symbol = '\N{DO NOT LITTER SYMBOL}'
+        embed = self._make_message_embed(msg, title=f'{delete_symbol} Message deleted')
 
         if msg.attachments:
             def description(a):

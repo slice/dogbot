@@ -26,7 +26,8 @@ class Config(Cog):
             'modlog_filter_allow_bot',
             'welcome_message',
             'modlog_notrack_deletes',
-            'modlog_notrack_edits'
+            'modlog_notrack_edits',
+            'modlog_channel_id'
         ]
 
     @commands.group(aliases=['gcfg'])
