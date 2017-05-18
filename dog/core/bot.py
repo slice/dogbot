@@ -221,10 +221,8 @@ class DogBot(commands.AutoShardedBot):
 
         # don't post to mod-log, couldn't find the channel
         if mod_log is None:
-            logger.info('Not sending to modlog for gid=%d, no modlog channel.', guild.id)
             return
 
-        logger.info('Sending to modlog. cid=%d, gid=%d', mod_log.id, guild.id)
         await mod_log.send(*args, **kwargs)
 
     async def ok(self, ctx: commands.Context, emoji: str='\N{OK HAND SIGN}'):
