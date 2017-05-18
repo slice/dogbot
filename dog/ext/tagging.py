@@ -71,6 +71,7 @@ class Tagging(Cog):
         return False
 
     @commands.group(invoke_without_command=True)
+    @commands.guild_only()
     async def tag(self, ctx, name: str, *, value: str=None):
         """
         Tag related operations.
@@ -110,6 +111,7 @@ class Tagging(Cog):
                 await ctx.send('\N{CONFUSED FACE} Not found.')
 
     @tag.command(name='list', aliases=['ls'])
+    @commands.guild_only()
     async def tag_list(self, ctx):
         """ Lists tags in this server. """
         tags = [t.decode().split(':')[2] for t in
@@ -120,6 +122,7 @@ class Tagging(Cog):
             await ctx.send('\N{PENSIVE FACE} Too many tags to display!')
 
     @tag.command(name='delete', aliases=['rm', 'remove', 'del'])
+    @commands.guild_only()
     async def tag_delete(self, ctx, name: str):
         """
         Deletes a tag.
@@ -141,6 +144,7 @@ class Tagging(Cog):
         await self.bot.ok(ctx, '\N{PUT LITTER IN ITS PLACE SYMBOL}')
 
     @tag.command(name='markdown', aliases=['raw'])
+    @commands.guild_only()
     async def tag_markdown(self, ctx, name: str):
         """
         Views the markdown of a tag.
@@ -158,6 +162,7 @@ class Tagging(Cog):
         await ctx.send(content)
 
     @tag.command(name='info', aliases=['about'])
+    @commands.guild_only()
     async def tag_info(self, ctx, name: str):
         """ Shows you information about a certain tag. """
         tag = await self.get_tag(ctx, name)

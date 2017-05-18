@@ -58,7 +58,8 @@ async def urban(session: aiohttp.ClientSession, word: str) -> UrbanDefinition:
 def make_urban_embed(d: UrbanDefinition) -> discord.Embed:
     """ Makes a ``discord.Embed`` from an ``UrbanDefinition``. """
     embed = discord.Embed(title=d.word, description=d.definition)
-    embed.add_field(name='Example', value=d.example, inline=False)
+    if d.example:
+        embed.add_field(name='Example', value=d.example, inline=False)
     embed.add_field(name='\N{THUMBS UP SIGN}', value=utils.commas(d.thumbs_up))
     embed.add_field(name='\N{THUMBS DOWN SIGN}', value=utils.commas(d.thumbs_down))
     return embed
@@ -90,12 +91,16 @@ class Fun(Cog):
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Geck'
                               'o) Chrome/58.0.3029.96 Safari/537.36'
             }
-            async with self.bot.session.get(GOOGLE_COMPLETE, headers=headers, params=payload) as resp:
-                try:
-                    result = random.choice((await resp.json())[1])[0]
-                    await ctx.send(utils.strip_tags(result))
-                except IndexError:
-                    await ctx.send('No results.')
+            try:
+                async with self.bot.session.get(GOOGLE_COMPLETE, headers=headers,
+                                                params=payload) as resp:
+                    try:
+                        result = random.choice((await resp.json())[1])[0]
+                        await ctx.send(utils.strip_tags(result))
+                    except IndexError:
+                        await ctx.send('No results.')
+            except aiohttp.ClientError:
+                await ctx.send('Something went wrong, try again.')
 
     @commands.command()
     @commands.is_owner()
@@ -140,7 +145,12 @@ class Fun(Cog):
         async with ctx.channel.typing():
             avatar_url = who.avatar_url_as(format='png')
             with await _get_bytesio(self.bot.session, avatar_url) as avatar_data:
-                im = Image.open(avatar_data)
+                try:
+                    im = Image.open(avatar_data)
+                except:
+                    await ctx.send('I couldn\'t load that person\'s avatar.')
+                    return im.close()
+
                 converter = ImageEnhance.Color(im)
                 im = converter.enhance(50)
 

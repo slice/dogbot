@@ -87,6 +87,12 @@ class Utility(Cog):
         vote on the poll with reactions.
         """
 
+        if not ctx.guild:
+            return
+
+        if len(choices) > 9:
+            raise commands.errors.BadArgument('Too many choices! There is a maximum of nine.')
+
         if conclude_on_votes < 1:
             raise commands.errors.BadArgument('Invalid `conclude_on_votes` parameter. It must be '
                                               'greater than zero.')
@@ -124,6 +130,10 @@ class Utility(Cog):
                 return has_not_voted and is_poll_message and not_bot
 
             reaction, adder = await self.bot.wait_for('reaction_add', check=message_check)
+
+            if isinstance(reaction.emoji, discord.Emoji):
+                # ignore custom emoji
+                continue
 
             # check if it was a number emoji
             if len(reaction.emoji) != 2 or reaction.emoji[1] != '\u20e3':
