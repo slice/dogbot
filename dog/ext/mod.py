@@ -288,8 +288,13 @@ class Mod(Cog):
         """
         Bans someone.
 
-        If you don't want to delete any message, specify 0 for delete_days.
+        If you don't want to delete any message, specify 0 for delete_days. delete_days has a
+        maximum of 7.
         """
+
+        if delete_days > 7:
+            raise commands.errors.BadArgument('`delete_days` has a maximum of 7.')
+
         try:
             await ctx.guild.ban(member, delete_message_days=delete_days, reason=reason)
         except discord.Forbidden:
