@@ -26,6 +26,7 @@ import discord
 from discord.ext import commands
 
 from dog import Cog
+from dog.haste import haste
 
 log = logging.getLogger(__name__)
 
@@ -127,7 +128,8 @@ class Exec(Cog):
                     await ctx.send('```py\n{}{}\n```'.format(value, ret))
             except discord.HTTPException:
                 # too long
-                await ctx.send('Result was too long.')
+                url = await haste(ctx.bot.session, value + str(ret))
+                await ctx.send('Result was too long. ' + url)
 
 
 def setup(bot):

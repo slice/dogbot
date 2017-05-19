@@ -2,8 +2,8 @@
 
 import aiohttp
 
-HASTEBIN_ENDPOINT = 'https://paste.safe.moe/documents'
-HASTEBIN_FMT = 'https://paste.safe.moe/{}.py'
+HASTEBIN_ENDPOINT = 'https://hastebin.com/documents'
+HASTEBIN_FMT = 'https://hastebin.com/{}.py'
 
 
 async def haste(session: aiohttp.ClientSession, text: str) -> str:
