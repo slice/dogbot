@@ -222,8 +222,12 @@ class DogBot(commands.AutoShardedBot):
         # don't post to mod-log, couldn't find the channel
         if mod_log is None:
             return
-
-        await mod_log.send(*args, **kwargs)
+        
+        try:
+            await mod_log.send(*args, **kwargs)
+        except discord.Forbidden:
+            # couldn't post to modlog
+            pass
 
     async def ok(self, ctx: commands.Context, emoji: str='\N{OK HAND SIGN}'):
         """
