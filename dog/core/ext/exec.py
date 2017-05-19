@@ -128,8 +128,12 @@ class Exec(Cog):
                     await ctx.send('```py\n{}{}\n```'.format(value, ret))
             except discord.HTTPException:
                 # too long
-                url = await haste(ctx.bot.session, value + str(ret))
-                await ctx.send('Result was too long. ' + url)
+                try:
+                    url = await haste(ctx.bot.session, value + str(ret))
+                    await ctx.send('Result was too long. ' + url)
+                except KeyError:
+                    # even hastebin couldn't handle it
+                    await ctx.send('Result was too long, even for Hastebin.')
 
 
 def setup(bot):
