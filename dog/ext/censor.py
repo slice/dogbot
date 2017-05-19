@@ -14,21 +14,20 @@ from dog.core import utils
 
 logger = logging.getLogger(__name__)
 INVITE_RE = re.compile(r'(discordapp\.com\/invite|discord\.gg)\/([a-zA-Z_\-0-9]+)')
-
-
-def has_invite(content: str) -> bool:
-    return INVITE_RE.match(content) is not None
+VIDEOSITE_RE = re.compile(r'(https?:\/\/)?(www\.)?(twitch\.tv|youtube\.com)\/(.+)')
 
 
 class CensorType(Enum):
+    """ Signifies the type of censorship. """
     INVITES = 1
+    VIDEOSITES = 2
 
 
 class Censorship(Cog):
     async def is_censoring(self, guild: discord.Guild, what: CensorType) -> bool:
         """ Returns whether something is being censored for a guild. """
         return await self.bot.redis.hexists(f'censor:{guild.id}', what.name)
-    
+
     async def censor(self, guild: discord.Guild, what: CensorType):
         """ Censors something for a guild. """
         logger.info('Censoring %s for %s (%d)', what, guild.name, guild.id)
@@ -93,18 +92,33 @@ class Censorship(Cog):
         await self.uncensor(ctx.message.guild, censor_type)
         await self.bot.ok(ctx)
 
+    async def should_censor(self, msg: discord.Message, censor_type: CensorType, regex) -> bool:
+        """ Returns whether a message should be censored based on a regex and censor type. """
+        return await self.is_censoring(msg.guild, censor_type) and regex.match(msg.content) \
+            is not None
+
+    async def censor_message(self, msg: discord.Message, title: str):
+        """ Censors a message, and posts to the modlog. """
+        try:
+            await msg.delete()
+        except discord.Forbidden:
+            await self.bot.send_modlog(msg.guild, ':x: I failed to censor a message because '
+                                       'I couldn\'t delete it! Please fix my permissions.')
+        else:
+            embed = self.bot.get_cog('Modlog')._make_message_embed(msg, title=title)
+            await self.bot.send_modlog(msg.guild, embed=embed)
+
     async def on_message(self, msg: discord.Message):
-        if await self.is_censoring(msg.guild, CensorType.INVITES) and has_invite(msg.content):
-            try:
-                await msg.delete()
-            except discord.Forbidden:
-                await self.bot.send_modlog(msg.guild, ':x: I failed to censor a message because '
-                                           'I couldn\'t delete it! Please fix my permissions.')
-            else:
-                title = '\u002a\u20e3 Invite-containing message censored'
-                embed = self.bot.get_cog('Modlog')._make_message_embed(msg, title=title)
-                await self.bot.send_modlog(msg.guild, embed=embed)
-                
+        censors = [
+            (CensorType.INVITES, INVITE_RE, '\u002a\u20e3 Invite-containing message censored'),
+            (CensorType.VIDEOSITES, VIDEOSITE_RE, '\u002a\u20e3 Videosite-containing message censored')
+        ]
+
+        for censor_type, regex, title in censors:
+            if await self.should_censor(msg, censor_type, regex):
+                await self.censor_message(msg, title)
+                break
+
 
 def setup(bot):
     bot.add_cog(Censorship(bot))
