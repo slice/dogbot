@@ -63,8 +63,6 @@ class Exec(Cog):
 
         env = {
             'bot': ctx.bot,
-            'bot_user': ctx.bot.user,
-            'bot_me': ctx.guild.me,
             'ctx': ctx,
             'msg': ctx.message,
             'guild': ctx.guild,

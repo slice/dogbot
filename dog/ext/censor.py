@@ -162,6 +162,9 @@ class Censorship(Cog):
         return exceptions
 
     async def on_message(self, msg: discord.Message):
+        if not isinstance(msg.channel, discord.TextChannel):
+            return
+
         censors = [
             (CensorType.INVITES, INVITE_RE, '\u002a\u20e3 Invite-containing message censored'),
             (CensorType.VIDEOSITES, VIDEOSITE_RE, '\u002a\u20e3 Videosite-containing message censored')
