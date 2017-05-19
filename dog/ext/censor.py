@@ -60,6 +60,10 @@ class Censorship(Cog):
         with the `d?censorship list` subcommand. You may then disable and enable certain types of
         censorship with the `d?censorship censor` and `d?censorship uncensor` commands.
 
+        You may manage certain roles from being censored with the `except`, `unexcept`, and
+        `exceptions` subcommands. Note: The `except` and `unexcept` subcommands use role IDs, not
+        role names or mentions. To list the roles (and their IDs) in this server, use `d?roles`.
+
         You must have the "Manage Server" permission in order to manage server censorship.
         """
         pass
@@ -118,8 +122,22 @@ class Censorship(Cog):
         await ctx.send(f'Censorship types: {types}')
 
     @censorship.command(name='censoring')
-    async def _censoring(self, ctx, what: str):
-        """ Views what types of messages are being censored. """
+    async def _censoring(self, ctx, what: str = None):
+        """
+        Views what types of messages are being censored.
+
+        If you pass the name of a censor type (view all censor types with d?cs list) into the
+        command, Dogbot will tell if you if that certain censor type is enabled or not.
+        """
+
+        if not what:
+            censor_types = [t.name for t in CensorType]
+            censoring_dict = {name.lower(): await self.is_censoring(ctx.guild,
+                                                                    getattr(CensorType, name))
+                              for name in censor_types}
+            await ctx.send(utils.format_dict(censoring_dict))
+            return
+
         censor_type = getattr(CensorType, what.upper(), None)
         if not censor_type:
             return await ctx.send('Invalid censorship type.')

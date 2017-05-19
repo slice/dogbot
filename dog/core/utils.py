@@ -1,6 +1,7 @@
 import datetime
 import urllib.parse
 from html.parser import HTMLParser
+from typing import Any, Dict
 
 import discord
 
@@ -17,6 +18,18 @@ class MLStripper(HTMLParser):
 
     def get_data(self):
         return ''.join(self.fed)
+
+
+def format_dict(d: Dict[Any, Any]) -> str:
+    """ Formats a ``dict`` to look pretty. """
+    code_block = '```\n'
+    padding = len(max(d.keys(), key=len))
+
+    for name, value in d.items():
+        code_block += '{name: <{width}} {value}\n'.format(name=name, width=padding, value=value)
+
+    code_block += '```'
+    return code_block
 
 
 def make_profile_embed(member: discord.Member):
