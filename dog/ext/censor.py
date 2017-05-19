@@ -38,6 +38,15 @@ class Censorship(Cog):
         logging.info('Uncensoring %s for %s (%d)', what, guild.name, guild.id)
         await self.bot.redis.hdel(f'censor:{guild.id}', what.name)
 
+    @commands.command()
+    async def roles(self, ctx):
+        """ Views the roles (and their IDs) in this server. """
+        code = '```\n' + '\n'.join([f'\N{BULLET} {r.name} ({r.id})' for r in ctx.guild.roles]) + '\n```'
+        try:
+            await ctx.send(code)
+        except discord.HTTPException:
+            await ctx.send(f'You have too many roles ({len(ctx.guild.roles)}) for me to list!')
+
     @commands.group(aliases=['cs'])
     @commands.has_permissions(manage_guild=True)
     async def censorship(self, ctx):
@@ -54,6 +63,44 @@ class Censorship(Cog):
         You must have the "Manage Server" permission in order to manage server censorship.
         """
         pass
+
+    @censorship.command(name='except')
+    async def _except(self, ctx, role_id: int):
+        """
+        Excepts a role from being censored.
+
+        This command only accepts role IDs. In order to view the list of roles and their IDs, use
+        d?roles.
+        """
+        if not discord.utils.get(ctx.guild.roles, id=role_id):
+            return await ctx.send('I couldn\'t find a role with that ID. To view the list of roles '
+                                  '(and their IDs) in this server, use the `d?roles` command.'
+                                  ' **Note:** This command only takes role IDs, not role names or '
+                                  'mentions.')
+        await self.bot.redis.sadd(f'censor:exceptions:{ctx.message.guild.id}', role_id)
+        await self.bot.ok(ctx)
+
+    @censorship.command(name='unexcept')
+    async def _unexcept(self, ctx, role_id: int):
+        """
+        Unexcepts a role from being censored.
+
+        This command only accepts role IDs. In order to view the list of roles and their IDs, use
+        d?roles.
+        """
+        await self.bot.redis.srem(f'censor:exceptions:{ctx.message.guild.id}', role_id)
+        await self.bot.ok(ctx)
+
+    @censorship.command(name='exceptions', aliases=['excepted'])
+    async def _exceptions(self, ctx):
+        """ Lists the excepted roles, and their IDs. """
+        roles = [discord.utils.get(ctx.guild.roles, id=i) for i in await self.get_guild_exceptions(ctx.guild)]
+
+        if not roles:
+            return await ctx.send('There are no roles being excepted.')
+
+        code = '```\n' + '\n'.join([f'\N{BULLET} {r.name} ({r.id})' for r in roles]) + '\n```'
+        await ctx.send(code)
 
     @censorship.command(name='censor')
     async def _censor(self, ctx, what: str):
@@ -108,11 +155,20 @@ class Censorship(Cog):
             embed = self.bot.get_cog('Modlog')._make_message_embed(msg, title=title)
             await self.bot.send_modlog(msg.guild, embed=embed)
 
+    async def get_guild_exceptions(self, guild: discord.Guild):
+        """ Returns the list of exception role IDs that a guild has. """
+        exceptions = await self.bot.redis.smembers(f'censor:exceptions:{guild.id}')
+        exceptions = [int(e.decode()) for e in exceptions]
+        return exceptions
+
     async def on_message(self, msg: discord.Message):
         censors = [
             (CensorType.INVITES, INVITE_RE, '\u002a\u20e3 Invite-containing message censored'),
             (CensorType.VIDEOSITES, VIDEOSITE_RE, '\u002a\u20e3 Videosite-containing message censored')
         ]
+
+        if any([role.id in await self.get_guild_exceptions(msg.guild) for role in msg.author.roles]):
+            return
 
         for censor_type, regex, title in censors:
             if await self.should_censor(msg, censor_type, regex):
