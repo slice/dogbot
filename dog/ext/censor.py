@@ -43,7 +43,14 @@ class Censorship(Cog):
     @commands.has_permissions(manage_guild=True)
     async def censorship(self, ctx):
         """
-        Manages censorship.
+        Manages censorship. Censorship allows you to forbid certain types of messages in your
+        server. If the modlog is setup, then Dogbot will post to the modlog whenever a message
+        is censored.
+
+        In order to censor, Dogbot needs to be able to delete messages. Ensure that Dogbot has
+        proper permissions before enabling censoring. You can list the types of censorship
+        with the `d?censorship list` subcommand. You may then disable and enable certain types of
+        censorship with the `d?censorship censor` and `d?censorship uncensor` commands.
 
         You must have the "Manage Server" permission in order to manage server censorship.
         """
