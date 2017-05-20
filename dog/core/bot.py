@@ -390,15 +390,11 @@ class DogBot(commands.AutoShardedBot):
                            'need help, need to report a bug, or just want to request a feature, '
                            'please join the support server: https://discord.gg/3dd7czT Thanks!')
 
-        # send welcome message to first available channel
-        logger.info('Initial message - iterating over channels...')
-        for channel in sorted(g.channels, key=lambda c: c.position):
-            can_send = channel.permissions_for(g.me).send_messages 
-            if can_send and isinstance(channel, discord.TextChannel):
-                logger.info('I can send in #%s - sending it there!', channel.name)
-                return await channel.send(WELCOME_MESSAGE)
-            else:
-                logger.info('Can\'t send in "%s", moving on...', channel.name)
+        logger.info('PMing owner of %s (%d)...', g.name, g.id)
+        try:
+            await g.owner.send(WELCOME_MESSAGE)
+        except discord.Forbidden:
+            logger.info('Failed to DM owner. Not caring...')
 
     async def on_guild_remove(self, g):
         fmt = (f'\N{LOUDLY CRYING FACE} Removed from guild "{g.name}"'
