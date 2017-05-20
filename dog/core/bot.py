@@ -27,7 +27,7 @@ from .utils import pretty_timedelta
 logger = logging.getLogger(__name__)
 
 
-class DogBot(commands.Bot):
+class DogBot(commands.AutoShardedBot):
     """
     The main DogBot bot. It is automatically sharded. All parameters are passed
     to the constructor of :class:`discord.commands.AutoShardedBot`.
