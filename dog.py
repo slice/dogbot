@@ -65,3 +65,10 @@ d = DogBot(command_prefix=commands.when_mentioned_or(*cfg.prefixes),
 
 d.load_exts_recursively('dog/ext', 'Initial recursive load')
 d.run(cfg.token)
+
+# close log handlers (why)
+# https://github.com/Rapptz/RoboDanny/blob/master/bot.py#L128-L132
+handlers = root_logger.handlers[:]
+for hndlr in handlers:
+    hndlr.close()
+    root_logger.removeHandler(hndlr)
