@@ -83,10 +83,11 @@ class Level(Cog):
         await ctx.send(utils.format_dict(lvls))
 
     @level.command(name='cmd_level', aliases=['cl'])
-    async def level_cmd_level(self, ctx, cmd: str, level: int):
+    async def level_cmd_level(self, ctx, cmd: str, level: int=0):
         """
-        Assigns a command level to a command. A command invoker must have a command level matching
-        the command or higher in order to execute it.
+        Assigns a command level to a command, or views it. You will set it if a secondary argument
+        is passed. A command invoker must have a command level matching the command or higher in
+        order to execute it.
 
         Examples:
         d?level cmd_level ping 50
@@ -94,16 +95,21 @@ class Level(Cog):
         d?level cmd_level "tag delete" 250
             Requires a command level of 250 or higher in order to execute d?tag delete.
         """
-        if len(cmd) > 120:
-            return await ctx.send('That isn\'t a command name!')
-        await self.bot.redis.set(f'levels:cmd:{ctx.guild.id}:{cmd}', level)
-        await self.bot.ok(ctx)
+        if level:
+            if len(cmd) > 120:
+                return await ctx.send('That isn\'t a command name!')
+            await self.bot.redis.set(f'levels:cmd:{ctx.guild.id}:{cmd}', level)
+            await self.bot.ok(ctx)
+        else:
+            lvl = await self.get_command_level(ctx.guild, cmd)
+            await ctx.send('Command level for `d?{}`: **{}**'.format(cmd, lvl))
 
     @level.command(name='role_level', aliases=['rl'])
-    async def level_role_level(self, ctx, role: discord.Role, level: int):
+    async def level_role_level(self, ctx, role: discord.Role, level: int=0):
         """
-        Assigns a command level to a role. If someone has a role with a command level, then it will
-        be taken into calculation when determining someone's command level.
+        Assigns a command level to a role, or views it. You will set it if a secondary arugment is
+        passed. If someone has a role with a command level, then it will be taken into calculation
+        when determining someone's command level.
 
         A command level of zero is equivalent to no command level at all.
 
@@ -112,8 +118,12 @@ class Level(Cog):
             Gives a role named "my role" a command level of 900.
         """
 
-        await self.bot.redis.set(f'levels:role:{role.id}', level)
-        await self.bot.ok(ctx)
+        if level:
+            await self.bot.redis.set(f'levels:role:{role.id}', level)
+            await self.bot.ok(ctx)
+        else:
+            lvl = await self.get_role_command_level(role)
+            await ctx.send('Command level for role `{}`: **{}**'.format(role.name, lvl))
 
 
 def setup(bot):
