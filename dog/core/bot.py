@@ -439,7 +439,7 @@ class DogBot(commands.AutoShardedBot):
 
     async def on_command_error(self, ctx, ex):
         if ctx.command:
-            see_help = f'Run `d?help {ctx.command.name}` for more information.'
+            see_help = f'Run `d?help {ctx.command.qualified_name}` for more information.'
 
         if isinstance(ex, commands.errors.BadArgument):
             message = str(ex)
