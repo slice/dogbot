@@ -5,3 +5,4 @@ aioredis
 beautifulsoup4
 raven
 asyncpg
+objgraph
