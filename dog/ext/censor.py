@@ -180,7 +180,7 @@ class Censorship(Cog):
         return exceptions
 
     async def on_message(self, msg: discord.Message):
-        if not isinstance(msg.channel, discord.TextChannel):
+        if not isinstance(msg.channel, discord.TextChannel) or isinstance(msg.author, discord.User):
             return
 
         censors = [
