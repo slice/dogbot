@@ -19,8 +19,8 @@ DETAILED_PING = '''**message create:** {}
 
 
 class Internal(Cog):
-    def __local_check(self, ctx):
-        return self.bot.is_owner(ctx.message.author)
+    async def __local_check(self, ctx):
+        return await self.bot.is_owner(ctx.message.author)
 
     @commands.command()
     async def dping(self, ctx):
