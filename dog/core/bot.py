@@ -27,7 +27,7 @@ from .utils import pretty_timedelta
 logger = logging.getLogger(__name__)
 
 
-class DogBot(commands.AutoShardedBot):
+class DogBot(commands.Bot):
     """
     The main DogBot bot. It is automatically sharded. All parameters are passed
     to the constructor of :class:`discord.commands.AutoShardedBot`.
@@ -66,6 +66,14 @@ class DogBot(commands.AutoShardedBot):
         # this is here so we can d?reload even if an syntax error occurs and it won't be present
         # in self.extensions
         self._exts_to_load = list(self.extensions.keys()).copy()
+
+    async def close(self):
+        # close stuff
+        logger.info('close() called, cleaning up...')
+        self.redis.close()
+        await self.pg.close()
+        await self.session.close()
+        await super().close()
 
     def load_exts_recursively(self, directory: str, prefix: str = 'Recursive load'):
         """ Loads extensions from a directory recursively. """
