@@ -105,11 +105,11 @@ class Exec(Cog):
                 ret = await func()
         except Exception as e:
             # something went wrong
-            value = stdout.getvalue()
-            await ctx.send('```py\n{}{}\n```'.format(value, traceback.format_exc()))
+            stream = stdout.getvalue()
+            await ctx.send('```py\n{}{}\n```'.format(stream, traceback.format_exc()))
         else:
             # successful
-            value = stdout.getvalue()
+            stream = stdout.getvalue()
 
             try:
                 await ctx.message.add_reaction('\u2705')
@@ -118,16 +118,12 @@ class Exec(Cog):
                 log.warning('Failed to add reaction to eval message, ignoring.')
 
             try:
-                if ret is None:
-                    if value:
-                        await ctx.send('```py\n{}\n```'.format(value))
-                else:
-                    self.last_result = ret
-                    await ctx.send('```py\n{}{}\n```'.format(value, ret))
+                self.last_result = self.last_result if ret is None else ret
+                await ctx.send('```py\n{}{}\n```'.format(stream, repr(ret)))
             except discord.HTTPException:
                 # too long
                 try:
-                    url = await haste(ctx.bot.session, value + str(ret))
+                    url = await haste(ctx.bot.session, stream + repr(ret))
                     await ctx.send('Result was too long. ' + url)
                 except KeyError:
                     # even hastebin couldn't handle it
