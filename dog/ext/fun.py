@@ -12,6 +12,8 @@ import discord
 import random
 from discord.ext import commands
 from PIL import Image, ImageEnhance
+from wand import image as wndimg
+from wand.color import Color
 
 from dog import Cog
 from dog.core import checks, utils
@@ -66,6 +68,47 @@ def make_urban_embed(d: UrbanDefinition) -> discord.Embed:
 
 
 class Fun(Cog):
+    @commands.command()
+    @commands.cooldown(1, 2, commands.BucketType.user)
+    async def forbidden(self, ctx, who: discord.Member):
+        """ At last! I am free to think the forbidden thoughts. """
+        with ctx.typing():
+            try:
+                avatar_url = who.avatar_url_as(format='png')
+
+                # grab the avatar data, the forbidden image, the avatar image, and create a canvas
+                avatar_data = await _get_bytesio(self.bot.session, avatar_url)
+                forbid = wndimg.Image(filename='resources/forbidden_thoughts.png')
+                avatar = wndimg.Image(file=avatar_data)
+                canvas = wndimg.Image(width=forbid.width, height=forbid.height)
+
+                # canvas should be png
+                canvas.format = 'png'
+
+                # resize the avatar to an appropriate size
+                avatar.resize(580, 580)
+
+                # composite the avatar on the bottom, then the forbidden image on top
+                canvas.composite(avatar, 980, 480)
+                canvas.composite(forbid, 0, 0)
+
+                # create a bytesio to save it to
+                with BytesIO() as bio:
+                    # save
+                    canvas.save(file=bio)
+                    bio.seek(0)
+
+                    # send it
+                    await ctx.send(file=discord.File(bio, f'forbidden-{who.id}.png'))
+
+                # close everything
+                avatar_data.close()
+                forbid.close()
+                avatar.close()
+                canvas.close()
+            except:
+                await ctx.send('Something went wrong making the image. Sorry!')
+
     @commands.command()
     @commands.guild_only()
     @checks.config_is_set('woof_command_enabled')
