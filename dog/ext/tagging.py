@@ -5,7 +5,7 @@ Extension that implements tags, a way to store pieces of useful text for later.
 import datetime
 import re
 from collections import namedtuple
-from time import time as epoch
+import datetime
 
 import discord
 from discord.ext import commands
@@ -15,41 +15,32 @@ from dog.core import checks, utils
 
 Tag = namedtuple('Tag', 'name value creator created_at uses')
 
+
 class Tagging(Cog):
     async def create_tag(self, ctx: commands.Context, name: str, value: str):
-        prefix = f'tags:{ctx.guild.id}:{name}'
-
-        await self.bot.redis.set(f'{prefix}:value', value)
-        await self.bot.redis.set(f'{prefix}:creator', ctx.author.id)
-        await self.bot.redis.set(f'{prefix}:created_at', epoch())
-        await self.bot.redis.set(f'{prefix}:uses', 0)
+        insert = 'INSERT INTO tags VALUES ($1, $2, $3, $4, 0, $5)'
+        await self.bot.pg.execute(insert, name, ctx.guild.id, ctx.author.id, value,
+                                  datetime.datetime.utcnow())
 
     async def get_tag(self, ctx: commands.Context, name: str) -> Tag:
-        prefix = f'tags:{ctx.guild.id}:{name}'
+        """ Finds a tag, and returns it as a ``Tag`` object. """
+        select = 'SELECT * FROM tags WHERE guild_id = $1 AND name = $2'
+        record = await self.bot.pg.fetchrow(select, ctx.guild.id, name)
 
-        # check if the tag actually exists
-        if not await self.bot.redis.exists(f'{prefix}:value'):
+        if not record:
             return None
 
-        tag_value = (await self.bot.redis.get(f'{prefix}:value')).decode()
-        creator_id = int((await self.bot.redis.get(f'{prefix}:creator')).decode())
-        created_at = float((await self.bot.redis.get(f'{prefix}:created_at')).decode())
-        uses = int((await self.bot.redis.get(f'{prefix}:uses')).decode())
-
-        creator = ctx.guild.get_member(creator_id) or creator_id
-
-        return Tag(value=tag_value, creator=creator, uses=uses, name=name,
-                   created_at=datetime.datetime.utcfromtimestamp(created_at))
+        creator = ctx.guild.get_member(record['creator_id']) or record['creator_id']
+        return Tag(value=record['value'], creator=creator, uses=record['uses'], name=name,
+                   created_at=record['created_at'])
 
     async def delete_tag(self, ctx: commands.Context, name: str):
-        prefix = f'tags:{ctx.guild.id}:{name}'
-
-        await self.bot.redis.delete(f'{prefix}:value')
-        await self.bot.redis.delete(f'{prefix}:creator')
-        await self.bot.redis.delete(f'{prefix}:created_at')
-        await self.bot.redis.delete(f'{prefix}:uses')
+        """ Deletes a tag. """
+        await self.bot.pg.execute('DELETE FROM tags WHERE guild_id = $1 AND name = $2', ctx.guild.id,
+                                  name)
 
     def can_touch_tag(self, ctx: commands.Context, tag: str) -> bool:
+        """ Returns whether someone can touch a tag (modify, delete, or edit it). """
         perms = ctx.author.guild_permissions
 
         # they can manage the server
@@ -85,18 +76,19 @@ class Tagging(Cog):
         You may only touch a tag if one of the following conditions are met:
             1) You have the "Manage Server" permission.
             2) You are the owner of the server.
-            3) You created that tag.
+            3) You have created that tag.
             4) You are a Dogbot Moderator.
         """
         if value:
+            # a value was provided, create or overwrite
             tag = await self.get_tag(ctx, name)
-            if tag:
-                # tag already exists
-                if not self.can_touch_tag(ctx, tag):
-                    # cannot overwrite
-                    await ctx.send('\N{NO PEDESTRIANS} You can\'t overwrite'
-                                   ' that tag\'s contents.')
-                    return
+
+            # tag already exists, check if we can touch it
+            if tag and not self.can_touch_tag(ctx, tag):
+                # cannot overwrite
+                await ctx.send('\N{NO PEDESTRIANS} You can\'t overwrite'
+                               ' that tag\'s contents.')
+                return
 
             # set a tag
             await self.create_tag(ctx, name, value)
@@ -106,7 +98,8 @@ class Tagging(Cog):
             tag = await self.get_tag(ctx, name)
             if tag:
                 await ctx.send(tag.value)
-                await self.bot.redis.incr(f'tags:{ctx.guild.id}:{name}:uses')
+                await self.bot.pg.execute('UPDATE tags SET uses = uses + 1 WHERE name = $1 AND'
+                                          ' guild_id = $2', name, ctx.guild.id)
             else:
                 await ctx.send('\N{CONFUSED FACE} Not found.')
 
@@ -114,8 +107,8 @@ class Tagging(Cog):
     @commands.guild_only()
     async def tag_list(self, ctx):
         """ Lists tags in this server. """
-        tags = [t.decode().split(':')[2] for t in
-                await self.bot.redis.keys(f'tags:{ctx.guild.id}:*:value')]
+        tags = [record['name'] for record in
+                await self.bot.pg.fetch('SELECT * FROM tags WHERE guild_id = $1', ctx.guild.id)]
         try:
             await ctx.send(f'**{len(tags)} tag(s):** ' + ', '.join(tags))
         except discord.HTTPException:
@@ -168,14 +161,10 @@ class Tagging(Cog):
         tag = await self.get_tag(ctx, name)
 
         if tag:
-            embed = discord.Embed(title=tag.name)
-            embed.description = tag.value
-            embed.add_field(name='Created',
-                            value=utils.american_datetime(tag.created_at) + ' UTC')
-            embed.add_field(name='Created by',
-                            value=tag.creator.mention, inline=False)
-            embed.add_field(name='Uses',
-                            value=tag.uses)
+            embed = discord.Embed(title=tag.name, description=tag.value)
+            embed.add_field(name='Created', value=utils.american_datetime(tag.created_at) + ' UTC')
+            embed.add_field(name='Created by', value=tag.creator.mention, inline=False)
+            embed.add_field(name='Uses', value=tag.uses)
             await ctx.send(embed=embed)
         else:
             await ctx.send('\N{CONFUSED FACE} Not found.')
