@@ -61,7 +61,8 @@ class Stats(Cog):
     async def on_command_completion(self, ctx):
         if any(['is_owner' in fun.__qualname__ for fun in ctx.command.checks]):
             return
-        await update_statistics(self.bot.pg, ctx)
+        async with self.bot.pgpool.acquire() as conn:
+            await update_statistics(conn, ctx)
 
     @commands.command()
     async def stats(self, ctx):
@@ -118,7 +119,8 @@ class Stats(Cog):
         """ Shows commands statistics. """
 
         if command:
-            record = await get_statistics(self.bot.pg, command)
+            async with self.bot.pgpool.acquire() as conn:
+                record = await get_statistics(conn, command)
             if not record:
                 return await ctx.send('There are no statistics for that command.')
             embed = discord.Embed(title=f'Statistics for `{command}`')
@@ -127,11 +129,13 @@ class Stats(Cog):
             return await ctx.send(embed=embed)
 
         select = 'SELECT * FROM command_statistics ORDER BY times_used DESC LIMIT 5'
-        records = await self.bot.pg.fetch(select)
+        async with self.bot.pgpool.acquire() as conn:
+            records = await conn.fetch(select)
 
         medals = [':first_place:', ':second_place:', ':third_place:']
         embed = discord.Embed(title='Most used commands')
-        lu = utils.ago(await last_used(self.bot.pg))
+        async with self.bot.pgpool.acquire() as conn:
+            lu = utils.ago(await last_used(conn))
         embed.set_footer(text=f'Last command usage was {lu}')
 
         for index, record in enumerate(records):

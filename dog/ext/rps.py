@@ -13,8 +13,8 @@ log = logging.getLogger(__name__)
 class RPS(Cog):
     async def rps_is_being_excluded(self, who: discord.Member) -> bool:
         """ Returns whether a person is being excluded from RPS. """
-        return await self.bot.pg.fetchrow('SELECT * FROM rps_exclusions WHERE user_id = $1',
-                                          who.id) is not None
+        async with self.bot.pgpool.acquire() as conn:
+            return await conn.fetchrow('SELECT * FROM rps_exclusions WHERE user_id = $1', who.id) is not None
 
     @commands.group(invoke_without_command=True)
     @commands.guild_only()
@@ -101,7 +101,8 @@ class RPS(Cog):
         if await self.rps_is_being_excluded(ctx.author):
             return await ctx.send('You are already excluded from RPS.')
 
-        await self.bot.pg.execute('INSERT INTO rps_exclusions VALUES ($1)', ctx.author.id)
+        async with self.bot.pgpool.acquire() as conn:
+            await conn.execute('INSERT INTO rps_exclusions VALUES ($1)', ctx.author.id)
         await self.bot.ok(ctx)
 
     @rps.command(name='include')
@@ -110,7 +111,8 @@ class RPS(Cog):
         if not await self.rps_is_being_excluded(ctx.author):
             return await ctx.send('You are not being excluded from RPS.')
 
-        await self.bot.pg.execute('DELETE FROM rps_exclusions WHERE user_id = $1', ctx.author.id)
+        async with self.bot.pgpool.acquire() as conn:
+            await conn.execute('DELETE FROM rps_exclusions WHERE user_id = $1', ctx.author.id)
         await self.bot.ok(ctx)
 
 

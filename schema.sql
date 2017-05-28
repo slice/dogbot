@@ -8,6 +8,12 @@ CREATE TABLE IF NOT EXISTS rps_exclusions (
   user_id bigint
 );
 
+CREATE TABLE IF NOT EXISTS censorship (
+  guild_id bigint,
+  enabled text[],
+  exceptions bigint[]
+);
+
 CREATE TABLE IF NOT EXISTS tags (
   name text,
   guild_id bigint,

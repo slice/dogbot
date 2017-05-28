@@ -5,11 +5,9 @@ Extension that implements tags, a way to store pieces of useful text for later.
 import datetime
 import re
 from collections import namedtuple
-import datetime
 
 import discord
 from discord.ext import commands
-
 from dog import Cog
 from dog.core import checks, utils
 
@@ -19,13 +17,14 @@ Tag = namedtuple('Tag', 'name value creator created_at uses')
 class Tagging(Cog):
     async def create_tag(self, ctx: commands.Context, name: str, value: str):
         insert = 'INSERT INTO tags VALUES ($1, $2, $3, $4, 0, $5)'
-        await self.bot.pg.execute(insert, name, ctx.guild.id, ctx.author.id, value,
-                                  datetime.datetime.utcnow())
+        async with self.bot.pgpool.acquire() as conn:
+            await conn.execute(insert, name, ctx.guild.id, ctx.author.id, value, datetime.datetime.utcnow())
 
     async def get_tag(self, ctx: commands.Context, name: str) -> Tag:
         """ Finds a tag, and returns it as a ``Tag`` object. """
         select = 'SELECT * FROM tags WHERE guild_id = $1 AND name = $2'
-        record = await self.bot.pg.fetchrow(select, ctx.guild.id, name)
+        async with self.bot.pgpool.acquire() as conn:
+            record = await conn.fetchrow(select, ctx.guild.id, name)
 
         if not record:
             return None
@@ -36,8 +35,8 @@ class Tagging(Cog):
 
     async def delete_tag(self, ctx: commands.Context, name: str):
         """ Deletes a tag. """
-        await self.bot.pg.execute('DELETE FROM tags WHERE guild_id = $1 AND name = $2', ctx.guild.id,
-                                  name)
+        async with self.bot.pgpool.acquire() as conn:
+            await conn.execute('DELETE FROM tags WHERE guild_id = $1 AND name = $2', ctx.guild.id, name)
 
     def can_touch_tag(self, ctx: commands.Context, tag: str) -> bool:
         """ Returns whether someone can touch a tag (modify, delete, or edit it). """
@@ -98,8 +97,9 @@ class Tagging(Cog):
             tag = await self.get_tag(ctx, name)
             if tag:
                 await ctx.send(tag.value)
-                await self.bot.pg.execute('UPDATE tags SET uses = uses + 1 WHERE name = $1 AND'
-                                          ' guild_id = $2', name, ctx.guild.id)
+                async with self.bot.pgpool.acquire() as conn:
+                    await conn.execute('UPDATE tags SET uses = uses + 1 WHERE name = $1 AND'
+                                       ' guild_id = $2', name, ctx.guild.id)
             else:
                 await ctx.send('\N{CONFUSED FACE} Not found.')
 
@@ -107,8 +107,9 @@ class Tagging(Cog):
     @commands.guild_only()
     async def tag_list(self, ctx):
         """ Lists tags in this server. """
-        tags = [record['name'] for record in
-                await self.bot.pg.fetch('SELECT * FROM tags WHERE guild_id = $1', ctx.guild.id)]
+        async with self.bot.pgpool.acquire() as conn:
+            tags = [record['name'] for record in
+                    await conn.fetch('SELECT * FROM tags WHERE guild_id = $1', ctx.guild.id)]
         try:
             await ctx.send(f'**{len(tags)} tag(s):** ' + ', '.join(tags))
         except discord.HTTPException:

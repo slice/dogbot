@@ -26,17 +26,38 @@ class CensorType(Enum):
 class Censorship(Cog):
     async def is_censoring(self, guild: discord.Guild, what: CensorType) -> bool:
         """ Returns whether something is being censored for a guild. """
-        return await self.bot.redis.hexists(f'censor:{guild.id}', what.name)
+        if not await self.has_censorship_record(guild):
+            return False
+        sql = 'SELECT enabled FROM censorship WHERE guild_id = $1'
+        async with self.bot.pgpool.acquire() as conn:
+            enabled = (await conn.fetchrow(sql, guild.id))['enabled']
+        return what.name in enabled
+    
+    async def has_censorship_record(self, guild: discord.Guild) -> bool:
+        """ Returns whether a censorship record is present for a guild. """
+        sql = 'SELECT * FROM censorship WHERE guild_id = $1'
+        async with self.bot.pgpool.acquire() as conn:
+            return await conn.fetchrow(sql, guild.id) is not None
 
     async def censor(self, guild: discord.Guild, what: CensorType):
         """ Censors something for a guild. """
         logger.info('Censoring %s for %s (%d)', what, guild.name, guild.id)
-        await self.bot.redis.hset(f'censor:{guild.id}', what.name, 'on')
+        async with self.bot.pgpool.acquire() as conn:
+            if not await self.has_censorship_record(guild):
+                logger.debug('Creating initial censorship data for guild %s (%d)', guild.name, guild.id)
+                await conn.execute('INSERT INTO censorship VALUES ($1, \'{}\', \'{}\')', guild.id)
+            # TODO: don't concat the string directly
+            await conn.execute(f'UPDATE censorship SET enabled = enabled || \'{{"{what.name}"}}\' '
+                               'WHERE guild_id = $1', guild.id)
 
     async def uncensor(self, guild: discord.Guild, what: CensorType):
         """ Uncensors something for a guild. """
+        if not await self.has_censorship_record(guild):
+            return
         logging.info('Uncensoring %s for %s (%d)', what, guild.name, guild.id)
-        await self.bot.redis.hdel(f'censor:{guild.id}', what.name)
+        async with self.bot.pgpool.acquire() as conn:
+            await conn.execute(f'UPDATE censorship SET enabled = array_remove(enabled, \'{what.name}\') '
+                               'WHERE guild_id = $1', guild.id)
 
     @commands.command()
     async def roles(self, ctx):
@@ -81,7 +102,11 @@ class Censorship(Cog):
                                   '(and their IDs) in this server, use the `d?roles` command.'
                                   ' **Note:** This command only takes role IDs, not role names or '
                                   'mentions.')
-        await self.bot.redis.sadd(f'censor:exceptions:{ctx.message.guild.id}', role_id)
+        if not await self.has_censorship_record(ctx.guild):
+            return await ctx.send('You need to censor something first before you can except.')
+        async with self.bot.pgpool.acquire() as conn:
+            await conn.execute('UPDATE censorship SET exceptions = exceptions || $1 WHERE '
+                               'guild_id = $2', role_id, ctx.guild.id)
         await self.bot.ok(ctx)
 
     @censorship.command(name='unexcept')
@@ -92,7 +117,9 @@ class Censorship(Cog):
         This command only accepts role IDs. In order to view the list of roles and their IDs, use
         d?roles.
         """
-        await self.bot.redis.srem(f'censor:exceptions:{ctx.message.guild.id}', role_id)
+        sql = 'UPDATE censorship SET exceptions = array_remove(exceptions, $1) WHERE guild_id = $2'
+        async with self.bot.pgpool.acquire() as conn:
+            await conn.execute(sql, role_id, ctx.guild.id)
         await self.bot.ok(ctx)
 
     @censorship.command(name='exceptions', aliases=['excepted'])
@@ -175,12 +202,15 @@ class Censorship(Cog):
 
     async def get_guild_exceptions(self, guild: discord.Guild):
         """ Returns the list of exception role IDs that a guild has. """
-        exceptions = await self.bot.redis.smembers(f'censor:exceptions:{guild.id}')
-        exceptions = [int(e.decode()) for e in exceptions]
-        return exceptions
+        sql = 'SELECT exceptions FROM censorship WHERE guild_id = $1'
+        async with self.bot.pgpool.acquire() as conn:
+            return await conn.fetch(sql, guild.id)
 
     async def on_message(self, msg: discord.Message):
         if not isinstance(msg.channel, discord.TextChannel) or isinstance(msg.author, discord.User):
+            return
+        
+        if not await self.has_censorship_record(msg.guild):
             return
 
         censors = [

@@ -47,7 +47,7 @@ class DogBot(commands.AutoShardedBot):
         self.redis = loop.run_until_complete(redis_coroutine)
 
         # asyncpg
-        self.pg = loop.run_until_complete(asyncpg.connect(**cfg.postgresql_auth))
+        self.pgpool = loop.run_until_complete(asyncpg.create_pool(**cfg.postgresql_auth))
 
         # aiohttp session used for fetching data
         self.session = aiohttp.ClientSession()
@@ -71,7 +71,7 @@ class DogBot(commands.AutoShardedBot):
         # close stuff
         logger.info('close() called, cleaning up...')
         self.redis.close()
-        await self.pg.close()
+        await self.pgpool.close()
         await self.session.close()
         await super().close()
 
