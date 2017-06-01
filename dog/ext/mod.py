@@ -59,11 +59,10 @@ class Mod(Cog):
 
         try:
             msgs = await ctx.channel.purge(limit=limit, check=check, **kwargs)
+            await ctx.send(f'Purge complete. Removed {len(msgs)} message(s).',
+                           delete_after=2.5)
         except discord.NotFound:
             pass # ignore not found errors
-
-        await ctx.send(f'Purge complete. Removed {len(msgs)} message(s).',
-                       delete_after=2.5)
 
     @commands.group(invoke_without_command=True)
     @commands.guild_only()
