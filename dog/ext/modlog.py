@@ -100,13 +100,13 @@ class Modlog(Cog):
 
         if msg.attachments:
             def description(a):
-                if 'width' in a:
+                if a.width:
                     # is a picture
-                    after = f'({a["width"]}×{a["height"]})'
+                    after = f'({a.width}×{a.height})'
                 else:
                     # is a file
-                    after = f'({a["size"]} bytes)'
-                return f'`{a["filename"]} {after}`'
+                    after = f'({a.size} bytes)'
+                return f'`{a.filename} {after}`'
 
             atts = [description(a) for a in msg.attachments]
             embed.add_field(name='Attachments', value=', '.join(atts))
