@@ -63,12 +63,16 @@ class RPS(Cog):
             await progress_message.edit(content='Waiting for the opponent ({}) to choose...'.format(
                 opponent))
             opponent_choice = await rps_get_choice(opponent)
-        except discord.Forbidden:
+        except discord.HTTPException:
             return await progress_message.edit(content='I failed to DM the initiator or the opponent.')
 
         # delete the original message, because edited mentions do not notify
         # the user
-        await progress_message.delete()
+        try:
+            await progress_message.delete()
+        except discord.NotFound:
+            # someone deleted it!
+            return
 
         # check if it was a tie
         if initiator_choice == opponent_choice:

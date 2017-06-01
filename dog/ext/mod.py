@@ -57,7 +57,11 @@ class Mod(Cog):
         # purge the actual command message too
         limit += 1
 
-        msgs = await ctx.channel.purge(limit=limit, check=check, **kwargs)
+        try:
+            msgs = await ctx.channel.purge(limit=limit, check=check, **kwargs)
+        except discord.NotFound:
+            pass # ignore not found errors
+
         await ctx.send(f'Purge complete. Removed {len(msgs)} message(s).',
                        delete_after=2.5)
 

@@ -30,8 +30,9 @@ class Anime(Cog):
             if anime.start_date == anime.end_date:
                 aired_value = anime.start_date + ' (one day)'
             embed.add_field(name='Aired', value=aired_value)
-        synopsis = html.unescape(anime.synopsis).replace('<br />', '\n')[:2500]
-        embed.add_field(name='Synopsis', value=utils.truncate(synopsis, 1000), inline=False)
+        if anime.synopsis:
+            synopsis = html.unescape(anime.synopsis).replace('<br />', '\n')[:2500]
+            embed.add_field(name='Synopsis', value=utils.truncate(synopsis, 1000), inline=False)
         embed.set_thumbnail(url=anime.image)
         return embed
 

@@ -60,6 +60,7 @@ class Censorship(Cog):
                                'WHERE guild_id = $1', guild.id)
 
     @commands.command()
+    @commands.guild_only()
     async def roles(self, ctx):
         """ Views the roles (and their IDs) in this server. """
         code = '```\n' + '\n'.join([f'\N{BULLET} {r.name} ({r.id})' for r in ctx.guild.roles]) + '\n```'

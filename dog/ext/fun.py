@@ -59,9 +59,9 @@ async def urban(session: aiohttp.ClientSession, word: str) -> UrbanDefinition:
 
 def make_urban_embed(d: UrbanDefinition) -> discord.Embed:
     """ Makes a ``discord.Embed`` from an ``UrbanDefinition``. """
-    embed = discord.Embed(title=d.word, description=d.definition)
+    embed = discord.Embed(title=d.word, description=utils.truncate(d.definition, 2048))
     if d.example:
-        embed.add_field(name='Example', value=d.example, inline=False)
+        embed.add_field(name='Example', value=utils.truncate(d.example, 1024), inline=False)
     embed.add_field(name='\N{THUMBS UP SIGN}', value=utils.commas(d.thumbs_up))
     embed.add_field(name='\N{THUMBS DOWN SIGN}', value=utils.commas(d.thumbs_down))
     return embed
