@@ -12,13 +12,13 @@ import traceback
 from typing import Any, List
 
 import aiohttp
-import discord
-from discord.ext import commands
-
 import aioredis
 import asyncpg
+import discord
 import dog_config as cfg
+import praw
 import raven
+from discord.ext import commands
 from dog.core import utils
 
 from . import botcollection, errors
@@ -27,7 +27,7 @@ from .utils import pretty_timedelta
 logger = logging.getLogger(__name__)
 
 
-class DogBot(commands.AutoShardedBot):
+class DogBot(commands.Bot):
     """
     The main DogBot bot. It is automatically sharded. All parameters are passed
     to the constructor of :class:`discord.commands.AutoShardedBot`.
@@ -55,6 +55,9 @@ class DogBot(commands.AutoShardedBot):
         # sentry connection for reporting exceptions
         self.sentry = raven.Client(cfg.raven_client_url)
 
+        # praw (reddit)
+        self.praw = praw.Reddit(**cfg.reddit)
+
         # asyncio task that POSTs to bots.discord.pw with the guild count every
         # 10 minutes
         self.report_task = None
@@ -73,6 +76,7 @@ class DogBot(commands.AutoShardedBot):
         self.redis.close()
         await self.pgpool.close()
         await self.session.close()
+        self.get_cog('Reddit').feed_task.cancel()
         await super().close()
 
     def load_exts_recursively(self, directory: str, prefix: str = 'Recursive load'):

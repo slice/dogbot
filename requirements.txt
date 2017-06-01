@@ -7,3 +7,4 @@ raven
 asyncpg
 objgraph
 wand
+praw
