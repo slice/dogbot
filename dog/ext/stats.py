@@ -106,8 +106,7 @@ class Stats(Cog):
             'Emoji': f'{cm(num_emojis)} total\n{cm(num_emojis_managed)} managed',
             'Servers': f'{cm(num_servers)} total\n{cm(average_member_count)} average members\n'
                        f'{cm(max(member_counts))} max, {cm(min(member_counts))} min',
-            'Uptime': uptime,
-            'Total Shards': cm(len(self.bot.shards)),
+            'Uptime': uptime
         }
         for name, value in fields.items():
             embed.add_field(name=name, value=value)
