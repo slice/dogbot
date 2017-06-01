@@ -55,11 +55,21 @@ class Admin(Cog):
     @commands.command()
     async def ping(self, ctx):
         """ You know what this does. """
+
+        # get ws ping
+        begin_ws = monotonic()
+        await (await ctx.bot.ws.ping())
+        end_ws = monotonic()
+
+        # get rtt
         begin = monotonic()
         msg = await ctx.send('Pong!')
         end = monotonic()
-        difference_ms = round((end - begin) * 1000, 2)
-        await msg.edit(content=f'Pong! (Took `{difference_ms}ms` to send.)')
+
+        rtt = round((end - begin) * 1000, 2)
+        ws = round((end_ws - begin_ws) * 1000, 2)
+
+        await msg.edit(content=f'Pong! \N{EM DASH} WS: `{ws}ms`, RTT: `{rtt}ms`')
 
     @commands.command()
     @commands.is_owner()
