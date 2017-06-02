@@ -20,7 +20,7 @@ class Reddit(Cog):
     def __init__(self, bot):
         super().__init__(bot)
 
-        self.update_interval = 60 * 25 # 25 minutes
+        self.update_interval = 60 * 10 # 10 minutes
         self.feed_task = bot.loop.create_task(self.post_to_feeds())
 
     async def update_feed(self, feed):
@@ -96,7 +96,7 @@ class Reddit(Cog):
                 # enumerate through all feeds
                 for feed in feeds:
                     # wait a minute or two to prevent rate limiting (doesn't really help but w/e)
-                    await asyncio.sleep((random.random() + 1) * 60)
+                    await asyncio.sleep(random.random() + 5)
 
                     # update the feed
                     await self.update_feed(feed)

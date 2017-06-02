@@ -161,7 +161,10 @@ class Fun(Cog):
     async def urban(self, ctx, *, word: str):
         """ Finds UrbanDictionary definitions. """
         async with ctx.channel.typing():
-            result = await urban(self.bot.session, word)
+            try:
+                result = await urban(self.bot.session, word)
+            except asyncio.ClientError:
+                return await ctx.send('Failed to look up that word!')
             if not result:
                 return await ctx.send('No results!')
             await ctx.send(embed=make_urban_embed(result))
