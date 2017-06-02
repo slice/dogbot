@@ -21,7 +21,7 @@ def is_bot_collection(guild: discord.Guild):
         return False
 
     # ratio too big!
-    if user_to_bot_ratio(guild) >= 5:
+    if user_to_bot_ratio(guild) >= 8:
         return True
 
     return False

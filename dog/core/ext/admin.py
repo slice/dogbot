@@ -16,6 +16,7 @@ import discord
 from discord.ext import commands
 
 import dog_config as cfg
+from dog.core import botcollection
 from dog import Cog
 from dog.haste import haste
 
@@ -28,6 +29,21 @@ def _restart():
 
 
 class Admin(Cog):
+    @commands.command()
+    @commands.is_owner()
+    async def leave_collections(self, ctx):
+        """ Leaves collections. """
+        left_guilds = []
+        for g in ctx.bot.guilds:
+            if botcollection.is_bot_collection(g):
+                ratio = botcollection.user_to_bot_ratio(g)
+                left_guilds.append(f'\N{BULLET} {g.name} (`{g.id}`, ratio={ratio}')
+                await g.leave()
+        if not left_guilds:
+            return await ctx.send('\N{SMIRKING FACE} No collections!')
+        await ctx.send('\n'.join(left_guilds))
+        await ctx.send(f'Left `{len(left_guilds)}` guilds in total.')
+
     @commands.command()
     @commands.is_owner()
     async def update(self, ctx, is_hot: str = None):
