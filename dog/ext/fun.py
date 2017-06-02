@@ -68,6 +68,11 @@ def make_urban_embed(d: UrbanDefinition) -> discord.Embed:
 
 
 class Fun(Cog):
+    def __init__(self, bot):
+        super().__init__(bot)
+        with open('resources/dogfacts.txt') as dogfacts:
+            self.dogfacts = [fact.strip() for fact in dogfacts.readlines()]
+
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
     async def forbidden(self, ctx, who: discord.Member):
@@ -208,15 +213,7 @@ class Fun(Cog):
     @commands.cooldown(1, 2, commands.BucketType.user)
     async def dogfact(self, ctx):
         """ Returns a random dog-related fact. """
-        async with ctx.channel.typing():
-            try:
-                facts = await _get_json(self.bot.session, DOGFACTS_ENDPOINT)
-            except aiohttp.ClientError:
-                return await ctx.send('\N{DISAPPOINTED FACE} Failed to get a dog fact.')
-            if not facts['success']:
-                await ctx.send('I couldn\'t contact the Dog Facts API.')
-                return
-            await ctx.send(facts['facts'][0])
+        await ctx.send(random.choice(self.dogfacts))
 
 
 def setup(bot):
