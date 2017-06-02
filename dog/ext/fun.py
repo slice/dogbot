@@ -18,7 +18,7 @@ from wand.color import Color
 from dog import Cog
 from dog.core import checks, utils
 
-SHIBE_ENDPOINT = 'http://shibe.online/api/shibes?count=1&urls=true&httpsUrls=true'
+SHIBE_ENDPOINT = 'http://shibe.online/api/shibes?count=1&urls=true'
 DOGFACTS_ENDPOINT = 'https://dog-api.kinduff.com/api/facts'
 GOOGLE_COMPLETE = 'https://www.google.com/complete/search'
 
