@@ -32,7 +32,7 @@ class Reddit(Cog):
     def __init__(self, bot):
         super().__init__(bot)
 
-        self.update_interval = 60 * 10 # 10 minutes
+        self.update_interval = 60 * 30 # 30 minutes
         self.feed_task = bot.loop.create_task(self.post_to_feeds())
 
     async def get_hot(self, channel: discord.TextChannel, sub: str):
@@ -125,9 +125,9 @@ class Reddit(Cog):
     @checks.is_moderator()
     async def reddit(self, ctx):
         """
-        This command group contains all commands related to reddit.
+        This command group contains all commands related to Reddit feeds.
 
-        Feeds will be updated every 10 minutes. Both self and link posts will be posted to the channel. NSFW posts will
+        Feeds will be updated every 30 minutes. Both self and link posts will be posted to the channel. NSFW posts will
         only be posted if the channel that the bot is posting in is NSFW. Stickied posts are never posted.
         """
         pass
