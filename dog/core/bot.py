@@ -76,7 +76,6 @@ class DogBot(commands.Bot):
         self.redis.close()
         await self.pgpool.close()
         await self.session.close()
-        self.get_cog('Reddit').feed_task.cancel()
         await super().close()
 
     def load_exts_recursively(self, directory: str, prefix: str = 'Recursive load'):

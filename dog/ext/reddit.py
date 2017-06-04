@@ -35,6 +35,10 @@ class Reddit(Cog):
         self.update_interval = 60 * 30 # 30 minutes
         self.feed_task = bot.loop.create_task(self.post_to_feeds())
 
+    def __unload(self):
+        logger.info('Reddit cog unloading, cancelling feed task...')
+        self.feed_task.cancel()
+
     async def get_hot(self, channel: discord.TextChannel, sub: str):
         """ Returns a hot Post from a sub. """
 
