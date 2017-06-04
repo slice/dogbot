@@ -8,3 +8,4 @@ asyncpg
 objgraph
 wand
 praw
+psutil
