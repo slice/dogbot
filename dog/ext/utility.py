@@ -233,11 +233,13 @@ class Utility(Cog):
 
         # get emoji id
         emoji_id = match.groups()[1]
-        emoji_cdn = 'https://discordapp.com/api/emojis/{}.png'
+        emoji_cdn = 'https://cdn.discordapp.com/emojis/{}.png'.format(emoji_id)
+
+        logger.debug('jumbo: url = %s', emoji_cdn)
 
         # create wrapping embed
-        wrapper_embed = discord.Embed()
-        wrapper_embed.set_image(url=emoji_cdn.format(emoji_id))
+        wrapper_embed = discord.Embed(title=f':{match.group(1)}: \N{EM DASH} `{match.group(2)}`')
+        wrapper_embed.set_image(url=emoji_cdn)
 
         # send
         await ctx.send(embed=wrapper_embed)
