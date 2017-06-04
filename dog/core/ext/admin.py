@@ -37,7 +37,7 @@ class Admin(Cog):
         for g in ctx.bot.guilds:
             if botcollection.is_bot_collection(g):
                 ratio = botcollection.user_to_bot_ratio(g)
-                left_guilds.append(f'\N{BULLET} {g.name} (`{g.id}`, ratio={ratio}')
+                left_guilds.append(f'\N{BULLET} {g.name} (`{g.id}`, ratio=`{ratio}`)')
                 await g.leave()
         if not left_guilds:
             return await ctx.send('\N{SMIRKING FACE} No collections!')
