@@ -88,14 +88,6 @@ class Mod(Cog):
         """ Purges <n> messages from someone. """
         await self.base_purge(ctx, amount, lambda m: m.author == target)
 
-    @purge.command(name='dog')
-    @commands.guild_only()
-    @checks.bot_perms(manage_messages=True, read_message_history=True)
-    @checks.is_moderator()
-    async def purge_dog(self, ctx, amount: int = 5):
-        """ Purges <n> messages by me (dogbot). """
-        await self.base_purge(ctx, amount, lambda m: m.author == self.bot.user)
-
     @purge.command(name='embeds')
     @commands.guild_only()
     @checks.bot_perms(manage_messages=True, read_message_history=True)
@@ -119,6 +111,15 @@ class Mod(Cog):
     async def purge_bot(self, ctx, amount: int = 5):
         """ Purges <n> messages by bots. """
         await self.base_purge(ctx, amount, lambda m: m.author.bot)
+
+    @commands.command()
+    @commands.guild_only()
+    async def clean(self, ctx):
+        """ Removes recent messages posted by the bot. """
+        try:
+            await ctx.channel.purge(limit=50, check=lambda m: m.author == ctx.bot.user)
+        except discord.NotFound:
+            pass
 
     async def _check_who_action(self, ctx, action, target, action_past_tense):
         al_action = getattr(discord.AuditLogAction, action)
