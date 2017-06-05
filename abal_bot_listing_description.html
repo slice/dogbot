@@ -8,6 +8,10 @@
   The bot might go down for an hour or two, but this is rare. I try to keep the bot up as much as
   possible with the use of hotpatching. However, some features require a full bot restart, which
   can take 8-20 seconds. If the bot does not respond (and it's online), that is why.
+  <br/><br/>
+  This currently means that <code>d?mute</code> and <code>d?remind</code> are currently
+  <strong>unreliable</strong>, because the bot restarts a lot. Please use these commands in
+  caution.
 </div>
 
 <style>
@@ -47,6 +51,10 @@
   <div class="message-body">
     <ul>
       <li>Play rock, paper, scissors with someone <code>(d?rps @someone)</code></li>
+      <ul>
+        <li>Use <code>d?exclude</code> and <code>d?include</code> to exclude or include yourself in games (you are included by default).</li>
+      </ul>
+      <li>Put someone in a "forbidden thought" meme comic <code>(d?forbidden @someone)</code></li>
       <li>Shibe Inu pictures <code>(d?shibe)</code></li>
       <li>Google search (<code>d?google stuff</code>, or <code>d?g</code> for short)</li>
       <li>UrbanDictionary definition lookup <code>(d?urban word)</code></li>
@@ -64,6 +72,22 @@
         earliest to join Discord in the server <code>(d?earliest)</code></li>
       <li>Reminders <code>(d?remind 30m Do the thing)</code></li>
       <li>Google search's autocomplete <code>(d?complete i love)</code></li>
+      <li>Weather <code>(d?weather San Francisco, California)</code></li>
+      <ul>
+        <li>Cloud coverage</li>
+        <li>Temperature ranges (both in Celsius and in Fahrenheit)</li>
+        <li>Sunset time in GMT</li>
+      </ul>
+      <li>Reddit feeds <code>(d?help reddit)</code></li>
+      <ul>
+        <li>New hot posts every <strong>30</strong> minutes</li>
+        <li>No duplicate posts</li>
+        <li>Limited to 2 feeds per server</li>
+      </ul>
+      <li>Dictionary <code>(d?define hello)</code></li>
+      <ul>
+        <li>Definitions, examples, and IPA pronunciation</li>
+      </ul>
     </ul>
   </div>
 </article>
@@ -75,7 +99,7 @@
   <div class="message-body">
     <ul>
       <li><strong>Message censorship</strong> - prevent troublemakers in your server by censoring
-        messages containing invites, and more. (Currently, you may only censor invites.)
+        messages containing invites, and more. (Currently, you may only censor invites and Twitch.tv/YouTube links.)
         (<code>d?censorship</code>, or <code>d?cs</code>)</li>
       <li>Quickly block and unblock users from your channel (<code>d?block</code>, <code>d?unblock</code>)</li>
       <li>Rename attention-seekers (people whose names start with !) <code>(d?attentionseek)</code></li>
@@ -91,6 +115,7 @@
         <li>Logs mutes/unmutes</li>
       </ul>
       <li>Message purging <code>(d?purge)</code></li>
+      <li>Clean up messages from the bot <code>(d?clean)</code></li>
       <li>Disable and enable commands server-specifically <code>(d?enable, d?disable)</code></li>
       <li>Server-specific configuration <code>(d?config)</code></li>
       <li>Formattable welcome message <code>(d?cfg set welcome_message "Hello %{mention}!")</code></li>
