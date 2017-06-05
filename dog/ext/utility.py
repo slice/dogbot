@@ -112,7 +112,10 @@ class Utility(Cog):
         # get word definition
         async with ctx.bot.session.get(api_base + f'/entries/en/{utils.urlescape(word_id)}', headers=headers) as resp:
             # grab results
-            results = (await resp.json())['results']
+            try:
+                results = (await resp.json())['results']
+            except aiohttp.ClientError:
+                return await ctx.send('Hmm, I couldn\'t decode the results from Oxford.')
             lexical = results[0]['lexicalEntries'][0]
             sense = lexical['entries'][0]['senses'][0]
 
