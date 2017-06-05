@@ -9,3 +9,4 @@ objgraph
 wand
 praw
 psutil
+pyowm

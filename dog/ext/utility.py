@@ -13,10 +13,11 @@ from typing import Any, Dict, List
 
 import aiohttp
 import discord
-from discord.ext import commands
-
+import dog_config
+import pyowm
 from asteval import Interpreter
 from bs4 import BeautifulSoup
+from discord.ext import commands
 from dog import Cog
 from dog.core import utils
 from dog.humantime import HumanTime
@@ -71,11 +72,43 @@ async def google(session: aiohttp.ClientSession, query: str) -> List[GoogleResul
 
 
 class Utility(Cog):
+    def __init__(self, bot):
+        super().__init__(bot)
+        if hasattr(dog_config, 'owm_key'):
+            self.owm = pyowm.OWM(dog_config.owm_key)
+        else:
+            self.owm = None
+
     @commands.command()
     @commands.is_owner()
     async def exception(self, ctx, message: str = 'Test exception'):
         """ Creates an exception. """
         raise RuntimeError(message)
+
+    @commands.command()
+    async def weather(self, ctx, *, place: str):
+        """ Checks the weather for some place. """
+        if not self.owm:
+            return
+
+        try:
+            obv = await ctx.bot.loop.run_in_executor(None, self.owm.weather_at_place, place)
+        except pyowm.exceptions.not_found_error.NotFoundError:
+            return await ctx.send('Place not found.')
+        weather = await ctx.bot.loop.run_in_executor(None, obv.get_weather)
+
+        embed = discord.Embed(title=weather.get_status())
+
+        c = weather.get_temperature('celsius')
+        f = weather.get_temperature('fahrenheit')
+        temp = (f'{c["temp"]}°C ({c["temp_min"]}°C \N{EM DASH} {c["temp_max"]}°C)\n'
+                f'{f["temp"]}°F ({f["temp_min"]}°F \N{EM DASH} {f["temp_max"]}°F)')
+        embed.add_field(name='Temperature', value=temp)
+
+        embed.add_field(name='Sunset', value=weather.get_sunset_time('iso'))
+        embed.add_field(name='Cloud Coverage', value=f'{weather.get_clouds()}%', inline=False)
+
+        await ctx.send(embed=embed)
 
     @commands.command()
     @commands.guild_only()
