@@ -20,7 +20,9 @@ def create_post_embed(post) -> discord.Embed:
     endings = ('.gif', '.jpeg', '.png', '.jpg', '.webp')
     is_image = not post.is_self and any([post.url.endswith(ending) for ending in endings])
 
-    embed = discord.Embed(title=post.title, url=post.url, description=post.selftext)
+    embed = discord.Embed(title=utils.truncate(post.title, 256),
+                          url=post.url,
+                          description=utils.truncate(post.selftext, 2048))
     embed.set_author(name='/r/%s \N{EM DASH} /u/%s' % (post.subreddit, post.author))
     if is_image:
         embed.set_image(url=post.url)
