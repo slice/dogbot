@@ -33,11 +33,17 @@ class Reddit(Cog):
         super().__init__(bot)
 
         self.update_interval = 60 * 30 # 30 minutes
+        self.fuzz_interval = 5
         self.feed_task = bot.loop.create_task(self.post_to_feeds())
 
     def __unload(self):
         logger.info('Reddit cog unloading, cancelling feed task...')
         self.feed_task.cancel()
+
+    def reboot_feed_task(self):
+        logger.info('Rebooting feed task.')
+        self.feed_task.cancel()
+        self.bot.loop.create_task(self.post_to_feeds())
 
     async def get_hot(self, channel: discord.TextChannel, sub: str):
         """ Returns a hot Post from a sub. """
@@ -59,14 +65,26 @@ class Reddit(Cog):
             return
 
         # get some hot posts
-        posts = list(filter(post_filter, sub.hot(limit=75)))
+        posts = list(filter(post_filter, sub.hot(limit=100)))
 
         if not posts:
             logger.debug('Could not find a suitable post. sub=%s', sub)
             return
 
-        # just grab a random post
-        return random.choice(posts)
+        # just grab a random, non-exhausted post
+        nonexhausted = [p for p in posts if not await self.is_exhausted(channel.guild.id, p.id)]
+
+        if not nonexhausted:
+            # all posts have been exhausted, wew
+            return
+
+        chosen_post = random.choice(nonexhausted)
+
+        # exhaust the post we chose
+        await self.add_exhausted(channel.guild.id, chosen_post.id)
+        logger.debug('%d posts left unexhausted', len(nonexhausted) - 1)
+
+        return chosen_post
 
     async def update_feed(self, feed):
         logger.debug('Feed update: cid=%d, sub=%s', feed['channel_id'], feed['subreddit'])
@@ -93,6 +111,19 @@ class Reddit(Cog):
             # not allowed to send to the channel?
             logger.debug('Not allowed to post to feed channel in %d, cid=%d', feed['guild_id'], feed['channel_id'])
 
+    async def is_exhausted(self, guild_id: int, post_id: str) -> bool:
+        """ Returns whether a post IDs is exhausted. """
+        async with self.bot.pgpool.acquire() as conn:
+            record = await conn.fetchrow('SELECT * FROM exhausted_reddit_posts WHERE guild_id = $1 AND '
+                                         'post_id = $2', guild_id, post_id)
+            return record is not None
+
+    async def add_exhausted(self, guild_id: int, post_id: str):
+        """ Adds an exhausted post ID to the database. """
+        async with self.bot.pgpool.acquire() as conn:
+            logger.debug('Exhausting post %s (guild = %d)', post_id, guild_id)
+            await conn.execute("INSERT INTO exhausted_reddit_posts VALUES ($1, $2)", guild_id, post_id)
+
     async def post_to_feeds(self):
         # guilds aren't available until the bot is ready, and this task begins before the bot
         # is ready. so let's wait for it to be ready before updating feeds
@@ -110,7 +141,7 @@ class Reddit(Cog):
                 # enumerate through all feeds
                 for feed in feeds:
                     # wait a minute or two to prevent rate limiting (doesn't really help but w/e)
-                    await asyncio.sleep(random.random() + 5)
+                    await asyncio.sleep(random.random() + self.fuzz_interval)
 
                     # update the feed
                     await self.update_feed(feed)
@@ -151,6 +182,15 @@ class Reddit(Cog):
                                       'reddit watch` for more information.')
             text = '\n'.join(['\N{BULLET} <#{}> (/r/{})'.format(r['channel_id'], r['subreddit']) for r in feeds])
             await ctx.send('**Feeds in {}:**\n\n{}'.format(ctx.guild.name, text))
+
+    @reddit.command()
+    @commands.is_owner()
+    async def debug(self, ctx):
+        """ Drastically lowers feed timers. Applied globally. """
+        self.update_interval = 3
+        self.fuzz_interval = 1
+        self.reboot_feed_task()
+        await self.bot.ok(ctx)
 
     @reddit.command(aliases=['unwatch'])
     @checks.is_moderator()

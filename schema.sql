@@ -14,7 +14,11 @@ CREATE TABLE IF NOT EXISTS censorship (
   exceptions bigint[]
 );
 
--- not gonna use arrays here because asyncpg is bad with them
+CREATE TABLE IF NOT EXISTS exhausted_reddit_posts (
+  guild_id bigint,
+  post_id text
+);
+
 CREATE TABLE IF NOT EXISTS reddit_feeds (
   guild_id bigint,
   channel_id bigint,
