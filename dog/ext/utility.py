@@ -86,6 +86,62 @@ class Utility(Cog):
         raise RuntimeError(message)
 
     @commands.command()
+    async def define(self, ctx, *, word: str):
+        """ Defines a word. """
+        api_base = 'https://od-api.oxforddictionaries.com/api/v1'
+
+        # request headers
+        headers = {
+            'app_id': dog_config.oxford_creds['application_id'],
+            'app_key': dog_config.oxford_creds['application_key']
+        }
+
+        search_params = {
+            'q': word,
+            'limit': 3
+        }
+
+        # search word
+        async with ctx.bot.session.get(api_base + '/search/en', params=search_params, headers=headers) as resp:
+            results = (await resp.json())['results']
+            if not results:
+                # empty
+                return await ctx.send('Word not found.')
+            word_id = results[0]['id']
+
+        # get word definition
+        async with ctx.bot.session.get(api_base + f'/entries/en/{utils.urlescape(word_id)}', headers=headers) as resp:
+            # grab results
+            results = (await resp.json())['results']
+            lexical = results[0]['lexicalEntries'][0]
+            sense = lexical['entries'][0]['senses'][0]
+
+            # get data
+            if 'definitions' not in sense:
+                return await ctx.send('Failed to grab definitions.')
+            definitions = sense['definitions']
+            if 'examples' in sense:
+                examples = [e['text'] for e in sense['examples']]
+            else:
+                examples = None
+            if 'pronunciations' in lexical:
+                pronun = ','.join([p['phoneticSpelling'] for p in lexical['pronunciations']])
+            else:
+                pronun = ''
+
+        def_text = '\n'.join([f'\N{BULLET} {defn}' for defn in definitions])
+        embed = discord.Embed(title=utils.truncate(lexical['text'], 256), description=utils.truncate(def_text, 2048))
+        if examples:
+            examples_text = '\n'.join([f'\N{BULLET} {example}' for example in examples])
+            embed.add_field(name='Examples', value=utils.truncate(examples_text, 1024))
+        embed.set_footer(text=pronun)
+        await ctx.send(embed=embed)
+
+    @define.error
+    async def define_error(self, ctx, _):
+        await ctx.send('An error has occurred.')
+
+    @commands.command()
     async def weather(self, ctx, *, place: str):
         """ Checks the weather for some place. """
         if not self.owm:
