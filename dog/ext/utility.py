@@ -124,11 +124,17 @@ class Utility(Cog):
         # combine senses
         definitions = []
         examples = []
+        def add_sense(sense):
+            nonlocal definitions, examples
+            definitions += sense['definitions']
+            if 'examples' in sense:
+                examples += sense['examples']
         for entry in lexical['entries']:
             for sense in entry['senses']:
-                definitions += sense['definitions']
-                if 'examples' in sense:
-                    examples += sense['examples']
+                add_sense(sense)
+                if 'subsenses' in sense:
+                    for subsense in sense['subsenses']:
+                        add_sense(subsense)
 
         def_text = '\n'.join([f'\N{BULLET} {defn}' for defn in definitions])
         embed = discord.Embed(title=utils.truncate(lexical['text'], 256), description=utils.truncate(def_text, 2048))
