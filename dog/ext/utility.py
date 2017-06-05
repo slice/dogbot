@@ -116,23 +116,24 @@ class Utility(Cog):
             lexical = results[0]['lexicalEntries'][0]
             sense = lexical['entries'][0]['senses'][0]
 
-            # get data
-            if 'definitions' not in sense:
-                return await ctx.send('Failed to grab definitions.')
-            definitions = sense['definitions']
-            if 'examples' in sense:
-                examples = [e['text'] for e in sense['examples']]
-            else:
-                examples = None
             if 'pronunciations' in lexical:
                 pronun = ','.join([p['phoneticSpelling'] for p in lexical['pronunciations']])
             else:
                 pronun = ''
 
+        # combine senses
+        definitions = []
+        examples = []
+        for entry in lexical['entries']:
+            for sense in entry['senses']:
+                definitions += sense['definitions']
+                if 'examples' in sense:
+                    examples += sense['examples']
+
         def_text = '\n'.join([f'\N{BULLET} {defn}' for defn in definitions])
         embed = discord.Embed(title=utils.truncate(lexical['text'], 256), description=utils.truncate(def_text, 2048))
         if examples:
-            examples_text = '\n'.join([f'\N{BULLET} {example}' for example in examples])
+            examples_text = '\n'.join([f'\N{BULLET} {example["text"]}' for example in examples])
             embed.add_field(name='Examples', value=utils.truncate(examples_text, 1024))
         embed.set_footer(text=pronun)
         await ctx.send(embed=embed)
