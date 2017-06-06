@@ -187,7 +187,7 @@ class Censorship(Cog):
 
     async def should_censor(self, msg: discord.Message, censor_type: CensorType, regex) -> bool:
         """ Returns whether a message should be censored based on a regex and censor type. """
-        return await self.is_censoring(msg.guild, censor_type) and regex.match(msg.content) \
+        return await self.is_censoring(msg.guild, censor_type) and regex.search(msg.content) \
             is not None
 
     async def censor_message(self, msg: discord.Message, title: str):
