@@ -46,9 +46,8 @@ class Censorship(Cog):
             if not await self.has_censorship_record(guild):
                 logger.debug('Creating initial censorship data for guild %s (%d)', guild.name, guild.id)
                 await conn.execute('INSERT INTO censorship VALUES ($1, \'{}\', \'{}\')', guild.id)
-            # TODO: don't concat the string directly
-            await conn.execute(f'UPDATE censorship SET enabled = enabled || \'{{"{what.name}"}}\' '
-                               'WHERE guild_id = $1', guild.id)
+            await conn.execute('UPDATE censorship SET enabled = array_append(enabled, $1) '
+                               'WHERE guild_id = $2', what.name, guild.id)
 
     async def uncensor(self, guild: discord.Guild, what: CensorType):
         """ Uncensors something for a guild. """
