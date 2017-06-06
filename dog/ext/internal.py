@@ -34,9 +34,12 @@ class Internal(Cog):
     @commands.command()
     async def dstats(self, ctx):
         """ Shows detailed stats. """
-        embed = discord.Embed(title='Detailed stats')
+        desc = """{0} (`{1}`, <@{1}>)\nCreated: {2}""".format(
+            ctx.bot.user, ctx.bot.user.id, ctx.bot.user.created_at)
+        embed = discord.Embed(title='Detailed stats', description=desc)
 
-        embed.add_field(name='Socket Events', value=utils.commas(self.socket_events))
+        skt_events = f'{utils.commas(self.socket_events)} total\nSequence: {ctx.bot.ws.sequence}'
+        embed.add_field(name='Socket Events', value=skt_events)
 
         # log file
         log_size = os.path.getsize('dog.log')
@@ -52,7 +55,8 @@ class Internal(Cog):
         avail = round(vmem.available / 10 ** 9, 3)
         mem_gb = round(mem.rss / 10 ** 9, 2)
         mem_mb = round(mem.rss / 10 ** 6, 2)
-        embed.add_field(name='RAM', value=f'{avail} GB/{total} GB total\n{mem_mb} MB, {mem_gb} GB')
+        ttl = f'Using {round(mem_gb / total, 2)}% of total RAM'
+        embed.add_field(name='RAM', value=f'{avail} GB/{total} GB total\n{mem_mb} MB, {mem_gb} GB\n{ttl}')
 
         # owner
         owner = (await ctx.bot.application_info()).owner
@@ -63,7 +67,7 @@ class Internal(Cog):
 
         async with ctx.bot.pgpool.acquire() as conn:
             record = await conn.fetchrow('SELECT SUM(times_used) FROM command_statistics')
-            embed.add_field(name='Commands Ran', value=utils.commas(record['sum']))
+            embed.add_field(name='Commands Ran', value=utils.commas(record['sum']) + ' total')
 
         await ctx.send(embed=embed)
 
