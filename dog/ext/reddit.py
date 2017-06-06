@@ -68,21 +68,30 @@ class Reddit(Cog):
             logger.debug('Sub not found, not updating. sub=%s', sub)
             return
 
+        logger.debug('Fetched subreddit: %s', sub)
+
         # get some hot posts
         posts = list(filter(post_filter, sub.hot(limit=100)))
+
+        logger.debug('Fetched %d posts from %s', len(posts), sub.fullname)
 
         if not posts:
             logger.debug('Could not find a suitable post. sub=%s', sub)
             return
+
+        logger.debug('Fetching nonexhausted posts...')
 
         # just grab a random, non-exhausted post
         nonexhausted = [p for p in posts if not await self.is_exhausted(channel.guild.id, p.id)]
 
         if not nonexhausted:
             # all posts have been exhausted, wew
+            logger.debug('All posts have been exhausted.')
             return
 
         chosen_post = random.choice(nonexhausted)
+
+        logger.debug('Chose a post! Returning.')
 
         # exhaust the post we chose
         await self.add_exhausted(channel.guild.id, chosen_post.id)
@@ -105,6 +114,10 @@ class Reddit(Cog):
 
         # get a host post
         post = await self.get_hot(channel, feed['subreddit'])
+
+        if not post:
+            logger.debug('Refusing to update this feed, no post.')
+            return
 
         logger.debug('Feed make post: url=%s title=%s sub=%s', post.url, post.title, post.subreddit)
 
