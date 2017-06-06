@@ -123,8 +123,8 @@ class Modlog(Cog):
         embed = self._make_profile_embed(member, title='\N{OUTBOX TRAY} Member removed')
         await self.bot.send_modlog(member.guild, embed=embed)
 
-    async def on_member_ban(self, member: discord.Member):
-        ban_emote = '<:Banhammer:243818902881042432>'
+    async def on_member_ban(self, guild: discord.Guild, member: discord.Member):
+        ban_emote = '\N{HAMMER}'
         embed = self._make_profile_embed(member, title=f'{ban_emote} Member banned')
         await self.bot.send_modlog(member.guild, embed=embed)
 

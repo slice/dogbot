@@ -27,7 +27,8 @@ class Config(Cog):
             'welcome_message',
             'modlog_notrack_deletes',
             'modlog_notrack_edits',
-            'modlog_channel_id'
+            'modlog_channel_id',
+            'pollr_announce'
         ]
 
     @commands.group(aliases=['gcfg'])
