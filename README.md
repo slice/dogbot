@@ -55,15 +55,25 @@ postgresql_auth = {
   'host': '127.0.0.1'
 }
 
-# myanimelist auth (optional)
+# third party auth
 myanimelist = {
   'username': '...',
   'password': '...'
+}
+owm_key = '' # open weather map
+oxford_creds = { # oxford dictionaries
+    'application_id': '',
+    'application_key': ''
 }
 
 # reporting
 raven_client_url = '<sentry auth url>'  # (or empty string)
 discordpw_token = '<bots.discord.pw api token>'  # (optional)
+reddit = {
+    'client_id': '',
+    'client_secret': '',
+    'user_agent': 'discord:...:v1.0.0 (by /u/...)'
+}
 
 # cfg
 prefixes = ['dog, ', 'd?']
