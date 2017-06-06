@@ -304,8 +304,9 @@ class DogBot(commands.Bot):
         if not self.report_task:
             logger.info('Creating bots.discord.pw task')
             self.report_task = self.loop.create_task(report_guilds_task())
-
-        self.rotate_game_task = self.loop.create_task(self.change_game_task())
+        if not self.rotate_game_task:
+            logger.info('Creating game rotater task')
+            self.rotate_game_task = self.loop.create_task(self.change_game_task())
 
     async def monitor_send(self, *args, **kwargs):
         """
