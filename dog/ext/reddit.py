@@ -110,7 +110,11 @@ class Reddit(Cog):
             return
 
         # type to signal an upcoming post
-        await channel.trigger_typing()
+        try:
+            await channel.trigger_typing()
+        except discord.Forbidden:
+            logger.debug('Couldn\'t post in #%s (%d), returning.', channel.name, channel.id)
+            return
 
         # get a host post
         post = await self.get_hot(channel, feed['subreddit'])
