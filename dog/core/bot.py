@@ -7,6 +7,7 @@ import datetime
 import importlib
 import logging
 import os
+import random
 import sys
 import traceback
 from typing import Any, List
@@ -58,9 +59,9 @@ class DogBot(commands.Bot):
         # praw (reddit)
         self.praw = praw.Reddit(**cfg.reddit)
 
-        # asyncio task that POSTs to bots.discord.pw with the guild count every
-        # 10 minutes
+        # tasks
         self.report_task = None
+        self.rotate_game_task = None
 
         # load core extensions
         self.load_exts_recursively('dog/core/ext', 'Core recursive load')
@@ -76,6 +77,11 @@ class DogBot(commands.Bot):
         self.redis.close()
         await self.pgpool.close()
         await self.session.close()
+
+        # cancel tasks
+        if self.report_task:
+            self.report_task.cancel()
+        self.rotate_game_task.cancel()
         await super().close()
 
     def load_exts_recursively(self, directory: str, prefix: str = 'Recursive load'):
@@ -224,9 +230,8 @@ class DogBot(commands.Bot):
             key = 'modlog_channel_id'
             manual_id = int(await self.config_get(guild, key))
             manual_mod_log = discord.utils.get(guild.text_channels, id=manual_id)
-        except Exception as e:
+        except:
             manual_mod_log = None
-            pass
 
         mod_log = manual_mod_log or discord.utils.get(guild.text_channels, name='mod-log')
 
@@ -252,17 +257,27 @@ class DogBot(commands.Bot):
         except discord.Forbidden:
             await ctx.send(emoji)
 
+    async def change_game_task(self):
+        while True:
+            prefixes = (
+                f'{utils.commas(len(self.guilds))} servers',
+                f'{utils.commas(len(self.users))} users'
+            )
+
+            short_prefix = min(cfg.prefixes, key=len)
+            prefix = random.choice(prefixes)
+            game = discord.Game(name=f'{short_prefix}help \N{EM DASH} {prefix}')
+            await self.change_presence(game=game)
+
+            # wait a bit
+            await asyncio.sleep(60 * 10)
+
     async def on_ready(self):
         logger.info('*** Bot is ready! ***')
         logger.info('Owner ID: %s', cfg.owner_id)
         logger.info('Logged in!')
         logger.info(f' Name: {self.user.name}#{self.user.discriminator}')
         logger.info(f' ID:   {self.user.id}')
-
-        # helpful game
-        short_prefix = min(cfg.prefixes, key=len)
-        help_game = discord.Game(name=f'{short_prefix}help')
-        await self.change_presence(game=help_game)
 
         async def report_guilds_task():
             # bail if we don't have the token
@@ -279,15 +294,18 @@ class DogBot(commands.Bot):
                 # HTTP POST to the endpoint
                 async with self.session.post(ENDPOINT, json=data, headers=headers) as resp:
                     if resp.status != 200:
-                        logger.warning('Failed to post guild count...')
-                        logger.warning('Resp: %s', await resp.text())
+                        # probably just a hiccup on abal's side
+                        logger.warning('Failed to post guild count, ignoring.')
                     else:
                         logger.info('Posted guild count successfully!'
                                     ' (%d guilds)', guilds)
                 await asyncio.sleep(60 * 10)  # only report every 10 minutes
 
-        logger.info('Creating bots.discord.pw task')
-        self.report_task = self.loop.create_task(report_guilds_task())
+        if not self.report_task:
+            logger.info('Creating bots.discord.pw task')
+            self.report_task = self.loop.create_task(report_guilds_task())
+
+        self.rotate_game_task = self.loop.create_task(self.change_game_task())
 
     async def monitor_send(self, *args, **kwargs):
         """
