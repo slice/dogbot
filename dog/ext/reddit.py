@@ -34,6 +34,8 @@ class Reddit(Cog):
     def __init__(self, bot):
         super().__init__(bot)
 
+        logger.info('Reddit cog created!')
+
         self.update_interval = 60 * 30 # 30 minutes
         self.fuzz_interval = 5
         self.feed_task = bot.loop.create_task(self.post_to_feeds())
@@ -131,22 +133,29 @@ class Reddit(Cog):
         # is ready. so let's wait for it to be ready before updating feeds
         await self.bot.wait_until_ready()
 
+        logger.debug('Bot is ready, proceeding to Reddit feed update loop...')
+
         while True:
             # sleep up here so we don't update immediately
             # wait the main sleep interval
             await asyncio.sleep(self.update_interval)
+
+            logger.debug('Going to update all feeds...')
 
             # fetch all feeds, and update them all
             async with self.bot.pgpool.acquire() as conn:
                 feeds = await conn.fetch('SELECT * FROM reddit_feeds')
 
                 # enumerate through all feeds
-                for feed in feeds:
+                for idx, feed in enumerate(feeds):
+                    logger.debug('Updating feed {}/{}!'.format(idx + 1, len(feeds)))
                     # wait a minute or two to prevent rate limiting (doesn't really help but w/e)
                     await asyncio.sleep(random.random() + self.fuzz_interval)
 
                     # update the feed
                     await self.update_feed(feed)
+
+                logger.debug('Updated.')
 
     @commands.command()
     async def hot(self, ctx, sub: str):
