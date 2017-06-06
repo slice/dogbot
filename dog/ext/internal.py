@@ -38,7 +38,7 @@ class Internal(Cog):
             ctx.bot.user, ctx.bot.user.id, ctx.bot.user.created_at)
         embed = discord.Embed(title='Detailed stats', description=desc)
 
-        skt_events = f'{utils.commas(self.socket_events)} total\nSequence: {ctx.bot.ws.sequence}'
+        skt_events = f'{utils.commas(self.socket_events)} total\nSequence: {utils.commas(ctx.bot.ws.sequence)}'
         embed.add_field(name='Socket Events', value=skt_events)
 
         # log file
