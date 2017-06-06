@@ -129,9 +129,12 @@ class Utility(Cog):
         examples = []
         def add_sense(sense):
             nonlocal definitions, examples
+            if not 'definitions' in sense:
+                return  # don't bother
             definitions += sense['definitions']
             if 'examples' in sense:
                 examples += sense['examples']
+
         for entry in lexical['entries']:
             for sense in entry['senses']:
                 add_sense(sense)
