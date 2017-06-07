@@ -46,8 +46,7 @@ async def jisho(session: aiohttp.ClientSession, query: str) -> Dict[Any, Any]:
 async def google(session: aiohttp.ClientSession, query: str) -> List[GoogleResult]:
     """ Searches Google. """
     headers = {
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrom'
-                      'e/57.0.2987.133 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64)'
     }
     params = {
         'q': query,
