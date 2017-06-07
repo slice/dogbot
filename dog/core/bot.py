@@ -505,6 +505,8 @@ class DogBot(commands.Bot):
             await ctx.send('You can\'t do that in a private message.')
         elif isinstance(ex, errors.InsufficientPermissions):
             await ctx.send(ex)
+        elif isinstance(ex, commands.errors.DisabledCommand):
+            await ctx.send('That command has been globally disabled by the bot\'s owner.')
         elif isinstance(ex, commands.errors.CommandInvokeError):
             if isinstance(ex.original, discord.Forbidden):
                 return await self.handle_forbidden(ctx)
