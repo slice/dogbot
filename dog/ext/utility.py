@@ -45,12 +45,15 @@ async def jisho(session: aiohttp.ClientSession, query: str) -> Dict[Any, Any]:
 
 async def google(session: aiohttp.ClientSession, query: str) -> List[GoogleResult]:
     """ Searches Google. """
-    url = 'https://www.google.com/search?q={}&safe=on'.format(utils.urlescape(query))
     headers = {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrom'
                       'e/57.0.2987.133 Safari/537.36'
     }
-    async with session.get(url, headers=headers) as resp:
+    params = {
+        'q': query,
+        'safe': 'on'
+    }
+    async with session.get('https://www.google.com/search', params=params, headers=headers) as resp:
         soup = BeautifulSoup(await resp.text(), 'html.parser')
 
         def inflate_node(node):
@@ -68,6 +71,8 @@ async def google(session: aiohttp.ClientSession, query: str) -> List[GoogleResul
             else:
                 description = description[0].text
             return GoogleResult(url=link, title=link_text, description=description)
+        g_nodes = soup.find_all('div', {'class': 'g'})
+        logger.debug('Found %d google node(s), inflating', len(g_nodes))
         return list(map(inflate_node, soup.find_all('div', {'class': 'g'})))
 
 
@@ -257,7 +262,7 @@ class Utility(Cog):
             pass
         await poll_msg.edit(embed=embed)
 
-    @commands.command(aliases=['goog', 'g'])
+    @commands.command(aliases=['goog', 'g'], enabled=False)
     async def google(self, ctx, *, query: str):
         """ Searches on Google. """
         async with ctx.channel.typing():
