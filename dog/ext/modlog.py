@@ -123,30 +123,6 @@ class Modlog(Cog):
         embed = self._make_profile_embed(member, title='\N{OUTBOX TRAY} Member removed')
         await self.bot.send_modlog(member.guild, embed=embed)
 
-    async def on_member_ban(self, guild: discord.Guild, member: discord.Member):
-        ban_emote = '\N{HAMMER}'
-        embed = self._make_profile_embed(member, title=f'{ban_emote} Member banned')
-        await self.bot.send_modlog(member.guild, embed=embed)
-
-    async def on_member_unban(self, guild: discord.Guild, user: discord.User):
-        embed = self._make_profile_embed(user, title='\N{SMILING FACE WITH HALO} Member unbanned')
-        await self.bot.send_modlog(guild, embed=embed)
-
-    async def on_channel_create(self, channel):
-        if isinstance(channel, discord.DMChannel):
-            return
-
-        embed = self._make_modlog_embed(title='\N{SPARKLES} New channel')
-        embed.add_field(name='Channel', value=f'{channel.mention} {channel.name}')
-        embed.add_field(name='ID', value=channel.id)
-        await self.bot.send_modlog(channel.guild, embed=embed)
-
-    async def on_channel_delete(self, channel):
-        embed = self._make_modlog_embed(title='\N{HAMMER} Channel deleted')
-        embed.add_field(name='Channel', value=f'{channel.name}')
-        embed.add_field(name='ID', value=channel.id)
-        await self.bot.send_modlog(channel.guild, embed=embed)
-
     @commands.command()
     async def is_public(self, ctx, channel: discord.TextChannel=None):
         """
