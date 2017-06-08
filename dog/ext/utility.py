@@ -7,7 +7,6 @@ import datetime
 import logging
 import operator
 import random
-import re
 from collections import namedtuple
 from typing import Any, Dict, List
 
@@ -19,8 +18,7 @@ from asteval import Interpreter
 from bs4 import BeautifulSoup
 from discord.ext import commands
 from dog import Cog
-from dog.core import utils
-from dog.humantime import HumanTime
+from dog.core import utils, converters
 
 logger = logging.getLogger(__name__)
 
@@ -329,22 +327,18 @@ class Utility(Cog):
         return embed
 
     @commands.command()
-    async def jumbo(self, ctx, emoji: str):
-        """ Views a custom emoji at a big resolution. """
+    async def jumbo(self, ctx, emoji: converters.FormattedCustomEmoji):
+        """
+        Views a custom emoji at 100% resolution.
 
-        match = re.match(r'<:([a-z0-9A-Z_-]+):([0-9]+)>', emoji)
-        if not match:
-            await ctx.send('Not a custom emoji!')
-            return
+        This command ONLY supports custom emojis.
+        """
 
         # get emoji id
-        emoji_id = match.groups()[1]
-        emoji_cdn = 'https://cdn.discordapp.com/emojis/{}.png'.format(emoji_id)
-
-        logger.debug('jumbo: url = %s', emoji_cdn)
+        emoji_cdn = 'https://cdn.discordapp.com/emojis/{}.png'.format(emoji.id)
 
         # create wrapping embed
-        wrapper_embed = discord.Embed(title=f':{match.group(1)}: \N{EM DASH} `{match.group(2)}`')
+        wrapper_embed = discord.Embed(title=f':{emoji.name}: \N{EM DASH} `{emoji.id}`')
         wrapper_embed.set_image(url=emoji_cdn)
 
         # send
@@ -389,14 +383,19 @@ class Utility(Cog):
             return await ctx.send('\N{CONFUSED FACE} I can\'t choose from an empty list!')
         await ctx.send(random.choice(args))
 
+    @commands.command()
+    @commands.is_owner()
+    async def humantime(self, ctx, *, time: converters.HumanTime):
+        """ Humantime debug. """
+        await ctx.send(f'```py\n{repr(time)}\n```')
+
     @commands.command(aliases=['timer'])
-    async def remind(self, ctx, time: HumanTime, *, reminder: str):
+    async def remind(self, ctx, time: converters.HumanTime, *, reminder: str):
         """ Reminds you in a certain amount of time. """
-        if time.seconds >= 604800:
+        if time >= 604800:
             return await ctx.send('That time is too long. One week maximum.')
-        await ctx.send('Got your reminder. I\'ll remind you in {0.raw} ({0.seconds} second(s)).'
-                       .format(time))
-        await asyncio.sleep(time.seconds)
+        await ctx.send(f'Got your reminder! \N{BELL}')
+        await asyncio.sleep(time)
         await ctx.author.send('**Ring!** {}'.format(reminder))
 
     @commands.command()

@@ -10,3 +10,4 @@ wand
 praw
 psutil
 pyowm
+parsedatetime

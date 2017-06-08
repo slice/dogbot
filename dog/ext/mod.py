@@ -9,7 +9,6 @@ from discord.ext import commands
 
 from dog import Cog
 from dog.core import checks, utils
-from dog.humantime import HumanTime
 
 logger = logging.getLogger(__name__)
 
