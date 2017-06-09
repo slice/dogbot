@@ -9,7 +9,7 @@ BareCustomEmoji = namedtuple('BareCustomEmoji', 'id name')
 
 
 class FormattedCustomEmoji(commands.Converter):
-    regex = re.compile(r'<:([a-z0-9A-Z_-]+):([0-9]+)>')
+    regex = re.compile(r'<:([a-z0-9A-Z_-]+):(\d+)>')
 
     async def convert(self, ctx, argument):
         match = self.regex.match(argument)

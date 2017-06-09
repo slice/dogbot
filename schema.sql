@@ -19,6 +19,14 @@ CREATE TABLE IF NOT EXISTS exhausted_reddit_posts (
   post_id text
 );
 
+CREATE TABLE IF NOT EXISTS reminders (
+  id serial primary key,
+  author_id bigint,
+  channel_id bigint,
+  note text,
+  due timestamp without time zone
+);
+
 CREATE TABLE IF NOT EXISTS reddit_feeds (
   guild_id bigint,
   channel_id bigint,

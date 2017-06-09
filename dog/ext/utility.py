@@ -389,15 +389,6 @@ class Utility(Cog):
         """ Humantime debug. """
         await ctx.send(f'```py\n{repr(time)}\n```')
 
-    @commands.command(aliases=['timer'])
-    async def remind(self, ctx, time: converters.HumanTime, *, reminder: str):
-        """ Reminds you in a certain amount of time. """
-        if time >= 604800:
-            return await ctx.send('That time is too long. One week maximum.')
-        await ctx.send(f'Got your reminder! \N{BELL}')
-        await asyncio.sleep(time)
-        await ctx.author.send('**Ring!** {}'.format(reminder))
-
     @commands.command()
     @commands.guild_only()
     async def joined(self, ctx, target: discord.Member=None):
