@@ -205,6 +205,9 @@ class DogBot(commands.Bot):
         the command message.
         """
         def check(m):
+            if isinstance(m.channel, discord.DMChannel):
+                # accept any message, because we are in a dm
+                return True
             return m.channel.id == ctx.channel.id and m.author == ctx.author
         return await self.wait_for('message', check=check)
 
