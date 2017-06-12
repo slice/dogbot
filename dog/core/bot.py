@@ -265,7 +265,11 @@ class DogBot(commands.Bot):
         try:
             await ctx.message.add_reaction(emoji)
         except discord.Forbidden:
+            # can't add reactions
             await ctx.send(emoji)
+        except discord.NotFound:
+            # the command message got deleted somehow
+            pass
 
     async def change_game_task(self):
         while True:
@@ -404,14 +408,9 @@ class DogBot(commands.Bot):
                 await guild.owner.send(COLL_HDR_PRIVATE + COLL_REST)
             except discord.Forbidden:
                 logger.info('Couldn\'t DM the owner of the guild. Looping.')
-                for channel in guild.channels:
-                    # ignore voice channels
-                    if not isinstance(channel, discord.TextChannel):
-                        continue
-                    can_speak = channel.permissions_for(guild.me).send_messages
-                    if can_speak:
-                        await channel.send(COLL_HDR_PUBLIC + COLL_REST)
-                        return
+                for channel in guild.text_channels:
+                    if channel.permissions_for(guild.me).send_messages:
+                        return await channel.send(COLL_HDR_PUBLIC + COLL_REST)
                 logger.info('Couldn\'t inform the server at all. Giving up.')
 
     async def on_guild_join(self, g):
@@ -501,6 +500,10 @@ class DogBot(commands.Bot):
                     ctx.message.content, ','.join(checks) or '(none)')
 
     async def on_command_error(self, ctx, ex):
+        if getattr(ex, 'should_suppress', False):
+            logger.debug('Suppressing exception: %s', ex)
+            return
+
         if ctx.command:
             see_help = f'Run `d?help {ctx.command.qualified_name}` for more information.'
 

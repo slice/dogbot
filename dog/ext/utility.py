@@ -119,10 +119,9 @@ class Utility(Cog):
             except aiohttp.ClientError:
                 return await ctx.send('Hmm, I couldn\'t decode the results from Oxford.')
             lexical = results[0]['lexicalEntries'][0]
-            sense = lexical['entries'][0]['senses'][0]
 
             if 'pronunciations' in lexical:
-                pronun = ','.join([p['phoneticSpelling'] for p in lexical['pronunciations']])
+                pronun = ','.join([p['phoneticSpelling'] for p in lexical['pronunciations'] if 'phoneticSpelling' in p])
             else:
                 pronun = ''
 
@@ -133,11 +132,14 @@ class Utility(Cog):
             nonlocal definitions, examples
             if not 'definitions' in sense:
                 return  # don't bother
-            definitions += sense['definitions']
+            if 'definitions' in sense:
+                definitions += sense['definitions']
             if 'examples' in sense:
                 examples += sense['examples']
 
         for entry in lexical['entries']:
+            if 'senses' not in entry:
+                continue
             for sense in entry['senses']:
                 add_sense(sense)
                 if 'subsenses' in sense:
@@ -241,11 +243,15 @@ class Utility(Cog):
 
             # check if it was a number emoji
             if len(reaction.emoji) != 2 or reaction.emoji[1] != '\u20e3':
-                logger.info('Ignoring invalid poll reaction -- reaction=%s, len(reaction)=%d',
-                            reaction.emoji, len(reaction.emoji))
+                logger.debug('Ignoring invalid poll reaction -- reaction=%s, len(reaction)=%d',
+                             reaction.emoji, len(reaction.emoji))
                 continue
 
-            poll_results[int(reaction.emoji[0]) - 1] += 1
+            result_index = int(reaction.emoji[0]) - 1
+            if result_index < 0 or result_index > len(poll_results) - 1:
+                logger.debug('Ignoring incorrect poll number reaction.')
+                continue
+            poll_results[result_index] += 1
             has_voted.append(adder)
 
         winning_choice = choices[max(poll_results.items(), key=operator.itemgetter(1))[0]]

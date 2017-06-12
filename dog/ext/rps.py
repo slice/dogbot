@@ -68,11 +68,7 @@ class RPS(Cog):
 
         # delete the original message, because edited mentions do not notify
         # the user
-        try:
-            await progress_message.delete()
-        except discord.NotFound:
-            # someone deleted it!
-            return
+        await progress_message.delete()
 
         # check if it was a tie
         if initiator_choice == opponent_choice:
@@ -98,6 +94,12 @@ class RPS(Cog):
             await inform_winner(ctx.author, initiator_choice, opponent_choice)
         else:
             await inform_winner(opponent, opponent_choice, initiator_choice)
+
+    @rps.error
+    async def rps_error(self, _ctx, error):
+        if not isinstance(error, discord.NotFound):
+            log.debug('RPS message deleted, ignoring!')
+            error.should_suppress = True
 
     @rps.command(name='exclude')
     async def rps_exclude(self, ctx):
