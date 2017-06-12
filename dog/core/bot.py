@@ -149,9 +149,14 @@ class DogBot(commands.Bot):
 
         # send list of stuff
         await ctx.send('Pick one, or send `cancel`.\n\n' + choices_list)
+        remaining_tries = 3
         picked = None
 
         while True:
+            if remaining_tries <= 0:
+                await ctx.send('You ran out of tries, I give up!')
+                return None
+
             # wait for a message
             msg = await self.wait_for_response(ctx)
 
@@ -167,6 +172,7 @@ class DogBot(commands.Bot):
                 await ctx.send('That wasn\'t a number! Send a message that '
                                'solely contains the number of the item that '
                                'you want.')
+                remaining_tries -= 1
                 continue
 
             if chosen_index < 0 or chosen_index > len(choices) - 1:
@@ -174,6 +180,7 @@ class DogBot(commands.Bot):
                 await ctx.send('Invalid choice! Send a message that solely '
                                'contains the number of the item that you '
                                'want.')
+                remaining_tries -= 1
             else:
                 # they chose correctly
                 picked = choices[chosen_index]
