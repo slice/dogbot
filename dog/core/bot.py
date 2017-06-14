@@ -66,6 +66,10 @@ class DogBot(commands.Bot):
         # load core extensions
         self.load_exts_recursively('dog/core/ext', 'Core recursive load')
 
+        with open('resources/playing_status_flavor_text.txt') as f:
+            self.flavor_text = [line.strip() for line in f.readlines()]
+        logger.info('Loaded %d flavor text line(s)', len(self.flavor_text))
+
         # list of extensions to reload (this means that new extensions are not picked up)
         # this is here so we can d?reload even if an syntax error occurs and it won't be present
         # in self.extensions
@@ -271,19 +275,23 @@ class DogBot(commands.Bot):
             # the command message got deleted somehow
             pass
 
+    async def rotate_game(self):
+        prefixes = (
+            f'{utils.commas(len(self.guilds))} servers',
+            f'{utils.commas(len(self.users))} users'
+        )
+
+        short_prefix = min(cfg.prefixes, key=len)
+        prefix = random.choice(prefixes)
+        flavor = random.choice(self.flavor_text)
+        game = discord.Game(name=f'{short_prefix}help \N{EM DASH} {prefix} \N{EM DASH} {flavor}')
+        await self.change_presence(game=game)
+
+        # wait a bit
+
     async def change_game_task(self):
         while True:
-            prefixes = (
-                f'{utils.commas(len(self.guilds))} servers',
-                f'{utils.commas(len(self.users))} users'
-            )
-
-            short_prefix = min(cfg.prefixes, key=len)
-            prefix = random.choice(prefixes)
-            game = discord.Game(name=f'{short_prefix}help \N{EM DASH} {prefix}')
-            await self.change_presence(game=game)
-
-            # wait a bit
+            await self.rotate_game()
             await asyncio.sleep(60 * 10)
 
     async def on_member_ban(self, guild, user):

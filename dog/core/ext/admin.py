@@ -47,6 +47,13 @@ class Admin(Cog):
 
     @commands.command()
     @commands.is_owner()
+    async def rotate_game(self, ctx):
+        """ Immediately rotates the bot's playing status. """
+        await ctx.bot.rotate_game()
+        await ctx.bot.ok(ctx)
+
+    @commands.command()
+    @commands.is_owner()
     async def update(self, ctx, is_hot: str = None):
         """ Updates dogbot from GitHub. """
         msg = await ctx.send('Fetching updates...')
