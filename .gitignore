@@ -1,5 +1,6 @@
 # bot
 dog_config.py
+dog_config.production.py
 *.log
 dog_blocked.json
 
@@ -9,8 +10,9 @@ documentation/build
 # idea
 .idea
 
-# fab
+# deployment
 fabfile.py
+playbook.retry
 
 # python
 __pycache__

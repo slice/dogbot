@@ -1,0 +1,95 @@
+---
+# play: install services
+- hosts: dogbot
+  remote_user: root
+
+  tasks:
+  - name: install postgresql
+    apt:
+      name: postgresql
+      state: latest
+  - name: install redis-server
+    apt:
+      name: redis-server
+      state: latest
+
+# play: ensure services
+
+- hosts: dogbot
+  remote_user: root
+
+  tasks:
+  - name: ensure postgresql has been started and is enabled
+    service:
+      name: postgresql
+      state: started
+      enabled: yes
+  - name: ensure redis has been started and is enabled
+    service:
+      name: redis
+      state: started
+      enabled: yes
+
+# play: source code
+
+- hosts: dogbot
+  
+  tasks:
+  - name: clone source code
+    git:
+      repo: 'https://github.com/sliceofcode/dogbot.git'
+      dest: /srv/dog
+    notify:
+      - run schema
+  - name: copy configuration file
+    copy:
+      src: ../dog_config.production.py
+      dest: /srv/dog/dog_config.py
+  handlers:
+  - name: run schema
+    shell: psql -U postgres -d dogbot -a -f /srv/dog/schema.sql
+
+# play: database
+
+- hosts: dogbot
+  
+  tasks:
+  - name: ensure database exists
+    postgresql_db:
+      name: dogbot
+
+# play: dependencies
+
+- hosts: dogbot
+  
+  tasks:
+  - name: install libmagickwand-dev
+    apt:
+      name: libmagickwand-dev
+      state: latest
+
+  - name: install python dependencies
+    pip:
+      requirements: /srv/dog/requirements.txt
+      virtualenv: /usr/lib/venvs/dogbot
+
+# play: service
+
+- hosts: dogbot
+  remote_user: root
+  
+  tasks:
+  - name: install service
+    copy:
+      src: ./dogbot.service
+      dest: /etc/systemd/system/dogbot.service
+    notify:
+      - reload systemd daemon
+  - name: ensure service
+    service:
+      name: dogbot
+      state: started
+      enabled: yes
+  handlers:
+  - name: reload systemd daemon
+    shell: systemd daemon-reload
