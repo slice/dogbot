@@ -287,8 +287,6 @@ class DogBot(commands.Bot):
         game = discord.Game(name=f'{short_prefix}help \N{EM DASH} {prefix} \N{EM DASH} {flavor}')
         await self.change_presence(game=game)
 
-        # wait a bit
-
     async def change_game_task(self):
         while True:
             await self.rotate_game()
