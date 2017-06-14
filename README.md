@@ -95,3 +95,25 @@ I try to keep the code as readable as possible!
 ### Running
 
 When you're done configuring, start `dog.py`.
+
+### Deployment
+
+An Ansible playbook and systemd unit is included in this repository. All of the files are copied to `/srv/dog`. Make sure this directory exists before attempting to run the playbook.
+
+#### Usage
+
+Keep a `dog_config.production.py` file in the repository. This will be copied to the remote server by the Playbook.
+
+#### Playbook
+
+The playbook does the following:
+
+1. Ensure that Postgresql and Redis are installed
+2. Ensure that both services are running and enabled
+3. Ensure that the Postgres database (`dogbot`) exists
+4. Clone the source code from GitHub
+    1. The database tables defined in `schema.sql` are created if needed
+5. Copy the configuration file to the server (`dog_config.production.py`)
+6. Install `libmagickwand-dev` (required by Wand) and install required Python packages from `requirements.txt`
+7. Install the systemd unit, and restart it
+    1. The systemd daemon is reloaded if the unit has changed

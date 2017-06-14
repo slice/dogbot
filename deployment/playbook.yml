@@ -30,6 +30,15 @@
       state: started
       enabled: yes
 
+# play: database
+
+- hosts: dogbot
+  
+  tasks:
+  - name: ensure database exists
+    postgresql_db:
+      name: dogbot
+
 # play: source code
 
 - hosts: dogbot
@@ -39,6 +48,7 @@
     git:
       repo: 'https://github.com/sliceofcode/dogbot.git'
       dest: /srv/dog
+      force: yes
     notify:
       - run schema
   - name: copy configuration file
@@ -48,15 +58,6 @@
   handlers:
   - name: run schema
     shell: psql -U postgres -d dogbot -a -f /srv/dog/schema.sql
-
-# play: database
-
-- hosts: dogbot
-  
-  tasks:
-  - name: ensure database exists
-    postgresql_db:
-      name: dogbot
 
 # play: dependencies
 
@@ -88,7 +89,7 @@
   - name: ensure service
     service:
       name: dogbot
-      state: started
+      state: restarted
       enabled: yes
   handlers:
   - name: reload systemd daemon
