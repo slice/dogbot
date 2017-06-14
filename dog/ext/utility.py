@@ -302,15 +302,16 @@ class Utility(Cog):
         embed.description += '\n'
         for sense in result['senses']:
             restr = ', '.join(sense['restrictions'])
-            sense_value = ', '.join(sense['english_definitions'])
-            if sense['info']:
-                sense_value += f' ({", ".join(sense["info"])})'
-            if not sense['restrictions']:
-                # not restricted
-                embed.description += f'\N{BULLET} {sense_value}\n'
-            else:
-                embed.add_field(name=restr,
-                                value=sense_value, inline=False)
+            if 'english_definitions' in sense:
+                sense_value = ', '.join(sense['english_definitions'])
+                if sense['info']:
+                        sense_value += f' ({", ".join(sense["info"])})'
+                if not sense['restrictions']:
+                    # not restricted
+                    embed.description += f'\N{BULLET} {sense_value}\n'
+                else:
+                    embed.add_field(name=restr,
+                                    value=sense_value, inline=False)
         await ctx.send(embed=embed)
 
     @commands.command()
