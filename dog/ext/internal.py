@@ -32,6 +32,12 @@ class Internal(Cog):
         self.socket_events += 1
 
     @commands.command()
+    async def paginate(self, ctx, split_by: int, *, text):
+        """ Tests the paginator. """
+        pr = utils.Paginator(text, split_by)
+        await pr.paginate(ctx)
+
+    @commands.command()
     async def dstats(self, ctx):
         """ Shows detailed stats. """
         desc = """{0} (`{1}`, <@{1}>)\nCreated: {2}""".format(

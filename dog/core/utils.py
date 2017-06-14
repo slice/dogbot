@@ -1,9 +1,77 @@
+import asyncio
 import datetime
 import urllib.parse
 from html.parser import HTMLParser
 from typing import Any, Dict
 
 import discord
+
+
+class Paginator:
+    def __init__(self, text, max = 2000):
+        self.text = text
+        self.current_page = 0
+        self.chunks = [text[i:i + max] for i in range(0, len(text), max)]
+        self.message = None
+
+    def jump_to(self, page):
+        self.current_page = page
+
+    def next_page(self):
+        if self.current_page == len(self.chunks) - 1:
+            return
+        self.current_page += 1
+
+    def prev_page(self):
+        if self.current_page == 0:
+            return
+        self.current_page -= 1
+
+    async def paginate(self, ctx):
+        self.message = await ctx.send(self.chunks[self.current_page])
+
+        emoji = [
+            '\N{LEFTWARDS BLACK ARROW}',
+            '\N{BLACK RIGHTWARDS ARROW}',
+            '\N{BLACK SQUARE FOR STOP}'
+        ]
+
+        # add the arrows we need
+        for codepoint in emoji:
+            await self.message.add_reaction(codepoint)
+
+        async def invalidate():
+            await self.message.edit(content=self.chunks[self.current_page])
+
+        def check(reaction, adder):
+            return adder.id == ctx.author.id and reaction.message.id == self.message.id
+
+        while True:
+            try:
+                reaction, adder = await ctx.bot.wait_for('reaction_add', check=check, timeout=20)
+                try:
+                    # fetch the action
+                    value = emoji.index(reaction.emoji)
+                    if value == 0:
+                        self.prev_page()
+                        await invalidate()
+                    elif value == 1:
+                        self.next_page()
+                        await invalidate()
+                    elif value == 2:
+                        break
+
+                    # remove the emoji
+                    await self.message.remove_reaction(reaction.emoji, adder)
+                except ValueError:
+                    pass
+                except discord.Forbidden:
+                    pass
+            except asyncio.TimeoutError:
+                await self.message.delete()
+                await ctx.send('Timed out!', delete_after=4.5)
+                return
+        await self.message.delete()
 
 
 class MLStripper(HTMLParser):
