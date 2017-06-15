@@ -62,7 +62,8 @@ class Censorship(Cog):
     @commands.guild_only()
     async def roles(self, ctx):
         """ Views the roles (and their IDs) in this server. """
-        code = '```\n' + '\n'.join([f'\N{BULLET} {r.name} ({r.id})' for r in ctx.guild.roles]) + '\n```'
+        sorted_roles = sorted(ctx.guild.roles, key=lambda r: r.position, reverse=True)
+        code = '```\n' + '\n'.join([f'\N{BULLET} {r.name} ({r.id})' for r in sorted_roles]) + '\n```'
         try:
             await ctx.send(code)
         except discord.HTTPException:
