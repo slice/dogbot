@@ -31,29 +31,31 @@ from dog.haste import haste
 log = logging.getLogger(__name__)
 
 
+def strip_code_markup(content: str) -> str:
+    """ Strips code markup from a string. """
+    # ```py
+    # code
+    # ```
+    if content.startswith('```') and content.endswith('```'):
+        # grab the lines in the middle
+        return '\n'.join(content.split('\n')[1:-1])
+
+    # `code`
+    return content.strip('` \n')
+
+
+def format_syntax_error(e: SyntaxError) -> str:
+    """ Formats a SyntaxError. """
+    if e.text is None:
+        return '```py\n{0.__class__.__name__}: {0}\n```'.format(e)
+    # display a nice arrow
+    return '```py\n{0.text}{1:>{0.offset}}\n{2}: {0}```'.format(e, '^', type(e).__name__)
+
+
 class Exec(Cog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.last_result = None
-
-    def strip_code_markup(self, content: str) -> str:
-        """ Strips code markup from a string. """
-        # ```py
-        # code
-        # ```
-        if content.startswith('```') and content.endswith('```'):
-            # grab the lines in the middle
-            return '\n'.join(content.split('\n')[1:-1])
-
-        # `code`
-        return content.strip('` \n')
-
-    def format_syntax_error(self, e: SyntaxError) -> str:
-        """ Formats a SyntaxError. """
-        if e.text is None:
-            return '```py\n{0.__class__.__name__}: {0}\n```'.format(e)
-        # display a nice arrow
-        return '```py\n{0.text}{1:>{0.offset}}\n{2}: {0}```'.format(e, '^', type(e).__name__)
 
     @commands.command(name='eval', aliases=['exec', 'debug'])
     @commands.is_owner()
@@ -80,11 +82,11 @@ class Exec(Cog):
         env.update(globals())
 
         # remove any markup that might be in the message
-        code = self.strip_code_markup(code)
+        code = strip_code_markup(code)
 
         # add an implicit return at the end
         lines = code.split('\n')
-        if not lines[-1].startswith('return'):
+        if not lines[-1].startswith('return') and not lines[-1].startswith(' '):
             lines[-1] = 'return ' + lines[-1]
         code = '\n'.join(lines)
 
@@ -97,7 +99,7 @@ class Exec(Cog):
         try:
             exec(compile(wrapped_code, '<exec>', 'exec'), env)
         except SyntaxError as e:
-            return await ctx.send(self.format_syntax_error(e))
+            return await ctx.send(format_syntax_error(e))
 
         func = env['func']
         try:

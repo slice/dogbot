@@ -11,8 +11,7 @@ import objgraph
 import psutil
 from discord.ext import commands
 from dog import Cog
-from dog.core import utils
-
+from dog.core import utils, converters
 
 DETAILED_PING = '''**message create:** {}
 **message edit:** {}
@@ -36,6 +35,12 @@ class Internal(Cog):
         """ Tests the paginator. """
         pr = utils.Paginator(text, split_by)
         await pr.paginate(ctx)
+
+    @commands.command()
+    @commands.is_owner()
+    async def humantime(self, ctx, *, time: converters.HumanTime):
+        """ Humantime debug. """
+        await ctx.send(f'```py\n{repr(time)}\n```')
 
     @commands.command()
     async def dstats(self, ctx):

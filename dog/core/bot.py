@@ -23,7 +23,6 @@ from discord.ext import commands
 from dog.core import utils
 
 from . import botcollection, errors
-from .utils import pretty_timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -332,14 +331,14 @@ class DogBot(commands.Bot):
                 logger.warning('Not going to submit guild count, no discord.pw token.')
                 return
 
-            ENDPOINT = f'https://bots.discord.pw/api/bots/{self.user.id}/stats'
+            endpoint = f'https://bots.discord.pw/api/bots/{self.user.id}/stats'
             while True:
                 guilds = len(self.guilds)
                 data = {'server_count': guilds}
                 headers = {'Authorization': cfg.discordpw_token}
                 logger.info('POSTing guild count to abal\'s website...')
                 # HTTP POST to the endpoint
-                async with self.session.post(ENDPOINT, json=data, headers=headers) as resp:
+                async with self.session.post(endpoint, json=data, headers=headers) as resp:
                     if resp.status != 200:
                         # probably just a hiccup on abal's side
                         logger.warning('Failed to post guild count, ignoring.')
@@ -420,7 +419,7 @@ class DogBot(commands.Bot):
                 logger.info('Couldn\'t inform the server at all. Giving up.')
 
     async def on_guild_join(self, g):
-        diff = pretty_timedelta(datetime.datetime.utcnow() - g.created_at)
+        diff = utils.ago(g.created_at)
         ratio = botcollection.user_to_bot_ratio(g)
 
         logger.info('New guild: %s (%d)', g.name, g.id)

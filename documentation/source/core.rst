@@ -1,5 +1,5 @@
 `core`
-========
+======
 
 The core functionality of the bot is contained in this package.
 

@@ -13,8 +13,8 @@ from dog import Cog
 from dog.core import utils
 
 logger = logging.getLogger(__name__)
-INVITE_RE = re.compile(r'(discordapp\.com\/invite|discord\.gg)\/([a-zA-Z_\-0-9]+)')
-VIDEOSITE_RE = re.compile(r'(https?:\/\/)?(www\.)?(twitch\.tv|youtube\.com)\/(.+)')
+INVITE_RE = re.compile(r'(discordapp\.com/invite|discord\.gg)/([a-zA-Z_\-0-9]+)')
+VIDEOSITE_RE = re.compile(r'(https?://)?(www\.)?(twitch\.tv|youtube\.com)/(.+)')
 
 
 class CensorType(Enum):
@@ -57,17 +57,6 @@ class Censorship(Cog):
         async with self.bot.pgpool.acquire() as conn:
             await conn.execute(f'UPDATE censorship SET enabled = array_remove(enabled, \'{what.name}\') '
                                'WHERE guild_id = $1', guild.id)
-
-    @commands.command()
-    @commands.guild_only()
-    async def roles(self, ctx):
-        """ Views the roles (and their IDs) in this server. """
-        sorted_roles = sorted(ctx.guild.roles, key=lambda r: r.position, reverse=True)
-        code = '```\n' + '\n'.join([f'\N{BULLET} {r.name} ({r.id})' for r in sorted_roles]) + '\n```'
-        try:
-            await ctx.send(code)
-        except discord.HTTPException:
-            await ctx.send(f'You have too many roles ({len(ctx.guild.roles)}) for me to list!')
 
     @commands.group(aliases=['cs'])
     @commands.has_permissions(manage_guild=True)

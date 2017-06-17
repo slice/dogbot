@@ -5,6 +5,7 @@ from html.parser import HTMLParser
 from typing import Any, Dict
 
 import discord
+import timeago
 
 
 class Paginator:
@@ -76,6 +77,7 @@ class Paginator:
 
 class MLStripper(HTMLParser):
     def __init__(self):
+        super().__init__()
         self.reset()
         self.strict = False
         self.convert_charrefs = True
@@ -140,7 +142,7 @@ def now():
 
 def ago(dt):
     """ Returns a `pretty_timedelta` since the provided `datetime.timedelta`. """
-    return pretty_timedelta(datetime.datetime.utcnow() - dt)
+    return timeago.format(dt, datetime.datetime.utcnow())
 
 
 def truncate(text: str, desired_length: int):
@@ -159,24 +161,3 @@ def truncate(text: str, desired_length: int):
 def commas(number: int):
     """ Adds American-style commas to an `int`. """
     return '{:,d}'.format(number)
-
-
-def pretty_timedelta(delta):
-    """ Returns a `datetime.timedelta` as a string, but pretty. """
-    big_parts = []
-
-    if delta.days >= 365:
-        years = round(delta.days / 365, 2)
-        plural = 's' if years == 0 or years > 1 else ''
-        big_parts.append(f'{years} year{plural}')
-
-    if delta.days >= 7 and delta.days < 365:
-        weeks = round(delta.days / 7, 2)
-        plural = 's' if weeks == 0 or weeks > 1 else ''
-        big_parts.append(f'{weeks} week{plural}')
-
-    m, s = divmod(delta.seconds, 60)
-    h, m = divmod(m, 60)
-    big = ', '.join(big_parts)
-    hms = '{}{}{}'.format(f'{h}h' if h else '', f'{m}m' if m else '', f'{s}s' if s else '')
-    return '{}, {} ago'.format(big, hms) if big else (f'{hms} ago' if hms else 'just now')

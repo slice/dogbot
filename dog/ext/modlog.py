@@ -141,7 +141,7 @@ class Modlog(Cog):
     async def modlog_setup(self, ctx):
         """ Sets up the modlog. """
 
-        if 'mod-log' in [c.name for c in ctx.guild.channels]:
+        if discord.utils.get(ctx.guild.text_channels, name='mod-log'):
             await ctx.send('There is already a #mod-log in this server!')
             return
 

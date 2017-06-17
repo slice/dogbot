@@ -1,6 +1,7 @@
 """
 Information extension.
 """
+import datetime
 
 import discord
 from discord.ext import commands
@@ -50,6 +51,56 @@ class Info(Cog):
         embed.set_footer(text=f'Owned by {g.owner}', icon_url=g.owner.avatar_url)
 
         await ctx.send(embed=embed)
+
+    @commands.command()
+    @commands.guild_only()
+    async def roles(self, ctx):
+        """ Views the roles (and their IDs) in this server. """
+        sorted_roles = sorted(ctx.guild.roles, key=lambda r: r.position, reverse=True)
+        code = '```\n' + '\n'.join([f'\N{BULLET} {r.name} ({r.id})' for r in sorted_roles]) + '\n```'
+        try:
+            await ctx.send(code)
+        except discord.HTTPException:
+            await ctx.send(f'You have too many roles ({len(ctx.guild.roles)}) for me to list!')
+
+    def _make_joined_embed(self, member):
+        embed = utils.make_profile_embed(member)
+        joined_dif = utils.ago(member.created_at)
+        embed.add_field(name='Joined Discord',
+                        value=(f'{joined_dif}\n' +
+                               utils.american_datetime(member.created_at)))
+        return embed
+
+
+    @commands.command()
+    @commands.guild_only()
+    async def joined(self, ctx, target: discord.Member=None):
+        """
+        Shows when someone joined this server and Discord.
+
+        If no arguments were passed, your information is shown.
+        """
+        if target is None:
+            target = ctx.message.author
+
+        embed = self._make_joined_embed(target)
+        joined_dif = utils.ago(target.joined_at)
+        embed.add_field(name='Joined this Server',
+                        value=(f'{joined_dif}\n' +
+                               utils.american_datetime(target.joined_at)),
+                        inline=False)
+
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    @commands.guild_only()
+    async def earliest(self, ctx):
+        """ Shows who in this server had the earliest Discord join time. """
+        members = {m: m.created_at for m in ctx.guild.members if not m.bot}
+        earliest_time = min(members.values())
+        for member, time in members.items():
+            if earliest_time == time:
+                await ctx.send(embed=self._make_joined_embed(member))
 
 
 def setup(bot):

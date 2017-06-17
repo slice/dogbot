@@ -2,7 +2,6 @@
 Contains utility commands that help you get stuff done.
 """
 
-import asyncio
 import datetime
 import logging
 import operator
@@ -30,8 +29,8 @@ class GoogleResult(namedtuple('Google', 'title description url')):
 async def jisho(session: aiohttp.ClientSession, query: str) -> Dict[Any, Any]:
     """ Searches Jisho, and returns definition data as a `dict`. """
     query_url = utils.urlescape(query)
-    JISHO_ENDPOINT = 'http://jisho.org/api/v1/search/words?keyword={}'
-    async with session.get(JISHO_ENDPOINT.format(query_url)) as resp:
+    jisho_endpoint = 'http://jisho.org/api/v1/search/words?keyword={}'
+    async with session.get(jisho_endpoint.format(query_url)) as resp:
         data = await resp.json()
 
         # failed, or no data
@@ -168,6 +167,8 @@ class Utility(Cog):
             obv = await ctx.bot.loop.run_in_executor(None, self.owm.weather_at_place, place)
         except pyowm.exceptions.not_found_error.NotFoundError:
             return await ctx.send('Place not found.')
+        except TypeError:
+            return await ctx.send('OpenWeatherMap gave me bogus information.')
         weather = await ctx.bot.loop.run_in_executor(None, obv.get_weather)
 
         embed = discord.Embed(title=weather.get_status())
@@ -325,14 +326,6 @@ class Utility(Cog):
             target = ctx.message.author
         await ctx.send(target.avatar_url)
 
-    def _make_joined_embed(self, member):
-        embed = utils.make_profile_embed(member)
-        joined_dif = utils.pretty_timedelta(datetime.datetime.utcnow() - member.created_at)
-        embed.add_field(name='Joined Discord',
-                        value=(f'{joined_dif}\n' +
-                               utils.american_datetime(member.created_at)))
-        return embed
-
     @commands.command()
     async def jumbo(self, ctx, emoji: converters.FormattedCustomEmoji):
         """
@@ -357,16 +350,6 @@ class Utility(Cog):
         """ Shows you the default channel. """
         await ctx.send(ctx.guild.default_channel.mention)
 
-    @commands.command()
-    @commands.guild_only()
-    async def earliest(self, ctx):
-        """ Shows who in this server had the earliest Discord join time. """
-        members = {m: m.created_at for m in ctx.guild.members if not m.bot}
-        earliest_time = min(members.values())
-        for member, time in members.items():
-            if earliest_time == time:
-                await ctx.send(embed=self._make_joined_embed(member))
-
     @commands.command(name='calc')
     async def calc(self, ctx, *, expression: str):
         """ Evaluates a math expression. """
@@ -389,36 +372,6 @@ class Utility(Cog):
         if not args:
             return await ctx.send('\N{CONFUSED FACE} I can\'t choose from an empty list!')
         await ctx.send(random.choice(args))
-
-    @commands.command()
-    @commands.is_owner()
-    async def humantime(self, ctx, *, time: converters.HumanTime):
-        """ Humantime debug. """
-        await ctx.send(f'```py\n{repr(time)}\n```')
-
-    @commands.command()
-    @commands.guild_only()
-    async def joined(self, ctx, target: discord.Member=None):
-        """
-        Shows when someone joined this server and Discord.
-
-        If no arguments were passed, your information is shown.
-        """
-        if target is None:
-            target = ctx.message.author
-
-        def diff(date):
-            now = datetime.datetime.utcnow()
-            return utils.pretty_timedelta(now - date)
-
-        embed = self._make_joined_embed(target)
-        joined_dif = utils.pretty_timedelta(datetime.datetime.utcnow() - target.joined_at)
-        embed.add_field(name='Joined this Server',
-                        value=(f'{joined_dif}\n' +
-                               utils.american_datetime(target.joined_at)),
-                        inline=False)
-
-        await ctx.send(embed=embed)
 
 
 def setup(bot):
