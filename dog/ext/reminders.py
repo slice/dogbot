@@ -9,7 +9,7 @@ import logging
 import discord
 from discord.ext import commands
 from dog import Cog
-from dog.core import converters
+from dog.core import converters, utils
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +38,11 @@ class Reminders(Cog):
         # check if it's earlier
         if self.current_reminder and self.current_reminder['due'] > due:
             logger.debug('Got a reminder that is due earlier than the current one, rebooting task!')
-            self.handler_task.cancel()
-            self.handler_task = self.bot.loop.create_task(self.handle_reminders())
+            self.reboot_handler()
+
+    def reboot_handler(self):
+        self.handler_task.cancel()
+        self.handler_task = self.bot.loop.create_task(self.handle_reminders())
 
     async def get_latest_reminder(self):
         async with self.bot.pgpool.acquire() as conn:
@@ -70,6 +73,8 @@ class Reminders(Cog):
     async def handle_reminders(self):
         logger.debug('Reminder handler started!')
 
+        await self.bot.wait_until_ready()
+
         # when this first starts, the flag might not be set, but there could be a reminder. we should check
         if await self.get_latest_reminder():
             self.has_a_reminder.set()
@@ -95,14 +100,35 @@ class Reminders(Cog):
             self.current_reminder = None
             logger.debug('Handler: Fulfilled reminder #%d.', reminder['id'])
 
-    @commands.command()
-    async def remind(self, ctx, due_in: converters.HumanTime, *, note: str):
+    @commands.group(invoke_without_command=True)
+    async def remind(self, ctx, due_in: converters.HumanTime, *, note: commands.clean_content):
         """ Creates a reminder. """
         if due_in > (24 * 60 * 60) * 40:
             return await ctx.send('The maximum time allowed is 40 days.')
         due = datetime.datetime.utcnow() + datetime.timedelta(seconds=due_in)
         await self.create_reminder(ctx, due, note)
         await ctx.send('\N{ALARM CLOCK} Created your reminder.')
+
+    @remind.command()
+    async def list(self, ctx):
+        """ Lists your reminders. """
+        async with ctx.bot.pgpool.acquire() as conn:
+            reminders = await conn.fetch('SELECT * FROM reminders WHERE author_id = $1', ctx.author.id)
+            top = f'You currently have {len(reminders)} reminder(s).\n\n'
+            lst = [f'#{r["id"]} `{r["note"]}` \N{EM DASH} due {utils.ago(r["due"])}' for r in reminders]
+            await ctx.send(top + '\n'.join(lst))
+
+    @remind.command()
+    async def cancel(self, ctx, rid: int):
+        """ Cancels a reminder. """
+        async with ctx.bot.pgpool.acquire() as conn:
+            reminder = await conn.fetchrow('SELECT * FROM reminders WHERE id = $1 AND author_id = $2',
+                                           rid, ctx.author.id)
+            if not reminder:
+                return await ctx.send('I couldn\'t find that reminder, or you didn\'t create that one.')
+            await conn.execute('DELETE FROM reminders WHERE id = $1', rid)
+            await ctx.send('Alright, I went ahead and cancelled that one for you.')
+            self.reboot_handler()
 
 
 def setup(bot):
