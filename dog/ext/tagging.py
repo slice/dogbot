@@ -20,6 +20,10 @@ class Tagging(Cog):
         async with self.bot.pgpool.acquire() as conn:
             await conn.execute(insert, name, ctx.guild.id, ctx.author.id, value, datetime.datetime.utcnow())
 
+    async def edit_tag(self, name: str, value: str):
+        async with self.bot.pgpool.acquire() as conn:
+            await conn.execute('UPDATE tags SET value = $1 WHERE name = $2', value, name)
+
     async def get_tag(self, ctx: commands.Context, name: str) -> Tag:
         """ Finds a tag, and returns it as a ``Tag`` object. """
         select = 'SELECT * FROM tags WHERE guild_id = $1 AND name = $2'
@@ -38,7 +42,7 @@ class Tagging(Cog):
         async with self.bot.pgpool.acquire() as conn:
             await conn.execute('DELETE FROM tags WHERE guild_id = $1 AND name = $2', ctx.guild.id, name)
 
-    def can_touch_tag(self, ctx: commands.Context, tag: str) -> bool:
+    def can_touch_tag(self, ctx: commands.Context, tag: Tag) -> bool:
         """ Returns whether someone can touch a tag (modify, delete, or edit it). """
         perms = ctx.author.guild_permissions
 
@@ -72,7 +76,7 @@ class Tagging(Cog):
 
         If you don't provide a value, the tag's contents are sent.
 
-        You may only touch a tag if one of the following conditions are met:
+        You may only touch a tag if any of the following conditions are met:
             1) You have the "Manage Server" permission.
             2) You are the owner of the server.
             3) You have created that tag.
@@ -90,7 +94,10 @@ class Tagging(Cog):
                 return
 
             # set a tag
-            await self.create_tag(ctx, name, value)
+            if tag:
+                await self.edit_tag(name, value)
+            else:
+                await self.create_tag(ctx, name, value)
             await self.bot.ok(ctx, '\N{MEMO}' if tag else '\N{DELIVERY TRUCK}')
         else:
             # get a tag
