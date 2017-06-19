@@ -118,7 +118,7 @@ class Censorship(Cog):
         if not await self.has_censorship_record(ctx.guild):
             return await ctx.send('You need to censor something first before you can except.')
         async with self.bot.pgpool.acquire() as conn:
-            await conn.execute('UPDATE censorship SET exceptions = exceptions || $1 WHERE '
+            await conn.execute('UPDATE censorship SET exceptions = array_append(exceptions, $1) WHERE '
                                'guild_id = $2', role_id, ctx.guild.id)
         await self.bot.ok(ctx)
 
@@ -138,12 +138,16 @@ class Censorship(Cog):
     @censorship.command(name='exceptions', aliases=['excepted'])
     async def _exceptions(self, ctx):
         """ Lists the excepted roles, and their IDs. """
-        roles = [discord.utils.get(ctx.guild.roles, id=i) for i in await self.get_guild_exceptions(ctx.guild)]
+        roles = [(i, discord.utils.get(ctx.guild.roles, id=i)) for i in await self.get_guild_exceptions(ctx.guild)]
 
         if not roles:
             return await ctx.send('There are no roles being excepted.')
 
-        code = '```\n' + '\n'.join([f'\N{BULLET} {r.name} ({r.id})' for r in roles]) + '\n```'
+        def format_role(role_info):
+            r, id = role_info
+            return f'\N{BULLET} {r.name} ({r.id})' if r else f'\N{BULLET} <dead role> ({id})'
+
+        code = '```\n' + '\n'.join(map(format_role, roles)) + '\n```'
         await ctx.send(code)
 
     @censorship.command(name='censor')
@@ -241,7 +245,8 @@ class Censorship(Cog):
         """ Returns the list of exception role IDs that a guild has. """
         sql = 'SELECT exceptions FROM censorship WHERE guild_id = $1'
         async with self.bot.pgpool.acquire() as conn:
-            return await conn.fetchrow(sql, guild.id)
+            record = await conn.fetchrow(sql, guild.id)
+            return record['exceptions'] if record else []
 
     async def on_message(self, msg: discord.Message):
         if not isinstance(msg.channel, discord.abc.GuildChannel):
