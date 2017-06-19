@@ -23,6 +23,14 @@ class CensorType(Enum):
     VIDEOSITES = 2
 
 
+class CensorTypeConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        censor_type = getattr(CensorType, argument.upper(), None)
+        if not censor_type:
+            raise commands.BadArgument('Invalid censorship type! Use `d?cs list` to view valid censorship types.')
+        return censor_type
+
+
 class Censorship(Cog):
     async def is_censoring(self, guild: discord.Guild, what: CensorType) -> bool:
         """ Returns whether something is being censored for a guild. """
@@ -49,14 +57,29 @@ class Censorship(Cog):
             await conn.execute('UPDATE censorship SET enabled = array_append(enabled, $1) '
                                'WHERE guild_id = $2', what.name, guild.id)
 
+    async def enable_autoban(self, guild: discord.Guild):
+        """ Enables autoban for a guild. """
+        async with self.bot.pgpool.acquire() as conn:
+            await conn.execute('INSERT INTO censorship_autoban VALUES ($1)', guild.id)
+
+    async def disable_autoban(self, guild: discord.Guild):
+        """ Disables autoban for a guild. """
+        async with self.bot.pgpool.acquire() as conn:
+            await conn.execute('DELETE FROM censorship_autoban WHERE guild_id = $1', guild.id)
+
+    async def autoban_enabled(self, guild: discord.Guild) -> bool:
+        """ Returns whether autoban is enabled for this guild. """
+        async with self.bot.pgpool.acquire() as conn:
+            return await conn.fetchrow('SELECT * FROM censorship_autoban WHERE guild_id = $1', guild.id) is not None
+
     async def uncensor(self, guild: discord.Guild, what: CensorType):
         """ Uncensors something for a guild. """
         if not await self.has_censorship_record(guild):
             return
         logging.info('Uncensoring %s for %s (%d)', what, guild.name, guild.id)
         async with self.bot.pgpool.acquire() as conn:
-            await conn.execute(f'UPDATE censorship SET enabled = array_remove(enabled, \'{what.name}\') '
-                               'WHERE guild_id = $1', guild.id)
+            await conn.execute('UPDATE censorship SET enabled = array_remove(enabled, $1) '
+                               'WHERE guild_id = $2', what.name, guild.id)
 
     @commands.group(aliases=['cs'])
     @commands.has_permissions(manage_guild=True)
@@ -124,11 +147,12 @@ class Censorship(Cog):
         await ctx.send(code)
 
     @censorship.command(name='censor')
-    async def _censor(self, ctx, what: str):
-        """ Censors a specific type of message. """
-        censor_type = getattr(CensorType, what.upper(), None)
-        if not censor_type:
-            return await ctx.send('Invalid censorship type.')
+    async def _censor(self, ctx, censor_type: CensorTypeConverter):
+        """
+        Censors a specific type of message.
+
+        To view censor types, run d?cs list.
+        """
         await self.censor(ctx.message.guild, censor_type)
         await self.bot.ok(ctx)
 
@@ -136,10 +160,11 @@ class Censorship(Cog):
     async def _list(self, ctx):
         """ Lists the censorship types. """
         types = ', '.join([f'`{t.name.lower()}`' for t in CensorType])
-        await ctx.send(f'Censorship types: {types}')
+        wiki = 'https://github.com/sliceofcode/dogbot/wiki/Censorship'
+        await ctx.send(f'Censorship types: {types}\n\nTo see what these do, click here: <{wiki}>')
 
     @censorship.command(name='censoring')
-    async def _censoring(self, ctx, what: str = None):
+    async def _censoring(self, ctx, censor_type: CensorTypeConverter = None):
         """
         Views what types of messages are being censored.
 
@@ -147,32 +172,54 @@ class Censorship(Cog):
         command, Dogbot will tell if you if that certain censor type is enabled or not.
         """
 
-        if not what:
+        if not censor_type:
             censor_types = [t.name for t in CensorType]
-            censoring_dict = {name.lower(): await self.is_censoring(ctx.guild,
-                                                                    getattr(CensorType, name))
+            censoring_dict = {name.lower(): await self.is_censoring(ctx.guild, getattr(CensorType, name))
                               for name in censor_types}
             await ctx.send(utils.format_dict(censoring_dict))
             return
 
-        censor_type = getattr(CensorType, what.upper(), None)
-        if not censor_type:
-            return await ctx.send('Invalid censorship type.')
         is_censoring = await self.is_censoring(ctx.guild, censor_type)
 
-        if is_censoring:
-            await ctx.send(f'Yes, `{what}` are being censored.')
-        else:
-            await ctx.send(f'No, `{what}` are not being censored.')
+        await ctx.send((f'Yes, ' if is_censoring else 'No, ') + f'`{what}` are ' + ('not ' if not is_censoring else '')
+                       + 'being censored.')
 
     @censorship.command(name='uncensor')
-    async def _uncensor(self, ctx, what: str):
-        """ Uncensors a specific type of message. """
-        censor_type = getattr(CensorType, what.upper(), None)
-        if not censor_type:
-            return await ctx.send('Invalid censorship type.')
+    async def _uncensor(self, ctx, censor_type: CensorTypeConverter):
+        """
+        Uncensors a specific type of message.
+
+        To view censor types, run d?cs list.
+        """
         await self.uncensor(ctx.message.guild, censor_type)
         await self.bot.ok(ctx)
+
+    @censorship.group(name='autoban')
+    async def _autoban(self, ctx):
+        """
+        Manages censorship autobanning. When enabled, Dogbot will ban anyone that violates
+        the censorship filter. Dogbot attaches a reason to every ban.
+
+        Before using this, ensure that Dogbot can ban members.
+        """
+
+    @_autoban.command(name='enable')
+    async def _autoban_enable(self, ctx):
+        """ Enables autobanning. """
+        await self.enable_autoban(ctx.guild)
+        await ctx.bot.ok(ctx)
+
+    @_autoban.command(name='disable')
+    async def _autoban_disable(self, ctx):
+        """ Disables autobanning. """
+        await self.disable_autoban(ctx.guild)
+        await ctx.bot.ok(ctx)
+
+    @_autoban.command(name='status')
+    async def _autoban_status(self, ctx):
+        """ Is autobanning enabled? """
+        is_enabled = await self.autoban_enabled(ctx.guild)
+        await ctx.send('**Yup!** Autobanning is enabled.' if is_enabled else '**Nope!** Autobanning is disabled.')
 
     async def should_censor(self, msg: discord.Message, censor_type: CensorType, regex) -> bool:
         """ Returns whether a message should be censored based on a regex and censor type. """
@@ -194,13 +241,15 @@ class Censorship(Cog):
         """ Returns the list of exception role IDs that a guild has. """
         sql = 'SELECT exceptions FROM censorship WHERE guild_id = $1'
         async with self.bot.pgpool.acquire() as conn:
-            return await conn.fetch(sql, guild.id)
+            return await conn.fetchrow(sql, guild.id)
 
     async def on_message(self, msg: discord.Message):
-        if not isinstance(msg.channel, discord.TextChannel) or isinstance(msg.author, discord.User):
+        if not isinstance(msg.channel, discord.abc.GuildChannel):
+            # no dms
             return
         
         if not await self.has_censorship_record(msg.guild):
+            # no censorship record yet!
             return
 
         censors = [
@@ -208,12 +257,21 @@ class Censorship(Cog):
             (CensorType.VIDEOSITES, VIDEOSITE_RE, '\u002a\u20e3 Videosite-containing message censored')
         ]
 
+        # if the message author has a role that has been excepted, don't even check the message
         if any([role.id in await self.get_guild_exceptions(msg.guild) for role in msg.author.roles]):
             return
 
         for censor_type, regex, title in censors:
             if await self.should_censor(msg, censor_type, regex):
                 await self.censor_message(msg, title)
+
+                # automatically ban the user, if applicable
+                if await self.autoban_enabled(msg.guild):
+                    try:
+                        logger.debug('Autobanning %d', msg.author.id)
+                        await msg.author.ban(reason=f'Violated censorship filter \N{EM DASH} {censor_type.name.lower()}')
+                    except discord.Forbidden:
+                        pass
                 break
 
 

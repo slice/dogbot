@@ -149,7 +149,7 @@ class Admin(Cog):
     async def sql(self, ctx, *, query: str):
         """ Executes SQL queries. """
         # ew i know
-        sql = subprocess.run(['psql', '-d', 'dogbot', '-c', query], stdout=subprocess.PIPE,
+        sql = subprocess.run(['psql', '-U', 'postgres', '-d', 'dogbot', '-c', query], stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         if sql.stderr != b'':
             return await ctx.send('Something went wrong!\n```{}\n```'.format(sql.stderr.decode()))
