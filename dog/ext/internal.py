@@ -83,6 +83,12 @@ class Internal(Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
+    async def prefix_cache(self, ctx, guild_id: int = None):
+        """ Inspects prefix cache for a guild. """
+        guild_id = guild_id if guild_id else ctx.guild.id
+        await ctx.send(f'`{repr(ctx.bot.prefix_cache.get(guild_id))}`')
+
+    @commands.command()
     async def dping(self, ctx):
         """ Detailed ping. """
         def ms(before, after):

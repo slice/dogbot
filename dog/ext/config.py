@@ -154,6 +154,11 @@ class Config(Cog):
         """
         async with ctx.bot.pgpool.acquire() as conn:
             await conn.execute('INSERT INTO prefixes VALUES ($1, $2)', ctx.guild.id, prefix)
+
+        cache = ctx.bot.prefix_cache.get(ctx.guild.id, [])
+        ctx.bot.prefix_cache[ctx.guild.id] = cache + [prefix]
+        log.debug('Added "%s" to cache for %d', prefix, ctx.guild.id)
+
         await ctx.bot.ok(ctx)
 
     @prefix.command(name='remove')
@@ -162,6 +167,14 @@ class Config(Cog):
         async with ctx.bot.pgpool.acquire() as conn:
             await conn.execute('DELETE FROM prefixes WHERE guild_id = $1 AND prefix = $2', ctx.guild.id,
                                prefix)
+        try:
+            cache = ctx.bot.prefix_cache.get(ctx.guild.id)
+            cache.remove(prefix)
+            ctx.bot.prefix_cache[ctx.guild.id] = cache
+        except ValueError:
+            pass
+        log.debug('Removed "%s" from cache for %d', prefix, ctx.guild.id)
+
         await ctx.bot.ok(ctx)
 
     @prefix.command(name='list')

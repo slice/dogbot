@@ -40,13 +40,14 @@ async def _get_json(session: aiohttp.ClientSession, url: str) -> Dict[Any, Any]:
     resp = await _get(session, url)
     return await resp.json()
 
+
 UrbanDefinition = namedtuple('UrbanDefinition', [
     'word', 'definition', 'thumbs_up', 'thumbs_down', 'example',
     'permalink', 'author', 'defid', 'current_vote'
 ])
 
 
-async def urban(session: aiohttp.ClientSession, word: str) -> UrbanDefinition:
+async def urban(session: aiohttp.ClientSession, word: str) -> 'Union[UrbanDefinition, None]':
     """ Queries UrbanDictionary for a definition. """
     UD_ENDPOINT = 'http://api.urbandictionary.com/v0/define?term={}'
     async with session.get(UD_ENDPOINT.format(utils.urlescape(word))) as resp:
@@ -163,7 +164,7 @@ class Fun(Cog):
         async with ctx.channel.typing():
             try:
                 result = await urban(self.bot.session, word)
-            except asyncio.ClientError:
+            except aiohttp.ClientError:
                 return await ctx.send('Failed to look up that word!')
             if not result:
                 return await ctx.send('No results!')

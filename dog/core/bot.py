@@ -74,11 +74,22 @@ class DogBot(commands.Bot):
         # in self.extensions
         self._exts_to_load = list(self.extensions.keys()).copy()
 
+        self.prefix_cache = {}
+
     async def get_prefixes(self, guild: discord.Guild) -> 'List[str]':
         """ Returns the supplementary prefixes for a guild. """
+        if self.prefix_cache.get(guild.id):
+            logger.debug('Using prefix cache for %d', guild.id)
+            return self.prefix_cache[guild.id]
+
+        logger.debug('Going to query Postgres for prefixes for %d', guild.id)
         async with self.pgpool.acquire() as conn:
             prefixes = await conn.fetch('SELECT prefix FROM prefixes WHERE guild_id = $1', guild.id)
-            return [] if not prefixes else list(map(lambda r: r['prefix'], prefixes))
+            prefix_strings = list(map(lambda r: r['prefix'], prefixes))
+            if prefixes and not self.prefix_cache.get(guild.id):
+                logger.debug('Populating prefix cache for %d', guild.id)
+                self.prefix_cache[guild.id] = prefix_strings
+            return [] if not prefixes else prefix_strings
 
     async def prefix(self, bot, message: discord.Message):
         """ Returns prefixes for a message. """
