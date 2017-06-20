@@ -249,7 +249,7 @@ class Censorship(Cog):
             return record['exceptions'] if record else []
 
     async def on_message(self, msg: discord.Message):
-        if not isinstance(msg.channel, discord.abc.GuildChannel):
+        if not isinstance(msg.channel, discord.abc.GuildChannel) or isinstance(msg.author, discord.User):
             # no dms
             return
         
