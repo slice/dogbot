@@ -286,7 +286,7 @@ class Mod(Cog):
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @checks.bot_perms(ban_members=True)
-    async def ban(self, ctx, member: converters.RawMember, delete_days: int, *, reason: str = None):
+    async def ban(self, ctx, member: converters.RawMember, delete_days: int = 7, *, reason: str = None):
         """
         Bans someone.
 
@@ -294,8 +294,8 @@ class Mod(Cog):
         member to ban. Banning users outside of the server is called "hackbanning", and is handy for banning
         users who are not present in the server.
 
-        If you don't want to delete any message, specify 0 for delete_days. delete_days has a
-        maximum of 7.
+        If you don't want to delete any messages, specify 0 for delete_days. delete_days has a
+        maximum of 7. By default, 7 days worth of messages are deleted.
         """
 
         if delete_days > 7:
