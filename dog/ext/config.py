@@ -133,6 +133,7 @@ class Config(Cog):
     async def prefix(self, ctx):
         """
         Manages supplemental bot prefixes for this server.
+        Only members with "Manage Server" may manage prefixes.
 
         By adding supplemental prefixes, prefixes such as d? will continue to
         function. When Dogbot references commands, like "d?ping", d? will always
