@@ -2,8 +2,10 @@ import datetime
 import re
 from collections import namedtuple
 
+import discord
 import parsedatetime
 from discord.ext import commands
+from discord.ext.commands import MemberConverter
 
 BareCustomEmoji = namedtuple('BareCustomEmoji', 'id name')
 
@@ -14,8 +16,20 @@ class FormattedCustomEmoji(commands.Converter):
     async def convert(self, ctx, argument):
         match = self.regex.match(argument)
         if not match:
-            raise commands.errors.BadArgument('Invalid custom emoji.')
+            raise commands.BadArgument('Invalid custom emoji.')
         return BareCustomEmoji(id=int(match.group(2)), name=match.group(1))
+
+
+class RawMember(commands.Converter):
+    async def convert(self, ctx, argument):
+        # garbo
+        try:
+            return await MemberConverter().convert(ctx, argument)
+        except commands.BadArgument:
+            try:
+                return discord.Object(id=int(argument))
+            except TypeError:
+                raise commands.BadArgument('Invalid member ID. I also couldn\'t find the user by username.')
 
 
 class HumanTime(commands.Converter):

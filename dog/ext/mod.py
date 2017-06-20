@@ -8,7 +8,7 @@ import discord
 from discord.ext import commands
 
 from dog import Cog
-from dog.core import checks, utils
+from dog.core import checks, utils, converters
 
 logger = logging.getLogger(__name__)
 
@@ -286,9 +286,13 @@ class Mod(Cog):
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @checks.bot_perms(ban_members=True)
-    async def ban(self, ctx, member: discord.Member, delete_days: int, *, reason: str = None):
+    async def ban(self, ctx, member: converters.RawMember, delete_days: int, *, reason: str = None):
         """
         Bans someone.
+
+        This command is special in that you may specify an ID to ban, instead of regularly specifying a
+        member to ban. Banning users outside of the server is called "hackbanning", and is handy for banning
+        users who are not present in the server.
 
         If you don't want to delete any message, specify 0 for delete_days. delete_days has a
         maximum of 7.
@@ -301,6 +305,8 @@ class Mod(Cog):
             await ctx.guild.ban(member, delete_message_days=delete_days, reason=reason)
         except discord.Forbidden:
             await ctx.send('I can\'t do that.')
+        except discord.NotFound:
+            await ctx.send('I couldn\'t find that user.')
         else:
             await self.bot.ok(ctx)
 
