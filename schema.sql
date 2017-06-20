@@ -31,6 +31,11 @@ CREATE TABLE IF NOT EXISTS reminders (
   due timestamp without time zone
 );
 
+CREATE TABLE IF NOT EXISTS prefixes (
+  guild_id bigint,
+  prefix varchar(140)
+);
+
 CREATE TABLE IF NOT EXISTS reddit_feeds (
   guild_id bigint,
   channel_id bigint,

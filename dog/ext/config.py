@@ -14,6 +14,13 @@ from dog import Cog
 log = logging.getLogger(__name__)
 CONFIGKEYS_HELP = '<https://github.com/sliceofcode/dogbot/wiki/Configuration>'
 
+class Prefix(commands.Converter):
+    async def convert(self, ctx: commands.Context, arg: str):
+        if len(arg) > 140:
+            raise commands.BadArgument('Prefixes cannot be greater than 140 characters.')
+        return arg
+
+
 class Config(Cog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -120,6 +127,53 @@ class Config(Cog):
             value = await self.bot.redis.get(f'{ctx.guild.id}:{name}')
             await ctx.send(f'`{name}`: {value.decode()}')
 
+    @commands.group()
+    @commands.guild_only()
+    @commands.has_permissions(manage_guild=True)
+    async def prefix(self, ctx):
+        """
+        Manages supplemental bot prefixes for this server.
+
+        By adding supplemental prefixes, prefixes such as d? will continue to
+        function. When Dogbot references commands, like "d?ping", d? will always
+        be used in the helptext. Don't worry as you can use your supplemental prefixes
+        in place of "d?".
+        """
+
+    @prefix.command(name='add')
+    async def prefix_add(self, ctx: commands.Context, prefix: Prefix):
+        """
+        Adds a prefix.
+
+        In order to add a prefix with a space at the end, you must quote the argument.
+
+        Examples:
+            d?prefix add "lol "
+            d?prefix add "pls "
+            d?prefix add ?
+        """
+        async with ctx.bot.pgpool.acquire() as conn:
+            await conn.execute('INSERT INTO prefixes VALUES ($1, $2)', ctx.guild.id, prefix)
+        await ctx.bot.ok(ctx)
+
+    @prefix.command(name='remove')
+    async def prefix_remove(self, ctx: commands.Context, prefix: Prefix):
+        """ Removes a prefix. """
+        async with ctx.bot.pgpool.acquire() as conn:
+            await conn.execute('DELETE FROM prefixes WHERE guild_id = $1 AND prefix = $2', ctx.guild.id,
+                               prefix)
+        await ctx.bot.ok(ctx)
+
+    @prefix.command(name='list')
+    async def prefix_list(self, ctx: commands.Context):
+        """ Lists all supplemental prefixes. """
+        prefixes = await ctx.bot.get_prefixes(ctx.guild)
+        if not prefixes:
+            return await ctx.send('There are no supplemental prefixes for this server. Add one with ' +
+                                  '`d?prefix add <prefix>`.')
+        prefix_list = ', '.join([f'`{p}`' for p in prefixes])
+        footer = 'View non-supplemental prefixes with `d?prefixes`.'
+        await ctx.send(f'Supplemental prefixes for this server: {prefix_list}\n\n' + footer)
 
 def setup(bot):
     bot.add_cog(Config(bot))

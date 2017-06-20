@@ -33,7 +33,7 @@ class DogBot(commands.Bot):
     to the constructor of :class:`discord.commands.AutoShardedBot`.
     """
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, command_prefix=self.prefix, **kwargs)
 
         # boot time (for uptime)
         self.boot_time = datetime.datetime.utcnow()
@@ -73,6 +73,18 @@ class DogBot(commands.Bot):
         # this is here so we can d?reload even if an syntax error occurs and it won't be present
         # in self.extensions
         self._exts_to_load = list(self.extensions.keys()).copy()
+
+    async def get_prefixes(self, guild: discord.Guild) -> 'List[str]':
+        """ Returns the supplementary prefixes for a guild. """
+        async with self.pgpool.acquire() as conn:
+            prefixes = await conn.fetch('SELECT prefix FROM prefixes WHERE guild_id = $1', guild.id)
+            return [] if not prefixes else list(map(lambda r: r['prefix'], prefixes))
+
+    async def prefix(self, bot, message: discord.Message):
+        """ Returns prefixes for a message. """
+        mention = [self.user.mention + ' ', f'<@!{self.user.id}> ']
+        additional_prefixes = await self.get_prefixes(message.guild)
+        return cfg.prefixes + mention + additional_prefixes
 
     async def close(self):
         # close stuff

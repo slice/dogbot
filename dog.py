@@ -60,8 +60,7 @@ additional_options.update({
 logger.info('Bot options: %s', additional_options)
 
 # create dogbot instance
-d = DogBot(command_prefix=commands.when_mentioned_or(*cfg.prefixes),
-           **additional_options)
+d = DogBot(**additional_options)
 
 d.load_exts_recursively('dog/ext', 'Initial recursive load')
 d.run(cfg.token)
