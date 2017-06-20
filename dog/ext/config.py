@@ -152,10 +152,16 @@ class Config(Cog):
             d?prefix add "pls "
             d?prefix add ?
         """
+        cache = ctx.bot.prefix_cache.get(ctx.guild.id, [])
+
+        # cache is guaranteed to be populated by now, because it is populated before
+        # commands are ran
+        if prefix in cache:
+            return await ctx.send('This server already has that prefix.')
+
         async with ctx.bot.pgpool.acquire() as conn:
             await conn.execute('INSERT INTO prefixes VALUES ($1, $2)', ctx.guild.id, prefix)
 
-        cache = ctx.bot.prefix_cache.get(ctx.guild.id, [])
         ctx.bot.prefix_cache[ctx.guild.id] = cache + [prefix]
         log.debug('Added "%s" to cache for %d', prefix, ctx.guild.id)
 

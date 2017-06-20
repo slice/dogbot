@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS reminders (
 
 CREATE TABLE IF NOT EXISTS prefixes (
   guild_id bigint,
-  prefix varchar(140)
+  prefix varchar(140) primary key
 );
 
 CREATE TABLE IF NOT EXISTS reddit_feeds (
