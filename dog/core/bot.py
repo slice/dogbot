@@ -78,6 +78,9 @@ class DogBot(commands.Bot):
 
     async def get_prefixes(self, guild: discord.Guild) -> 'List[str]':
         """ Returns the supplementary prefixes for a guild. """
+        if not guild:
+            return []
+
         if self.prefix_cache.get(guild.id):
             return self.prefix_cache[guild.id]
 
