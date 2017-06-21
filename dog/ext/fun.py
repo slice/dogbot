@@ -76,7 +76,7 @@ class Fun(Cog):
 
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
-    async def forbidden(self, ctx, who: discord.Member):
+    async def forbidden(self, ctx, *, who: discord.Member):
         """ At last! I am free to think the forbidden thoughts. """
         with ctx.typing():
             try:
