@@ -7,6 +7,7 @@ import logging
 import random
 
 import discord
+import functools
 import praw
 import prawcore
 from discord.ext import commands
@@ -61,6 +62,8 @@ class Reddit(Cog):
         # get the sub
         sub = self.bot.praw.subreddit(sub)
 
+        logger.debug('Attempting to fetch subreddit: %s, this can time out', sub)
+
         # check if it exists
         try:
             sub.fullname
@@ -68,12 +71,17 @@ class Reddit(Cog):
             logger.debug('Sub not found, not updating. sub=%s', sub)
             return
 
-        logger.debug('Fetched subreddit: %s', sub)
+        logger.debug('Fetched subreddit: %s, fetching posts!', sub)
 
         # get some hot posts
-        posts = list(filter(post_filter, sub.hot(limit=100)))
+        def exhaust_generator():
+            lazy_posts = sub.hot(limit=250)
+            return list(lazy_posts)
+        hot_posts = await self.bot.loop.run_in_executor(None, exhaust_generator)
+        logger.debug('Ran sub.hot() in executor. len=%d', len(hot_posts))
+        posts = list(filter(post_filter, hot_posts))
 
-        logger.debug('Fetched %d posts from %s', len(posts), sub.fullname)
+        logger.debug('Filtered %d posts from %s!', len(posts), sub.fullname)
 
         if not posts:
             logger.debug('Could not find a suitable post. sub=%s', sub)
@@ -117,7 +125,11 @@ class Reddit(Cog):
             return
 
         # get a host post
-        post = await self.get_hot(channel, feed['subreddit'])
+        try:
+            post = await asyncio.wait_for(self.get_hot(channel, feed['subreddit']), 6.5)
+        except asyncio.TimeoutError:
+            logger.error('get_hot timed out, cannot update feed (sub=%s, cid=%d)', feed['subreddit'], feed['channel_id'])
+            return
 
         if not post:
             logger.debug('Refusing to update this feed, no post.')
