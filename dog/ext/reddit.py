@@ -62,11 +62,13 @@ class Reddit(Cog):
         # get the sub
         sub = self.bot.praw.subreddit(sub)
 
-        logger.debug('Attempting to fetch subreddit: %s, this can time out', sub)
+        logger.debug('Attempting to fetch subreddit: %s inside of executor, this can time out', sub)
 
         # check if it exists
+        def fetch():
+            sub.fullname  # yes, this actually fetches the subreddit
         try:
-            sub.fullname
+            await self.bot.loop.run_in_executor(None, fetch)
         except prawcore.exceptions.NotFound:
             logger.debug('Sub not found, not updating. sub=%s', sub)
             return
