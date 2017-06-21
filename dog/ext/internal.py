@@ -6,6 +6,7 @@ import io
 import os
 from time import monotonic
 
+import asyncpg
 import discord
 import objgraph
 import psutil
@@ -81,6 +82,21 @@ class Internal(Cog):
             embed.add_field(name='Commands Ran', value=utils.commas(record['sum']) + ' total')
 
         await ctx.send(embed=embed)
+
+    @commands.command(aliases=['bl'])
+    async def blacklist(self, ctx, guild: int):
+        async with ctx.bot.pgpool.acquire() as conn:
+            try:
+                await conn.execute('INSERT INTO blacklisted_guilds VALUES ($1)', guild)
+            except asyncpg.UniqueViolationError:
+                return await ctx.send('That guild is already blacklisted.')
+        await ctx.bot.ok(ctx)
+
+    @commands.command(aliases=['ubl'])
+    async def unblacklist(self, ctx, guild: int):
+        async with ctx.bot.pgpool.acquire() as conn:
+            await conn.execute('DELETE FROM blacklisted_guilds WHERE guild_id = $1', guild)
+        await ctx.bot.ok(ctx)
 
     @commands.command()
     async def prefix_cache(self, ctx, guild_id: int = None):

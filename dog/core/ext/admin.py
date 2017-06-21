@@ -35,7 +35,7 @@ class Admin(Cog):
         """ Leaves collections. """
         left_guilds = []
         for g in ctx.bot.guilds:
-            if botcollection.is_bot_collection(g):
+            if await botcollection.is_bot_collection(ctx.bot, g):
                 ratio = botcollection.user_to_bot_ratio(g)
                 left_guilds.append(f'\N{BULLET} {g.name} (`{g.id}`, ratio=`{ratio}`)')
                 await ctx.bot.notify_think_is_collection(g)

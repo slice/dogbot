@@ -75,6 +75,7 @@ class DogBot(commands.Bot):
         self._exts_to_load = list(self.extensions.keys()).copy()
 
         self.prefix_cache = {}
+        self.refuse_notify_left = []
 
     async def get_prefixes(self, guild: discord.Guild) -> 'List[str]':
         """ Returns the supplementary prefixes for a guild. """
@@ -220,12 +221,12 @@ class DogBot(commands.Bot):
 
     async def disable_command(self, guild: discord.Guild, command_name: str):
         """ Disables a command in a guild. """
-        logger.info('disabling %s in %d', command_name, guild.id)
+        logger.debug('Disabling %s in %d.', command_name, guild.id)
         await self.redis.set(f'disabled:{guild.id}:{command_name}', 'on')
 
     async def enable_command(self, guild: discord.Guild, command_name: str):
         """ Enables a command in a guild. """
-        logger.info('enabling %s in %d', command_name, guild.id)
+        logger.debug('Enabling %s in %d.', command_name, guild.id)
         await self.redis.delete(f'disabled:{guild.id}:{command_name}')
 
     async def wait_for_response(self, ctx: commands.Context):
@@ -395,9 +396,15 @@ class DogBot(commands.Bot):
         if not channels or not any(channels):
             return
 
+        # form embed
+        fields = kwargs.pop('fields', [])
+        embed = discord.Embed(**kwargs)
+        for name, value in fields:
+            embed.add_field(name=name, value=value)
+
         try:
             for channel in channels:
-                await channel.send(*args, **kwargs)
+                await channel.send(*args, embed=embed)
         except discord.Forbidden:
             logger.warning('Forbidden to send to monitoring channel -- ignoring.')
 
@@ -442,34 +449,38 @@ class DogBot(commands.Bot):
                 logger.info('Couldn\'t inform the server at all. Giving up.')
 
     async def on_guild_join(self, g):
-        diff = utils.ago(g.created_at)
+        # calculate the utb ratio
         ratio = botcollection.user_to_bot_ratio(g)
+        diff = utils.ago(g.created_at)
+        fields = [
+            ('Guild', f'{g.name}\n`{g.id}`'),
+            ('Owner', f'{g.owner.mention} {g.owner}\n`{g.id}`'),
+            ('Info', f'Created {diff}\nMembers: {len(g.members)}\nUTB ratio: {ratio}')
+        ]
 
         logger.info('New guild: %s (%d)', g.name, g.id)
 
-        if botcollection.is_bot_collection(g):
+        if await botcollection.is_bot_collection(self, g):
             # uh oh!
-            logger.info('I think %s (%d) by %s is a bot collection! Leaving.',
+            logger.info('I think %s (%d) by %s is a bot collection/is blacklisted! Leaving.',
                         g.name, g.id, str(g.owner))
 
             # notify that i'm leaving a collection
-            await self.notify_think_is_collection(g)
+            is_blacklisted = await botcollection.is_blacklisted(self, g.id)
+            if not is_blacklisted:
+                # if they are a collection, just straight up leave (don't send a message)
+                await self.notify_think_is_collection(g)
 
             # leave it
+            self.refuse_notify_left.append(g.id)
             await g.leave()
 
             # monitor
-            fmt = (f'\N{FACE WITH ROLLING EYES} Left bot collection {g.name}'
-                   f' (`{g.id}`), owned by {g.owner.mention} (`{g.owner.id}`)'
-                   f' Created {diff}, user to bot ratio: {ratio}')
-            return await self.monitor_send(fmt)
+            title = '\N{RADIOACTIVE SIGN} ' + ('Left blacklisted guild' if is_blacklisted else 'Left bot collection')
+            return await self.monitor_send(title=title, fields=fields, color=0xff655b)
 
         # monitor
-        fmt = (f'\N{SMIRKING FACE} Added to new guild "{g.name}" (`{g.id}`)'
-               f', {len(g.members)} members, owned by {g.owner.mention}'
-               f' (`{g.owner.id}`). This guild was created {diff}.'
-               f' User to bot ratio: {ratio}')
-        await self.monitor_send(fmt)
+        await self.monitor_send(title='\N{INBOX TRAY} Added to new guild', fields=fields, color=0x71ff5e)
 
         WELCOME_MESSAGE = ('\N{DOG FACE} Woof! Hey there! I\'m Dogbot! To get a list of all of my '
                            'commands, type `d?help` in chat, so I can DM you my commands! If you '
@@ -483,9 +494,19 @@ class DogBot(commands.Bot):
             logger.info('Failed to DM owner. Not caring...')
 
     async def on_guild_remove(self, g):
-        fmt = (f'\N{LOUDLY CRYING FACE} Removed from guild "{g.name}"'
-               f' (`{g.id}`)!')
-        await self.monitor_send(fmt)
+        if g.id in self.refuse_notify_left:
+            # refuse to notify that we got removed from the guild, because the "left bot collection"/"left blacklisted"
+            # monitor message already does that
+            logger.debug('Refusing to notify guild leave, already sent a message about that. gid=%d', g.id)
+            self.refuse_notify_left.remove(g.id)
+            return
+
+        diff = utils.ago(g.created_at)
+        fields = [
+            ('Guilds', f'{g.name}\n`{g.id}`'),
+            ('Info', f'Created {diff}\nMembers: {len(g.members)}')
+        ]
+        await self.monitor_send(title='\N{OUTBOX TRAY} Removed from guild', fields=fields, color=0xff945b)
 
     async def config_get(self, guild: discord.Guild, name: str):
         """
