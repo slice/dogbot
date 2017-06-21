@@ -52,6 +52,14 @@ class Reddit(Cog):
         self.feed_task.cancel()
         self.bot.loop.create_task(self.post_to_feeds())
 
+    async def notify_error(self, channel: discord.TextChannel, text: str):
+        embed = discord.Embed(title='\N{WARNING SIGN} Feed error', description=text, color=0xff4747)
+        try:
+            await channel.send(embed=embed)
+        except discord.Forbidden:
+            # wow
+            pass
+
     async def get_hot(self, channel: discord.TextChannel, sub: str):
         """ Returns a hot Post from a sub. """
 
@@ -71,8 +79,9 @@ class Reddit(Cog):
             sub.fullname  # yes, this actually fetches the subreddit
         try:
             await self.bot.loop.run_in_executor(None, fetch)
-        except prawcore.exceptions.NotFound:
+        except (prawcore.exceptions.NotFound, prawcore.exceptions.Redirect):
             logger.debug('Sub not found, not updating. sub=%s', sub)
+            await self.notify_error(channel, f'The subreddit /r/{sub} was not found.')
             return
 
         logger.debug('Fetched subreddit: %s, fetching posts!', sub)
