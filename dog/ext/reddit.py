@@ -15,6 +15,8 @@ from dog import Cog
 from dog.core import checks, utils
 
 logger = logging.getLogger(__name__)
+UPDATE_INTERVAL = 60 * 30  # 30 minutes
+FUZZ_INTERVAL = 5
 
 
 def create_post_embed(post) -> discord.Embed:
@@ -37,8 +39,8 @@ class Reddit(Cog):
 
         logger.info('Reddit cog created!')
 
-        self.update_interval = 60 * 30 # 30 minutes
-        self.fuzz_interval = 5
+        self.update_interval = UPDATE_INTERVAL
+        self.fuzz_interval = FUZZ_INTERVAL
         self.feed_task = bot.loop.create_task(self.post_to_feeds())
 
     def __unload(self):
@@ -233,6 +235,34 @@ class Reddit(Cog):
         self.fuzz_interval = 1
         self.reboot_feed_task()
         await self.bot.ok(ctx)
+
+    @reddit.command()
+    @commands.is_owner()
+    async def debug_revert(self, ctx):
+        """ Reverts lowered feed timers. """
+        self.update_interval = UPDATE_INTERVAL
+        self.fuzz_interval = FUZZ_INTERVAL
+        self.reboot_feed_task()
+        await self.bot.ok(ctx)
+
+    @reddit.command()
+    @commands.is_owner()
+    async def update_all_now(self, ctx):
+        """ Forces a feed update now. """
+        logger.debug('[FORCED] Updating all feeds NOW...')
+
+        # fetch all feeds, and update them all
+        async with self.bot.pgpool.acquire() as conn:
+            feeds = await conn.fetch('SELECT * FROM reddit_feeds')
+
+            # enumerate through all feeds
+            for idx, feed in enumerate(feeds):
+                logger.debug('[FORCED] Updating feed {}/{}!'.format(idx + 1, len(feeds)))
+
+                # update the feed
+                await self.update_feed(feed)
+
+            logger.debug('[FORCED] Updated all feeds.')
 
     @reddit.command(aliases=['unwatch'])
     @checks.is_moderator()
