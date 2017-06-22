@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 
 from .errors import InsufficientPermissions
@@ -77,6 +78,8 @@ def is_dogbot_moderator(ctx):
     """
     Returns whether a person is a "Dogbot Moderator".
     """
+    if isinstance(ctx.channel, discord.DMChannel):
+        return False
     names = [r.name for r in ctx.author.roles]
     has_moderator_role = any([1 for name in names if name in mod_names])
     has_manage_server = ctx.author.guild_permissions.manage_guild

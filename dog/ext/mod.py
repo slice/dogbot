@@ -19,8 +19,7 @@ class Mod(Cog):
         self.mute_tasks = {}
 
     async def __global_check(self, ctx: commands.Context):
-        # do not handle guild-specific command disables in
-        # dms
+        # do not handle guild-specific command disables in dms
         if not isinstance(ctx.channel, discord.abc.GuildChannel):
             return True
 

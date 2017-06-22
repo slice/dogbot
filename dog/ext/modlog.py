@@ -86,6 +86,9 @@ class Modlog(Cog):
             await self.bot.send_modlog(before.guild, embed=embed)
 
     async def on_message_delete(self, msg: discord.Message):
+        if isinstance(msg.channel, discord.DMChannel):
+            return
+
         if (not is_publicly_visible(msg.channel) or
                 await self.bot.config_is_set(msg.guild, 'modlog_notrack_deletes')):
             return

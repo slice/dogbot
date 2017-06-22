@@ -545,8 +545,9 @@ class DogBot(commands.Bot):
     async def on_command(self, ctx):
         author = ctx.message.author
         checks = [c.__qualname__.split('.')[0] for c in ctx.command.checks]
-        logger.info('Command invocation by %s (%d) "%s" checks=%s', author, author.id,
-                    ctx.message.content, ','.join(checks) or '(none)')
+        location = '[DM] ' if isinstance(ctx.channel, discord.DMChannel) else '[Guild] '
+        logger.info('%sCommand invocation by %s (%d) "%s" checks=%s', location, author, author.id, ctx.message.content,
+                    ','.join(checks) or '(none)')
 
     async def on_command_error(self, ctx, ex):
         if getattr(ex, 'should_suppress', False):
@@ -564,13 +565,20 @@ class DogBot(commands.Bot):
         elif isinstance(ex, commands.errors.MissingRequiredArgument):
             await ctx.send(f'Uh oh! {ex} {see_help}')
         elif isinstance(ex, commands.NoPrivateMessage):
-            await ctx.send('You can\'t do that in a private message.')
+            await ctx.send('You can\'t do that in a DM.')
         elif isinstance(ex, errors.InsufficientPermissions):
             await ctx.send(ex)
         elif isinstance(ex, commands.errors.DisabledCommand):
             await ctx.send('That command has been globally disabled by the bot\'s owner.')
         elif isinstance(ex, commands.errors.CommandInvokeError):
             if isinstance(ex.original, discord.Forbidden):
+                if ctx.command.name == 'help':
+                    # can't dm that person :(
+                    try:
+                        await ctx.send(f'Hey, {ctx.author.mention}! I can\'t DM you my help. Do you have DMs enabled?')
+                    except discord.Forbidden:
+                        pass
+                    return
                 return await self.handle_forbidden(ctx)
 
             tb = ''.join(traceback.format_exception(
