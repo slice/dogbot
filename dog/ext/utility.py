@@ -154,7 +154,9 @@ class Utility(Cog):
         await ctx.send(embed=embed)
 
     @define.error
-    async def define_error(self, ctx, _):
+    async def define_error(self, ctx, err):
+        if isinstance(err, commands.DisabledCommand) or isinstance(err, commands.CheckFailure):
+            return
         await ctx.send('An error has occurred.')
 
     @commands.command()
