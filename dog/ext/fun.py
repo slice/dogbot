@@ -152,10 +152,22 @@ class Fun(Cog):
                 await ctx.send('Something went wrong, try again.')
 
     @commands.command()
-    @commands.is_owner()
-    async def say(self, ctx, *, text: str):
-        """ Makes the bot say something. """
-        await ctx.send(text)
+    @checks.is_moderator()
+    async def say(self, ctx, channel: discord.TextChannel, *, text: commands.clean_content):
+        """
+        Makes the bot say something in a certain channel.
+
+        Mentions will be scrubbed, meaning that they will be converted to plain text
+        to avoid abuse.
+
+        Dogbot Moderator is required to do this.
+        """
+        try:
+            await channel.send(text)
+        except discord.Forbidden:
+            await ctx.send(f'I can\'t speak in {channel.mention}.')
+        except discord.HTTPException:
+            await ctx.send(f'Your message is too long! 2,000 characters maximum.')
 
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
