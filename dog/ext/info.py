@@ -22,12 +22,37 @@ SERVER_INFO_COUNT = '''{} role(s)
 
 
 class Info(Cog):
-    @commands.command()
+    @commands.command(aliases=['user'])
+    @commands.guild_only()
+    async def profile(self, ctx, *, who: discord.Member = None):
+        """ Shows information about a user. """
+        who = who or ctx.author
+
+        embed = discord.Embed(title=f'{who} \N{EM DASH} {who.id}')
+        embed.set_thumbnail(url=who.avatar_url_as(format='png'))
+
+        # roles
+        embed.add_field(name='Roles', value=' '.join([r.mention for r in who.roles if r != ctx.guild.default_role]))
+
+        # shared servers
+        shared_servers = len([g for g in ctx.bot.guilds if who in g.members])
+        embed.add_field(name='Shared Servers', value=shared_servers)
+
+        # joined
+        def add_joined_field(*, attr, name, **kwargs):
+            dt = getattr(who, attr)
+            embed.add_field(name=name, value=f'{utils.ago(dt)}\n{utils.american_datetime(dt)} UTC', **kwargs)
+        add_joined_field(attr='joined_at', name='Joined this Server', inline=False)
+        add_joined_field(attr='created_at', name='Joined Discord', inline=False)
+
+        await ctx.send(embed=embed)
+
+    @commands.command(aliases=['guild'])
     @commands.guild_only()
     async def server(self, ctx):
         """ Shows information about the server. """
         g = ctx.guild
-        embed = discord.Embed(title=g.name)
+        embed = discord.Embed(title=f'{g.name} \N{EM DASH} {g.id}')
 
         # server icon
         if g.icon_url:
@@ -46,6 +71,9 @@ class Info(Cog):
             cm(len(g.roles)), cm(len(g.text_channels)), cm(len(g.voice_channels)),
             cm(len(g.channels))
         ))
+
+        created = f'Created: {g.created_at} UTC\n{utils.ago(g.created_at)}'
+        embed.add_field(name='Created', value=created)
 
         # guild owner
         embed.set_footer(text=f'Owned by {g.owner}', icon_url=g.owner.avatar_url)
