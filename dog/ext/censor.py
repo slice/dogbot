@@ -145,6 +145,7 @@ class Censorship(Cog):
             await msg.author.kick(reason=reason)
 
     @commands.group(aliases=['cs'])
+    @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     async def censorship(self, ctx):
         """
@@ -262,6 +263,7 @@ class Censorship(Cog):
         await ctx.ok()
 
     @censorship.group(name='punish', aliases=['p'])
+    @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     async def censor_punish(self, ctx):
         """
