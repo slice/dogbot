@@ -107,7 +107,7 @@ class Reminders(Cog):
             return await ctx.send('The maximum time allowed is 40 days.')
         due = datetime.datetime.utcnow() + datetime.timedelta(seconds=due_in)
         await self.create_reminder(ctx, due, note)
-        await ctx.send('\N{ALARM CLOCK} Created your reminder.')
+        await ctx.ok()
 
     @remind.command()
     async def list(self, ctx):

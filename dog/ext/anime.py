@@ -47,7 +47,7 @@ class Anime(Cog):
             results = results[:10]
 
         if len(results) > 1:
-            choice = await self.bot.pick_from_list(ctx, results[:20])
+            choice = await ctx.pick_from_list(results[:20])
             if choice is None:
                 return
             await ctx.send(embed=self._make_anime_embed(choice))

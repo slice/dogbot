@@ -170,52 +170,6 @@ class DogBot(commands.Bot):
             importlib.reload(module)
         logger.info('Finished reloading bot modules!')
 
-    async def pick_from_list(self, ctx: commands.Context, choices: List[Any]) -> Any:
-        """ Shows the user a list of items to pick from. Returns the picked item. """
-        # format list of stuff
-        choices_list = utils.format_list(choices)
-
-        # send list of stuff
-        await ctx.send('Pick one, or send `cancel`.\n\n' + choices_list)
-        remaining_tries = 3
-        picked = None
-
-        while True:
-            if remaining_tries <= 0:
-                await ctx.send('You ran out of tries, I give up!')
-                return None
-
-            # wait for a message
-            msg = await self.wait_for_response(ctx)
-
-            # user wants to cancel?
-            if msg.content == 'cancel':
-                await ctx.send('Canceled selection.')
-                break
-
-            try:
-                chosen_index = int(msg.content) - 1
-            except ValueError:
-                # they didn't enter a valid number
-                await ctx.send('That wasn\'t a number! Send a message that '
-                               'solely contains the number of the item that '
-                               'you want.')
-                remaining_tries -= 1
-                continue
-
-            if chosen_index < 0 or chosen_index > len(choices) - 1:
-                # out of range
-                await ctx.send('Invalid choice! Send a message that solely '
-                               'contains the number of the item that you '
-                               'want.')
-                remaining_tries -= 1
-            else:
-                # they chose correctly
-                picked = choices[chosen_index]
-                break
-
-        return picked
-
     async def command_is_disabled(self, guild: discord.Guild, command_name: str):
         """ Returns whether a command is disabled in a guild. """
         return await self.redis.exists(f'disabled:{guild.id}:{command_name}')
@@ -229,22 +183,6 @@ class DogBot(commands.Bot):
         """ Enables a command in a guild. """
         logger.debug('Enabling %s in %d.', command_name, guild.id)
         await self.redis.delete(f'disabled:{guild.id}:{command_name}')
-
-    async def wait_for_response(self, ctx: commands.Context):
-        """
-        Waits for a message response from the message author, then returns the
-        new message.
-
-        The message we are waiting for will only be accepted if it was sent by
-        the original command invoker, and it was sent in the same channel as
-        the command message.
-        """
-        def check(m):
-            if isinstance(m.channel, discord.DMChannel):
-                # accept any message, because we are in a dm
-                return True
-            return m.channel.id == ctx.channel.id and m.author == ctx.author
-        return await self.wait_for('message', check=check)
 
     def has_prefix(self, text: str):
         """
@@ -281,22 +219,6 @@ class DogBot(commands.Bot):
             await mod_log.send(*args, **kwargs)
         except discord.Forbidden:
             # couldn't post to modlog
-            pass
-
-    async def ok(self, ctx: commands.Context, emoji: str='\N{OK HAND SIGN}'):
-        """
-        Adds a reaction to the command message, or sends it to the channel if
-        we can't add reactions. This should be used as feedback to commands,
-        just like how most bots send out `:ok_hand:` when a command completes
-        successfully.
-        """
-        try:
-            await ctx.message.add_reaction(emoji)
-        except discord.Forbidden:
-            # can't add reactions
-            await ctx.send(emoji)
-        except discord.NotFound:
-            # the command message got deleted somehow
             pass
 
     async def rotate_game(self):
@@ -394,7 +316,7 @@ class DogBot(commands.Bot):
         channels = [self.get_channel(c) for c in monitor_channels]
 
         # no monitor channels
-        if not channels or not any(channels):
+        if not any(channels):
             return
 
         # form embed
@@ -421,32 +343,24 @@ class DogBot(commands.Bot):
           one that we find.
 
         """
-        COLL_ISSUES = f'https://github.com/{cfg.github}/issues'
-        COLL_HDR_PUBLIC = "Hi there! Somebody added me to this server, "
-        COLL_HDR_PRIVATE = ("Hi there! Somebody added me to your server, "
-                            f"{guild.name} (`{guild.id}`), ")
-        COLL_REST = ("but my algorithms tell me that this is a bot"
-                     " collection! (A server dedicated to keeping"
-                     " loads of bots in one place, which I don't like"
-                     "!) If this server is not a bot collection, "
-                     "please open an issue here: <" + COLL_ISSUES +
-                     "> and I'll try to get back to you as soon as"
-                     " possible (make sure to include the name of"
-                     " your server so I can whitelist you)! Thanks!")
+        support_invite = 'discord.gg/3dd7czT'
+        header_public = "Hi there! Somebody added me to this server, "
+        header_dm = f"Hi there! Somebody added me to your server, {guild.name} (`{guild.id}`), "
+        content = """but my algorithms tell me that this is a bot collecion! (A server dedicated to keeping loads of
+        bots in one place, which I don't like!) If this server is not a bot collection, please talk to me, here:
+        {invite}, and I'll try to get back to you as soon as possible (make sure to include the ID of your server so I
+        can whitelist you)! Thanks!
+        """.strip().replace('\n', ' ')
 
         try:
-            await guild.default_channel.send(COLL_HDR_PUBLIC + COLL_REST)
+            await guild.default_channel.send(header_public + content.format(invite=support_invite))
             logger.info('Notified %s (%d) that they were a collection.',
                         guild.name, guild.id)
         except discord.Forbidden:
             logger.info('Couldn\'t send to default channel. DMing owner!')
             try:
-                await guild.owner.send(COLL_HDR_PRIVATE + COLL_REST)
+                await guild.owner.send(header_dm + content)
             except discord.Forbidden:
-                logger.info('Couldn\'t DM the owner of the guild. Looping.')
-                for channel in guild.text_channels:
-                    if channel.permissions_for(guild.me).send_messages:
-                        return await channel.send(COLL_HDR_PUBLIC + COLL_REST)
                 logger.info('Couldn\'t inform the server at all. Giving up.')
 
     async def on_guild_join(self, g):

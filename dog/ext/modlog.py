@@ -141,7 +141,7 @@ class Modlog(Cog):
     @commands.command()
     @commands.has_permissions(manage_guild=True)
     @checks.bot_perms(manage_channels=True)
-    async def modlog_setup(self, ctx):
+    async def modlog_setup(self, ctx: 'DogbotContext'):
         """ Sets up the modlog. """
 
         if discord.utils.get(ctx.guild.text_channels, name='mod-log'):
@@ -152,7 +152,7 @@ class Modlog(Cog):
                        ' in #mod-log? Example response: `rolename1,rolename2`'
                        '\nTo grant no roles access, respond with "none".')
 
-        msg = await self.bot.wait_for_response(ctx)
+        msg = await ctx.wait_for_response()
 
         if msg.content == 'none':
             await ctx.send('Granting no roles access.')
