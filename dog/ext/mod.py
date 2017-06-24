@@ -195,7 +195,7 @@ class Mod(Cog):
         existing_overwrite = ctx.channel.overwrites_for(someone)
         existing_overwrite.read_messages = False
         await ctx.channel.set_permissions(someone, overwrite=existing_overwrite)
-        await self.bot.ok(ctx)
+        await self.ok()
 
     @commands.command()
     @commands.guild_only()
@@ -223,7 +223,7 @@ class Mod(Cog):
                 # overwrite still has stuff
                 logger.info('overwrite still has things!')
                 await ctx.channel.set_permissions(someone, overwrite=overwrites)
-            await self.bot.ok(ctx)
+            await ctx.ok()
 
     @commands.command()
     @commands.guild_only()
@@ -239,7 +239,7 @@ class Mod(Cog):
             await ctx.send('You must leave off the prefix.')
             return
         await self.bot.disable_command(ctx.guild, command)
-        await self.bot.ok(ctx)
+        await self.ok()
 
     @commands.command()
     @commands.guild_only()
@@ -253,7 +253,7 @@ class Mod(Cog):
             await ctx.send('That command isn\'t disabled!')
             return
         await self.bot.enable_command(ctx.guild, command)
-        await self.bot.ok(ctx)
+        await self.ok()
 
     @commands.command()
     @commands.guild_only()
@@ -279,7 +279,7 @@ class Mod(Cog):
         except discord.Forbidden:
             await ctx.send('I can\'t do that.')
         else:
-            await self.bot.ok(ctx)
+            await ctx.ok()
 
     @commands.command()
     @commands.guild_only()
@@ -307,7 +307,7 @@ class Mod(Cog):
         except discord.NotFound:
             await ctx.send('I couldn\'t find that user.')
         else:
-            await self.bot.ok(ctx)
+            await self.ok()
 
     def _embed_field_for(self, member):
         return f'{member.mention} {member.name}#{member.discriminator}'
@@ -331,7 +331,7 @@ class Mod(Cog):
         """
         perms = discord.Permissions(permissions=0)
         await ctx.guild.create_role(name=name, permissions=perms)
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
     @commands.command()
     @commands.guild_only()

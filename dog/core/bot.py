@@ -21,6 +21,7 @@ import praw
 import raven
 from discord.ext import commands
 from dog.core import utils
+from dog.core.context import DogbotContext
 
 from . import botcollection, errors
 
@@ -531,7 +532,8 @@ class DogBot(commands.Bot):
         if msg.author.bot:
             return
 
-        await self.process_commands(msg)
+        ctx = await self.get_context(msg, cls=DogbotContext)
+        await self.invoke(ctx)
 
     async def handle_forbidden(self, ctx):
         cant_respond = ("Hey! I can't respond because I don't have the `Send Messages` "

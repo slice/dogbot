@@ -109,7 +109,7 @@ class RPS(Cog):
 
         async with self.bot.pgpool.acquire() as conn:
             await conn.execute('INSERT INTO rps_exclusions VALUES ($1)', ctx.author.id)
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
     @rps.command(name='include')
     async def rps_include(self, ctx):
@@ -119,7 +119,7 @@ class RPS(Cog):
 
         async with self.bot.pgpool.acquire() as conn:
             await conn.execute('DELETE FROM rps_exclusions WHERE user_id = $1', ctx.author.id)
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
 
 def setup(bot):

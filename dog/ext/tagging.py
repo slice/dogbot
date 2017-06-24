@@ -98,7 +98,7 @@ class Tagging(Cog):
                 await self.edit_tag(name, value)
             else:
                 await self.create_tag(ctx, name, value)
-            await self.bot.ok(ctx, '\N{MEMO}' if tag else '\N{DELIVERY TRUCK}')
+            await ctx.ok('\N{MEMO}' if tag else '\N{DELIVERY TRUCK}')
         else:
             # get a tag
             tag = await self.get_tag(ctx, name)
@@ -142,7 +142,7 @@ class Tagging(Cog):
             return
 
         await self.delete_tag(ctx, name)
-        await self.bot.ok(ctx, '\N{PUT LITTER IN ITS PLACE SYMBOL}')
+        await ctx.ok('\N{PUT LITTER IN ITS PLACE SYMBOL}')
 
     @tag.command(name='markdown', aliases=['raw'])
     @commands.guild_only()

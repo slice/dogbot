@@ -50,7 +50,7 @@ class Admin(Cog):
     async def rotate_game(self, ctx):
         """ Immediately rotates the bot's playing status. """
         await ctx.bot.rotate_game()
-        await ctx.bot.ok(ctx)
+        await ctx.ok()
 
     @commands.command()
     @commands.is_owner()
@@ -102,7 +102,7 @@ class Admin(Cog):
         async with self.bot.session.get(url) as resp:
             avatar_data = await resp.read()
             await self.bot.user.edit(avatar=avatar_data)
-            await self.bot.ok(ctx)
+            await ctx.ok()
 
     @commands.command(aliases=['reboot'])
     @commands.is_owner()

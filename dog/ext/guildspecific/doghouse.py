@@ -43,7 +43,7 @@ class Doghouse(Cog):
 
         # revert back
         await subbed.edit(mentionable=False)
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
     @doghouse.command(aliases=['sub'])
     async def subscribe(self, ctx):
@@ -54,13 +54,13 @@ class Doghouse(Cog):
         in bikeshedding and other stuff.
         """
         await ctx.message.author.add_roles(get_subbed_role(ctx))
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
     @doghouse.command(aliases=['unsub'])
     async def unsubscribe(self, ctx):
         """ Unsubscribes to some alerts. """
         await ctx.message.author.remove_roles(get_subbed_role(ctx))
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
     @doghouse.command()
     async def info(self, ctx):

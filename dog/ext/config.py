@@ -47,13 +47,13 @@ class Config(Cog):
     async def global_config_set(self, ctx, name: str, value: str='on'):
         """ Sets a config field. """
         await self.bot.redis.set(name, value)
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
     @global_config.command(name='remove', aliases=['rm', 'del', 'delete'])
     async def global_config_remove(self, ctx, name: str):
         """ Remove a config field. """
         await self.bot.redis.delete(name)
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
     @global_config.command(name='get', aliases=['cat'])
     async def global_config_get(self, ctx, name: str):
@@ -86,7 +86,7 @@ class Config(Cog):
             return
 
         await self.bot.redis.set(f'{ctx.guild.id}:{name}', value)
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
     @config.command(name='permitted')
     async def config_permitted(self, ctx):
@@ -115,7 +115,7 @@ class Config(Cog):
     async def config_remove(self, ctx, name: str):
         """ Removes a config field for this server. """
         await self.bot.redis.delete(f'{ctx.guild.id}:{name}')
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
     @config.command(name='get', aliases=['cat'])
     async def config_get(self, ctx, name: str):
@@ -166,7 +166,7 @@ class Config(Cog):
         ctx.bot.prefix_cache[ctx.guild.id] = cache + [prefix]
         log.debug('Added "%s" to cache for %d', prefix, ctx.guild.id)
 
-        await ctx.bot.ok(ctx)
+        await ctx.ok()
 
     @prefix.command(name='remove')
     async def prefix_remove(self, ctx: commands.Context, prefix: Prefix):
@@ -182,7 +182,7 @@ class Config(Cog):
             pass
         log.debug('Removed "%s" from cache for %d', prefix, ctx.guild.id)
 
-        await ctx.bot.ok(ctx)
+        await ctx.ok()
 
     @prefix.command(name='list')
     async def prefix_list(self, ctx: commands.Context):

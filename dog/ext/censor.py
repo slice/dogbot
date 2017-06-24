@@ -120,7 +120,7 @@ class Censorship(Cog):
         async with self.bot.pgpool.acquire() as conn:
             await conn.execute('UPDATE censorship SET exceptions = array_append(exceptions, $1) WHERE '
                                'guild_id = $2', role_id, ctx.guild.id)
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
     @censorship.command(name='unexcept')
     async def _unexcept(self, ctx, role_id: int):
@@ -133,7 +133,7 @@ class Censorship(Cog):
         sql = 'UPDATE censorship SET exceptions = array_remove(exceptions, $1) WHERE guild_id = $2'
         async with self.bot.pgpool.acquire() as conn:
             await conn.execute(sql, role_id, ctx.guild.id)
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
     @censorship.command(name='exceptions', aliases=['excepted'])
     async def _exceptions(self, ctx):
@@ -158,7 +158,7 @@ class Censorship(Cog):
         To view censor types, run d?cs list.
         """
         await self.censor(ctx.message.guild, censor_type)
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
     @censorship.command(name='list')
     async def _list(self, ctx):
@@ -196,7 +196,7 @@ class Censorship(Cog):
         To view censor types, run d?cs list.
         """
         await self.uncensor(ctx.message.guild, censor_type)
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
     @censorship.group(name='autoban')
     async def _autoban(self, ctx):
@@ -211,13 +211,13 @@ class Censorship(Cog):
     async def _autoban_enable(self, ctx):
         """ Enables autobanning. """
         await self.enable_autoban(ctx.guild)
-        await ctx.bot.ok(ctx)
+        await ctx.ok()
 
     @_autoban.command(name='disable')
     async def _autoban_disable(self, ctx):
         """ Disables autobanning. """
         await self.disable_autoban(ctx.guild)
-        await ctx.bot.ok(ctx)
+        await ctx.ok()
 
     @_autoban.command(name='status')
     async def _autoban_status(self, ctx):

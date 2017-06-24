@@ -243,7 +243,7 @@ class Reddit(Cog):
         self.update_interval = 3
         self.fuzz_interval = 1
         self.reboot_feed_task()
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
     @reddit.command()
     @commands.is_owner()
@@ -252,7 +252,7 @@ class Reddit(Cog):
         self.update_interval = UPDATE_INTERVAL
         self.fuzz_interval = FUZZ_INTERVAL
         self.reboot_feed_task()
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
     @reddit.command()
     @commands.is_owner()
@@ -285,7 +285,7 @@ class Reddit(Cog):
         async with self.bot.pgpool.acquire() as conn:
             await conn.execute('DELETE FROM reddit_feeds WHERE guild_id = $1 AND subreddit = $2', ctx.guild.id,
                                subreddit)
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
     @reddit.command()
     @checks.is_moderator()
