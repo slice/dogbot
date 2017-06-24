@@ -22,6 +22,7 @@ class CensorType(Enum):
     """ Signifies types of censorship. """
     INVITES = 1
     VIDEOSITES = 2
+    ZALGO = 3
 
 
 class CensorshipFilter:
@@ -44,6 +45,12 @@ class InviteCensorshipFilter(ReCensorshipFilter):
 class VideositeCensorshipFilter(ReCensorshipFilter):
     censor_type = CensorType.VIDEOSITES
     regex = re.compile(r'(https?://)?(www\.)?(twitch\.tv|youtube\.com)/(.+)')
+
+class ZalgoCensorshipFilter(CensorshipFilter):
+    censor_type = CensorType.ZALGO
+
+    async def does_violate(self, msg: discord.Message) -> bool:
+        return any([glyph in msg.content for glyph in utils.zalgo_glyphs])
 
 
 class PunishmentType(Enum):
@@ -348,7 +355,8 @@ class Censorship(Cog):
 
         censors = [
             (InviteCensorshipFilter, '\u002a\u20e3 Invite-containing message censored'),
-            (VideositeCensorshipFilter, '\u002a\u20e3 Videosite-containing message censored')
+            (VideositeCensorshipFilter, '\u002a\u20e3 Videosite-containing message censored'),
+            (ZalgoCensorshipFilter, '\u002a\u20e3 Zalgo message censored')
         ]
 
         # if the message author has a role that has been excepted, don't even check the message
