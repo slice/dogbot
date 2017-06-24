@@ -454,7 +454,7 @@ class DogBot(commands.Bot):
         diff = utils.ago(g.created_at)
         fields = [
             ('Guild', f'{g.name}\n`{g.id}`'),
-            ('Owner', f'{g.owner.mention} {g.owner}\n`{g.id}`'),
+            ('Owner', f'{g.owner.mention} {g.owner}\n`{g.owner.id}`'),
             ('Info', f'Created {diff}\nMembers: {len(g.members)}\nUTB ratio: {ratio}')
         ]
 
