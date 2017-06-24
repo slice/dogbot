@@ -45,7 +45,8 @@ class CensorTypeConverter(EnumConverter):
 
 class PunishmentTypeConverter(EnumConverter):
     enum = PunishmentType
-    bad_argument_text = 'Invalid punishment type.'
+    bad_argument_text = 'Invalid punishment type. List of punishment types: ' \
+                        '<https://github.com/sliceofcode/dogbot/wiki/Censorship#punishments>'
 
 
 class Censorship(Cog):
