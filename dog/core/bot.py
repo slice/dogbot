@@ -570,6 +570,8 @@ class DogBot(commands.Bot):
             await ctx.send(ex)
         elif isinstance(ex, commands.errors.DisabledCommand):
             await ctx.send('That command has been globally disabled by the bot\'s owner.')
+        elif isinstance(ex, asyncio.TimeoutError):
+            await ctx.send('A request in that command took too long to run. Try running the command again.')
         elif isinstance(ex, commands.errors.CommandInvokeError):
             if isinstance(ex.original, discord.Forbidden):
                 if ctx.command.name == 'help':
