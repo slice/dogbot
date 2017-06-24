@@ -6,6 +6,7 @@ from typing import Any, Dict
 
 import discord
 import timeago
+from discord.ext import commands
 
 
 class Paginator:
@@ -161,3 +162,11 @@ def truncate(text: str, desired_length: int):
 def commas(number: int):
     """ Adds American-style commas to an `int`. """
     return '{:,d}'.format(number)
+
+
+class EnumConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        enum_type = getattr(self.enum, argument.upper(), None)
+        if not enum_type:
+            raise commands.BadArgument(self.bad_argument_text)
+        return enum_type

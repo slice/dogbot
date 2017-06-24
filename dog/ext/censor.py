@@ -12,10 +12,10 @@ from discord.ext import commands
 
 from dog import Cog
 from dog.core import utils
+from dog.core.utils import EnumConverter
 
 logger = logging.getLogger(__name__)
-INVITE_RE = re.compile(r'(discordapp\.com/invite|discord\.gg)/([a-zA-Z_\-0-9]+)')
-VIDEOSITE_RE = re.compile(r'(https?://)?(www\.)?(twitch\.tv|youtube\.com)/(.+)')
+
 
 
 class CensorType(Enum):
@@ -24,18 +24,32 @@ class CensorType(Enum):
     VIDEOSITES = 2
 
 
+class CensorshipFilter:
+    censor_type: CensorType = None
+
+    async def does_violate(self, msg: discord.Message) -> bool:
+        raise NotImplementedError
+
+
+class ReCensorshipFilter(CensorshipFilter):
+    async def does_violate(self, msg: discord.Message) -> bool:
+        return self.regex.search(msg.content) is not None
+
+
+class InviteCensorshipFilter(ReCensorshipFilter):
+    censor_type = CensorType.INVITES
+    regex = re.compile(r'(discordapp\.com/invite|discord\.gg)/([a-zA-Z_\-0-9]+)')
+
+
+class VideositeCensorshipFilter(ReCensorshipFilter):
+    censor_type = CensorType.VIDEOSITES
+    regex = re.compile(r'(https?://)?(www\.)?(twitch\.tv|youtube\.com)/(.+)')
+
+
 class PunishmentType(Enum):
     """ Signifies types of punishments. """
     BAN = 1
     KICK = 2
-
-
-class EnumConverter(commands.Converter):
-    async def convert(self, ctx, argument):
-        enum_type = getattr(self.enum, argument.upper(), None)
-        if not enum_type:
-            raise commands.BadArgument(self.bad_argument_text)
-        return enum_type
 
 
 class CensorTypeConverter(EnumConverter):
@@ -301,10 +315,9 @@ class Censorship(Cog):
             status = {r['censorship_type'].lower(): r['punishment'].lower() for r in punishments}
             await ctx.send(utils.format_dict(status))
 
-    async def should_censor(self, msg: discord.Message, censor_type: CensorType, regex) -> bool:
-        """ Returns whether a message should be censored based on a regex and censor type. """
-        return await self.is_censoring(msg.guild, censor_type) and regex.search(msg.content) \
-            is not None
+    async def should_censor(self, msg: discord.Message, filter: CensorshipFilter) -> bool:
+        """ Returns whether a message should be censored based on a censorship filter and censor type. """
+        return await self.is_censoring(msg.guild, filter.censor_type) and await filter().does_violate(msg)
 
     async def censor_message(self, msg: discord.Message, title: str):
         """ Censors a message, and posts to the modlog. """
@@ -334,21 +347,21 @@ class Censorship(Cog):
             return
 
         censors = [
-            (CensorType.INVITES, INVITE_RE, '\u002a\u20e3 Invite-containing message censored'),
-            (CensorType.VIDEOSITES, VIDEOSITE_RE, '\u002a\u20e3 Videosite-containing message censored')
+            (InviteCensorshipFilter, '\u002a\u20e3 Invite-containing message censored'),
+            (VideositeCensorshipFilter, '\u002a\u20e3 Videosite-containing message censored')
         ]
 
         # if the message author has a role that has been excepted, don't even check the message
         if any([role.id in await self.get_guild_exceptions(msg.guild) for role in msg.author.roles]):
             return
 
-        for censor_type, regex, title in censors:
-            if await self.should_censor(msg, censor_type, regex):
+        for filter, title in censors:
+            if await self.should_censor(msg, filter):
                 await self.censor_message(msg, title)
 
                 # punish the user
                 try:
-                    await self.carry_out_punishment(censor_type, msg)
+                    await self.carry_out_punishment(filter.censor_type, msg)
                 except discord.Forbidden:
                     logger.warning('Unable to carry out punishment, forbidden! gid=%d', msg.guild.id)
                     pass
