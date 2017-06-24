@@ -6,6 +6,7 @@ import logging
 import re
 from enum import Enum
 
+import asyncpg
 import discord
 from discord.ext import commands
 
@@ -18,17 +19,33 @@ VIDEOSITE_RE = re.compile(r'(https?://)?(www\.)?(twitch\.tv|youtube\.com)/(.+)')
 
 
 class CensorType(Enum):
-    """ Signifies the type of censorship. """
+    """ Signifies types of censorship. """
     INVITES = 1
     VIDEOSITES = 2
 
 
-class CensorTypeConverter(commands.Converter):
+class PunishmentType(Enum):
+    """ Signifies types of punishments. """
+    BAN = 1
+    KICK = 2
+
+
+class EnumConverter(commands.Converter):
     async def convert(self, ctx, argument):
-        censor_type = getattr(CensorType, argument.upper(), None)
-        if not censor_type:
-            raise commands.BadArgument('Invalid censorship type! Use `d?cs list` to view valid censorship types.')
-        return censor_type
+        enum_type = getattr(self.enum, argument.upper(), None)
+        if not enum_type:
+            raise commands.BadArgument(self.bad_argument_text)
+        return enum_type
+
+
+class CensorTypeConverter(EnumConverter):
+    enum = CensorType
+    bad_argument_text = 'Invalid censorship type! Use `d?cs list` to view valid censorship types.'
+
+
+class PunishmentTypeConverter(EnumConverter):
+    enum = PunishmentType
+    bad_argument_text = 'Invalid punishment type.'
 
 
 class Censorship(Cog):
@@ -57,20 +74,27 @@ class Censorship(Cog):
             await conn.execute('UPDATE censorship SET enabled = array_append(enabled, $1) '
                                'WHERE guild_id = $2', what.name, guild.id)
 
-    async def enable_autoban(self, guild: discord.Guild):
-        """ Enables autoban for a guild. """
+    async def delete_punishment(self, guild: discord.Guild, type: CensorType):
+        """ Deletes a punishment. """
+        logger.debug('Removing punishment. gid=%d, censor=%s', guild.id, type)
         async with self.bot.pgpool.acquire() as conn:
-            await conn.execute('INSERT INTO censorship_autoban VALUES ($1)', guild.id)
+            await conn.execute('DELETE FROM censorship_punishments WHERE guild_id = $1 AND censorship_type = $2',
+                               guild.id, type.name)
 
-    async def disable_autoban(self, guild: discord.Guild):
-        """ Disables autoban for a guild. """
+    async def add_punishment(self, guild: discord.Guild, type: CensorType, punishment: PunishmentType):
+        """ Adds a punishment. """
+        logger.debug('Adding punishment. gid=%d, censor=%s, punishment=%s', guild.id, type, punishment)
         async with self.bot.pgpool.acquire() as conn:
-            await conn.execute('DELETE FROM censorship_autoban WHERE guild_id = $1', guild.id)
+            await conn.execute('INSERT INTO censorship_punishments VALUES ($1, $2, $3)', guild.id, type.name,
+                               punishment.name)
 
-    async def autoban_enabled(self, guild: discord.Guild) -> bool:
-        """ Returns whether autoban is enabled for this guild. """
+    async def get_punishment(self, guild: discord.Guild, type: CensorType) -> 'Union[PunishmentType, None]':
+        """ Returns a punishment for a censorship type. """
+        logger.debug('Fetching punishment. gid=%d, censor=%s', guild.id, type)
+        sql = 'SELECT punishment FROM censorship_punishments WHERE guild_id = $1 AND censorship_type = $2'
         async with self.bot.pgpool.acquire() as conn:
-            return await conn.fetchrow('SELECT * FROM censorship_autoban WHERE guild_id = $1', guild.id) is not None
+            row = await conn.fetchrow(sql, guild.id, type.name)
+            return getattr(PunishmentType, row['punishment'], None) if row else None
 
     async def uncensor(self, guild: discord.Guild, what: CensorType):
         """ Uncensors something for a guild. """
@@ -80,6 +104,23 @@ class Censorship(Cog):
         async with self.bot.pgpool.acquire() as conn:
             await conn.execute('UPDATE censorship SET enabled = array_remove(enabled, $1) '
                                'WHERE guild_id = $2', what.name, guild.id)
+
+    async def carry_out_punishment(self, censor_type: CensorType, msg: discord.Message):
+        """ Carries out a punishment. """
+        punishment = await self.get_punishment(msg.guild, censor_type)
+        if not punishment:
+            logger.debug('Not carrying out punishment for %d, no punishment assigned to censor type %s.', msg.id,
+                         censor_type)
+            return
+        logger.debug('Carrying out punishment. mid=%d aid=%d censor_type=%s punishment_type=%s', msg.id, msg.author.id,
+                     censor_type, punishment)
+
+        reason = f'(Automated) Censorship violation: {censor_type.name}'
+
+        if punishment == PunishmentType.BAN:
+            await msg.author.ban(reason=reason)
+        elif punishment == PunishmentType.KICK:
+            await msg.author.kick(reason=reason)
 
     @commands.group(aliases=['cs'])
     @commands.has_permissions(manage_guild=True)
@@ -198,32 +239,66 @@ class Censorship(Cog):
         await self.uncensor(ctx.message.guild, censor_type)
         await ctx.ok()
 
-    @censorship.group(name='autoban')
-    async def _autoban(self, ctx):
+    @censorship.group(name='punish', aliases=['p'])
+    @commands.has_permissions(manage_guild=True)
+    async def censor_punish(self, ctx):
         """
-        Manages censorship autobanning. When enabled, Dogbot will ban anyone that violates
-        the censorship filter. Dogbot attaches a reason to every ban.
+        Manages censorship punishments. For each censorship type, you may assign a punishment
+        to that type. The punishment will be carried out upon that specific censorship type being violated.
 
-        Before using this, ensure that Dogbot can ban members.
+        Before using this, ensure that Dogbot can ban members and kick members. Excepted users are immune
+        to being punished (and being censored in the first place). Only members with "Manage Server" can manage
+        punishments.
+
+        Examples:
+            d?censorship punish add invites ban
+                Makes Dogbot anybody who posts an invite.
+            d?cs p add videosites kick
+                Makes Dogbot kick anybody who violates the videosites censorship type.
+            d?cs p delete invites
+                Deletes the punishment for the invites censorship filter.
+            d?cs p status
+                Views all punishments assigned to censorship filters.
         """
 
-    @_autoban.command(name='enable')
-    async def _autoban_enable(self, ctx):
-        """ Enables autobanning. """
-        await self.enable_autoban(ctx.guild)
+    @censor_punish.command(name='add')
+    async def censor_punish_add(self, ctx, censor_type: CensorTypeConverter, punishment: PunishmentTypeConverter):
+        """ Adds a punishment. """
+        if not await self.is_censoring(ctx.guild, censor_type):
+            return await ctx.send(f'You aren\'t censoring `{censor_type.name.lower()}`, you should censor it first '
+                                  f'with `d?cs censor {censor_type.name.lower()}`.')
+        try:
+            await self.add_punishment(ctx.guild, censor_type, punishment)
+        except asyncpg.IntegrityConstraintViolationError:
+            return await ctx.send('That censorship type already has a punishment!')
         await ctx.ok()
 
-    @_autoban.command(name='disable')
-    async def _autoban_disable(self, ctx):
-        """ Disables autobanning. """
-        await self.disable_autoban(ctx.guild)
+    @censor_punish.command(name='delete', aliases=['del', 'rm', 'remove'])
+    async def censor_punish_delete(self, ctx, censor_type: CensorTypeConverter):
+        """ Deletes a punishment. """
+        await self.delete_punishment(ctx.guild, censor_type)
         await ctx.ok()
 
-    @_autoban.command(name='status')
-    async def _autoban_status(self, ctx):
-        """ Is autobanning enabled? """
-        is_enabled = await self.autoban_enabled(ctx.guild)
-        await ctx.send('**Yup!** Autobanning is enabled.' if is_enabled else '**Nope!** Autobanning is disabled.')
+    @censor_punish.command(name='status')
+    async def censor_punish_status(self, ctx):
+        """
+        Shows all punishments.
+
+        This command will show all censorship filters that have a punishment assigned to them. It will show
+        the censorship filter's name, and its punishment.
+
+        For example, if the bot says:
+
+            invites    = kick
+            videosites = ban
+
+        It means that Dogbot will kick upon someone violating the invites filter, and will ban upon someone violating
+        the videosites filter.
+        """
+        async with ctx.bot.pgpool.acquire() as conn:
+            punishments = await conn.fetch('SELECT * FROM censorship_punishments WHERE guild_id = $1', ctx.guild.id)
+            status = {r['censorship_type'].lower(): r['punishment'].lower() for r in punishments}
+            await ctx.send(utils.format_dict(status))
 
     async def should_censor(self, msg: discord.Message, censor_type: CensorType, regex) -> bool:
         """ Returns whether a message should be censored based on a regex and censor type. """
@@ -270,13 +345,12 @@ class Censorship(Cog):
             if await self.should_censor(msg, censor_type, regex):
                 await self.censor_message(msg, title)
 
-                # automatically ban the user, if applicable
-                if await self.autoban_enabled(msg.guild):
-                    try:
-                        logger.debug('Autobanning %d', msg.author.id)
-                        await msg.author.ban(reason=f'Violated censorship filter \N{EM DASH} {censor_type.name.lower()}')
-                    except discord.Forbidden:
-                        pass
+                # punish the user
+                try:
+                    await self.carry_out_punishment(censor_type, msg)
+                except discord.Forbidden:
+                    logger.warning('Unable to carry out punishment, forbidden! gid=%d', msg.guild.id)
+                    pass
                 break
 
 

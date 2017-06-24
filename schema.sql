@@ -14,8 +14,12 @@ CREATE TABLE IF NOT EXISTS censorship (
   exceptions bigint[]
 );
 
-CREATE TABLE IF NOT EXISTS censorship_autoban (
-  guild_id bigint
+CREATE TABLE IF NOT EXISTS censorship_punishments (
+  guild_id bigint,
+  censorship_type text,
+  punishment text,
+
+  PRIMARY KEY(guild_id, censorship_type)
 );
 
 CREATE TABLE IF NOT EXISTS exhausted_reddit_posts (

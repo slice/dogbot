@@ -96,7 +96,7 @@ def format_dict(d: Dict[Any, Any]) -> str:
     padding = len(max(d.keys(), key=len))
 
     for name, value in d.items():
-        code_block += '{name: <{width}} {value}\n'.format(name=name, width=padding, value=value)
+        code_block += '{name: <{width}} = {value}\n'.format(name=name, width=padding, value=value)
 
     code_block += '```'
     return code_block
