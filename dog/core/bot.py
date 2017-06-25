@@ -128,8 +128,13 @@ class DogBot(commands.Bot):
                      for file in filter(ext_filter, files)]
 
         for ext in exts:
-            logger.info('%s: %s', prefix, ext)
-            self.load_extension(ext)
+
+            module = importlib.import_module(ext)
+            if hasattr(module, 'setup'):
+                logger.info('%s: %s', prefix, ext)
+                self.load_extension(ext)
+            else:
+                logger.debug('Skipping %s, doesn\'t seem to be an extension.', ext)
 
         # update exts to load
         self._exts_to_load = list(self.extensions.keys()).copy()

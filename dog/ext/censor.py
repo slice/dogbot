@@ -3,8 +3,6 @@ Contains censorship functionality.
 """
 
 import logging
-import re
-from enum import Enum
 
 import asyncpg
 import discord
@@ -12,62 +10,12 @@ from discord.ext import commands
 
 from dog import Cog
 from dog.core import utils
-from dog.core.utils import EnumConverter
+from dog.ext.censorship import CensorshipFilter, CensorType, PunishmentType
+from dog.ext.censorship.converters import CensorTypeConverter, PunishmentTypeConverter
+from dog.ext.censorship.filters import InviteCensorshipFilter, VideositeCensorshipFilter, ZalgoCensorshipFilter, \
+    MediaLinksCensorshipFilter, ExecutableLinksCensorshipFilter
 
 logger = logging.getLogger(__name__)
-
-
-
-class CensorType(Enum):
-    """ Signifies types of censorship. """
-    INVITES = 1
-    VIDEOSITES = 2
-    ZALGO = 3
-
-
-class CensorshipFilter:
-    censor_type: CensorType = None
-
-    async def does_violate(self, msg: discord.Message) -> bool:
-        raise NotImplementedError
-
-
-class ReCensorshipFilter(CensorshipFilter):
-    async def does_violate(self, msg: discord.Message) -> bool:
-        return self.regex.search(msg.content) is not None
-
-
-class InviteCensorshipFilter(ReCensorshipFilter):
-    censor_type = CensorType.INVITES
-    regex = re.compile(r'(discordapp\.com/invite|discord\.gg)/([a-zA-Z_\-0-9]+)')
-
-
-class VideositeCensorshipFilter(ReCensorshipFilter):
-    censor_type = CensorType.VIDEOSITES
-    regex = re.compile(r'(https?://)?(www\.)?(twitch\.tv|youtube\.com)/(.+)')
-
-class ZalgoCensorshipFilter(CensorshipFilter):
-    censor_type = CensorType.ZALGO
-
-    async def does_violate(self, msg: discord.Message) -> bool:
-        return any([glyph in msg.content for glyph in utils.zalgo_glyphs])
-
-
-class PunishmentType(Enum):
-    """ Signifies types of punishments. """
-    BAN = 1
-    KICK = 2
-
-
-class CensorTypeConverter(EnumConverter):
-    enum = CensorType
-    bad_argument_text = 'Invalid censorship type! Use `d?cs list` to view valid censorship types.'
-
-
-class PunishmentTypeConverter(EnumConverter):
-    enum = PunishmentType
-    bad_argument_text = 'Invalid punishment type. List of punishment types: ' \
-                        '<https://github.com/sliceofcode/dogbot/wiki/Censorship#punishments>'
 
 
 class Censorship(Cog):
@@ -249,8 +197,8 @@ class Censorship(Cog):
 
         is_censoring = await self.is_censoring(ctx.guild, censor_type)
 
-        await ctx.send((f'Yes, ' if is_censoring else 'No, ') + f'`{what}` are ' + ('not ' if not is_censoring else '')
-                       + 'being censored.')
+        await ctx.send((f'Yes, ' if is_censoring else 'No, ') + f'`{censor_type.name}` are ' + ('not ' if not
+                        is_censoring else '') + 'being censored.')
 
     @censorship.command(name='uncensor')
     async def _uncensor(self, ctx, censor_type: CensorTypeConverter):
@@ -355,23 +303,20 @@ class Censorship(Cog):
             # no censorship record yet!
             return
 
-        censors = [
-            (InviteCensorshipFilter, '\u002a\u20e3 Invite-containing message censored'),
-            (VideositeCensorshipFilter, '\u002a\u20e3 Videosite-containing message censored'),
-            (ZalgoCensorshipFilter, '\u002a\u20e3 Zalgo message censored')
-        ]
+        censors = (InviteCensorshipFilter, VideositeCensorshipFilter, ZalgoCensorshipFilter,
+                   MediaLinksCensorshipFilter, ExecutableLinksCensorshipFilter)
 
         # if the message author has a role that has been excepted, don't even check the message
         if any([role.id in await self.get_guild_exceptions(msg.guild) for role in msg.author.roles]):
             return
 
-        for filter, title in censors:
-            if await self.should_censor(msg, filter):
-                await self.censor_message(msg, title)
+        for censorship_filter in censors:
+            if await self.should_censor(msg, censorship_filter):
+                await self.censor_message(msg, f'\u002a\u20e3 {censorship_filter.mod_log_description}')
 
                 # punish the user
                 try:
-                    await self.carry_out_punishment(filter.censor_type, msg)
+                    await self.carry_out_punishment(censorship_filter.censor_type, msg)
                 except discord.Forbidden:
                     logger.warning('Unable to carry out punishment, forbidden! gid=%d', msg.guild.id)
                     pass
