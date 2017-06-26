@@ -6,6 +6,7 @@ import sys
 from discord.ext import commands
 
 from dog import DogBot
+from dog.core.bot import DogSelfbot
 
 try:
     import dog_config as cfg
@@ -64,10 +65,15 @@ additional_options.update({
 logger.info('Bot options: %s', additional_options)
 
 # create dogbot instance
-d = DogBot(**additional_options)
-
-d.load_exts_recursively('dog/ext', 'Initial recursive load')
-d.run(cfg.token)
+selfbot_mode = '--selfbot' in ' '.join(sys.argv)
+if selfbot_mode:
+    logger.warning('Running in selfbot mode!')
+    d = DogSelfbot(**additional_options)
+    d.load_exts_recursively('dog/selfext', 'Initial selfbot recursive load')
+else:
+    d = DogBot(**additional_options)
+    d.load_exts_recursively('dog/ext', 'Initial recursive load')
+d.run(cfg.selfbot_token if selfbot_mode else cfg.token, bot=not selfbot_mode)
 
 # close log handlers (why)
 # https://github.com/Rapptz/RoboDanny/blob/master/bot.py#L128-L132

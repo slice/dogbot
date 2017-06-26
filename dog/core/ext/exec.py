@@ -22,6 +22,7 @@ import textwrap
 import traceback
 from contextlib import redirect_stdout
 
+import aiohttp
 import discord
 from discord.ext import commands
 
@@ -130,6 +131,8 @@ class Exec(Cog):
                 except KeyError:
                     # even hastebin couldn't handle it
                     await ctx.send('Result was too long, even for Hastebin.')
+                except aiohttp.ClientError:
+                    await ctx.send('Unable to send the result to Hastebin, it\'s probably down.')
 
 
 def setup(bot):

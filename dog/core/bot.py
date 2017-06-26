@@ -8,15 +8,13 @@ import random
 import traceback
 from typing import List
 
-import aioredis
-import asyncpg
 import discord
 import dog_config as cfg
 import praw
 import raven
 from discord.ext import commands
 from dog.core import utils
-from dog.core.base import BaseBot
+from dog.core.base import BaseBot, Selfbot
 from dog.core.context import DogbotContext
 
 from . import botcollection, errors
@@ -41,9 +39,6 @@ class DogBot(BaseBot):
         # tasks
         self.report_task = None
         self.rotate_game_task = None
-
-        # load core extensions
-        self.load_exts_recursively('dog/core/ext', 'Core recursive load')
 
         with open('resources/playing_status_flavor_text.txt') as f:
             self.flavor_text = [line.strip() for line in f.readlines()]
@@ -427,3 +422,8 @@ class DogBot(BaseBot):
             # dispatch the message
             self.sentry.captureMessage(message)
             logger.error(message)
+
+
+class DogSelfbot(BaseBot, Selfbot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(command_prefix='self.', *args, **kwargs)

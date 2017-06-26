@@ -101,12 +101,23 @@ class BaseBot(ReloadableBot, DBBot):
         super().__init__(*args, **kwargs)
 
         # aiohttp session used for fetching data
-        self.session = aiohttp.ClientSession()
+        self.session = aiohttp.ClientSession(loop=self.loop)
 
         # boot time (for uptime)
         self.boot_time = datetime.datetime.utcnow()
 
-    def on_ready(self):
+        # load core extensions
+        self.load_exts_recursively('dog/core/ext', 'Core recursive load')
+
+    async def on_ready(self):
         print('Bot is ready!')
         print('[User]', self.user)
         print('[ID]  ', self.user.id)
+
+
+class Selfbot(commands.Bot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(self_bot=True, *args, **kwargs)
+
+    async def is_owner(self, user):
+        return True

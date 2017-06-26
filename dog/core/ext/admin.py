@@ -16,7 +16,7 @@ import discord
 from discord.ext import commands
 
 import dog_config as cfg
-from dog.core import botcollection
+from dog.core import botcollection, checks
 from dog import Cog
 from dog.haste import haste
 
@@ -31,6 +31,7 @@ def _restart():
 class Admin(Cog):
     @commands.command()
     @commands.is_owner()
+    @checks.bot_only()
     async def leave_collections(self, ctx):
         """ Leaves collections. """
         left_guilds = []
@@ -47,6 +48,7 @@ class Admin(Cog):
 
     @commands.command()
     @commands.is_owner()
+    @checks.bot_only()
     async def rotate_game(self, ctx):
         """ Immediately rotates the bot's playing status. """
         await ctx.bot.rotate_game()
@@ -121,6 +123,7 @@ class Admin(Cog):
         sys.exit(0)
 
     @commands.command()
+    @checks.bot_only()
     async def prefixes(self, ctx):
         """ Lists the bot's prefixes. """
         prefixes = ', '.join([f'`{p}`' for p in cfg.prefixes])
