@@ -14,14 +14,6 @@ except ModuleNotFoundError:
     print('err: please read the README.md file.', file=sys.stderr)
     sys.exit(-1)
 
-
-try:
-    import uvloop
-    # uvloop for speedups
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-except ModuleNotFoundError:
-    pass
-
 # configure logging
 # set the root logger's info to INFO
 root_logger = logging.getLogger()
@@ -51,10 +43,22 @@ logger = logging.getLogger('dog')
 
 logger.info('Bot is starting...')
 
+try:
+    import uvloop
+
+    # uvloop for speedups
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+    logger.info('Using uvloop\'s event loop policy.')
+except ModuleNotFoundError:
+    pass
+
+
 # gather additional options from the configuration file
 additional_options = getattr(cfg, 'options', {})
 additional_options.update({
-    'owner_id': getattr(cfg, 'owner_id', None)
+    'owner_id': getattr(cfg, 'owner_id', None),
+    'postgresql_auth': getattr(cfg, 'postgresql_auth', None),
+    'redis_url': getattr(cfg, 'redis_url', None)
 })
 
 logger.info('Bot options: %s', additional_options)

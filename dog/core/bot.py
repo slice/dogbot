@@ -3,16 +3,11 @@ The core Dogbot bot.
 """
 
 import asyncio
-import datetime
-import importlib
 import logging
-import os
 import random
-import sys
 import traceback
-from typing import Any, List
+from typing import List
 
-import aiohttp
 import aioredis
 import asyncpg
 import discord
@@ -21,6 +16,7 @@ import praw
 import raven
 from discord.ext import commands
 from dog.core import utils
+from dog.core.base import BaseBot
 from dog.core.context import DogbotContext
 
 from . import botcollection, errors
@@ -28,30 +24,13 @@ from . import botcollection, errors
 logger = logging.getLogger(__name__)
 
 
-class DogBot(commands.Bot):
+class DogBot(BaseBot):
     """
     The main DogBot bot. It is automatically sharded. All parameters are passed
     to the constructor of :class:`discord.commands.AutoShardedBot`.
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command_prefix=self.prefix, **kwargs)
-
-        # boot time (for uptime)
-        self.boot_time = datetime.datetime.utcnow()
-
-        # hack because __init__ cannot be async
-        loop = asyncio.get_event_loop()
-        redis_coroutine = aioredis.create_redis(
-            (cfg.redis_url, 6379), loop=loop)
-
-        # aioredis connection
-        self.redis = loop.run_until_complete(redis_coroutine)
-
-        # asyncpg
-        self.pgpool = loop.run_until_complete(asyncpg.create_pool(**cfg.postgresql_auth))
-
-        # aiohttp session used for fetching data
-        self.session = aiohttp.ClientSession()
 
         # sentry connection for reporting exceptions
         self.sentry = raven.Client(cfg.raven_client_url)
@@ -111,69 +90,6 @@ class DogBot(commands.Bot):
             self.report_task.cancel()
         self.rotate_game_task.cancel()
         await super().close()
-
-    def load_exts_recursively(self, directory: str, prefix: str = 'Recursive load'):
-        """ Loads extensions from a directory recursively. """
-        def ext_filter(f):
-            return f not in ('__init__.py', '__pycache__') and not f.endswith('.pyc')
-
-        exts = []
-
-        # walk the ext directory to find extensions
-        for path, _, files in os.walk(directory):
-            # replace the base path/like/this to path.like.this
-            # add the filename at the end, but without the .py
-            # filter out stuff we don't need
-            exts += [path.replace('/', '.').replace('\\', '.') + '.' + file.replace('.py', '')
-                     for file in filter(ext_filter, files)]
-
-        for ext in exts:
-
-            module = importlib.import_module(ext)
-            if hasattr(module, 'setup'):
-                logger.info('%s: %s', prefix, ext)
-                self.load_extension(ext)
-            else:
-                logger.debug('Skipping %s, doesn\'t seem to be an extension.', ext)
-
-        # update exts to load
-        self._exts_to_load = list(self.extensions.keys()).copy()
-
-    def reload_extension(self, name: str):
-        """ Reloads an extension. """
-        self.unload_extension(name)
-        self.load_extension(name)
-
-    def perform_full_reload(self):
-        """ Fully reloads Dogbot.
-
-        This reloads all Dogbot related modules, and all
-        extensions.
-        """
-        logger.info('*** Performing full reload! ***')
-        self.reload_all_extensions()
-        self.reload_modules()
-
-    def reload_all_extensions(self):
-        """ Reloads all extensions. """
-        logger.info('Reloading all %d extensions', len(self._exts_to_load))
-        for name in self._exts_to_load:
-            try:
-                logger.info('Reloading extension: %s', name)
-                self.reload_extension(name)
-            except:
-                logger.exception('While reloading all: Failed extension reload for %s', name)
-                raise
-
-    def reload_modules(self):
-        """ Reloads all Dogbot related modules. """
-        # get applicable modules to reload
-        modules = {k: m for k, m in sys.modules.items() if 'dog' in k and 'ext' not in k and
-                   k != 'dog'}
-        for name, module in modules.items():
-            logger.info('Reloading bot module: %s', name)
-            importlib.reload(module)
-        logger.info('Finished reloading bot modules!')
 
     async def command_is_disabled(self, guild: discord.Guild, command_name: str):
         """ Returns whether a command is disabled in a guild. """
@@ -271,11 +187,7 @@ class DogBot(commands.Bot):
                 logger.debug('Cannot announce ban, forbidden! gid=%d', guild.id)
 
     async def on_ready(self):
-        logger.info('*** Bot is ready! ***')
-        logger.info('Owner ID: %s', cfg.owner_id)
-        logger.info('Logged in!')
-        logger.info(f' Name: {self.user.name}#{self.user.discriminator}')
-        logger.info(f' ID:   {self.user.id}')
+        super().on_ready()
 
         async def report_guilds_task():
             # bail if we don't have the token
