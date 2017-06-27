@@ -59,7 +59,7 @@ class Mod(Cog):
             await ctx.send(f'Purge complete. Removed {len(msgs)} message(s).',
                            delete_after=2.5)
         except discord.NotFound:
-            pass # ignore not found errors
+            pass  # ignore not found errors
 
     @commands.group(invoke_without_command=True)
     @commands.guild_only()
@@ -195,7 +195,7 @@ class Mod(Cog):
         existing_overwrite = ctx.channel.overwrites_for(someone)
         existing_overwrite.read_messages = False
         await ctx.channel.set_permissions(someone, overwrite=existing_overwrite)
-        await self.ok()
+        await ctx.ok()
 
     @commands.command()
     @commands.guild_only()
@@ -239,7 +239,7 @@ class Mod(Cog):
             await ctx.send('You must leave off the prefix.')
             return
         await self.bot.disable_command(ctx.guild, command)
-        await self.ok()
+        await ctx.ok()
 
     @commands.command()
     @commands.guild_only()
@@ -253,7 +253,7 @@ class Mod(Cog):
             await ctx.send('That command isn\'t disabled!')
             return
         await self.bot.enable_command(ctx.guild, command)
-        await self.ok()
+        await ctx.ok()
 
     @commands.command()
     @commands.guild_only()
@@ -307,10 +307,10 @@ class Mod(Cog):
         except discord.NotFound:
             await ctx.send('I couldn\'t find that user.')
         else:
-            await self.ok()
+            await ctx.ok()
 
     def _embed_field_for(self, member):
-        return f'{member.mention} {member.name}#{member.discriminator}'
+        return f'{member.mention} {member}'
 
     def _make_action_embed(self, executor, victim, **kwargs):
         embed = discord.Embed(**kwargs)
