@@ -39,13 +39,13 @@ def _link_regex(types: 'Tuple[str]') -> str:
 class MediaLinksCensorshipFilter(ReCensorshipFilter):
     censor_type = CensorType.MEDIALINKS
     mod_log_description = 'Image link censored'
-    regex = re.compile(_link_regex(media_types))
+    regex = re.compile(_link_regex(media_types), re.IGNORECASE)
 
 
 class ExecutableLinksCensorshipFilter(ReCensorshipFilter):
     censor_type = CensorType.EXECUTABLELINKS
     mod_log_description = 'Link to executable file censored'
-    regex = re.compile(_link_regex(executable_types))
+    regex = re.compile(_link_regex(executable_types), re.IGNORECASE)
 
 
 class ZalgoCensorshipFilter(CensorshipFilter):
