@@ -91,13 +91,16 @@ class MLStripper(HTMLParser):
         return ''.join(self.fed)
 
 
-def format_dict(d: Dict[Any, Any]) -> str:
+def format_dict(d: Dict[Any, Any], *, style='equals') -> str:
     """ Formats a ``dict`` to look pretty. """
-    code_block = '```\n'
+    code_block = '```{}\n'.format('ini' if style == 'ini' else '')
     padding = len(max(d.keys(), key=len))
 
     for name, value in d.items():
-        code_block += '{name: <{width}} = {value}\n'.format(name=name, width=padding, value=value)
+        if style == 'equals':
+            code_block += '{name: <{width}} = {value}\n'.format(name=name, width=padding, value=value)
+        elif style == 'ini':
+            code_block += '{name: <{width}} {value}\n'.format(name=f'[{name}]', width=padding + 2, value=value)
 
     code_block += '```'
     return code_block
@@ -159,8 +162,8 @@ def truncate(text: str, desired_length: int):
     return text
 
 
-def commas(number: int):
-    """ Adds American-style commas to an `int`. """
+def commas(number: 'Union[int, float]'):
+    """ Adds American-style commas to an number. """
     return '{:,d}'.format(number)
 
 
