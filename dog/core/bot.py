@@ -182,7 +182,7 @@ class DogBot(BaseBot):
                 logger.debug('Cannot announce ban, forbidden! gid=%d', guild.id)
 
     async def on_ready(self):
-        super().on_ready()
+        await super().on_ready()
 
         async def report_guilds_task():
             # bail if we don't have the token
