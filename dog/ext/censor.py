@@ -156,7 +156,7 @@ class Censorship(Cog):
             return await ctx.send('There are no roles being excepted.')
 
         def format_role(role_info):
-            r, id = role_info
+            id, r = role_info
             return f'\N{BULLET} {r.name} ({r.id})' if r else f'\N{BULLET} <dead role> ({id})'
 
         code = '```\n' + '\n'.join(map(format_role, roles)) + '\n```'
