@@ -38,13 +38,13 @@ class DogbotContext(commands.Context):
         return await self.bot.wait_for('message', check=check)
 
 
-    async def pick_from_list(self, choices: 'List[Any]') -> 'Any':
+    async def pick_from_list(self, choices: 'List[Any]', *, delete_after_choice=False) -> 'Any':
         """ Shows the user a list of items to pick from. Returns the picked item. """
         # format list of stuff
         choices_list = utils.format_list(choices)
 
         # send list of stuff
-        await self.send('Pick one, or send `cancel`.\n\n' + choices_list)
+        choices_message = await self.send('Pick one, or send `cancel`.\n\n' + choices_list)
         remaining_tries = 3
         picked = None
 
@@ -55,6 +55,10 @@ class DogbotContext(commands.Context):
 
             # wait for a message
             msg = await self.wait_for_response()
+
+            # don't choke when using a selfbot
+            if msg.author == self.bot.user and msg.content.startswith('Pick one, or send'):
+                continue
 
             # user wants to cancel?
             if msg.content == 'cancel':
@@ -80,6 +84,9 @@ class DogbotContext(commands.Context):
             else:
                 # they chose correctly
                 picked = choices[chosen_index]
+                if delete_after_choice:
+                    await choices_message.delete()
+                    await msg.delete()
                 break
 
         return picked
