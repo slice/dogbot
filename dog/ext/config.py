@@ -7,12 +7,14 @@ the owner can use those.
 
 import logging
 
+import asyncpg
 from discord.ext import commands
 
 from dog import Cog
 
 log = logging.getLogger(__name__)
 CONFIGKEYS_HELP = '<https://github.com/sliceofcode/dogbot/wiki/Configuration>'
+
 
 class Prefix(commands.Converter):
     async def convert(self, ctx: commands.Context, arg: str):
@@ -155,13 +157,11 @@ class Config(Cog):
         """
         cache = ctx.bot.prefix_cache.get(ctx.guild.id, [])
 
-        # cache is guaranteed to be populated by now, because it is populated before
-        # commands are ran
-        if prefix in cache:
-            return await ctx.send('This server already has that prefix.')
-
-        async with ctx.bot.pgpool.acquire() as conn:
-            await conn.execute('INSERT INTO prefixes VALUES ($1, $2)', ctx.guild.id, prefix)
+        try:
+            async with ctx.bot.pgpool.acquire() as conn:
+                await conn.execute('INSERT INTO prefixes VALUES ($1, $2)', ctx.guild.id, prefix)
+        except asyncpg.UniqueViolationError:
+            await ctx.send('This server already has that prefix.')
 
         ctx.bot.prefix_cache[ctx.guild.id] = cache + [prefix]
         log.debug('Added "%s" to cache for %d', prefix, ctx.guild.id)
