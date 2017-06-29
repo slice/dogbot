@@ -64,6 +64,13 @@ class Exec(Cog):
         """ Executes Python code. """
         log.info('Eval: %s', code)
 
+        async def upload(file_name: str):
+            with open(file_name, 'rb') as fp:
+                await ctx.send(file=discord.File(fp))
+
+        async def send(*args, **kwargs):
+            await ctx.send(*args, **kwargs)
+
         env = {
             'bot': ctx.bot,
             'ctx': ctx,
@@ -75,6 +82,8 @@ class Exec(Cog):
             # utilities
             '_get': discord.utils.get,
             '_find': discord.utils.find,
+            '_upload': upload,
+            '_send': send,
 
             # last result
             '_': self.last_result
