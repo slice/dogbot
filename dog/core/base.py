@@ -10,6 +10,8 @@ import aioredis
 import asyncpg
 from discord.ext import commands
 
+from dog.core.context import DogbotContext
+
 logger = logging.getLogger(__name__)
 
 
@@ -108,6 +110,14 @@ class BaseBot(ReloadableBot, DBBot):
 
         # load core extensions
         self.load_exts_recursively('dog/core/ext', 'Core recursive load')
+
+    async def on_message(self, msg):
+        # do not process messages from other bots
+        if msg.author.bot:
+            return
+
+        ctx = await self.get_context(msg, cls=DogbotContext)
+        await self.invoke(ctx)
 
     async def on_ready(self):
         print('Bot is ready!')

@@ -15,7 +15,6 @@ import raven
 from discord.ext import commands
 from dog.core import utils
 from dog.core.base import BaseBot, Selfbot
-from dog.core.context import DogbotContext
 
 from . import botcollection, errors
 
@@ -352,14 +351,6 @@ class DogBot(BaseBot):
             signifies that it is set.
         """
         return await self.redis.exists(f'{guild.id}:{name}')
-
-    async def on_message(self, msg):
-        # do not process messages from other bots
-        if msg.author.bot:
-            return
-
-        ctx = await self.get_context(msg, cls=DogbotContext)
-        await self.invoke(ctx)
 
     async def handle_forbidden(self, ctx):
         cant_respond = ("Hey! I can't respond because I don't have the `Send Messages` "
