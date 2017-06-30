@@ -83,6 +83,9 @@ class Reddit(Cog):
             logger.debug('Sub not found, not updating. sub=%s', sub)
             await self.notify_error(channel, f'The subreddit /r/{sub} was not found.')
             return
+        except prawcore.exceptions.BadRequest:
+            logger.warning('Received bad request from Reddit. sub=%s', sub)
+            return
 
         logger.debug('Fetched subreddit: %s, fetching posts!', sub)
 
