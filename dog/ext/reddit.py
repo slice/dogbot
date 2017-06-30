@@ -304,7 +304,7 @@ class Reddit(Cog):
                 return await ctx.send('You have too many feeds! You can only have two at a time. Use `d?reddit feeds` '
                                       'check the feeds in this server.')
             await conn.execute('INSERT INTO reddit_feeds VALUES ($1, $2, $3)', ctx.guild.id, channel.id, subreddit)
-        await self.bot.ok(ctx)
+        await ctx.ok()
 
 
 def setup(bot):

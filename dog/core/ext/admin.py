@@ -16,7 +16,7 @@ import discord
 from discord.ext import commands
 
 import dog_config as cfg
-from dog.core import botcollection, checks
+from dog.core import botcollection, checks, utils
 from dog import Cog
 from dog.haste import haste
 
@@ -152,14 +152,14 @@ class Admin(Cog):
     async def sql(self, ctx, *, query: str):
         """ Executes SQL queries. """
         # ew i know
-        sql = subprocess.run(['psql', '-U', 'postgres', '-d', 'dogbot', '-c', query], stdout=subprocess.PIPE,
+        sql = subprocess.run(['psql', '-U', 'postgres', '-d', ctx.bot.database, '-c', query], stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         if sql.stderr != b'':
             return await ctx.send('Something went wrong!\n```{}\n```'.format(sql.stderr.decode()))
         if len(sql.stdout) > 1992:
             await ctx.send(await haste(self.bot.session, sql.stdout.decode()))
         else:
-            await ctx.send('```\n{}\n```'.format(sql.stdout.decode()))
+            await ctx.send('```\n{}\n```'.format(utils.prevent_codeblock_breakout(sql.stdout.decode())))
 
 
 def setup(bot):

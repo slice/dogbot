@@ -106,6 +106,10 @@ def format_dict(d: Dict[Any, Any], *, style='equals') -> str:
     return code_block
 
 
+def prevent_codeblock_breakout(text: str) -> str:
+    return text.replace('`', '\u200b`')
+
+
 def make_profile_embed(member: discord.Member):
     """ Creates an embed with the author containing the name and icon of a `discord.Member`. """
     embed = discord.Embed()

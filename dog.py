@@ -68,6 +68,7 @@ logger.info('Bot options: %s', additional_options)
 selfbot_mode = '--selfbot' in ' '.join(sys.argv)
 if selfbot_mode:
     logger.warning('Running in selfbot mode!')
+    additional_options['postgresql_auth']['database'] = 'dog_selfbot'
     d = DogSelfbot(**additional_options)
     d.load_exts_recursively('dog/selfext', 'Initial selfbot recursive load')
 else:

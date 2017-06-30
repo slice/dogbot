@@ -95,7 +95,9 @@ class DBBot(commands.Bot):
         self.redis = self.loop.run_until_complete(redis_coroutine)
 
         # asyncpg
-        self.pgpool = self.loop.run_until_complete(asyncpg.create_pool(**kwargs.pop('postgresql_auth')))
+        pg = kwargs.pop('postgresql_auth')
+        self.database = pg['database']
+        self.pgpool = self.loop.run_until_complete(asyncpg.create_pool(**pg))
 
 
 class BaseBot(ReloadableBot, DBBot):
