@@ -24,7 +24,7 @@ class Reminders(Cog):
                                 get_latest_item=self.get_latest_item)
 
     def __unload(self):
-        self.handler_task.cancel()
+        self.queue.handler.cancel()
 
     async def create_reminder(self, ctx, due, note):
         async with self.bot.pgpool.acquire() as conn:
