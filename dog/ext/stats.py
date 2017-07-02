@@ -96,7 +96,7 @@ class Stats(Cog):
         cm = lambda v: utils.commas(v)
 
         embed = discord.Embed(title='Statistics')
-        embed.set_footer(text=f'Booted at {utils.american_datetime(self.bot.boot_time)} UTC')
+        embed.set_footer(text=f'Booted at {utils.standard_datetime(self.bot.boot_time)} UTC')
         fields = {
             'Members': f'{cm(num_members)} total, {cm(num_online)} online\n{cm(num_dnd)} DnD, '
                        f'{cm(num_idle)} idle\n{cm(num_offline)} offline\n\n{perc_online}',

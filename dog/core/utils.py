@@ -9,7 +9,7 @@ import discord
 import timeago
 from discord.ext import commands
 
-from dog.ext.reminders import logger
+logger = logging.getLogger(__name__)
 
 
 class Paginator:
@@ -132,13 +132,13 @@ def urlescape(text: str):
     return urllib.parse.quote_plus(text)
 
 
-def american_datetime(dt):
+def standard_datetime(dt):
     """
-    Formats a `datetime.datetime` to the American style: ::
+    Formats a `datetime.datetime` to a modified standard style: ::
 
-        MONTH/DAY/YEAR HOUR/MINUTE/SECOND [AM/PM]
+        YEAR-MONTH-DAY HOUR:MINUTE:SECOND
     """
-    return dt.strftime('%m/%d/%Y %I:%M:%S %p')
+    return dt.strftime('%Y-%m-%d %H:%M:%S')
 
 
 def format_list(lst):
@@ -147,8 +147,8 @@ def format_list(lst):
 
 
 def now():
-    """ Returns an American-formatted datetime with a "UTC" suffix. """
-    return american_datetime(datetime.datetime.utcnow()) + ' UTC'
+    """ Returns an Semistandard-formatted datetime with a "UTC" suffix. """
+    return standard_datetime(datetime.datetime.utcnow()) + ' UTC'
 
 
 def ago(dt):

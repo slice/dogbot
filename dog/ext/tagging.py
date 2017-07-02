@@ -170,7 +170,7 @@ class Tagging(Cog):
 
         if tag:
             embed = discord.Embed(title=tag.name, description=tag.value)
-            embed.add_field(name='Created', value=utils.american_datetime(tag.created_at) + ' UTC')
+            embed.add_field(name='Created', value=utils.standard_datetime(tag.created_at) + ' UTC')
             embed.add_field(name='Created by', value=tag.creator.mention, inline=False)
             embed.add_field(name='Uses', value=tag.uses)
             await ctx.send(embed=embed)

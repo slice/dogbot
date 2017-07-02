@@ -41,7 +41,7 @@ class Info(Cog):
         # joined
         def add_joined_field(*, attr, name, **kwargs):
             dt = getattr(who, attr)
-            embed.add_field(name=name, value=f'{utils.ago(dt)}\n{utils.american_datetime(dt)} UTC', **kwargs)
+            embed.add_field(name=name, value=f'{utils.ago(dt)}\n{utils.standard_datetime(dt)} UTC', **kwargs)
         add_joined_field(attr='joined_at', name='Joined this Server', inline=False)
         add_joined_field(attr='created_at', name='Joined Discord', inline=False)
 
@@ -95,8 +95,7 @@ class Info(Cog):
         embed = utils.make_profile_embed(member)
         joined_dif = utils.ago(member.created_at)
         embed.add_field(name='Joined Discord',
-                        value=(f'{joined_dif}\n' +
-                               utils.american_datetime(member.created_at)))
+                        value=f'{joined_dif}\n{utils.standard_datetime(member.created_at)} UTC')
         return embed
 
 
@@ -114,8 +113,7 @@ class Info(Cog):
         embed = self._make_joined_embed(target)
         joined_dif = utils.ago(target.joined_at)
         embed.add_field(name='Joined this Server',
-                        value=(f'{joined_dif}\n' +
-                               utils.american_datetime(target.joined_at)),
+                        value=f'{joined_dif}\n{utils.standard_datetime(target.joined_at)} UTC',
                         inline=False)
 
         await ctx.send(embed=embed)

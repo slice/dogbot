@@ -69,8 +69,8 @@ class Spy(Cog):
             'member': f'{member} ({member.id})',
             'highest role': f'{member.top_role.name} ({member.top_role.id})',
             'shared': f'{shared} guild(s)',
-            'created': f'{utils.ago(member.created_at)} ({utils.american_datetime(member.created_at)} UTC)',
-            'joined': f'{utils.ago(member.joined_at)} ({utils.american_datetime(member.joined_at)} UTC)'
+            'created': f'{utils.ago(member.created_at)} ({utils.standard_datetime(member.created_at)} UTC)',
+            'joined': f'{utils.ago(member.joined_at)} ({utils.standard_datetime(member.joined_at)} UTC)'
         }
         await ctx.send(utils.format_dict(data, style='ini'))
 

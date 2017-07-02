@@ -29,7 +29,7 @@ class Modlog(Cog):
         return f'{member.mention} {member.name}#{member.discriminator}'
 
     def _make_profile_embed(self, member: discord.Member, **kwargs) -> discord.Embed:
-        _registered = (f'{utils.american_datetime(member.created_at)}'
+        _registered = (f'{utils.standard_datetime(member.created_at)}'
                        f' ({utils.ago(member.created_at)})')
         embed = self._make_modlog_embed(**kwargs)
         embed.add_field(name='Member', value=self._member_repr(member))
