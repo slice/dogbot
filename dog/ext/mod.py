@@ -152,7 +152,7 @@ class Mod(Cog):
 
     @commands.command()
     @commands.guild_only()
-    @checks.bot_perms(view_audit_logs=True)
+    @checks.bot_perms(view_audit_log=True)
     @checks.is_moderator()
     async def who_banned(self, ctx, *, someone: str):
         """
@@ -165,7 +165,7 @@ class Mod(Cog):
 
     @commands.command()
     @commands.guild_only()
-    @checks.bot_perms(view_audit_logs=True)
+    @checks.bot_perms(view_audit_log=True)
     @checks.is_moderator()
     async def who_kicked(self, ctx, *, someone: str):
         """
