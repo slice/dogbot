@@ -28,9 +28,8 @@ class Mod(Cog):
             'Banned from Dog', 'banned from dog'
         ]
 
-        for banned_name in banned_names:
-            if discord.utils.get(ctx.author.roles, name=banned_name):
-                return False
+        if any([discord.utils.get(ctx.author.roles, name=name) for name in banned_names]):
+            return False
 
         return not await self.bot.command_is_disabled(ctx.guild, ctx.command.name)
 
@@ -41,8 +40,7 @@ class Mod(Cog):
 
         if await self.bot.config_is_set(message.guild, 'invisible_announce'):
             if message.author.status is discord.Status.offline:
-                reply = ('Hey {0.mention}! You\'re invisible. Stop being '
-                         'invisible, please. Thanks.')
+                reply = 'Hey {0.mention}! You\'re invisible. Stop being invisible, please. Thanks.'
                 await message.channel.send(reply.format(message.author))
 
     async def base_purge(self, ctx: commands.Context, limit: int, check=None, **kwargs):
@@ -56,8 +54,7 @@ class Mod(Cog):
 
         try:
             msgs = await ctx.channel.purge(limit=limit, check=check, **kwargs)
-            await ctx.send(f'Purge complete. Removed {len(msgs)} message(s).',
-                           delete_after=2.5)
+            await ctx.send(f'Purge complete. Removed {len(msgs)} message(s).', delete_after=2.5)
         except discord.NotFound:
             pass  # ignore not found errors
 
@@ -337,7 +334,7 @@ class Mod(Cog):
     @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     @checks.bot_perms(manage_nicknames=True)
-    async def attentionseek(self, ctx, replace_with: str='💩'):
+    async def attentionseek(self, ctx, replace_with: str = '💩'):
         """
         Changes attention-seeking nicknames.
 
