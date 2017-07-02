@@ -8,8 +8,10 @@ import logging
 
 import discord
 from discord.ext import commands
+
 from dog import Cog
 from dog.core import converters, utils
+from dog.core.utils import AsyncQueue
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +20,8 @@ class Reminders(Cog):
     def __init__(self, bot):
         super().__init__(bot)
         self.bot = bot
-        self.has_a_reminder = asyncio.Event()
-        self.current_reminder = None
-        self.handler_task = bot.loop.create_task(self.handle_reminders())
+        self.queue = AsyncQueue(bot, 'Reminders', fulfill_item=self.fulfill_item,
+                                get_latest_item=self.get_latest_item)
 
     def __unload(self):
         self.handler_task.cancel()
@@ -33,72 +34,40 @@ class Reminders(Cog):
         logger.debug('Creating reminder -- due=%s note=%s cid=%d aid=%d', due, note, cid, ctx.author.id)
 
         # we just created a reminder, we definitely have one now!
-        self.has_a_reminder.set()
+        self.queue.has_item.set()
 
         # check if it's earlier
-        if self.current_reminder and self.current_reminder['due'] > due:
+        if self.queue.current_item and self.queue.current_item['due'] > due:
             logger.debug('Got a reminder that is due earlier than the current one, rebooting task!')
-            self.reboot_handler()
+            self.queue.reboot()
 
-    def reboot_handler(self):
-        self.handler_task.cancel()
-        self.handler_task = self.bot.loop.create_task(self.handle_reminders())
-
-    async def get_latest_reminder(self):
+    async def get_latest_item(self):
         async with self.bot.pgpool.acquire() as conn:
             latest_reminder = await conn.fetchrow('SELECT * FROM reminders ORDER BY due ASC LIMIT 1')
             if latest_reminder:
                 logger.debug('Got latest reminder -- rid=%d', latest_reminder['id'])
             return latest_reminder
 
-    async def fulfill_reminder(self, reminder):
-        logger.debug('Removing reminder %d', reminder['id'])
-        async with self.bot.pgpool.acquire() as conn:
-            await conn.execute('DELETE FROM reminders WHERE id = $1', reminder['id'])
+    async def fulfill_item(self, reminder):
+        # wait
+        remaining_duration = (reminder['due'] - datetime.datetime.utcnow()).total_seconds() + 1
+        logger.debug('Remaining duration: %ds', remaining_duration)
+        if remaining_duration > 0:
+            await asyncio.sleep(remaining_duration)
 
         # notify
         author = self.bot.get_user(reminder['author_id'])
-        logger.debug('Fulfilling reminder %d', reminder['id'])
+        logger.debug('Notifying author of reminder %d', reminder['id'])
         if not author:
             logger.debug('Not totally fulfilling reminder -- couldn\'t find author. rid=%d', reminder['id'])
             return
         else:
-            await author.send(f'\N{ALARM CLOCK} **Ring ring!** {reminder["note"]}')
+            await author.send(f'\N{ALARM CLOCK} {reminder["note"]}')
 
-        if not await self.get_latest_reminder():
-            # no more reminders
-            logger.debug('No more reminders! Clearing flag.')
-            self.has_a_reminder.clear()
-
-    async def handle_reminders(self):
-        logger.debug('Reminder handler started!')
-
-        await self.bot.wait_until_ready()
-
-        # when this first starts, the flag might not be set, but there could be a reminder. we should check
-        if await self.get_latest_reminder():
-            self.has_a_reminder.set()
-
-        while not self.bot.is_closed():
-            logger.debug('Waiting for a reminder...')
-
-            # wait for a reminder
-            await self.has_a_reminder.wait()
-
-            # grab it
-            reminder = self.current_reminder = await self.get_latest_reminder()
-            logger.debug('Got a reminder! rid=%d', reminder['id'])
-
-            # get remaining duration
-            remaining_duration = (reminder['due'] - datetime.datetime.utcnow()).total_seconds() + 1
-            logger.debug('Remaining duration: %ds', remaining_duration)
-            if remaining_duration > 0:
-                await asyncio.sleep(remaining_duration)
-
-            # fulfill reminder
-            await self.fulfill_reminder(reminder)
-            self.current_reminder = None
-            logger.debug('Handler: Fulfilled reminder #%d.', reminder['id'])
+        # remove it from the database
+        logger.debug('Removing reminder %d', reminder['id'])
+        async with self.bot.pgpool.acquire() as conn:
+            await conn.execute('DELETE FROM reminders WHERE id = $1', reminder['id'])
 
     @commands.group(invoke_without_command=True)
     async def remind(self, ctx, due_in: converters.HumanTime, *, note: commands.clean_content):
@@ -128,7 +97,7 @@ class Reminders(Cog):
                 return await ctx.send('I couldn\'t find that reminder, or you didn\'t create that one.')
             await conn.execute('DELETE FROM reminders WHERE id = $1', rid)
             await ctx.send('Alright, I went ahead and cancelled that one for you.')
-            self.reboot_handler()
+            self.queue.reboot()
 
 
 def setup(bot):

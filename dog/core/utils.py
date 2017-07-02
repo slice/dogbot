@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import logging
 import urllib.parse
 from html.parser import HTMLParser
 from typing import Any, Dict
@@ -7,6 +8,8 @@ from typing import Any, Dict
 import discord
 import timeago
 from discord.ext import commands
+
+from dog.ext.reminders import logger
 
 
 class Paginator:
@@ -178,6 +181,7 @@ class EnumConverter(commands.Converter):
             raise commands.BadArgument(self.bad_argument_text)
         return enum_type
 
+
 # from rowboat https://github.com/b1naryth1ef/rowboat/blob/master/rowboat/util/zalgo.py
 zalgo_glyphs = [
     '\u030d', '\u030e', '\u0304', '\u0305', '\u033f', '\u0311', '\u0306', '\u0310', '\u0352', '\u0357', '\u0351',
@@ -192,3 +196,54 @@ zalgo_glyphs = [
     '\u0345', '\u0347', '\u0348', '\u0349', '\u034d', '\u034e', '\u0353', '\u0354', '\u0355', '\u0356', '\u0359',
     '\u035a', '\u0323'
 ]
+
+
+class AsyncQueue:
+    def __init__(self, bot, name, *, get_latest_item, fulfill_item):
+        self.name = name
+        self.bot = bot
+
+        self.current_item = None
+        self.handler = bot.loop.create_task(self.handle())
+        self.has_item = asyncio.Event()
+
+        self.get_latest_item = get_latest_item
+        self.fulfill_item = fulfill_item
+
+        self._log('debug', 'Created!')
+
+    def reboot(self):
+        self.handler.cancel()
+        self.handler = self.bot.loop.create_task(self.handle())
+
+    def _log(self, level, msg, *args):
+        # ugh
+        logger.log(getattr(logging, level.upper(), logging.INFO), f'[Queue] {self.name}: {msg}', *args)
+
+    async def handle(self):
+        self._log('debug', 'Handler started.')
+
+        await self.bot.wait_until_ready()
+
+        if await self.get_latest_item():
+            self.has_item.set()
+
+        while not self.bot.is_closed():
+            self._log('debug', 'Waiting for an item...')
+
+            await self.has_item.wait()
+
+            # get the current item to process
+            item = self.current_item = await self.get_latest_item()
+            self._log('debug', 'Fetched latest item. %s', item)
+
+            # fulfill the item we got
+            await self.fulfill_item(item)
+
+            # clear has item event if there's no more items
+            if not await self.get_latest_item():
+                self._log('debug', 'No more items! Clearing event.')
+                self.has_item.clear()
+
+            self.current_item = None
+            self._log('debug', 'Fulfilled item. %s', item)
