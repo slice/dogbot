@@ -2,6 +2,7 @@
 Contains fun commands that don't serve any purpose!
 """
 
+import asyncio
 import logging
 from collections import namedtuple
 from io import BytesIO
@@ -11,18 +12,40 @@ import aiohttp
 import discord
 import random
 from discord.ext import commands
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageDraw, ImageFont
 from wand import image as wndimg
-from wand.color import Color
 
 from dog import Cog
 from dog.core import checks, utils
 
 SHIBE_ENDPOINT = 'http://shibe.online/api/shibes?count=1&urls=true'
-DOGFACTS_ENDPOINT = 'https://dog-api.kinduff.com/api/facts'
 GOOGLE_COMPLETE = 'https://www.google.com/complete/search'
 
 logger = logging.getLogger(__name__)
+
+
+# http://jesselegg.com/archives/2009/09/5/simple-word-wrap-algorithm-pythons-pil/
+def draw_word_wrap(draw, font, text, xpos=0, ypos=0, max_width=130, fill=(0, 0, 0)):
+    text_size_x, text_size_y = draw.textsize(text, font=font)
+    remaining = max_width
+    space_width, space_height = draw.textsize(' ', font=font)
+    output_text = []
+    for word in text.split(None):
+        word_width, word_height = draw.textsize(word, font=font)
+        if word_width + space_width > remaining:
+            output_text.append(word)
+            remaining = max_width - word_width
+        else:
+            if not output_text:
+                output_text.append(word)
+            else:
+                output = output_text.pop()
+                output += ' %s' % word
+                output_text.append(output)
+            remaining = remaining - (word_width + space_width)
+    for text in output_text:
+        draw.text((xpos, ypos), text, font=font, fill=fill)
+        ypos += text_size_y
 
 
 async def _get(session: aiohttp.ClientSession, url: str) -> aiohttp.ClientResponse:
@@ -73,6 +96,71 @@ class Fun(Cog):
         super().__init__(bot)
         with open('resources/dogfacts.txt') as dogfacts:
             self.dogfacts = [fact.strip() for fact in dogfacts.readlines()]
+
+    @commands.command()
+    @commands.cooldown(1, 1, commands.BucketType.channel)
+    async def clap(self, ctx, *, text: commands.clean_content):
+        """👏MAKES👏TEXT👏LOOK👏LIKE👏THIS👏"""
+        clap = '\N{CLAPPING HANDS SIGN}'
+        await ctx.send(clap + text.replace(' ', clap) + clap)
+
+    @commands.command()
+    async def mock(self, ctx, *, text: commands.clean_content):
+        """Mocks."""
+        ev = random.randint(2, 4)
+        result = [character.upper() if not text.index(character) % ev == 0 else character.lower() for character in text]
+        await ctx.send(''.join(result))
+
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def floor(self, ctx, who: discord.Member, *, text: commands.clean_content):
+        """The floor is..."""
+
+        # open resources we need
+        floor_im = Image.open('resources/floor.png')
+        fnt = ImageFont.truetype('resources/font/SourceSansPro-Regular.ttf', 48)
+
+        # download the avatar
+        async with self.bot.session.get(who.avatar_url_as(format='png')) as ava:
+            ava_data = await ava.read()
+
+        # open the avatar
+        abio = BytesIO()
+        abio.write(ava_data)
+        ava_im = Image.open(abio)
+
+        # draw text
+        draw = ImageDraw.Draw(floor_im)
+        draw_word_wrap(draw, fnt, text, 25, 25, 1100)
+
+        # paste avatars
+        ava_im = ava_im.resize((100, 100), Image.BICUBIC)
+        floor_im.paste(ava_im, (783, 229))
+        floor_im.paste(ava_im, (211, 199))
+
+        del draw
+
+        with BytesIO() as bio:
+            # process
+            save = self.bot.loop.run_in_executor(None, floor_im.save, bio, 'PNG')
+            await asyncio.wait([save], loop=self.bot.loop, timeout=3.5)
+
+            # upload
+            bio.seek(0)
+            await ctx.send(file=discord.File(bio, filename='floor.png'))
+
+        floor_im.close()
+        ava_im.close()
+        abio.close()
+
+    @floor.error
+    async def floor_errors(self, ctx, err):
+        if isinstance(err, asyncio.TimeoutError):
+            await ctx.send('Took too long to process the image.')
+        else:
+            await ctx.send('Couldn\'t process the image correctly, sorry!')
+
+        err.should_suppress = True
 
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
