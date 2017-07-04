@@ -110,37 +110,38 @@ class Fun(Cog):
     async def floor(self, ctx, who: discord.Member, *, text: commands.clean_content):
         """The floor is..."""
 
-        # open resources we need
-        floor_im = Image.open('resources/floor.png')
-        fnt = ImageFont.truetype('resources/font/SourceSansPro-Regular.ttf', 48)
+        async with ctx.typing():
+            # open resources we need
+            floor_im = Image.open('resources/floor.png')
+            fnt = ImageFont.truetype('resources/font/SourceSansPro-Regular.ttf', 48)
 
-        # download the avatar
-        abio = get_bytesio(self.bot.session, who.avatar_url_as(format='png'))
-        ava_im = Image.open(abio)
+            # download the avatar
+            abio = await get_bytesio(self.bot.session, who.avatar_url_as(format='png'))
+            ava_im = Image.open(abio)
 
-        # draw text
-        draw = ImageDraw.Draw(floor_im)
-        draw_word_wrap(draw, fnt, text, 25, 25, 1100)
+            # draw text
+            draw = ImageDraw.Draw(floor_im)
+            draw_word_wrap(draw, fnt, text, 25, 25, 1100)
 
-        # paste avatars
-        ava_im = ava_im.resize((100, 100), Image.BICUBIC)
-        floor_im.paste(ava_im, (783, 229))
-        floor_im.paste(ava_im, (211, 199))
+            # paste avatars
+            ava_im = ava_im.resize((100, 100), Image.BICUBIC)
+            floor_im.paste(ava_im, (783, 229))
+            floor_im.paste(ava_im, (211, 199))
 
-        del draw
+            del draw
 
-        with BytesIO() as bio:
-            # process
-            save = self.bot.loop.run_in_executor(None, floor_im.save, bio, 'PNG')
-            await asyncio.wait([save], loop=self.bot.loop, timeout=3.5)
+            with BytesIO() as bio:
+                # process
+                save = self.bot.loop.run_in_executor(None, floor_im.save, bio, 'PNG')
+                await asyncio.wait([save], loop=self.bot.loop, timeout=3.5)
 
-            # upload
-            bio.seek(0)
-            await ctx.send(file=discord.File(bio, filename='floor.png'))
+                # upload
+                bio.seek(0)
+                await ctx.send(file=discord.File(bio, filename='floor.png'))
 
-        floor_im.close()
-        ava_im.close()
-        abio.close()
+            floor_im.close()
+            ava_im.close()
+            abio.close()
 
     @floor.error
     async def floor_errors(self, ctx, err):
