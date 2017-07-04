@@ -48,20 +48,14 @@ def draw_word_wrap(draw, font, text, xpos=0, ypos=0, max_width=130, fill=(0, 0, 
         ypos += text_size_y
 
 
-async def _get(session: aiohttp.ClientSession, url: str) -> aiohttp.ClientResponse:
-    async with session.get(url) as response:
-        return response
-
-
-async def _get_bytesio(session: aiohttp.ClientSession, url: str) -> BytesIO:
-    # can't use _get for some reason
+async def get_bytesio(session: aiohttp.ClientSession, url: str) -> BytesIO:
     async with session.get(url) as resp:
         return BytesIO(await resp.read())
 
 
-async def _get_json(session: aiohttp.ClientSession, url: str) -> Dict[Any, Any]:
-    resp = await _get(session, url)
-    return await resp.json()
+async def get_json(session: aiohttp.ClientSession, url: str) -> Dict[Any, Any]:
+    async with session.get(url) as resp:
+        return await resp.json()
 
 
 UrbanDefinition = namedtuple('UrbanDefinition', [
@@ -121,12 +115,7 @@ class Fun(Cog):
         fnt = ImageFont.truetype('resources/font/SourceSansPro-Regular.ttf', 48)
 
         # download the avatar
-        async with self.bot.session.get(who.avatar_url_as(format='png')) as ava:
-            ava_data = await ava.read()
-
-        # open the avatar
-        abio = BytesIO()
-        abio.write(ava_data)
+        abio = get_bytesio(self.bot.session, who.avatar_url_as(format='png'))
         ava_im = Image.open(abio)
 
         # draw text
@@ -171,7 +160,7 @@ class Fun(Cog):
                 avatar_url = who.avatar_url_as(format='png')
 
                 # grab the avatar data, the forbidden image, the avatar image, and create a canvas
-                avatar_data = await _get_bytesio(self.bot.session, avatar_url)
+                avatar_data = await get_bytesio(self.bot.session, avatar_url)
                 forbid = wndimg.Image(filename='resources/forbidden_thoughts.png')
                 avatar = wndimg.Image(file=avatar_data)
                 canvas = wndimg.Image(width=forbid.width, height=forbid.height)
@@ -280,7 +269,7 @@ class Fun(Cog):
         """
         async with ctx.channel.typing():
             try:
-                resp = await _get_json(self.bot.session, SHIBE_ENDPOINT)
+                resp = await get_json(self.bot.session, SHIBE_ENDPOINT)
             except aiohttp.ClientError:
                 return await ctx.send('\N{DISAPPOINTED FACE} Failed to contact the shibe API.')
             dog_url = resp[0]
@@ -296,7 +285,7 @@ class Fun(Cog):
 
         async with ctx.channel.typing():
             avatar_url = who.avatar_url_as(format='png')
-            with await _get_bytesio(self.bot.session, avatar_url) as avatar_data:
+            with await get_bytesio(self.bot.session, avatar_url) as avatar_data:
                 try:
                     im = Image.open(avatar_data)
                 except:

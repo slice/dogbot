@@ -31,6 +31,10 @@ CREATE TABLE IF NOT EXISTS blacklisted_guilds (
   guild_id bigint primary key
 );
 
+CREATE TABLE IF NOT EXISTS music_guilds (
+  guild_id bigint primary key
+);
+
 CREATE TABLE IF NOT EXISTS reminders (
   id serial primary key,
   author_id bigint,
