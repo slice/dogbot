@@ -69,7 +69,7 @@ async def is_whitelisted(bot, guild: discord.Guild):
 
 
 async def can_use_music(ctx: commands.Context):
-    return await ctx.bot.is_owner(ctx.author) or await is_whitelisted(ctx.bot, ctx.guild)
+    return await ctx.bot.is_owner(ctx.author) or (False if not ctx.guild else await is_whitelisted(ctx.bot, ctx.guild))
 
 
 class Music(Cog):
