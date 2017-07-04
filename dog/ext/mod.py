@@ -344,8 +344,7 @@ class Mod(Cog):
         The renaming of attention-seekers is borrowed from the Discord API
         server.
         """
-        attention_seekers = [m for m in ctx.guild.members if
-                             m.display_name.startswith('!')]
+        attention_seekers = [m for m in ctx.guild.members if m.display_name.startswith('!')]
         succeeded = len(attention_seekers)
         for seeker in attention_seekers:
             try:
@@ -353,8 +352,7 @@ class Mod(Cog):
             except:
                 succeeded -= 1
         failed_count = len(attention_seekers) - succeeded
-        await ctx.send(f'Renamed {succeeded} attention seeker(s).'
-                       f' Failed to rename {failed_count}.')
+        await ctx.send(f'Renamed {succeeded} attention seeker(s). Failed to rename {failed_count}.')
 
 
 def setup(bot):
