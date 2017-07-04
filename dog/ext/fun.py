@@ -281,34 +281,42 @@ class Fun(Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def wacky(self, ctx, who: discord.Member=None):
+    async def wacky(self, ctx, image_source: converters.ImageSourceConverter = None):
         """ Applies some wacky effects to your avatar. """
-        if not who:
+        if not image_source:
             who = ctx.message.author
-        logger.info('wacky: get: %s', who.avatar_url)
 
-        async with ctx.channel.typing():
-            avatar_url = who.avatar_url_as(format='png')
-            with await get_bytesio(self.bot.session, avatar_url) as avatar_data:
-                try:
-                    im = Image.open(avatar_data)
-                except:
-                    await ctx.send('I couldn\'t load that person\'s avatar.')
-                    return im.close()
+        await ctx.channel.trigger_typing()
+        avatar_bio = await get_bytesio(self.bot.session, image_source)
 
-                converter = ImageEnhance.Color(im)
-                im = converter.enhance(50)
+        # attempt to load the avatar
+        try:
+            avatar_im = Image.open(avatar_bio)
+        except:
+            await ctx.send('I couldn\'t load that person\'s avatar.')
+            logger.exception('Wacky avatar processing error.')
+            avatar_bio.close()
+            return
 
-                with BytesIO() as bio:
-                    try:
-                        save = functools.partial(im.save, bio, format='png')
-                        await self.bot.loop.run_in_executor(None, save)
-                    except Exception as e:
-                        return await ctx.send('An error has occurred processing your image.')
-                    bio.seek(0)
-                    await ctx.send(file=discord.File(bio, 'result.png'))
+        enhancer = ImageEnhance.Color(avatar_im)
+        avatar_im = await self.bot.loop.run_in_executor(None, enhancer.enhance, 50)
 
-                im.close()
+        finished_image = BytesIO()
+        try:
+            await self.bot.loop.run_in_executor(None, functools.partial(avatar_im.save, finished_image, format='png'))
+        except:
+            avatar_bio.close()
+            avatar_im.close()
+            finished_image.close()
+            logger.exception('Wacky processing error.')
+            return await ctx.send('An error has occurred processing your image.')
+
+        finished_image.seek(0)
+        await ctx.send(file=discord.File(finished_image, 'result.png'))
+
+        avatar_bio.close()
+        avatar_im.close()
+        finished_image.close()
 
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
