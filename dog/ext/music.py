@@ -11,7 +11,7 @@ import youtube_dl
 from discord.ext import commands
 
 from dog import Cog
-from dog.core import utils
+from dog.core import utils, checks
 
 logger = logging.getLogger(__name__)
 
@@ -72,11 +72,16 @@ async def can_use_music(ctx: commands.Context):
     return await ctx.bot.is_owner(ctx.author) or (False if not ctx.guild else await is_whitelisted(ctx.bot, ctx.guild))
 
 
+def required_votes(number_of_people: int) -> int:
+    return max(round(number_of_people / 2.5), 1)
+
+
 class Music(Cog):
     def __init__(self, bot):
         super().__init__(bot)
 
         self.queues = {}
+        self.skip_votes = {}
 
     @commands.group(aliases=['m', 'mus'])
     async def music(self, ctx):
@@ -103,14 +108,66 @@ class Music(Cog):
     @music.command()
     @commands.check(must_be_in_voice)
     async def skip(self, ctx):
-        """ Skips this song. """
-        queue = self.queues.get(ctx.guild.id, [])
-        if queue:
-            await ctx.send('Skipping...! I\'ll play **{0.info[title]}** next.'.format(queue[0].original))
-        else:
-            await ctx.ok()
+        """
+        Votes to skip this song.
 
-        ctx.guild.voice_client.stop()
+        40% of users in the voice channel must skip in order for the song to be skipped.
+        If someone leaves the voice channel, just rerun this command to recalculate the amount
+        of votes needed.
+
+        If you are a Dogbot Moderator, the song is skipped instantly.
+        """
+
+        if not ctx.guild.voice_client.is_playing():
+            return await ctx.send('I\'m not playing anything at the moment.')
+
+        async def insta_skip():
+            # clear voteskips
+            self.skip_votes[ctx.guild.id] = []
+
+            # get the next song, say it
+            queue = self.queues.get(ctx.guild.id, [])
+            if queue:
+                await ctx.send('Skipping...! I\'ll play **{0.info[title]}** next.'.format(queue[0].original))
+            else:
+                await ctx.send('Skipping!')
+
+            # stop!!!
+            ctx.guild.voice_client.stop()
+
+        if checks.is_dogbot_moderator(ctx):
+            logger.debug('Instantly skipping.')
+            await insta_skip()
+        else:
+            existing_votes = self.skip_votes.get(ctx.guild.id, [])  # votes we already have
+            voice_members = len(ctx.guild.voice_client.channel.members)  # how many people in the channel?
+            votes_with_this_one = len(existing_votes) + 1  # votes with this one counted
+            required = required_votes(voice_members)  # how many votes do we need?
+
+            # recalculate amount of users it takes to vote
+            if len(existing_votes) >= required:
+                logger.debug('Voteskip: Recalculated. Skipping. %d/%d', len(existing_votes), required)
+                return await insta_skip()
+
+            # check if they already voted
+            if ctx.author.id in existing_votes:
+                return await ctx.send('You already voted to skip. **{}** more vote(s) needed to skip.'.format(required -
+                                      len(existing_votes)))
+
+            # ok, their vote counts. now check if we surpass required votes with their votes too!
+            if votes_with_this_one >= required:
+                logger.debug('Voteskip: Fresh vote! Skipping. %d/%d', votes_with_this_one, required)
+                return await insta_skip()
+
+            # add the vote
+            self.skip_votes[ctx.guild.id] = existing_votes + [ctx.author.id]
+
+            # how many more?
+            more_votes = required - votes_with_this_one
+            await ctx.send('Your request to skip this song has been acknowledged. **{}** more vote(s) to '
+                           'skip.'.format(more_votes))
+
+            logger.debug('Voteskip: Now at %d/%d (%d more needed to skip.)', votes_with_this_one, required, more_votes)
 
     @music.command()
     @commands.check(must_be_in_voice)
@@ -172,17 +229,20 @@ class Music(Cog):
         if error:
             print(error)
 
+        logger.debug('Clearing voteskips for %d.', ctx.guild.id)
+        # clear voteskips
+        self.skip_votes[ctx.guild.id] = []
+
         queue = self.queues.get(ctx.guild.id, [])
 
-        logger.info('advancing -- queue: %s', [s.original.url for s in queue])
+        logger.debug('Advancing to the next song. Queue: %s', [s.original.url for s in queue])
 
         if not queue:
-            logger.info('queue is empty')
+            logger.debug('Queue is empty. Just going to sit here.')
             return
 
-        logger.info('queue isn\'t empty, advancing...')
         next_up = queue.pop(0)
-        logger.info('next up -- %s', next_up)
+        logger.debug('Next up! %s', next_up)
 
         # send message
         coro = ctx.send('**Next up!** {0.info[title]} (<{0.info[webpage_url]}>)'.format(next_up.original))
