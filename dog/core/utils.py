@@ -174,12 +174,17 @@ def commas(number: 'Union[int, float]'):
     return '{:,d}'.format(number)
 
 
-class EnumConverter(commands.Converter):
-    async def convert(self, ctx, argument):
-        enum_type = getattr(self.enum, argument.upper(), None)
-        if not enum_type:
-            raise commands.BadArgument(self.bad_argument_text)
-        return enum_type
+class EnumConverter:
+    @classmethod
+    async def convert(cls, ctx, arg):
+        try:
+            if arg not in cls:
+                return cls[arg.upper()]
+            else:
+                return cls[arg]
+        except KeyError:
+            valid_keys = ', '.join('`{}`'.format(num.name.lower()) for num in list(cls))
+            raise commands.BadArgument('Invalid type. Valid types: {}'.format(valid_keys))
 
 
 # from rowboat https://github.com/b1naryth1ef/rowboat/blob/master/rowboat/util/zalgo.py

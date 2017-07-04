@@ -11,7 +11,6 @@ from discord.ext import commands
 from dog import Cog
 from dog.core import utils
 from dog.ext.censorship import CensorshipFilter, CensorType, PunishmentType
-from dog.ext.censorship.converters import CensorTypeConverter, PunishmentTypeConverter
 from dog.ext.censorship.filters import InviteCensorshipFilter, VideositeCensorshipFilter, ZalgoCensorshipFilter, \
     MediaLinksCensorshipFilter, ExecutableLinksCensorshipFilter
 
@@ -102,8 +101,7 @@ class Censorship(Cog):
         is censored.
 
         In order to censor, Dogbot needs to be able to delete messages. Ensure that Dogbot has
-        proper permissions before enabling censoring. You can list the types of censorship
-        with the `d?censorship list` subcommand. You may then disable and enable certain types of
+        proper permissions before enabling censoring. You may then disable and enable certain types of
         censorship with the `d?censorship censor` and `d?censorship uncensor` commands.
 
         You may manage certain roles from being censored with the `except`, `unexcept`, and
@@ -163,7 +161,7 @@ class Censorship(Cog):
         await ctx.send(code)
 
     @censorship.command(name='censor')
-    async def _censor(self, ctx, censor_type: CensorTypeConverter):
+    async def _censor(self, ctx, censor_type: CensorType):
         """
         Censors a specific type of message.
 
@@ -180,7 +178,7 @@ class Censorship(Cog):
         await ctx.send(f'Censorship types: {types}\n\nTo see what these do, click here: <{wiki}>')
 
     @censorship.command(name='censoring')
-    async def _censoring(self, ctx, censor_type: CensorTypeConverter = None):
+    async def _censoring(self, ctx, censor_type: CensorType = None):
         """
         Views what types of messages are being censored.
 
@@ -201,7 +199,7 @@ class Censorship(Cog):
                         is_censoring else '') + 'being censored.')
 
     @censorship.command(name='uncensor')
-    async def _uncensor(self, ctx, censor_type: CensorTypeConverter):
+    async def _uncensor(self, ctx, censor_type: CensorType):
         """
         Uncensors a specific type of message.
 
@@ -234,7 +232,7 @@ class Censorship(Cog):
         """
 
     @censor_punish.command(name='add')
-    async def censor_punish_add(self, ctx, censor_type: CensorTypeConverter, punishment: PunishmentTypeConverter):
+    async def censor_punish_add(self, ctx, censor_type: CensorType, punishment: PunishmentType):
         """ Adds a punishment. """
         if not await self.is_censoring(ctx.guild, censor_type):
             return await ctx.send(f'You aren\'t censoring `{censor_type.name.lower()}`, you should censor it first '
@@ -246,7 +244,7 @@ class Censorship(Cog):
         await ctx.ok()
 
     @censor_punish.command(name='delete', aliases=['del', 'rm', 'remove'])
-    async def censor_punish_delete(self, ctx, censor_type: CensorTypeConverter):
+    async def censor_punish_delete(self, ctx, censor_type: CensorType):
         """ Deletes a punishment. """
         await self.delete_punishment(ctx.guild, censor_type)
         await ctx.ok()
