@@ -50,7 +50,7 @@ class Autorole(Cog):
             autorole = await pg.fetchrow('SELECT * FROM autoroles WHERE guild_id = $1 AND type = $2', member.guild.id,
                                          type)
             if not autorole:
-                log.debug('Ignoring autorole for guild %d -- no autorole for type "%s"!', member.guild.id, type)
+                # log.debug('Ignoring autorole for guild %d -- no autorole for type "%s"!', member.guild.id, type)
                 return []
 
             # get the role ids we need
