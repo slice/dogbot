@@ -77,6 +77,10 @@ class Internal(Cog):
         # guilds
         embed.add_field(name='Guilds', value=f'{utils.commas(len(ctx.bot.guilds))} total')
 
+        # voice
+        clients = ctx.bot.voice_clients
+        embed.add_field(name='Voice', value=f'{len(clients)} voice client(s)')
+
         async with ctx.bot.pgpool.acquire() as conn:
             record = await conn.fetchrow('SELECT SUM(times_used) FROM command_statistics')
             embed.add_field(name='Commands Ran', value=utils.commas(record['sum']) + ' total')
