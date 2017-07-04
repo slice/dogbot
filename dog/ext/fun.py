@@ -11,6 +11,8 @@ from typing import Any, Dict
 import aiohttp
 import discord
 import random
+
+import functools
 from discord.ext import commands
 from PIL import Image, ImageEnhance, ImageDraw, ImageFont
 from wand import image as wndimg
@@ -298,9 +300,13 @@ class Fun(Cog):
                 im = converter.enhance(50)
 
                 with BytesIO() as bio:
-                    im.save(bio, format='jpeg', quality=0)
+                    try:
+                        save = functools.partial(im.save, bio, format='png')
+                        await self.bot.loop.run_in_executor(None, save)
+                    except Exception as e:
+                        return await ctx.send('An error has occurred processing your image.')
                     bio.seek(0)
-                    await ctx.send(file=discord.File(bio, 'result.jpg'))
+                    await ctx.send(file=discord.File(bio, 'result.png'))
 
                 im.close()
 
