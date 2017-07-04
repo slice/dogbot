@@ -22,7 +22,8 @@ YTDL_OPTS = {
 
 SEARCHING_TEXT = (
     'Beep boop...',
-    'Traveling the interwebs...',
+    'Travelling the interwebs...',
+    'Hold up...',
     'Searching...',
     'Just a sec...'
 )
