@@ -55,6 +55,8 @@ async def youtube_search(bot, query: str) -> 'List[Dict[Any, Any]]':
 
 
 async def must_be_in_voice(ctx: commands.Context):
+    if not ctx.guild:
+        return False
     return ctx.guild.voice_client is not None
 
 
@@ -93,6 +95,7 @@ class Music(Cog):
             await before.channel.guild.voice_client.disconnect()
 
     @commands.group(aliases=['m', 'mus'])
+    @commands.guild_only()
     async def music(self, ctx):
         """ Music. Beep boop! """
         pass
