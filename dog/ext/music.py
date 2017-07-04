@@ -79,7 +79,6 @@ class Music(Cog):
         self.queues = {}
 
     @commands.group(aliases=['m', 'mus'])
-    @commands.check(can_use_music)
     async def music(self, ctx):
         """ Music. Beep boop! """
         pass
