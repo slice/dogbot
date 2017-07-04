@@ -121,7 +121,10 @@ class DogBot(BaseBot):
             key = 'modlog_channel_id'
             manual_id = int(await self.config_get(guild, key))
             manual_mod_log = discord.utils.get(guild.text_channels, id=manual_id)
+            if manual_mod_log is not None:
+                logger.debug('Using a manual mod log for guild %d.', guild.id)
         except:
+            logger.debug('Using automatic mod log or guild %d.', guild.id)
             manual_mod_log = None
 
         mod_log = manual_mod_log or discord.utils.get(guild.text_channels, name='mod-log')
@@ -134,6 +137,7 @@ class DogBot(BaseBot):
             await mod_log.send(*args, **kwargs)
         except discord.Forbidden:
             # couldn't post to modlog
+            logger.warning('Couldn\'t post to modlog for guild %d. No permissions.', guild.id)
             pass
 
     async def rotate_game(self):

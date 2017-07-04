@@ -12,8 +12,12 @@ from dog.core import checks, utils
 logger = logging.getLogger(__name__)
 
 
-def is_publicly_visible(channel: discord.TextChannel) -> bool:
+async def is_publicly_visible(bot, channel: discord.TextChannel) -> bool:
     """ Returns whether a channel is publicly visible with the default role. """
+    if await bot.config_is_set(channel.guild, 'log_all_message_events'):
+        logger.debug('All mesasge events are being logged for this guild, returning True.')
+        return True
+
     everyone_overwrite = discord.utils.find(lambda t: t[0].name == '@everyone',
                                             channel.overwrites)
     return everyone_overwrite is None or everyone_overwrite[1].read_messages is not False
@@ -51,7 +55,7 @@ class Modlog(Cog):
         if before.author.bot or before.content == after.content:
             return
 
-        if (not is_publicly_visible(before.channel) or
+        if (not await is_publicly_visible(self.bot, before.channel) or
                 await self.bot.config_is_set(before.guild, 'modlog_notrack_edits')):
             return
 
@@ -89,7 +93,7 @@ class Modlog(Cog):
         if isinstance(msg.channel, discord.DMChannel):
             return
 
-        if (not is_publicly_visible(msg.channel) or
+        if (not await is_publicly_visible(self.bot, msg.channel) or
                 await self.bot.config_is_set(msg.guild, 'modlog_notrack_deletes')):
             return
 
@@ -133,10 +137,12 @@ class Modlog(Cog):
 
         This command is in the Modlog cog because the modlog does not process message edit and
         delete events for private channels.
+
+        If you have turned 'log_all_message_events' on, this will always say public.
         """
         channel = channel if channel else ctx.channel
         public = f'{channel.mention} {{}} public to @\u200beveryone.'
-        await ctx.send(public.format('is' if is_publicly_visible(channel) else '**is not**'))
+        await ctx.send(public.format('is' if await is_publicly_visible(self.bot, channel) else '**is not**'))
 
     @commands.command()
     @commands.has_permissions(manage_guild=True)
