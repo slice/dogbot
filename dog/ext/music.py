@@ -144,7 +144,8 @@ class Music(Cog):
             votes_with_this_one = len(existing_votes) + 1  # votes with this one counted
             required = required_votes(voice_members)  # how many votes do we need?
 
-            # recalculate amount of users it takes to vote
+            # recalculate amount of users it takes to vote, not counting this vote.
+            # (just in case someone left the channel)
             if len(existing_votes) >= required:
                 logger.debug('Voteskip: Recalculated. Skipping. %d/%d', len(existing_votes), required)
                 return await insta_skip()
@@ -154,7 +155,7 @@ class Music(Cog):
                 return await ctx.send('You already voted to skip. **{}** more vote(s) needed to skip.'.format(required -
                                       len(existing_votes)))
 
-            # ok, their vote counts. now check if we surpass required votes with their votes too!
+            # ok, their vote counts. now check if we surpass required votes with this vote!
             if votes_with_this_one >= required:
                 logger.debug('Voteskip: Fresh vote! Skipping. %d/%d', votes_with_this_one, required)
                 return await insta_skip()
