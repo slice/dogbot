@@ -84,6 +84,9 @@ class Music(Cog):
         self.skip_votes = {}
 
     async def on_voice_state_update(self, member, before, after):
+        if not before.channel:
+            return
+
         in_channel = before.channel.guild.me in before.channel.members
         if len(before.channel.members) == 1 and in_channel:
             logger.debug('Leaving voice channel due to nobody being in here.')
