@@ -16,7 +16,7 @@ from PIL import Image, ImageEnhance, ImageDraw, ImageFont
 from wand import image as wndimg
 
 from dog import Cog
-from dog.core import checks, utils
+from dog.core import checks, utils, converters
 
 SHIBE_ENDPOINT = 'http://shibe.online/api/shibes?count=1&urls=true'
 GOOGLE_COMPLETE = 'https://www.google.com/complete/search'
@@ -107,7 +107,7 @@ class Fun(Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def floor(self, ctx, who: discord.Member, *, text: commands.clean_content):
+    async def floor(self, ctx, image_source: converters.ImageSourceConverter, *, text: commands.clean_content):
         """The floor is..."""
 
         async with ctx.typing():
@@ -116,7 +116,7 @@ class Fun(Cog):
             fnt = ImageFont.truetype('resources/font/SourceSansPro-Regular.ttf', 48)
 
             # download the avatar
-            abio = await get_bytesio(self.bot.session, who.avatar_url_as(format='png'))
+            abio = await get_bytesio(self.bot.session, image_source)
             ava_im = Image.open(abio)
 
             # draw text
@@ -147,10 +147,11 @@ class Fun(Cog):
     async def floor_errors(self, ctx, err):
         if isinstance(err, asyncio.TimeoutError):
             await ctx.send('Took too long to process the image.')
-        else:
+            err.should_suppress = True
+        elif isinstance(err, commands.CommandInvokeError):
             await ctx.send('Couldn\'t process the image correctly, sorry!')
+            err.should_suppress = True
 
-        err.should_suppress = True
 
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)

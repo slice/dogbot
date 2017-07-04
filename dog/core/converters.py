@@ -32,6 +32,20 @@ class RawMember(commands.Converter):
                 raise commands.BadArgument('Invalid member ID. I also couldn\'t find the user by username.')
 
 
+class ImageSourceConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        try:
+            memb = await MemberConverter().convert(ctx, argument)
+            return memb.avatar_url_as(format='png')
+        except commands.BadArgument:
+            safe_urls = ('https://i.imgur.com', 'https://cdn.discordapp.com', 'https://images.discordapp.net',
+                         'https://i.redd.it')
+            if any(argument.startswith(safe_url) for safe_url in safe_urls):
+                return argument
+            raise commands.BadArgument('Invalid image URL or user. Valid image URLs: ' + ', '.join(f'`{url}`' for url
+                                                                                                   in safe_urls))
+
+
 class HumanTime(commands.Converter):
     async def convert(self, ctx, argument):
         cal = parsedatetime.Calendar()
