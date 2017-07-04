@@ -38,7 +38,6 @@ class Internal(Cog):
         await pr.paginate(ctx)
 
     @commands.command()
-    @commands.is_owner()
     async def humantime(self, ctx, *, time: converters.HumanTime):
         """ Humantime debug. """
         await ctx.send(f'```py\n{repr(time)}\n```')

@@ -24,7 +24,7 @@ class Tagging(Cog):
         async with self.bot.pgpool.acquire() as conn:
             await conn.execute('UPDATE tags SET value = $1 WHERE name = $2', value, name)
 
-    async def get_tag(self, ctx: commands.Context, name: str) -> Tag:
+    async def get_tag(self, ctx: commands.Context, name: str) -> 'Union[None, Tag]':
         """ Finds a tag, and returns it as a ``Tag`` object. """
         select = 'SELECT * FROM tags WHERE guild_id = $1 AND name = $2'
         async with self.bot.pgpool.acquire() as conn:
