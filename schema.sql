@@ -62,3 +62,12 @@ CREATE TABLE IF NOT EXISTS tags (
   uses int,
   created_at timestamp without time zone
 );
+
+CREATE TABLE autoroles (
+  guild_id bigint,
+  type text,
+  roles bigint[],
+
+  PRIMARY KEY (guild_id, type)
+);
+
