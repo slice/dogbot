@@ -136,12 +136,20 @@ class Music(Cog):
 
     @music.command(aliases=['vol'])
     @commands.check(must_be_in_voice)
-    async def volume(self, ctx, vol: float = None):
-        """ Changes the volume. """
+    async def volume(self, ctx, vol: int = None):
+        """
+        Changes or views the volume.
+
+        If you provide a number from 0-500, the volume will be set. Otherwise, you will
+        view the current volume.
+        """
         if not vol:
-            await ctx.send('The volume is: `{}`'.format(ctx.guild.voice_client.source.volume))
-            return
-        ctx.guild.voice_client.source.volume = vol
+            return await ctx.send('The volume is at: `{}%`'.format(ctx.guild.voice_client.source.volume * 100))
+
+        if vol > 500:
+            return await ctx.send('You can\'t set the volume over 500%.')
+
+        ctx.guild.voice_client.source.volume = vol / 100
         await ctx.ok()
 
     @music.command(aliases=['np'])
