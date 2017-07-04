@@ -2,14 +2,12 @@
 Dogbot owner only music extension.
 """
 
+import asyncio
 import logging
-from collections import namedtuple
-from typing import List
+import random
 
-import aiohttp
 import discord
 import youtube_dl
-from bs4 import BeautifulSoup
 from discord.ext import commands
 
 from dog import Cog
@@ -17,23 +15,26 @@ from dog.core import utils
 
 logger = logging.getLogger(__name__)
 
+YTDL_OPTS = {
+    'format': 'webm[abr>0]/bestaudio/best',
+    'prefer_ffmpeg': True
+}
 
-class YouTubeResult(namedtuple('YouTubeResult', 'name url')):
-    """ Represents results from YouTube search. """
-
-    def __str__(self):
-        return '{0.name} (<{0.url}>)'.format(self)
+SEARCHING_TEXT = (
+    'Beep boop...',
+    'Traveling the interwebs...',
+    'Searching...',
+    'Just a sec...'
+)
 
 
 class YouTubeDLSource(discord.FFmpegPCMAudio):
     def __init__(self, url):
-        opts = {
-            'format': 'webm[abr>0]/bestaudio/best',
-            'prefer_ffmpeg': True,
-        }
-
-        ytdl = youtube_dl.YoutubeDL(opts)
+        ytdl = youtube_dl.YoutubeDL(YTDL_OPTS)
         info = ytdl.extract_info(url, download=False)
+
+        if '_type' in info and info['_type'] == 'playlist':
+            info = info['entries'][0]
 
         self.url = url
         self.info = info
@@ -41,19 +42,15 @@ class YouTubeDLSource(discord.FFmpegPCMAudio):
         super().__init__(info['url'])
 
 
-async def youtube_search(session: aiohttp.ClientSession, query: str) -> List[YouTubeResult]:
+async def youtube_search(bot, query: str) -> 'List[Dict[Any, Any]]':
     """
     Searches YouTube for videos. Returns a list of :class:`YouTubeResult`.
     """
-    query_escaped = utils.urlescape(query)
-    url = f'https://www.youtube.com/results?q={query_escaped}'
-    watch = 'https://www.youtube.com{}'
-
-    async with session.get(url) as resp:
-        text = await resp.text()
-        soup = BeautifulSoup(text, 'html.parser')
-        nodes = soup.find_all('a', {'class': 'yt-uix-tile-link'})
-        return [YouTubeResult(name=n.contents[0], url=watch.format(n['href'])) for n in nodes]
+    def search():
+        ytdl = youtube_dl.YouTubeDL(YTDL_OPTS)
+        info = ytdl.extract_info('ytsearch:' + query, download=False)
+        return info
+    return await bot.loop.run_in_executor(None, search)
 
 
 async def must_be_in_voice(ctx: commands.Context):
@@ -178,26 +175,37 @@ class Music(Cog):
         logger.info('queue isn\'t empty, advancing...')
         next_up = queue.pop(0)
         logger.info('next up -- %s', next_up)
+
+        # send message
+        coro = ctx.send('**Next up!** {0.info[title]} (<{0.info[webpage_url]}>)'.format(next_up.original))
+        fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
+        fut.result()
+        
         ctx.guild.voice_client.play(next_up, after=lambda e: self.advance(ctx, e))
         self.queues[ctx.guild.id] = queue
 
-    async def _play_yt(self, ctx, url):
-        msg = await ctx.send('\N{INBOX TRAY} Fetching information...')
+    async def _play(self, ctx, url, *, search=False):
+        msg = await ctx.send(f'\N{INBOX TRAY} {random.choice(SEARCHING_TEXT)}')
 
         # grab
-        source = await ctx.bot.loop.run_in_executor(None, YouTubeDLSource, url)
+        url = 'ytsearch:' + url if search else url
+        try:
+            source = await ctx.bot.loop.run_in_executor(None, YouTubeDLSource, url)
+        except youtube_dl.DownloadError:
+            return await msg.edit(content='\U0001f4ed YouTube gave me nothin\'.')
 
         # make it adjustable
         source = discord.PCMVolumeTransformer(source, 1.0)
+        disp = '**{}**'.format(source.original.info['title'])
 
         if not ctx.guild.voice_client.is_playing():
             # play immediately since we're not playing anything
             ctx.guild.voice_client.play(source, after=lambda e: self.advance(ctx, e))
-            await msg.edit(content='\N{MULTIPLE MUSICAL NOTES} Playing!')
+            await msg.edit(content=f'\N{MULTIPLE MUSICAL NOTES} Playing {disp}!')
         else:
             # add it to the queue
             self.queues[ctx.guild.id] = self.queues.get(ctx.guild.id, []) + [source]
-            await msg.edit(content='\N{LINKED PAPERCLIPS} Added to queue.')
+            await msg.edit(content=f'\N{LINKED PAPERCLIPS} Added {disp} to queue.')
 
     @music.command()
     async def queue(self, ctx):
@@ -214,36 +222,26 @@ class Music(Cog):
 
     @music.command()
     @commands.check(must_be_in_voice)
-    async def search(self, ctx, *, query: str):
-        """ Searches YouTube for videos. """
-        async with ctx.channel.typing():
-            results = (await youtube_search(self.bot.session, query))[:5]
-
-            if len(results) > 1:
-                result = await ctx.pick_from_list(results)
-                if result is None:
-                    return
-            else:
-                result = results[0]
-
-            await self._play_yt(ctx, result.url)
-
-    @music.command()
-    @commands.check(must_be_in_voice)
     @commands.is_owner()
     async def multiqueue(self, ctx, *urls):
         """ Queues multiple URLs. """
         for url in urls:
-            await self._play_yt(ctx, url)
+            await self._play(ctx, url)
 
-    @music.command()
+    @music.command(aliases=['p'])
     @commands.check(must_be_in_voice)
-    async def play(self, ctx, url: str):
-        """ Plays a URL. """
+    async def play(self, ctx, *, query: str):
+        """
+        Plays music.
+
+        You can specify a query to search for, or a URL.
+        """
         try:
-            await self._play_yt(ctx, url)
+            await self._play(ctx, query, search='http' not in query)
         except:
+            logger.exception('Error occurred searching.')
             await ctx.send('\N{UPSIDE-DOWN FACE} An error occurred fetching that URL. Sorry!')
+
 
 def setup(bot):
     bot.add_cog(Music(bot))
