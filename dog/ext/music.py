@@ -204,7 +204,7 @@ class Music(Cog):
         """
         Changes or views the volume.
 
-        If you provide a number from 0-500, the volume will be set. Otherwise, you will
+        If you provide a number from 0-200, the volume will be set. Otherwise, you will
         view the current volume.
         """
         if not ctx.guild.voice_client.is_playing():
@@ -213,8 +213,8 @@ class Music(Cog):
         if not vol:
             return await ctx.send('The volume is at: `{}%`'.format(ctx.guild.voice_client.source.volume * 100))
 
-        if vol > 500:
-            return await ctx.send('You can\'t set the volume over 500%.')
+        if vol > 200:
+            return await ctx.send('You can\'t set the volume over 200%.')
 
         ctx.guild.voice_client.source.volume = vol / 100
         await ctx.ok()
