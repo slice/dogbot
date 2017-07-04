@@ -157,44 +157,42 @@ class Fun(Cog):
 
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
-    async def forbidden(self, ctx, *, who: discord.Member):
+    async def forbidden(self, ctx, *, image_source: converters.ImageSourceConverter = None):
         """ At last! I am free to think the forbidden thoughts. """
-        with ctx.typing():
-            try:
-                avatar_url = who.avatar_url_as(format='png')
+        image_source = image_source or ctx.author.avatar_url_as(format='png')
+        await ctx.channel.trigger_typing()
+        try:
+            avatar_data = await get_bytesio(self.bot.session, image_source)
+            forbid = wndimg.Image(filename='resources/forbidden_thoughts.png')
+            avatar = wndimg.Image(file=avatar_data)
+            canvas = wndimg.Image(width=forbid.width, height=forbid.height)
 
-                # grab the avatar data, the forbidden image, the avatar image, and create a canvas
-                avatar_data = await get_bytesio(self.bot.session, avatar_url)
-                forbid = wndimg.Image(filename='resources/forbidden_thoughts.png')
-                avatar = wndimg.Image(file=avatar_data)
-                canvas = wndimg.Image(width=forbid.width, height=forbid.height)
+            # canvas should be png
+            canvas.format = 'png'
 
-                # canvas should be png
-                canvas.format = 'png'
+            # resize the avatar to an appropriate size
+            avatar.resize(580, 580)
 
-                # resize the avatar to an appropriate size
-                avatar.resize(580, 580)
+            # composite the avatar on the bottom, then the forbidden image on top
+            canvas.composite(avatar, 980, 480)
+            canvas.composite(forbid, 0, 0)
 
-                # composite the avatar on the bottom, then the forbidden image on top
-                canvas.composite(avatar, 980, 480)
-                canvas.composite(forbid, 0, 0)
+            # create a bytesio to save it to
+            with BytesIO() as bio:
+                # save
+                await ctx.bot.loop.run_in_executor(None, functools.partial(canvas.save, file=bio))
+                bio.seek(0)
 
-                # create a bytesio to save it to
-                with BytesIO() as bio:
-                    # save
-                    canvas.save(file=bio)
-                    bio.seek(0)
+                # send it
+                await ctx.send(file=discord.File(bio, f'forbidden.png'))
 
-                    # send it
-                    await ctx.send(file=discord.File(bio, f'forbidden-{who.id}.png'))
-
-                # close everything
-                avatar_data.close()
-                forbid.close()
-                avatar.close()
-                canvas.close()
-            except:
-                await ctx.send('Something went wrong making the image. Sorry!')
+            # close everything
+            avatar_data.close()
+            forbid.close()
+            avatar.close()
+            canvas.close()
+        except:
+            await ctx.send('Something went wrong making the image. Sorry!')
 
     @commands.command()
     @commands.guild_only()
@@ -208,29 +206,21 @@ class Fun(Cog):
         """ Pushes text through Google search's autocomplete. """
         async with ctx.channel.typing():
             payload = {
-                'q': text,
-                'client': 'hp',
-                'hl': 'en',
-                'gs_rn': 64,
-                'gs_ri': 'hp',
-                'cp': 5,
-                'gs_id': 'w',
-                'xhr': 't'
+                'q': text, 'client': 'hp', 'hl': 'en', 'gs_rn': 64, 'gs_ri': 'hp', 'cp': 5, 'gs_id': 'w', 'xhr': 't'
             }
             headers = {
-                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Geck'
-                              'o) Chrome/58.0.3029.96 Safari/537.36'
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029'
+                              '.96 Safari/537.36'
             }
+
             try:
-                async with self.bot.session.get(GOOGLE_COMPLETE, headers=headers,
-                                                params=payload) as resp:
-                    try:
-                        result = random.choice((await resp.json())[1])[0]
-                        await ctx.send(utils.strip_tags(result))
-                    except IndexError:
-                        await ctx.send('No results.')
+                async with self.bot.session.get(GOOGLE_COMPLETE, headers=headers, params=payload) as resp:
+                    result = random.choice((await resp.json())[1])[0]
+                    await ctx.send(utils.strip_tags(result))
             except aiohttp.ClientError:
                 await ctx.send('Something went wrong, try again.')
+            except IndexError:
+                await ctx.send('No results.')
 
     @commands.command()
     @checks.is_moderator()
@@ -283,8 +273,7 @@ class Fun(Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def wacky(self, ctx, image_source: converters.ImageSourceConverter = None):
         """ Applies some wacky effects to your avatar. """
-        if not image_source:
-            who = ctx.message.author
+        image_source = image_source or ctx.message.author.avatar_url_as(format='png')
 
         await ctx.channel.trigger_typing()
         avatar_bio = await get_bytesio(self.bot.session, image_source)
