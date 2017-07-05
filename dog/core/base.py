@@ -15,7 +15,7 @@ from dog.core.context import DogbotContext
 logger = logging.getLogger(__name__)
 
 
-class ReloadableBot(commands.Bot):
+class ReloadableBot(commands.AutoShardedBot):
     """ A bot subclass that contains utility methods that aid in reloading cogs and extensions, and recursively
     loading extensions. """
     def load_exts_recursively(self, directory: str, prefix: str = 'Recursive load'):
@@ -82,10 +82,15 @@ class ReloadableBot(commands.Bot):
         logger.info('Finished reloading bot modules!')
 
 
-class DBBot(commands.Bot):
-    """ A bot subclass that has access to Redis and Postgres. """
+class BaseBot(ReloadableBot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # aiohttp session used for fetching data
+        self.session = aiohttp.ClientSession(loop=self.loop)
+
+        # boot time (for uptime)
+        self.boot_time = datetime.datetime.utcnow()
 
         # hack because __init__ cannot be async
         redis_coroutine = aioredis.create_redis(
@@ -98,17 +103,6 @@ class DBBot(commands.Bot):
         pg = kwargs.pop('postgresql_auth')
         self.database = pg['database']
         self.pgpool = self.loop.run_until_complete(asyncpg.create_pool(**pg))
-
-
-class BaseBot(ReloadableBot, DBBot):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # aiohttp session used for fetching data
-        self.session = aiohttp.ClientSession(loop=self.loop)
-
-        # boot time (for uptime)
-        self.boot_time = datetime.datetime.utcnow()
 
         # load core extensions
         self.load_exts_recursively('dog/core/ext', 'Core recursive load')
