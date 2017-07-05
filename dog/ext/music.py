@@ -127,8 +127,16 @@ class Music(Cog):
     @music.command()
     @commands.is_owner()
     async def status(self, ctx):
-        """ Views the status of Opus. """
-        await ctx.send(f'Opus status: {discord.opus.is_loaded()}')
+        """ Views the status of voice clients. """
+        embed = discord.Embed(title='Voice status', color=discord.Color.blurple())
+
+        clients = len(ctx.bot.voice_clients)
+        idle = sum(1 for cl in ctx.bot.voice_clients if not cl.is_playing())
+        paused = sum(1 for cl in ctx.bot.voice_clients if cl.is_paused())
+        active = sum(1 for cl in ctx.bot.voice_clients if cl.is_playing())
+        embed.description = '{} client(s)\n{} idle, {} active, {} paused'.format(clients, idle, active, paused)
+
+        await ctx.send(embed=embed)
 
     @music.command(aliases=['summon'])
     async def join(self, ctx):
