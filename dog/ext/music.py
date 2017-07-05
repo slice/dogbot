@@ -99,8 +99,11 @@ class Music(Cog):
                 logger.debug('Automatically pausing stream.')
                 vc.pause()
             async def leave():
-                await asyncio.sleep(60 * 5)  # 5 minutes
+                await asyncio.sleep(5 * 60)  # 5 minutes
                 if vc.is_connected():
+                    # XXX: have to unpause before disconnecting or else ffmpeg never dies
+                    if vc.is_paused():
+                        vc.resume()
                     logger.debug('Automatically disconnecting from guild %d.', member.guild.id)
                     await vc.disconnect()
             logger.debug('Nobody\'s in this voice channel! Creating a leave task.')
