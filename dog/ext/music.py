@@ -29,6 +29,10 @@ SEARCHING_TEXT = (
 )
 
 
+class MustBeInVoice(commands.CheckFailure):
+    pass
+
+
 class YouTubeDLSource(discord.FFmpegPCMAudio):
     def __init__(self, url):
         ytdl = youtube_dl.YoutubeDL(YTDL_OPTS)
@@ -57,11 +61,9 @@ async def youtube_search(bot, query: str) -> 'List[Dict[Any, Any]]':
 async def must_be_in_voice(ctx: commands.Context):
     if not ctx.guild:
         return False
-    return ctx.guild.voice_client is not None
-
-
-async def cannot_be_playing(ctx: commands.Context):
-    return not ctx.guild.voice_client.is_playing()
+    if ctx.guild.voice_client is None:
+        raise MustBeInVoice
+    return True
 
 
 async def is_whitelisted(bot, guild: discord.Guild):
@@ -85,6 +87,11 @@ class Music(Cog):
         self.queues = {}
         self.skip_votes = {}
         self.leave_tasks = {}
+
+    async def __error(self, ctx, err):
+        if isinstance(err, MustBeInVoice):
+            await ctx.send('I need to be in a voice channel to do that. To connect me, type `d?m join`.')
+            err.should_suppress = True
 
     async def on_voice_state_update(self, member, before, after):
         if not member.guild.voice_client or not member.guild.voice_client.channel:
