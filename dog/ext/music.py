@@ -113,6 +113,9 @@ class Music(Cog):
                         vc.resume()
                     logger.debug('Automatically disconnecting from guild %d.', member.guild.id)
                     await vc.disconnect()
+            if member.guild.id in self.leave_tasks:
+                logger.debug('I got moved to another empty channel, and I already have a leave task. Ignoring!')
+                return
             logger.debug('Nobody\'s in this voice channel! Creating a leave task.')
             self.leave_tasks[member.guild.id] = self.bot.loop.create_task(leave())
         else:
