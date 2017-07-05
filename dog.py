@@ -21,9 +21,8 @@ root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
 
 # formatters
-console_fmt = logging.Formatter('[%(levelname)s] %(name)s: %(message)s')
-nice_fmt = logging.Formatter('%(asctime)s '
-                             '[%(name)s %(levelname)s] %(message)s', '%m/%d/%Y %I:%M:%S %p')
+console_fmt = logging.Formatter('[{asctime}] [{levelname: <7}] {name}: {message}', '%I:%M:%S %p', style='{')
+nice_fmt = logging.Formatter('%(asctime)s [%(name)s %(levelname)s] %(message)s', '%m/%d/%Y %I:%M:%S %p')
 
 logging.getLogger('discord').setLevel(logging.INFO)
 logging.getLogger('dog').setLevel(logging.DEBUG)
