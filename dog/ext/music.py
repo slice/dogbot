@@ -84,15 +84,36 @@ class Music(Cog):
 
         self.queues = {}
         self.skip_votes = {}
+        self.leave_tasks = {}
 
     async def on_voice_state_update(self, member, before, after):
-        if not before.channel:
+        if not member.guild.voice_client or not member.guild.voice_client.channel:
             return
+        vc = member.guild.voice_client
+        my_channel = vc.channel
 
-        in_channel = before.channel.guild.me in before.channel.members
-        if len(before.channel.members) == 1 and in_channel:
-            logger.debug('Leaving voice channel due to nobody being in here.')
-            await before.channel.guild.voice_client.disconnect()
+        logger.debug('There are now %d people in this voice channel.', len(my_channel.members))
+
+        if len(my_channel.members) == 1:
+            if not vc.is_paused():
+                logger.debug('Automatically pausing stream.')
+                vc.pause()
+            async def leave():
+                await asyncio.sleep(60 * 5)  # 5 minutes
+                if vc.is_connected():
+                    logger.debug('Automatically disconnecting from guild %d.', member.guild.id)
+                    await vc.disconnect()
+            logger.debug('Nobody\'s in this voice channel! Creating a leave task.')
+            self.leave_tasks[member.guild.id] = self.bot.loop.create_task(leave())
+        else:
+            logger.debug('Yay, someone rejoined!')
+            if vc.is_paused():
+                logger.debug('Automatically unpausing.')
+                vc.resume()
+            if member.guild.id in self.leave_tasks:
+                self.leave_tasks[member.guild.id].cancel()
+                del self.leave_tasks[member.guild.id]
+                logger.debug('Cancelling leave task for guild %d.', member.guild.id)
 
     @commands.group(aliases=['m', 'mus'])
     @commands.guild_only()
