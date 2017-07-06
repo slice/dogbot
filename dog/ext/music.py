@@ -11,7 +11,8 @@ import youtube_dl
 from discord.ext import commands
 
 from dog import Cog
-from dog.core import utils, checks
+from dog.core import checks
+from dog.core.errors import MustBeInVoice
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +28,6 @@ SEARCHING_TEXT = (
     'Searching...',
     'Just a sec...'
 )
-
-
-class MustBeInVoice(commands.CheckFailure):
-    pass
 
 
 class YouTubeDLSource(discord.FFmpegPCMAudio):

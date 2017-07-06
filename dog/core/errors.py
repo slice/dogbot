@@ -16,3 +16,10 @@ class InsufficientPermissions(commands.CommandError):
     idenitify which permissions they need to grant the bot.
     """
     pass
+
+
+class MustBeInVoice(commands.CheckFailure):
+    """
+    An exception that is thrown by a check that requires that the bot be in voice.
+    """
+    pass
