@@ -158,6 +158,9 @@ class Music(Cog):
         except asyncio.TimeoutError:
             await msg.edit(content='\N{ALARM CLOCK} Couldn\'t connect, I took too long to reach Discord\'s servers.')
             logger.warning('Timed out while connecting to Discord\'s voice servers.')
+        except discord.ClientException:
+            await msg.edit(content='\N{CONFUSED FACE} I\'m already connected.')
+            logger.warning('I couldn\'t detect being connected.')
         else:
             await msg.edit(content='\N{OK HAND SIGN} Connected!')
 
