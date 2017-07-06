@@ -27,7 +27,7 @@ class Memes(Cog):
             error.should_suppress = True
 
     @commands.command()
-    @commands.cooldown(1, 2, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def jpeg(self, ctx, image_source: converters.ImageSourceConverter):
         """ Drastically lowers an image's quality. """
         im_data = await get_bytesio(self.bot.session, image_source)
@@ -43,6 +43,27 @@ class Memes(Cog):
 
         im.close()
         im_data.close()
+
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def mistake(self, ctx, image_source: converters.ImageSourceConverter):
+        """ For really big mistakes. """
+        async with ctx.typing():
+            mistake_im = Image.open('resources/mistake.png')
+            im_data = await get_bytesio(ctx.bot.session, image_source)
+            im = Image.open(im_data)
+
+            im = im.resize((250, 250), Image.BICUBIC)
+            mistake_im.paste(im, (239, 241))
+
+            with BytesIO() as bio:
+                await ctx.bot.loop.run_in_executor(None, functools.partial(mistake_im.save, bio, format='png'))
+                bio.seek(0)
+                await ctx.send(file=discord.File(bio, 'mistake.png'))
+
+            im_data.close()
+            im.close()
+            mistake_im.close()
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -83,7 +104,7 @@ class Memes(Cog):
             abio.close()
 
     @commands.command()
-    @commands.cooldown(1, 2, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def forbidden(self, ctx, *, image_source: converters.ImageSourceConverter = None):
         """ At last! I am free to think the forbidden thoughts. """
         image_source = image_source or ctx.author.avatar_url_as(format='png')
