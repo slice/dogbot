@@ -170,35 +170,27 @@ class Music(Cog):
     @music.command()
     @checks.is_moderator()
     @commands.check(must_be_in_voice)
-    async def loop(self, ctx, toggle: bool=None):
+    async def loop(self, ctx):
         """
-        Views or sets the looping of the current song.
+        Toggles looping of the current song.
 
         Only Dogbot Moderators can do this.
         """
         enabled = ctx.guild.id in self.looping
-        if toggle is None:
-            status = 'enable' if enabled else 'disable'
-            opposite = 'enable' if not enabled else 'disable'
-            fmt = 'Looping is currently **{status}d**. To {opposite} looping, run `d?m loop {cmd}`.'
-            return await ctx.send(fmt.format(status=status, opposite=opposite, cmd='on' if not enabled else 'off'))
 
         if not ctx.guild.voice_client.is_playing():
             return await ctx.send('Play something first!')
 
-        if toggle:
-            if ctx.guild.id in self.looping:
-                return await ctx.send('Looping is already enabled. Turn it off with `d?m loop off`.')
-
+        if not enabled:
             title = ctx.guild.voice_client.source.original.info['title']
-            await ctx.send('Okay. I\'ll loop **{title}** from now on, until you run `d?m loop off`.'.format(
+            await ctx.send('Okay. I\'ll loop **{title}** from now on, until you run `d?m loop` again.'.format(
                 title=title))
 
             async with self.looping_lock:
                 self.looping[ctx.guild.id] = ctx.guild.voice_client.source.original.info
             logger.debug('Enabled looping for guild %d.', ctx.guild.id)
         else:
-            await ctx.send('Looping has been disabled.')
+            await ctx.send('Alright, I turned off looping.')
             if ctx.guild.id in self.looping:
                 async with self.looping_lock:
                     del self.looping[ctx.guild.id]
