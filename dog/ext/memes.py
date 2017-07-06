@@ -31,7 +31,10 @@ class Memes(Cog):
     async def jpeg(self, ctx, image_source: converters.ImageSourceConverter):
         """ Drastically lowers an image's quality. """
         im_data = await get_bytesio(self.bot.session, image_source)
-        im = Image.open(im_data).convert('RGB')
+
+        def open():
+            return Image.open(im_data).convert('RGB')
+        im = await ctx.bot.loop.run_in_executor(None, open)
 
         with BytesIO() as output:
             await ctx.bot.loop.run_in_executor(None, functools.partial(im.save, output, format='jpeg', quality=1))
