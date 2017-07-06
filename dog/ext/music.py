@@ -173,6 +173,8 @@ class Music(Cog):
     async def loop(self, ctx, toggle: bool=None):
         """
         Views or sets the looping of the current song.
+
+        Only Dogbot Moderators can do this.
         """
         enabled = ctx.guild.id in self.looping
         if toggle is None:
