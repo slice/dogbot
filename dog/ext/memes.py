@@ -27,9 +27,24 @@ class Memes(Cog):
             error.should_suppress = True
 
     @commands.command()
+    @commands.cooldown(1, 2, commands.BucketType.user)
+    async def jpeg(self, ctx, image_source: converters.ImageSourceConverter):
+        """ Drastically lowers an image's quality. """
+        im_data = await get_bytesio(self.bot.session, image_source)
+        im = Image.open(im_data)
+
+        with BytesIO() as output:
+            await ctx.bot.loop.run_in_executor(None, functools.partial(im.save, output, format='jpeg', quality=1))
+            output.seek(0)
+            await ctx.send(file=discord.File(output, filename='jpeg.jpg'))
+
+        im.close()
+        im_data.close()
+
+    @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def floor(self, ctx, image_source: converters.ImageSourceConverter, *, text: commands.clean_content):
-        """The floor is..."""
+        """ The floor is... """
 
         async with ctx.typing():
             # open resources we need
