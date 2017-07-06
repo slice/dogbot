@@ -85,6 +85,9 @@ class Music(Cog):
         self.skip_votes = {}
         self.leave_tasks = {}
 
+        self.looping_lock = asyncio.Lock()
+        self.looping = {}
+
     async def __error(self, ctx, err):
         if isinstance(err, MustBeInVoice):
             await ctx.send('I need to be in a voice channel to do that. To connect me, type `d?m join`.')
@@ -163,6 +166,41 @@ class Music(Cog):
             logger.warning('I couldn\'t detect being connected.')
         else:
             await msg.edit(content='\N{OK HAND SIGN} Connected!')
+
+    @music.command()
+    @checks.is_moderator()
+    @commands.check(must_be_in_voice)
+    async def loop(self, ctx, toggle: bool=None):
+        """
+        Views or sets the looping of the current song.
+        """
+        enabled = ctx.guild.id in self.looping
+        if toggle is None:
+            status = 'enable' if enabled else 'disable'
+            opposite = 'enable' if not enabled else 'disable'
+            fmt = 'Looping is currently **{status}d**. To {opposite} looping, run `d?m loop {cmd}`.'
+            return await ctx.send(fmt.format(status=status, opposite=opposite, cmd='on' if not enabled else 'off'))
+
+        if not ctx.guild.voice_client.is_playing():
+            return await ctx.send('Play something first!')
+
+        if toggle:
+            if ctx.guild.id in self.looping:
+                return await ctx.send('Looping is already enabled. Turn it off with `d?m loop off`.')
+
+            title = ctx.guild.voice_client.source.original.info['title']
+            await ctx.send('Okay. I\'ll loop **{title}** from now on, until you run `d?m loop off`.'.format(
+                title=title))
+
+            async with self.looping_lock:
+                self.looping[ctx.guild.id] = ctx.guild.voice_client.source.original.info
+            logger.debug('Enabled looping for guild %d.', ctx.guild.id)
+        else:
+            await ctx.send('Looping has been disabled.')
+            if ctx.guild.id in self.looping:
+                async with self.looping_lock:
+                    del self.looping[ctx.guild.id]
+                logger.debug('Disabled looping for guild %d.', ctx.guild.id)
 
     @music.command()
     @commands.check(must_be_in_voice)
@@ -278,8 +316,9 @@ class Music(Cog):
         """ Shows what's playing. """
         if not ctx.guild.voice_client.is_playing():
             return await ctx.send('Nothing\'s playing at the moment.')
-        src = ctx.guild.voice_client.source.original
-        await ctx.send('**Now playing:** {0.info[title]} {0.info[webpage_url]}'.format(src))
+        src = self.looping[ctx.guild.id] if ctx.guild.id in self.looping else \
+            ctx.guild.voice_client.source.original.info
+        await ctx.send('**Now playing:** {0[title]} {0[webpage_url]}'.format(src))
 
     @music.command()
     @commands.check(must_be_in_voice)
@@ -297,20 +336,29 @@ class Music(Cog):
         self.skip_votes[ctx.guild.id] = []
 
         queue = self.queues.get(ctx.guild.id, [])
+        looping = ctx.guild.id in self.looping
 
         logger.debug('Advancing to the next song. Queue: %s', [s.original.url for s in queue])
 
-        if not queue:
+        if not queue and not looping:
             logger.debug('Queue is empty. Just going to sit here.')
             return
 
-        next_up = queue.pop(0)
-        logger.debug('Next up! %s', next_up)
+        if looping:
+            logger.debug('Looping has been enabled, taking the saved URL.')
+            src = self.looping[ctx.guild.id]['url']
+            logger.debug('Looping %s.', src)
+            next_up = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(src))
+        else:
+            logger.debug('Popping queue.')
+            next_up = queue.pop(0)
+            logger.debug('Next up! %s', next_up)
 
         # send message
-        coro = ctx.send('**Next up!** {0.info[title]} (<{0.info[webpage_url]}>)'.format(next_up.original))
-        fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
-        fut.result()
+        if not looping:
+            coro = ctx.send('**Next up!** {0.info[title]} (<{0.info[webpage_url]}>)'.format(next_up.original))
+            fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
+            fut.result()
         
         ctx.guild.voice_client.play(next_up, after=lambda e: self.advance(ctx, e))
         self.queues[ctx.guild.id] = queue
