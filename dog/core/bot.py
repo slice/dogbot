@@ -39,10 +39,6 @@ class DogBot(BaseBot):
         self.report_task = None
         self.rotate_game_task = None
 
-        with open('resources/playing_status_flavor_text.txt') as f:
-            self.flavor_text = [line.strip() for line in f.readlines()]
-        logger.info('Loaded %d flavor text line(s)', len(self.flavor_text))
-
         # list of extensions to reload (this means that new extensions are not picked up)
         # this is here so we can d?reload even if an syntax error occurs and it won't be present
         # in self.extensions
@@ -141,16 +137,10 @@ class DogBot(BaseBot):
             pass
 
     async def rotate_game(self):
-        prefixes = (
-            f'{utils.commas(len(self.guilds))} servers',
-            f'{utils.commas(len(self.users))} users'
-        )
-
         short_prefix = min(cfg.prefixes, key=len)
-        prefix = random.choice(prefixes)
-        flavor = random.choice(self.flavor_text)
-        game = discord.Game(name=f'{short_prefix}help \N{EM DASH} {prefix} \N{EM DASH} {flavor}')
-        await self.change_presence(game=game)
+        for shard in self.shards.values():
+            game = discord.Game(name=f'{shard.id + 1} | {short_prefix}help')
+            await shard.ws.change_presence(game=game)
 
     async def change_game_task(self):
         while True:
@@ -205,8 +195,7 @@ class DogBot(BaseBot):
                         # probably just a hiccup on abal's side
                         logger.warning('Failed to post guild count, ignoring.')
                     else:
-                        logger.info('Posted guild count successfully!'
-                                    ' (%d guilds)', guilds)
+                        logger.info('Posted guild count successfully! (%d guilds)', guilds)
                 await asyncio.sleep(60 * 10)  # only report every 10 minutes
 
         if not self.report_task:
