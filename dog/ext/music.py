@@ -361,8 +361,12 @@ class Music(Cog):
             coro = ctx.send('**Next up!** {0.info[title]} (<{0.info[webpage_url]}>)'.format(next_up.original))
             fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
             fut.result()
-        
-        ctx.guild.voice_client.play(next_up, after=lambda e: self.advance(ctx, e))
+
+        try:
+            ctx.guild.voice_client.play(next_up, after=lambda e: self.advance(ctx, e))
+        except AttributeError:
+            # probably got kicked /shrug
+            logger.warning('Unable to play, probably got kicked from the channel. Ignoring.')
         self.queues[ctx.guild.id] = queue
 
     async def _play(self, ctx, url, *, search=False):
