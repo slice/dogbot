@@ -32,18 +32,39 @@ class RawMember(commands.Converter):
                 raise commands.BadArgument('Invalid member ID. I also couldn\'t find the user by username.')
 
 
+SAFE_IMAGE_HOSTS = ('https://i.imgur.com', 'https://cdn.discordapp.com', 'https://images.discordapp.net',
+                    'https://i.redd.it')
+
+
+async def _get_recent_image(channel):
+    async for msg in channel.history(limit=25):
+        for attachment in msg.attachments:
+            # return url for image
+            if attachment.height:
+                return attachment.proxy_url
+
+
 class ImageSourceConverter(commands.Converter):
     async def convert(self, ctx, argument):
+        # scan channel
+        if argument == 'recent':
+            result = await _get_recent_image(ctx.channel)
+            if not result:
+                raise commands.BadArgument('No recent image attachment was found in this channel.')
+            return result
+
         try:
+            # resolve avatar
             memb = await MemberConverter().convert(ctx, argument)
             return memb.avatar_url_as(format='png')
         except commands.BadArgument:
-            safe_urls = ('https://i.imgur.com', 'https://cdn.discordapp.com', 'https://images.discordapp.net',
-                         'https://i.redd.it')
-            if any(argument.startswith(safe_url) for safe_url in safe_urls):
+            # ok image
+            if any(argument.startswith(safe_url) for safe_url in SAFE_IMAGE_HOSTS):
                 return argument
-            raise commands.BadArgument('Invalid image URL or user. Valid image URLs: ' + ', '.join(f'`{url}`' for url
-                                                                                                   in safe_urls))
+
+            # lol wtf
+            err = 'Invalid image URL or user. Valid image hosts: ' + ','.join(f'`{url}`' for url in SAFE_IMAGE_HOSTS)
+            raise commands.BadArgument(err)
 
 
 class HumanTime(commands.Converter):
