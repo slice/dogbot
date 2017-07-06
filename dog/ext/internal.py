@@ -45,18 +45,8 @@ class Internal(Cog):
     @commands.command()
     async def dstats(self, ctx):
         """ Shows detailed stats. """
-        desc = """{0} (`{1}`, <@{1}>)\nCreated: {2}""".format(
-            ctx.bot.user, ctx.bot.user.id, ctx.bot.user.created_at)
-        embed = discord.Embed(title='Detailed stats', description=desc)
-
-        skt_events = f'{utils.commas(self.socket_events)} total\nSequence: {utils.commas(ctx.bot.ws.sequence)}'
-        embed.add_field(name='Socket Events', value=skt_events)
-
-        # log file
-        log_size = os.path.getsize('dog.log')
-        kb = log_size / 10 ** 3
-        mb = log_size / 10 ** 6
-        embed.add_field(name='Log File', value=f'{log_size} bytes\n{round(kb, 2)} KB, {round(mb, 2)} MB')
+        desc = """{0} (`{1}`, <@{1}>)\nCreated: {2}""".format(ctx.bot.user, ctx.bot.user.id, ctx.bot.user.created_at)
+        embed = discord.Embed(title='Detailed stats', description=desc, color=discord.Color.blurple())
 
         # ram
         process = psutil.Process(os.getpid())
