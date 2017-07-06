@@ -26,8 +26,8 @@ class VideositeCensorshipFilter(ReCensorshipFilter):
 media_types = ('png', 'webp', 'jpg', 'jpeg', 'gif', 'gifv', 'tif', 'tiff', 'webm', 'mp4', 'mkv', 'mov', 'avi', 'ogg',
                'ogv', 'wmv')
 
-executable_types = ('exe', 'scr', 'app', 'sh', 'terminal', 'pif', 'application', 'com', 'hta', 'cpl', 'msc', 'jar',
-                    'bat', 'cmd', 'vb', 'vbs', 'vbe', 'js', 'jse', 'ws', 'wsf', 'wsc', 'wsh', 'ps1', 'ps1xml', 'ps2',
+executable_types = ('exe', 'scr', 'app', 'sh', 'terminal', 'pif', 'application', 'hta', 'cpl', 'msc', 'jar', 'bat',
+                    'cmd', 'vb', 'vbs', 'vbe', 'js', 'jse', 'ws', 'wsf', 'wsc', 'wsh', 'ps1', 'ps1xml', 'ps2',
                     'ps2xml', 'psc1', 'psc2', 'msh', 'msh1', 'msh2', 'mshxml', 'msh1xml', 'msh2xml', 'lnk', 'inf',
                     'scf', 'reg')
 
