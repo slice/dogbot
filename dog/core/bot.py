@@ -37,7 +37,6 @@ class DogBot(BaseBot):
 
         # tasks
         self.report_task = None
-        self.rotate_game_task = None
 
         # list of extensions to reload (this means that new extensions are not picked up)
         # this is here so we can d?reload even if an syntax error occurs and it won't be present
@@ -78,7 +77,6 @@ class DogBot(BaseBot):
         # cancel tasks
         if self.report_task:
             self.report_task.cancel()
-        self.rotate_game_task.cancel()
         await super().close()
 
     async def command_is_disabled(self, guild: discord.Guild, command_name: str):
@@ -136,16 +134,11 @@ class DogBot(BaseBot):
             logger.warning('Couldn\'t post to modlog for guild %d. No permissions.', guild.id)
             pass
 
-    async def rotate_game(self):
+    async def set_playing_statuses(self):
         short_prefix = min(cfg.prefixes, key=len)
         for shard in self.shards.values():
             game = discord.Game(name=f'{shard.id + 1} | {short_prefix}help')
             await shard.ws.change_presence(game=game)
-
-    async def change_game_task(self):
-        while True:
-            await self.rotate_game()
-            await asyncio.sleep(60 * 10)
 
     async def on_member_ban(self, guild, user):
         if await self.config_is_set(guild, 'pollr_announce'):
@@ -201,9 +194,8 @@ class DogBot(BaseBot):
         if not self.report_task:
             logger.info('Creating bots.discord.pw task')
             self.report_task = self.loop.create_task(report_guilds_task())
-        if not self.rotate_game_task:
-            logger.info('Creating game rotater task')
-            self.rotate_game_task = self.loop.create_task(self.change_game_task())
+
+        await self.set_playing_statuses()
 
     async def monitor_send(self, *args, **kwargs):
         """
