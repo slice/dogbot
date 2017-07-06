@@ -11,6 +11,7 @@ import asyncpg
 from discord.ext import commands
 
 from dog.core.context import DogbotContext
+from dog.core.helpformatter import DogbotHelpFormatter
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ class ReloadableBot(commands.AutoShardedBot):
 
 class BaseBot(ReloadableBot):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs, formatter=DogbotHelpFormatter())
 
         # aiohttp session used for fetching data
         self.session = aiohttp.ClientSession(loop=self.loop)
