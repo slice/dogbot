@@ -322,7 +322,7 @@ class Music(Cog):
             ctx.guild.voice_client.source.original.info
         await ctx.send('**Now playing:** {0[title]} {0[webpage_url]}'.format(src))
 
-    @music.command()
+    @music.command(aliases=['unpause'])
     @commands.check(must_be_in_voice)
     async def resume(self, ctx):
         """ Resumes the music. """
