@@ -56,7 +56,7 @@ class Internal(Cog):
         avail = round(vmem.available / 10 ** 9, 3)
         mem_gb = round(mem.rss / 10 ** 9, 2)
         mem_mb = round(mem.rss / 10 ** 6, 2)
-        ttl = f'Using {round(mem_gb / total, 2)}% of total RAM'
+        ttl = f'Using {round(mem_gb / total * 100, 2)}% of total RAM'
         embed.add_field(name='RAM', value=f'{avail} GB/{total} GB total\n{mem_mb} MB, {mem_gb} GB\n{ttl}')
 
         # owner
