@@ -7,6 +7,7 @@ import logging
 import random
 
 import discord
+import functools
 import youtube_dl
 from discord.ext import commands
 
@@ -14,6 +15,7 @@ from dog import Cog
 from dog.core import checks
 from dog.core.errors import MustBeInVoice
 
+TIMEOUT = 60 * 4  # 4 minutes
 VIDEO_DURATION_LIMIT = 420  # 7 minutes
 
 logger = logging.getLogger(__name__)
@@ -23,35 +25,47 @@ YTDL_OPTS = {
     'prefer_ffmpeg': True
 }
 
+ytdl = youtube_dl.YoutubeDL(YTDL_OPTS)
+
 SEARCHING_TEXT = (
     'Beep boop...',
-    'Travelling the interwebs...',
-    'Hold up...',
     'Searching...',
     'Just a sec...'
 )
+
+FFMPEG_OPTIONS = {
+    'before_options': '-nostdin',
+    'options': '-vn'  # disable video
+}
 
 
 class YouTubeError(commands.CommandError):
     pass
 
 
-class YouTubeDLSource(discord.FFmpegPCMAudio):
-    def __init__(self, url):
-        ytdl = youtube_dl.YoutubeDL(YTDL_OPTS)
-        info = ytdl.extract_info(url, download=False)
+class YouTubeDLSource(discord.PCMVolumeTransformer):
+    def __init__(self, source, info):
+        super().__init__(source, 1.0)
+        self.info = info
+        self.title = info.get('title')
+        self.url = info.get('url')
 
+    @classmethod
+    async def create(cls, url, *, loop=None):
+        loop = loop or asyncio.get_event_loop()
+
+        info = await loop.run_in_executor(None, functools.partial(ytdl.extract_info, url, download=False))
+
+        # grab the first entry in the playlist
         if '_type' in info and info['_type'] == 'playlist':
             info = info['entries'][0]
 
+        # check if it's too long
         if info['duration'] >= VIDEO_DURATION_LIMIT:
             min = VIDEO_DURATION_LIMIT / 60
             raise YouTubeError('That video is too long! The maximum video duration is **{} minutes**.'.format(min))
 
-        self.url = url
-        self.info = info
-
-        super().__init__(info['url'])
+        return cls(discord.FFmpegPCMAudio(info['url'], **FFMPEG_OPTIONS), info)
 
 
 async def youtube_search(bot, query: str) -> 'List[Dict[Any, Any]]':
@@ -116,7 +130,7 @@ class Music(Cog):
                 logger.debug('Automatically pausing stream.')
                 vc.pause()
             async def leave():
-                await asyncio.sleep(5 * 60)  # 5 minutes
+                await asyncio.sleep(TIMEOUT)  # 5 minutes
                 if vc.is_connected():
                     # XXX: have to unpause before disconnecting or else ffmpeg never dies
                     if vc.is_paused():
@@ -198,12 +212,12 @@ class Music(Cog):
             return await ctx.send('Play something first!')
 
         if not enabled:
-            title = ctx.guild.voice_client.source.original.info['title']
+            title = ctx.guild.voice_client.source.info['title']
             await ctx.send('Okay. I\'ll loop **{title}** from now on, until you run `d?m loop` again.'.format(
                 title=title))
 
             async with self.looping_lock:
-                self.looping[ctx.guild.id] = ctx.guild.voice_client.source.original.info
+                self.looping[ctx.guild.id] = ctx.guild.voice_client.source.info
             logger.debug('Enabled looping for guild %d.', ctx.guild.id)
         else:
             await ctx.send('Alright, I turned off looping.')
@@ -235,7 +249,7 @@ class Music(Cog):
             # get the next song, say it
             queue = self.queues.get(ctx.guild.id, [])
             if queue:
-                await ctx.send('Skipping...! I\'ll play **{0.info[title]}** next.'.format(queue[0].original))
+                await ctx.send('Skipping...! I\'ll play **{0.title}** next.'.format(queue[0]))
             else:
                 await ctx.send('Skipping!')
 
@@ -327,7 +341,7 @@ class Music(Cog):
         if not ctx.guild.voice_client.is_playing():
             return await ctx.send('Nothing\'s playing at the moment.')
         src = self.looping[ctx.guild.id] if ctx.guild.id in self.looping else \
-            ctx.guild.voice_client.source.original.info
+            ctx.guild.voice_client.source.info
 
         minutes, seconds = divmod(src['duration'], 60)
         await ctx.send('**Now playing:** {0[title]} {0[webpage_url]} ({1:02d}:{2:02d})'.format(src, minutes, seconds))
@@ -350,7 +364,7 @@ class Music(Cog):
         queue = self.queues.get(ctx.guild.id, [])
         looping = ctx.guild.id in self.looping
 
-        logger.debug('Advancing to the next song. Queue: %s', [s.original.url for s in queue])
+        logger.debug('Advancing to the next song. Queue: %s', [s.url for s in queue])
 
         if not queue and not looping:
             logger.debug('Queue is empty. Just going to sit here.')
@@ -368,7 +382,7 @@ class Music(Cog):
 
         # send message
         if not looping:
-            coro = ctx.send('**Next up!** {0.info[title]} (<{0.info[webpage_url]}>)'.format(next_up.original))
+            coro = ctx.send('**Next up!** {0.title} (<{0.info[webpage_url]}>)'.format(next_up))
             fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
             fut.result()
 
@@ -385,15 +399,13 @@ class Music(Cog):
         # grab
         url = 'ytsearch:' + url if search else url
         try:
-            source = await ctx.bot.loop.run_in_executor(None, YouTubeDLSource, url)
+            source = await YouTubeDLSource.create(url, loop=ctx.bot.loop)
         except youtube_dl.DownloadError:
             return await msg.edit(content='\U0001f4ed YouTube gave me nothin\'.')
         except YouTubeError as yterr:
             return await msg.edit(content='\N{CROSS MARK} {}'.format(yterr))
 
-        # make it adjustable
-        source = discord.PCMVolumeTransformer(source, 1.0)
-        disp = '**{}**'.format(source.original.info['title'])
+        disp = '**{}**'.format(source.title)
 
         if not ctx.guild.voice_client.is_playing():
             # play immediately since we're not playing anything
@@ -413,7 +425,7 @@ class Music(Cog):
             await ctx.send('\N{SPIDER WEB} Queue is empty.')
         else:
             header = 'There are **{many}** item(s) in the queue. Run `d?m np` to view the currently playing song.\n\n'
-            format = '{index}) {source.original.info[title]} (<{source.original.info[webpage_url]}>)'
+            format = '{index}) {source.title} (<{source.info[webpage_url]}>)'
             lst = '\n'.join([format.format(index=index + 1, source=source) for index, source in enumerate(queue)])
             await ctx.send(header.format(many=len(queue)) + lst)
 
