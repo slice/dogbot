@@ -328,7 +328,9 @@ class Music(Cog):
             return await ctx.send('Nothing\'s playing at the moment.')
         src = self.looping[ctx.guild.id] if ctx.guild.id in self.looping else \
             ctx.guild.voice_client.source.original.info
-        await ctx.send('**Now playing:** {0[title]} {0[webpage_url]}'.format(src))
+
+        minutes, seconds = divmod(src['duration'], 60)
+        await ctx.send('**Now playing:** {0[title]} {0[webpage_url]} ({1:02d}:{2:02d})'.format(src, minutes, seconds))
 
     @music.command(aliases=['unpause'])
     @commands.check(must_be_in_voice)
