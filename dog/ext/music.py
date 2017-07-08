@@ -22,7 +22,9 @@ logger = logging.getLogger(__name__)
 
 YTDL_OPTS = {
     'format': 'webm[abr>0]/bestaudio/best',
-    'prefer_ffmpeg': True
+    'prefer_ffmpeg': True,
+    'noplaylist': True,
+    'nocheckcertificate': True
 }
 
 ytdl = youtube_dl.YoutubeDL(YTDL_OPTS)
