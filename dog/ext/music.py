@@ -14,6 +14,8 @@ from dog import Cog
 from dog.core import checks
 from dog.core.errors import MustBeInVoice
 
+VIDEO_DURATION_LIMIT = 420  # 7 minutes
+
 logger = logging.getLogger(__name__)
 
 YTDL_OPTS = {
@@ -30,6 +32,10 @@ SEARCHING_TEXT = (
 )
 
 
+class YouTubeError(commands.CommandError):
+    pass
+
+
 class YouTubeDLSource(discord.FFmpegPCMAudio):
     def __init__(self, url):
         ytdl = youtube_dl.YoutubeDL(YTDL_OPTS)
@@ -37,6 +43,10 @@ class YouTubeDLSource(discord.FFmpegPCMAudio):
 
         if '_type' in info and info['_type'] == 'playlist':
             info = info['entries'][0]
+
+        if info['duration'] >= VIDEO_DURATION_LIMIT:
+            min = VIDEO_DURATION_LIMIT / 60
+            raise YouTubeError('That video is too long! The maximum video duration is **{} minutes**.'.format(min))
 
         self.url = url
         self.info = info
@@ -376,6 +386,8 @@ class Music(Cog):
             source = await ctx.bot.loop.run_in_executor(None, YouTubeDLSource, url)
         except youtube_dl.DownloadError:
             return await msg.edit(content='\U0001f4ed YouTube gave me nothin\'.')
+        except YouTubeError as yterr:
+            return await msg.edit(content='\N{CROSS MARK} {}'.format(yterr))
 
         # make it adjustable
         source = discord.PCMVolumeTransformer(source, 1.0)
