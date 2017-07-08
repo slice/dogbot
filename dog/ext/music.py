@@ -56,7 +56,13 @@ class YouTubeDLSource(discord.PCMVolumeTransformer):
     async def create(cls, url, *, loop=None):
         loop = loop or asyncio.get_event_loop()
 
-        info = await loop.run_in_executor(None, functools.partial(ytdl.extract_info, url, download=False))
+        future = loop.run_in_executor(None, functools.partial(ytdl.extract_info, url, download=False))
+        # the extract_info call won't stop but w/e
+        try:
+            info = await asyncio.wait_for(future, 7, loop=loop)
+        except asyncio.TimeoutError:
+            raise YouTubeError('That took too long to fetch! Make sure you aren\'t playing playlists \N{EM DASH} '
+                               'those take too long to process!')
 
         # grab the first entry in the playlist
         if '_type' in info and info['_type'] == 'playlist':
