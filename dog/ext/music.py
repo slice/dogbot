@@ -156,8 +156,14 @@ class Music(Cog):
             return await msg.edit(content='\N{CONFUSED FACE} I\'m already connected!')
         if ctx.author.voice is None:
             return await msg.edit(content='\N{CONFUSED FACE} I can\'t join you if you aren\'t in a voice channel!')
+
+        ch = ctx.author.voice.channel
+
+        if not ctx.guild.me.permissions_in(ch).connect:
+            return await msg.edit(content='\N{LOCK} I can\'t connect to that channel.')
+
         try:
-            await ctx.author.voice.channel.connect()
+            await ch.connect()
         except asyncio.TimeoutError:
             await msg.edit(content='\N{ALARM CLOCK} Couldn\'t connect, I took too long to reach Discord\'s servers.')
             logger.warning('Timed out while connecting to Discord\'s voice servers.')
