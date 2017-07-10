@@ -402,4 +402,4 @@ class DogBot(BaseBot):
 
 class DogSelfbot(BaseBot, Selfbot):
     def __init__(self, *args, **kwargs):
-        super().__init__(command_prefix='self.', *args, **kwargs)
+        super().__init__(command_prefix='hey selfbot, ', *args, **kwargs)
