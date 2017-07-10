@@ -1,13 +1,16 @@
-from collections import namedtuple
-
-import asyncio
-import discord
-import re
-
 import logging
+import re
+from collections import namedtuple
+from io import BytesIO
+from zipfile import ZipFile
+
+import discord
 from discord.ext import commands
+from PIL import Image
 
 from dog import Cog
+from dog.core import converters
+from dog.core.utils import get_bytesio
 
 logger = logging.getLogger(__name__)
 emoji_re = re.compile(r'<:([^ ]+):(\d+)>')
@@ -33,6 +36,46 @@ class Steal(Cog):
                 continue
             emotes += [CustomEmoji(*match) for match in matches]
         return list(set(emotes))
+
+    @commands.command()
+    async def rip(self, ctx, where: converters.Guild):
+        """ Rips all of the emoji from a guild. """
+        # calculate how many rows we need
+        rows = round(len(where.emojis) / 10)
+
+        # create the preview image and zip file
+        im = Image.new('RGBA', (32 * 10, 32 * rows))
+        zip = ZipFile(f'{where.id}.zip', 'w')
+
+        for index, emoji in enumerate(where.emojis):
+            # fetch the emoji
+            emoji_bio = await get_bytesio(ctx.bot.session, f'https://cdn.discordapp.com/emojis/{emoji.id}.png')
+
+            # write it to the zip
+            zip.writestr(f'{emoji.name}-{emoji.id}.png', emoji_bio.read())
+            emoji_bio.seek(0)
+
+            # open the emoji
+            emoji_image = Image.open(emoji_bio).convert('RGBA').resize((32, 32), Image.BICUBIC)
+
+            # composite the emoji into the preview image
+            row = int(index / 10) * 32
+            col = (index % 10) * 32
+            im.paste(emoji_image, (col, row))
+
+            # close
+            emoji_bio.close()
+            emoji_image.close()
+
+        # send the preview image
+        with BytesIO() as bio:
+            await ctx.bot.loop.run_in_executor(None, im.save, bio, 'png')
+            bio.seek(0)
+            await ctx.send(file=discord.File(bio, f'emoji-{where.id}.png'))
+
+        # close zip and send it
+        zip.close()
+        await ctx.send(file=discord.File(f'{where.id}.zip'))
 
     @commands.group(aliases=['stealemoji', 'se'], invoke_without_command=True)
     async def stealemote(self, ctx):
