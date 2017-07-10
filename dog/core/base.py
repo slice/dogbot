@@ -115,6 +115,9 @@ class BaseBot(ReloadableBot):
         if msg.author.bot:
             return
 
+        # wait until ready before processing any messages
+        await self.wait_until_ready()
+
         ctx = await self.get_context(msg, cls=DogbotContext)
         await self.invoke(ctx)
 
