@@ -4,6 +4,9 @@ dog_config.production.py
 *.log
 dog_blocked.json
 
+# rips
+*.zip
+
 # docs
 documentation/build
 
