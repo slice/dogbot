@@ -59,7 +59,7 @@ class YouTubeDLSource(discord.PCMVolumeTransformer):
         future = loop.run_in_executor(None, functools.partial(ytdl.extract_info, url, download=False))
         # the extract_info call won't stop but w/e
         try:
-            info = await asyncio.wait_for(future, 7, loop=loop)
+            info = await asyncio.wait_for(future, 12, loop=loop)
         except asyncio.TimeoutError:
             raise YouTubeError('That took too long to fetch! Make sure you aren\'t playing playlists \N{EM DASH} '
                                'those take too long to process!')
@@ -76,7 +76,7 @@ class YouTubeDLSource(discord.PCMVolumeTransformer):
         return cls(discord.FFmpegPCMAudio(info['url'], **FFMPEG_OPTIONS), info)
 
 
-async def youtube_search(bot, query: str) -> 'List[Dict[Any, Any]]':
+async def youtube_search(bot, query):
     """
     Searches YouTube for videos. Returns a list of :class:`YouTubeResult`.
     """
@@ -109,16 +109,99 @@ def required_votes(number_of_people: int) -> int:
     return max(round(number_of_people / 2.5), 1)
 
 
+class State:
+    def __init__(self, guild: discord.Guild):
+        self.guild: discord.Guild = guild
+
+        self.looping = False
+        self.to_loop = None
+
+        # list of user IDs that have voted to skip
+        self.skip_votes = []
+        self.queue = []
+
+    def advance(self, error=None):
+        # uh oh
+        if error is not None:
+            logger.error('State.advance() threw an exception. %s', error)
+
+        # if we are looping and have a song to loop, don't pop the queue. instead, make a ffmpeg source
+        # and play that.
+        if self.looping and self.to_loop:
+            logger.debug('Bypassing State.advance() logic, looping %s.', self.to_loop['url'])
+            self.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(self.to_loop['url'])))
+            return
+
+        # out of sources in the queue -- oh well.
+        if not self.queue:
+            logger.debug('Out of queue items.')
+            return
+
+        # get the latest source in the queue, then play it.
+        next_up = self.queue.pop(0)
+        self.play(next_up)
+
+    @property
+    def vc(self):
+        return self.guild.voice_client
+
+    @property
+    def channel(self):
+        """ Returns the channel that I am playing music in. """
+        return self.vc.channel
+
+    @property
+    def connected(self):
+        """ Returns whether I am connected to voice chat. """
+        return self.vc and self.vc.is_connected()
+
+    def skip(self):
+        if not self.vc:
+            raise RuntimeError('Cannot State.skip() -- no voice client!')
+
+        # clear the amount of skip votes
+        self.skip_votes = []
+
+        self.vc.stop()
+
+    def play(self, source):
+        # hm, we got kicked from voice?
+        if not self.vc:
+            logger.debug('Cannot State.play() -- we might have gotten kicked from voice.')
+            return
+
+        # if we got a youtube source, make sure to make this the url to loop, if we're looping
+        if isinstance(source, YouTubeDLSource):
+            logger.debug('Setting to-loop information.')
+            self.to_loop = source.info
+
+        self.vc.play(source, after=lambda e: self.advance(e))
+
+    def pause(self):
+        self.vc.pause()
+
+    def is_playing(self):
+        return self.vc and self.vc.is_playing()
+
+    def is_paused(self):
+        return self.vc and self.vc.is_paused()
+
+    def resume(self):
+        self.vc.resume()
+
+
 class Music(Cog):
     def __init__(self, bot):
         super().__init__(bot)
 
-        self.queues = {}
-        self.skip_votes = {}
+        self.states = {}
         self.leave_tasks = {}
 
-        self.looping_lock = asyncio.Lock()
-        self.looping = {}
+    def state_for(self, guild: discord.Guild):
+        """ Returns a State instance for a guild. If one does not exist, it is created. """
+        if guild.id not in self.states:
+            self.states[guild.id] = State(guild)
+        return self.states[guild.id]
 
     async def __error(self, ctx, err):
         if isinstance(err, MustBeInVoice):
@@ -184,17 +267,23 @@ class Music(Cog):
     async def join(self, ctx):
         """ Summons the bot to your voice channel. """
         msg = await ctx.send('\N{RUNNER} Connecting to voice...')
-        if ctx.guild.voice_client is not None and ctx.guild.voice_client.is_connected():
-            return await msg.edit(content='\N{CONFUSED FACE} I\'m already connected!')
+
+        state = self.state_for(ctx.guild)
+        if state.connected:
+            return await msg.edit(content='I\'m already playing music in `{}`.'.format(state.channel))
+
+        # can't join if we aren't in a voice channel.
         if ctx.author.voice is None:
-            return await msg.edit(content='\N{CONFUSED FACE} I can\'t join you if you aren\'t in a voice channel!')
+            return await msg.edit(content='I can\'t join you if you aren\'t in a voice channel.')
 
         ch = ctx.author.voice.channel
 
+        # check if we can join that channel.
         if not ctx.guild.me.permissions_in(ch).connect:
             return await msg.edit(content='\N{LOCK} I can\'t connect to that channel.')
 
         try:
+            logger.debug('Connecting to %s.', ch)
             await ch.connect()
         except asyncio.TimeoutError:
             await msg.edit(content='\N{ALARM CLOCK} Couldn\'t connect, I took too long to reach Discord\'s servers.')
@@ -214,25 +303,16 @@ class Music(Cog):
 
         Only Dogbot Moderators can do this.
         """
-        enabled = ctx.guild.id in self.looping
+        state = self.state_for(ctx.guild)
 
-        if not ctx.guild.voice_client.is_playing():
-            return await ctx.send('Play something first!')
-
-        if not enabled or isinstance(ctx.guild.voice_client.source, discord.PCMVolumeTransformer):
-            title = ctx.guild.voice_client.source.info['title']
-            await ctx.send('Okay. I\'ll loop **{title}** from now on, until you run `d?m loop` again.'.format(
-                title=title))
-
-            async with self.looping_lock:
-                self.looping[ctx.guild.id] = ctx.guild.voice_client.source.info
+        if not state.looping:
+            await ctx.send('Okay. I\'ll repeat songs once they finish playing.')
+            state.looping = True
             logger.debug('Enabled looping for guild %d.', ctx.guild.id)
         else:
-            await ctx.send('Alright, I turned off looping.')
-            if ctx.guild.id in self.looping:
-                async with self.looping_lock:
-                    del self.looping[ctx.guild.id]
-                logger.debug('Disabled looping for guild %d.', ctx.guild.id)
+            await ctx.send('Okay, I turned off looping. The queue will proceed as normal.')
+            state.looping = False
+            logger.debug('Disabled looping for guild %d.', ctx.guild.id)
 
     @music.command()
     @commands.check(must_be_in_voice)
@@ -247,63 +327,55 @@ class Music(Cog):
         If you are a Dogbot Moderator, the song is skipped instantly.
         """
 
-        if not ctx.guild.voice_client.is_playing():
+        state = self.state_for(ctx.guild)
+
+        if not state.is_playing():
             return await ctx.send('I\'m not playing anything at the moment.')
-
-        async def insta_skip():
-            # clear voteskips
-            self.skip_votes[ctx.guild.id] = []
-
-            # get the next song, say it
-            queue = self.queues.get(ctx.guild.id, [])
-            if queue:
-                await ctx.send('Skipping...! I\'ll play **{0.title}** next.'.format(queue[0]))
-            else:
-                await ctx.send('Skipping!')
-
-            # stop!!!
-            ctx.guild.voice_client.stop()
 
         if checks.is_dogbot_moderator(ctx):
             logger.debug('Instantly skipping.')
-            await insta_skip()
-        else:
-            existing_votes = self.skip_votes.get(ctx.guild.id, [])  # votes we already have
-            voice_members = len(ctx.guild.voice_client.channel.members)  # how many people in the channel?
-            votes_with_this_one = len(existing_votes) + 1  # votes with this one counted
-            required = required_votes(voice_members)  # how many votes do we need?
+            state.skip()
+            return
 
-            # recalculate amount of users it takes to vote, not counting this vote.
-            # (just in case someone left the channel)
-            if len(existing_votes) >= required:
-                logger.debug('Voteskip: Recalculated. Skipping. %d/%d', len(existing_votes), required)
-                return await insta_skip()
+        state = self.state_for(ctx.guild)
+        existing_votes = state.skip_votes
+        voice_members = len(state.channel.members)  # how many people in the channel?
+        votes_with_this_one = len(existing_votes) + 1  # votes with this one counted
+        required = required_votes(voice_members)  # how many votes do we need?
 
-            # check if they already voted
-            if ctx.author.id in existing_votes:
-                return await ctx.send('You already voted to skip. **{}** more vote(s) needed to skip.'.format(required -
-                                      len(existing_votes)))
+        # recalculate amount of users it takes to vote, not counting this vote.
+        # (just in case someone left the channel)
+        if len(existing_votes) >= required:
+            logger.debug('Voteskip: Recalculated. Skipping. %d/%d', len(existing_votes), required)
+            state.skip()
+            return
 
-            # ok, their vote counts. now check if we surpass required votes with this vote!
-            if votes_with_this_one >= required:
-                logger.debug('Voteskip: Fresh vote! Skipping. %d/%d', votes_with_this_one, required)
-                return await insta_skip()
+        # check if they already voted
+        if ctx.author.id in existing_votes:
+            return await ctx.send('You already voted to skip. **{}** more vote(s) needed to skip.'.format(required -
+                                  len(existing_votes)))
 
-            # add the vote
-            self.skip_votes[ctx.guild.id] = existing_votes + [ctx.author.id]
+        # ok, their vote counts. now check if we surpass required votes with this vote!
+        if votes_with_this_one >= required:
+            logger.debug('Voteskip: Fresh vote! Skipping. %d/%d', votes_with_this_one, required)
+            state.skip()
+            return
 
-            # how many more?
-            more_votes = required - votes_with_this_one
-            await ctx.send('Your request to skip this song has been acknowledged. **{}** more vote(s) to '
-                           'skip.'.format(more_votes))
+        # add the vote
+        state.skip_votes.append(ctx.author.id)
 
-            logger.debug('Voteskip: Now at %d/%d (%d more needed to skip.)', votes_with_this_one, required, more_votes)
+        # how many more?
+        more_votes = required - votes_with_this_one
+        await ctx.send('Your request to skip this song has been acknowledged. **{}** more vote(s) to '
+                       'skip.'.format(more_votes))
+
+        logger.debug('Voteskip: Now at %d/%d (%d more needed to skip.)', votes_with_this_one, required, more_votes)
 
     @music.command()
     @commands.check(must_be_in_voice)
     async def stop(self, ctx):
         """ Stops playing music and empties the queue. """
-        self.queues[ctx.guild.id] = []
+        self.state_for(ctx.guild).queue = []
         ctx.guild.voice_client.stop()
         await ctx.ok('\N{BLACK SQUARE FOR STOP}')
 
@@ -348,8 +420,9 @@ class Music(Cog):
         """ Shows what's playing. """
         if not ctx.guild.voice_client.is_playing():
             return await ctx.send('Nothing\'s playing at the moment.')
-        src = self.looping[ctx.guild.id] if ctx.guild.id in self.looping else \
-            ctx.guild.voice_client.source.info
+
+        state = self.state_for(ctx.guild)
+        src = state.to_loop if isinstance(state.vc.source, discord.PCMVolumeTransformer) else state.vc.source.info
 
         minutes, seconds = divmod(src['duration'], 60)
         await ctx.send('**Now playing:** {0[title]} {0[webpage_url]} ({1:02d}:{2:02d})'.format(src, minutes, seconds))
@@ -361,50 +434,10 @@ class Music(Cog):
         ctx.guild.voice_client.resume()
         await ctx.ok('\N{BLACK RIGHT-POINTING TRIANGLE}')
 
-    def advance(self, ctx: commands.Context, error):
-        if error:
-            print(error)
-
-        logger.debug('Clearing voteskips for %d.', ctx.guild.id)
-        # clear voteskips
-        self.skip_votes[ctx.guild.id] = []
-
-        queue = self.queues.get(ctx.guild.id, [])
-        looping = ctx.guild.id in self.looping
-
-        logger.debug('Advancing to the next song. Queue: %s', [s.url for s in queue])
-
-        if not queue and not looping:
-            logger.debug('Queue is empty. Just going to sit here.')
-            return
-
-        if looping:
-            logger.debug('Looping has been enabled, taking the saved URL.')
-            src = self.looping[ctx.guild.id]['url']
-            logger.debug('Looping %s.', src)
-            next_up = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(src))
-        else:
-            logger.debug('Popping queue.')
-            next_up = queue.pop(0)
-            logger.debug('Next up! %s', next_up)
-
-        # send message
-        if not looping:
-            coro = ctx.send('**Next up!** {0.title} (<{0.info[webpage_url]}>)'.format(next_up))
-            fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
-            fut.result()
-
-        try:
-            ctx.guild.voice_client.play(next_up, after=lambda e: self.advance(ctx, e))
-        except AttributeError:
-            # probably got kicked /shrug
-            logger.warning('Unable to play, probably got kicked from the channel. Ignoring.')
-        self.queues[ctx.guild.id] = queue
-
     async def _play(self, ctx, url, *, search=False):
         msg = await ctx.send(f'\N{INBOX TRAY} {random.choice(SEARCHING_TEXT)}')
 
-        # grab
+        # grab the source
         url = 'ytsearch:' + url if search else url
         try:
             source = await YouTubeDLSource.create(url, loop=ctx.bot.loop)
@@ -415,20 +448,23 @@ class Music(Cog):
 
         disp = '**{}**'.format(source.title)
 
-        if not ctx.guild.voice_client.is_playing():
-            # play immediately since we're not playing anything
-            ctx.guild.voice_client.play(source, after=lambda e: self.advance(ctx, e))
-            await msg.edit(content=f'\N{MULTIPLE MUSICAL NOTES} Playing {disp}!')
-        else:
+        state = self.state_for(ctx.guild)
+
+        if state.is_playing():
             # add it to the queue
-            self.queues[ctx.guild.id] = self.queues.get(ctx.guild.id, []) + [source]
+            logger.debug('Adding to queue, because we\'re already playing.')
+            state.queue.append(source)
             await msg.edit(content=f'\N{LINKED PAPERCLIPS} Added {disp} to queue.')
+        else:
+            # play immediately since we're not playing anything
+            logger.debug('Playing immediately, we\'re not playing.')
+            state.play(source)
+            await msg.edit(content=f'\N{MULTIPLE MUSICAL NOTES} Playing {disp}!')
 
     @music.command()
     async def queue(self, ctx):
         """ Views the queue. """
-        queue = self.queues.get(ctx.guild.id, [])
-
+        queue = self.state_for(ctx.guild).queue
         if not queue:
             await ctx.send('\N{SPIDER WEB} Queue is empty.')
         else:
@@ -436,14 +472,6 @@ class Music(Cog):
             format = '{index}) {source.title} (<{source.info[webpage_url]}>)'
             lst = '\n'.join([format.format(index=index + 1, source=source) for index, source in enumerate(queue)])
             await ctx.send(header.format(many=len(queue)) + lst)
-
-    @music.command()
-    @commands.check(must_be_in_voice)
-    @commands.is_owner()
-    async def multiqueue(self, ctx, *urls):
-        """ Queues multiple URLs. """
-        for url in urls:
-            await self._play(ctx, url)
 
     @music.command(aliases=['p'])
     @commands.check(must_be_in_voice)
