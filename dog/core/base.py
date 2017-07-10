@@ -15,8 +15,10 @@ from dog.core.helpformatter import DogbotHelpFormatter
 
 logger = logging.getLogger(__name__)
 
+__base = commands.Bot if '--selfbot' in ' '.join(sys.argv) else commands.AutoShardedBot
 
-class ReloadableBot(commands.AutoShardedBot):
+
+class ReloadableBot(__base):
     """ A bot subclass that contains utility methods that aid in reloading cogs and extensions, and recursively
     loading extensions. """
     def load_exts_recursively(self, directory: str, prefix: str = 'Recursive load'):
