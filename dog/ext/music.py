@@ -219,7 +219,7 @@ class Music(Cog):
         if not ctx.guild.voice_client.is_playing():
             return await ctx.send('Play something first!')
 
-        if not enabled:
+        if not enabled or isinstance(ctx.guild.voice_client.source, discord.PCMVolumeTransformer):
             title = ctx.guild.voice_client.source.info['title']
             await ctx.send('Okay. I\'ll loop **{title}** from now on, until you run `d?m loop` again.'.format(
                 title=title))
