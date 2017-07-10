@@ -46,7 +46,7 @@
   tasks:
   - name: clone source code
     git:
-      repo: 'https://github.com/sliceofcode/dogbot.git'
+      repo: 'https://github.com/slice/dogbot.git'
       dest: /srv/dog
       force: yes
     notify:

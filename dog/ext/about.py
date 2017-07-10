@@ -34,7 +34,7 @@ class About(Cog):
     @commands.command(aliases=['helpme', 'support'])
     async def wiki(self, ctx):
         """ Need help using Dogbot? """
-        wiki = 'https://github.com/sliceofcode/dogbot/wiki'
+        wiki = 'https://github.com/slice/dogbot/wiki'
         invite = 'https://discord.gg/Ucs96UH'
         await ctx.send(f'Need help with Dogbot? The wiki ({wiki}) has all'
                        f' of your answers! Support server: {invite}')

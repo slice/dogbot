@@ -13,7 +13,7 @@ from discord.ext import commands
 from dog import Cog
 
 log = logging.getLogger(__name__)
-CONFIGKEYS_HELP = '<https://github.com/sliceofcode/dogbot/wiki/Configuration>'
+CONFIGKEYS_HELP = '<https://github.com/slice/dogbot/wiki/Configuration>'
 
 
 class Prefix(commands.Converter):
