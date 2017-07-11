@@ -22,10 +22,6 @@ from dog.core import utils, converters
 logger = logging.getLogger(__name__)
 
 
-class GoogleResult(namedtuple('Google', 'title description url')):
-    """ A result from Google. """
-
-
 async def jisho(session: aiohttp.ClientSession, query: str) -> Dict[Any, Any]:
     """ Searches Jisho, and returns definition data as a `dict`. """
     query_url = utils.urlescape(query)
@@ -38,38 +34,6 @@ async def jisho(session: aiohttp.ClientSession, query: str) -> Dict[Any, Any]:
             return None
 
         return data['data']
-
-
-async def google(session: aiohttp.ClientSession, query: str) -> List[GoogleResult]:
-    """ Searches Google. """
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64)'
-    }
-    params = {
-        'q': query,
-        'safe': 'on'
-    }
-    async with session.get('https://www.google.com/search', params=params, headers=headers) as resp:
-        soup = BeautifulSoup(await resp.text(), 'html.parser')
-
-        def inflate_node(node):
-            a_tag = node.select('h3.r a')
-            if not a_tag:
-                return None
-            a_tag = a_tag[0]
-
-            # the url to the result and the title
-            link, link_text = a_tag['href'], a_tag.string
-
-            description = node.select('.rc .s div .st')
-            if not description:
-                description = None
-            else:
-                description = description[0].text
-            return GoogleResult(url=link, title=link_text, description=description)
-        g_nodes = soup.find_all('div', {'class': 'g'})
-        logger.debug('Found %d google node(s), inflating', len(g_nodes))
-        return list(map(inflate_node, soup.find_all('div', {'class': 'g'})))
 
 
 class Utility(Cog):
@@ -267,26 +231,6 @@ class Utility(Cog):
         except discord.Forbidden:
             pass
         await poll_msg.edit(embed=embed)
-
-    @commands.command(aliases=['goog', 'g'], enabled=False)
-    async def google(self, ctx, *, query: str):
-        """ Searches on Google. """
-        async with ctx.channel.typing():
-            try:
-                results = (await google(self.bot.session, query))[:3]
-
-                if not results:
-                    return await ctx.send('\N{PENSIVE FACE} Google gave me nothing.')
-
-                def formatter(result):
-                    if result is None:
-                        return ''
-                    desc = f' - {result.description}' if result.description else ''
-                    return f'\N{BULLET} **{result.title}**{desc} ({result.url})'
-                results_text = '\n'.join(map(formatter, results))
-                await ctx.send(results_text)
-            except aiohttp.ClientError:
-                await ctx.send('\N{PENSIVE FACE} I couldn\'t contact Google.')
 
     @commands.command()
     async def jisho(self, ctx, *, query: str):
