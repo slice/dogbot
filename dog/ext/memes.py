@@ -141,6 +141,19 @@ class Memes(Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
+    async def drake(self, ctx, yay: converters.ImageSourceConverter, nay: converters.ImageSourceConverter):
+        """ yay, nay """
+        async with ctx.typing():
+            m = Meme('resources/drake.png', ctx)
+            await m.cache(yay, (256, 250))
+            await m.cache(nay, (261, 254))
+            m.paste(yay, (242, 257))
+            m.paste(nay, (241, 0))
+            await m.render('drake.png')
+            m.cleanup()
+
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def youcantjust(self, ctx, *, text: commands.clean_content):
         """ You can't just... """
         async with ctx.typing():
