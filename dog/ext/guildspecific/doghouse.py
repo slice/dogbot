@@ -62,13 +62,6 @@ class Doghouse(Cog):
         await ctx.message.author.remove_roles(get_subbed_role(ctx))
         await ctx.ok()
 
-    @doghouse.command()
-    async def info(self, ctx):
-        """ What's this? """
-        await ctx.send('This command group provides useful utilities '
-                       'to those in the Dogbot Support server! You '
-                       'can run `d?help doghouse`')
-
 
 def setup(bot):
     bot.add_cog(Doghouse(bot))
