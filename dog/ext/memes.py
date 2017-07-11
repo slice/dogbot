@@ -23,6 +23,17 @@ async def download_image(session, url):
     return im
 
 
+async def export_image(ctx, image, filename):
+    with BytesIO() as bio:
+        # export the image
+        coro = ctx.bot.loop.run_in_executor(None, functools.partial(image.save, bio, format='png'))
+        await asyncio.wait([coro], loop=ctx.bot.loop, timeout=5)
+
+        # upload
+        bio.seek(0)
+        await ctx.send(file=discord.File(bio, filename))
+
+
 class Meme:
     def __init__(self, source, ctx, *, text_size=32):
         self.ctx = ctx
@@ -49,14 +60,7 @@ class Meme:
         utils.draw_word_wrap(self.draw, self.font, text, x, y, width)
 
     async def render(self, filename='image.png'):
-        with BytesIO() as bio:
-            # export the image
-            coro = self.ctx.bot.loop.run_in_executor(None, functools.partial(self.source.save, bio, format='png'))
-            await asyncio.wait([coro], loop=self.ctx.bot.loop, timeout=5)
-
-            # upload
-            bio.seek(0)
-            await self.ctx.send(file=discord.File(bio, filename))
+        await export_image(self.ctx, self.source, filename)
 
     def cleanup(self):
         for url, im in self.image_cache.items():
@@ -239,6 +243,21 @@ class Memes(Cog):
         canvas.close()
 
     @commands.command()
+    @commands.cooldown(1, 2, commands.BucketType.user)
+    async def pixelate(self, ctx, image_source: converters.ImageSourceConverter, size: int=15):
+        """ Pixelates something. """
+        if size < 5:
+            await ctx.send('The minimum size is 5.')
+        size = min(size, 25)
+        async with ctx.typing():
+            im: Image = await download_image(ctx.bot.session, image_source)
+            original_size = im.size
+            im = im.resize((size, size), Image.NEAREST)
+            im = im.resize(original_size, Image.NEAREST)
+            await export_image(ctx, im, 'pixelated.png')
+            im.close()
+
+    @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def wacky(self, ctx, image_source: converters.ImageSourceConverter = None):
         """ Applies wacky effects to your avatar. """
@@ -259,22 +278,10 @@ class Memes(Cog):
         enhancer = ImageEnhance.Color(avatar_im)
         avatar_im = await self.bot.loop.run_in_executor(None, enhancer.enhance, 50)
 
-        finished_image = BytesIO()
-        try:
-            await self.bot.loop.run_in_executor(None, functools.partial(avatar_im.save, finished_image, format='png'))
-        except:
-            avatar_bio.close()
-            avatar_im.close()
-            finished_image.close()
-            logger.exception('Wacky processing error.')
-            return await ctx.send('An error has occurred processing your image.')
-
-        finished_image.seek(0)
-        await ctx.send(file=discord.File(finished_image, 'result.png'))
+        await export_image(ctx, avatar_im, 'result.png')
 
         avatar_bio.close()
         avatar_im.close()
-        finished_image.close()
 
 
 def setup(bot):
