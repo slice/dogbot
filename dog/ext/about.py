@@ -36,8 +36,7 @@ class About(Cog):
         """ Need help using Dogbot? """
         wiki = 'https://github.com/slice/dogbot/wiki'
         invite = 'https://discord.gg/Ucs96UH'
-        await ctx.send(f'Need help with Dogbot? The wiki ({wiki}) has all'
-                       f' of your answers! Support server: {invite}')
+        await ctx.send(f'Need help with Dogbot? The wiki ({wiki}) has all of your answers! Support server: {invite}')
 
     @commands.command(hidden=True)
     async def command_list(self, ctx):
@@ -55,17 +54,14 @@ class About(Cog):
 
         birthday = self.bot.user.created_at.strftime('%B %m (born %Y)')
 
-        embed = discord.Embed(
-            title='Dogbot',
+        embed = discord.Embed(title='Dogbot',
             description=f'A handy Discord bot by {self.maker.mention} ({self.maker.id}).')
-        rev_link = (f'[{git_revision}](https://github.com/{github}/commit/'
-                    f'{git_revision})')
+        rev_link = f'[{git_revision}](https://github.com/{github}/commit/{git_revision})'
         embed.add_field(name='Git revision', value=rev_link)
-        embed.add_field(name='GitHub repository',
-                        value='[{0}](https://www.github.com/{0})'.format(github))
+        embed.add_field(name='GitHub repository', value='[{0}](https://www.github.com/{0})'.format(github))
         embed.add_field(name='Birthday', value=birthday)
-        embed.set_author(name=f'{self.maker.name}#{self.maker.discriminator}',
-                         icon_url=self.maker.avatar_url)
+        embed.set_author(name=f'{self.maker.name}#{self.maker.discriminator}', icon_url=self.maker.avatar_url)
+
         pyversion = platform.python_version()
         version = discord.__version__
         embed.set_footer(text='Python {} \N{EM DASH} Discord.py {}'.format(pyversion, version),
@@ -76,8 +72,7 @@ class About(Cog):
     async def _github(self, ctx):
         """ Tells you my GitHub link. """
         gh = f'https://github.com/{github}'
-        await ctx.send(f'I\'m on GitHub at {gh}. Feel free to use handy'
-                       ' tidbits of my source code!')
+        await ctx.send(f'I\'m on GitHub at {gh}. Feel free to use handy tidbits of my source code!')
 
 
 def setup(bot):
