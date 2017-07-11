@@ -126,6 +126,19 @@ class Memes(Cog):
             await m.render('trust_nobody.png')
             m.cleanup()
 
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def youvs(self, ctx, a: converters.ImageSourceConverter, b: converters.ImageSourceConverter):
+        """ You vs. the guy she tells you not to worry about """
+        async with ctx.typing():
+            m = Meme('resources/you_vs.png', ctx)
+            await m.cache(a, (330, 375))
+            await m.cache(b, (327, 377))
+            m.paste(a, (22, 162))
+            m.paste(b, (365, 161))
+            await m.render('youvs.png')
+            m.cleanup()
+
     @commands.command(aliases=['handicap'])
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def handicapped(self, ctx, image_source: converters.ImageSourceConverter, *, text: commands.clean_content):
