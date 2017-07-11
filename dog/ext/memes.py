@@ -16,6 +16,56 @@ from wand import image as wndimg
 logger = logging.getLogger(__name__)
 
 
+async def download_image(session, url):
+    bio = await get_bytesio(session, url)
+    im = Image.open(bio).convert('RGBA')
+    bio.close()
+    return im
+
+
+class Meme:
+    def __init__(self, source, ctx, *, text_size=32):
+        self.ctx = ctx
+        self.image_cache = {}
+        self.source = Image.open(source)
+        self.draw = ImageDraw.Draw(self.source)
+        self.font = ImageFont.truetype('resources/font/SourceSansPro-Regular.ttf', text_size)
+
+    async def cache(self, url, size=None, ):
+        if url in self.image_cache:
+            return
+
+        self.image_cache[url] = await download_image(self.ctx.bot.session, url)
+        if size:
+            self.image_cache[url] = self.image_cache[url].resize(size, Image.BICUBIC)
+
+    def paste(self, src, coords):
+        if isinstance(src, str):
+            self.source.paste(self.image_cache[src], coords)
+        else:
+            self.source.paste(src, coords)
+
+    def text(self, text, x, y, width):
+        utils.draw_word_wrap(self.draw, self.font, text, x, y, width)
+
+    async def render(self, filename='image.png'):
+        with BytesIO() as bio:
+            # export the image
+            coro = self.ctx.bot.loop.run_in_executor(None, functools.partial(self.source.save, bio, format='png'))
+            await asyncio.wait([coro], loop=self.ctx.bot.loop, timeout=5)
+
+            # upload
+            bio.seek(0)
+            await self.ctx.send(file=discord.File(bio, filename))
+
+    def cleanup(self):
+        for url, im in self.image_cache.items():
+            logger.debug('Cleaning up after cached image %s...', url)
+            im.close()
+        del self.draw
+        self.source.close()
+
+
 class Memes(Cog):
     async def __error(self, ctx, error):
         if isinstance(error, commands.CommandInvokeError):
@@ -55,55 +105,44 @@ class Memes(Cog):
         For really big mistakes.
         """
         async with ctx.typing():
-            mistake_im = Image.open('resources/mistake.png')
-            im_data = await get_bytesio(ctx.bot.session, image_source)
-            im = Image.open(im_data)
+            m = Meme('resources/mistake.png', ctx)
+            m.paste(image_source, (239, 241))
+            await m.render('mistake.png')
+            m.cleanup()
 
-            im = im.resize((250, 250), Image.BICUBIC)
-            mistake_im.paste(im, (239, 241))
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def trustnobody(self, ctx, image_source: converters.ImageSourceConverter):
+        """ Trust nobody, not even yourself. """
+        async with ctx.typing():
+            m = Meme('resources/trust_nobody.png', ctx)
 
-            with BytesIO() as bio:
-                await ctx.bot.loop.run_in_executor(None, functools.partial(mistake_im.save, bio, format='png'))
-                bio.seek(0)
-                await ctx.send(file=discord.File(bio, 'mistake.png'))
-
-            im_data.close()
+            im = (await download_image(ctx.bot.session, image_source)).resize((100, 100), Image.BICUBIC)
+            m.paste(im, (82, 230))
+            im = im.crop((0, 0, 62, 100))
+            m.paste(im, (420, 250))
             im.close()
-            mistake_im.close()
+
+            await m.render('trust_nobody.png')
+            m.cleanup()
 
     @commands.command(aliases=['handicap'])
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def handicapped(self, ctx, image_source: converters.ImageSourceConverter, *, text: commands.clean_content):
         """ Sir, this spot is for the handicapped only!.. """
         async with ctx.typing():
-            source = Image.open('resources/handicap.png')
-            fnt = ImageFont.truetype('resources/font/SourceSansPro-Regular.ttf', 24)
+            m = Meme('resources/handicap.png', ctx, text_size=24)
 
-            abio = await get_bytesio(self.bot.session, image_source)
-            ava_im = Image.open(abio).resize((80, 80), Image.BICUBIC)
+            await m.cache(image_source, (80, 80))
 
-            # draw text
-            draw = ImageDraw.Draw(source)
-            utils.draw_word_wrap(draw, fnt, text, 270, 310, 270)
-            del draw
+            m.text(text, 270, 310, 270)
+            m.paste(image_source, (373, 151))
+            m.paste(image_source, (302, 408))
+            m.paste(image_source, (357, 690))
 
-            # paste images
-            source.paste(ava_im, (373, 151))
-            source.paste(ava_im, (302, 408))
-            source.paste(ava_im, (357, 690))
+            await m.render('handicapped.png')
 
-            with BytesIO() as bio:
-                save = self.bot.loop.run_in_executor(None, source.save, bio, 'PNG')
-                await asyncio.wait([save], loop=self.bot.loop, timeout=4)
-
-                # upload
-                bio.seek(0)
-                await ctx.send(file=discord.File(bio, 'handicapped.png'))
-
-            source.close()
-            ava_im.close()
-            abio.close()
-
+            m.cleanup()
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -116,36 +155,15 @@ class Memes(Cog):
         """
 
         async with ctx.typing():
-            # open resources we need
-            floor_im = Image.open('resources/floor.png')
-            fnt = ImageFont.truetype('resources/font/SourceSansPro-Regular.ttf', 48)
+            m = Meme('resources/floor.png', ctx, text_size=48)
 
-            # download the avatar
-            abio = await get_bytesio(self.bot.session, image_source)
-            ava_im = Image.open(abio).resize((100, 100), Image.BICUBIC)
+            await m.cache(image_source, (100, 100))
 
-            # draw text
-            draw = ImageDraw.Draw(floor_im)
-            utils.draw_word_wrap(draw, fnt, text, 25, 25, 1100)
+            m.text(text, 25, 25, 1100)
+            m.paste(image_source, (783, 229))
+            m.paste(image_source, (211, 199))
 
-            # paste avatars
-            floor_im.paste(ava_im, (783, 229))
-            floor_im.paste(ava_im, (211, 199))
-
-            del draw
-
-            with BytesIO() as bio:
-                # process
-                save = self.bot.loop.run_in_executor(None, floor_im.save, bio, 'PNG')
-                await asyncio.wait([save], loop=self.bot.loop, timeout=4)
-
-                # upload
-                bio.seek(0)
-                await ctx.send(file=discord.File(bio, 'floor.png'))
-
-            floor_im.close()
-            ava_im.close()
-            abio.close()
+            await m.render('floor.png')
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
