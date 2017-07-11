@@ -139,6 +139,16 @@ class Memes(Cog):
             await m.render('youvs.png')
             m.cleanup()
 
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def youcantjust(self, ctx, *, text: commands.clean_content):
+        """ You can't just... """
+        async with ctx.typing():
+            m = Meme('resources/you_cant_just.png', ctx, text_size=16)
+            m.text(f'"you can\'t just {text}"', 23, 12, 499)
+            await m.render('youcantjust.png')
+            m.cleanup()
+
     @commands.command(aliases=['handicap'])
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def handicapped(self, ctx, image_source: converters.ImageSourceConverter, *, text: commands.clean_content):
