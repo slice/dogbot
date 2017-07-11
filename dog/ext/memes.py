@@ -29,7 +29,11 @@ class Memes(Cog):
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def jpeg(self, ctx, image_source: converters.ImageSourceConverter):
-        """ Drastically lowers an image's quality. """
+        """
+        Drastically lowers an image's quality.
+
+        This command takes an image, and saves it as a JPEG with the quality of 1.
+        """
         im_data = await get_bytesio(self.bot.session, image_source)
 
         def open():
@@ -47,7 +51,9 @@ class Memes(Cog):
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def mistake(self, ctx, image_source: converters.ImageSourceConverter):
-        """ For really big mistakes. """
+        """
+        For really big mistakes.
+        """
         async with ctx.typing():
             mistake_im = Image.open('resources/mistake.png')
             im_data = await get_bytesio(ctx.bot.session, image_source)
@@ -65,10 +71,49 @@ class Memes(Cog):
             im.close()
             mistake_im.close()
 
+    @commands.command(aliases=['handicap'])
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def handicapped(self, ctx, image_source: converters.ImageSourceConverter, *, text: commands.clean_content):
+        """ Sir, this spot is for the handicapped only!.. """
+        async with ctx.typing():
+            source = Image.open('resources/handicap.png')
+            fnt = ImageFont.truetype('resources/font/SourceSansPro-Regular.ttf', 24)
+
+            abio = await get_bytesio(self.bot.session, image_source)
+            ava_im = Image.open(abio).resize((80, 80), Image.BICUBIC)
+
+            # draw text
+            draw = ImageDraw.Draw(source)
+            utils.draw_word_wrap(draw, fnt, text, 270, 310, 270)
+            del draw
+
+            # paste images
+            source.paste(ava_im, (373, 151))
+            source.paste(ava_im, (302, 408))
+            source.paste(ava_im, (357, 690))
+
+            with BytesIO() as bio:
+                save = self.bot.loop.run_in_executor(None, source.save, bio, 'PNG')
+                await asyncio.wait([save], loop=self.bot.loop, timeout=4)
+
+                # upload
+                bio.seek(0)
+                await ctx.send(file=discord.File(bio, 'handicapped.png'))
+
+            source.close()
+            ava_im.close()
+            abio.close()
+
+
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def floor(self, ctx, image_source: converters.ImageSourceConverter, *, text: commands.clean_content):
-        """ The floor is... """
+        """
+        The floor is...
+
+        Generates a "the floor is" type meme. The image source is composited
+        on top of the jumper's face. The remaining text is used to render a caption.
+        """
 
         async with ctx.typing():
             # open resources we need
@@ -77,14 +122,13 @@ class Memes(Cog):
 
             # download the avatar
             abio = await get_bytesio(self.bot.session, image_source)
-            ava_im = Image.open(abio)
+            ava_im = Image.open(abio).resize((100, 100), Image.BICUBIC)
 
             # draw text
             draw = ImageDraw.Draw(floor_im)
             utils.draw_word_wrap(draw, fnt, text, 25, 25, 1100)
 
             # paste avatars
-            ava_im = ava_im.resize((100, 100), Image.BICUBIC)
             floor_im.paste(ava_im, (783, 229))
             floor_im.paste(ava_im, (211, 199))
 
@@ -93,11 +137,11 @@ class Memes(Cog):
             with BytesIO() as bio:
                 # process
                 save = self.bot.loop.run_in_executor(None, floor_im.save, bio, 'PNG')
-                await asyncio.wait([save], loop=self.bot.loop, timeout=3.5)
+                await asyncio.wait([save], loop=self.bot.loop, timeout=4)
 
                 # upload
                 bio.seek(0)
-                await ctx.send(file=discord.File(bio, filename='floor.png'))
+                await ctx.send(file=discord.File(bio, 'floor.png'))
 
             floor_im.close()
             ava_im.close()
