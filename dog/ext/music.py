@@ -259,7 +259,7 @@ class Music(Cog):
         idle = sum(1 for cl in ctx.bot.voice_clients if not cl.is_playing())
         paused = sum(1 for cl in ctx.bot.voice_clients if cl.is_paused())
         active = sum(1 for cl in ctx.bot.voice_clients if cl.is_playing())
-        embed.description = '{} client(s)\n{} idle, {} active, {} paused'.format(clients, idle, active, paused)
+        embed.description = '{} client(s)\n{} idle, **{} active**, {} paused'.format(clients, idle, active, paused)
 
         await ctx.send(embed=embed)
 
