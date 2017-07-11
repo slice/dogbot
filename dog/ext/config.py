@@ -72,6 +72,8 @@ class Config(Cog):
     @commands.has_permissions(manage_guild=True)
     async def config(self, ctx):
         """ Manages server-specific configuration for the bot. """
+        if ctx.invoked_subcommand is None:
+            await ctx.send('You need to specify a subcommand to run. For help, run `d?help cfg`.')
 
     @config.command(name='set')
     async def config_set(self, ctx, name: str, value: str='on'):
