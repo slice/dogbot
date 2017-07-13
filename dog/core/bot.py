@@ -46,6 +46,11 @@ class DogBot(BaseBot):
         self.prefix_cache = {}
         self.refuse_notify_left = []
 
+    async def on_message(self, msg):
+        await self.redis.incr('stats:messages')
+
+        await super().on_message(msg)
+
     async def get_prefixes(self, guild: discord.Guild) -> 'List[str]':
         """ Returns the supplementary prefixes for a guild. """
         if not guild:
@@ -129,6 +134,7 @@ class DogBot(BaseBot):
         
         try:
             await mod_log.send(*args, **kwargs)
+            await self.redis.incr('stats:modlog:sends')
         except discord.Forbidden:
             # couldn't post to modlog
             logger.warning('Couldn\'t post to modlog for guild %d. No permissions.', guild.id)
@@ -292,6 +298,7 @@ class DogBot(BaseBot):
 
         # monitor
         await self.monitor_send(title='\N{INBOX TRAY} Added to new guild', fields=fields, color=0x71ff5e)
+        await self.redis.incr('stats:guilds:adds')
 
         WELCOME_MESSAGE = ('\N{DOG FACE} Woof! Hey there! I\'m Dogbot! To get a list of all of my '
                            'commands, type `d?help` in chat, so I can DM you my commands! If you '
@@ -318,6 +325,7 @@ class DogBot(BaseBot):
             ('Info', f'Created {diff}\nMembers: {len(g.members)}')
         ]
         await self.monitor_send(title='\N{OUTBOX TRAY} Removed from guild', fields=fields, color=0xff945b)
+        await self.redis.incr('stats:guilds:removes')
 
     async def config_get(self, guild: discord.Guild, name: str):
         """
