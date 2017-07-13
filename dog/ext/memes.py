@@ -110,6 +110,7 @@ class Memes(Cog):
         """
         async with ctx.typing():
             m = Meme('resources/mistake.png', ctx)
+            await m.cache(image_source, (250, 250))
             m.paste(image_source, (239, 241))
             await m.render('mistake.png')
             m.cleanup()
