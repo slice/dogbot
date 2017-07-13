@@ -5,6 +5,7 @@ from io import BytesIO
 from zipfile import ZipFile
 
 import discord
+import time
 from discord.ext import commands
 from PIL import Image
 
@@ -37,17 +38,15 @@ class Steal(Cog):
             emotes += [CustomEmoji(*match) for match in matches]
         return list(set(emotes))
 
-    @commands.command()
-    async def rip(self, ctx, where: converters.Guild):
-        """ Rips all of the emoji from a guild. """
+    async def rip_emojis(self, ctx, source):
         # calculate how many rows we need
-        rows = round(len(where.emojis) / 10)
+        rows = round(len(source["emojis"]) / 10)
 
         # create the preview image and zip file
         im = Image.new('RGBA', (32 * 10, 32 * rows))
-        zip = ZipFile(f'{where.id}.zip', 'w')
+        zip = ZipFile(f'{source["id"]}.zip', 'w')
 
-        for index, emoji in enumerate(where.emojis):
+        for index, emoji in enumerate(source["emojis"]):
             # fetch the emoji
             emoji_bio = await get_bytesio(ctx.bot.session, f'https://cdn.discordapp.com/emojis/{emoji.id}.png')
 
@@ -71,11 +70,23 @@ class Steal(Cog):
         with BytesIO() as bio:
             await ctx.bot.loop.run_in_executor(None, im.save, bio, 'png')
             bio.seek(0)
-            await ctx.send(file=discord.File(bio, f'emoji-{where.id}.png'))
+            await ctx.send(file=discord.File(bio, f'emoji-{source["id"]}.png'))
 
         # close zip and send it
         zip.close()
-        await ctx.send(file=discord.File(f'{where.id}.zip'))
+        await ctx.send(file=discord.File(f'{source["id"]}.zip'))
+
+    @commands.group(invoke_without_command=True)
+    async def rip(self, ctx, where: converters.Guild):
+        """ Rips all of the emoji from a guild. """
+        await self.rip_emojis(ctx, {'id': where.id, 'emojis': where.emojis})
+
+    @rip.command(name='colate')
+    async def rip_colate(self, ctx, *keywords):
+        """ Rips emoji with keywords. """
+        emoji = [em for em in ctx.bot.emojis if any(kw in em.name for kw in keywords)]
+        logger.debug('Colating %d emoji.', len(emoji))
+        await self.rip_emojis(ctx, {'id': f'colated-{time.time()}', 'emojis': emoji})
 
     @commands.group(aliases=['stealemoji', 'se'], invoke_without_command=True)
     async def stealemote(self, ctx):
