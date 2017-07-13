@@ -2,19 +2,15 @@
 Contains utility commands that help you get stuff done.
 """
 
-import datetime
 import logging
 import operator
 import random
-from collections import namedtuple
 from typing import Any, Dict, List
 
 import aiohttp
 import discord
-import dog_config
 import pyowm
 from asteval import Interpreter
-from bs4 import BeautifulSoup
 from discord.ext import commands
 from dog import Cog
 from dog.core import utils, converters
@@ -39,8 +35,8 @@ async def jisho(session: aiohttp.ClientSession, query: str) -> Dict[Any, Any]:
 class Utility(Cog):
     def __init__(self, bot):
         super().__init__(bot)
-        if hasattr(dog_config, 'owm_key'):
-            self.owm = pyowm.OWM(dog_config.owm_key)
+        if 'owm' in bot.cfg['credentials']:
+            self.owm = pyowm.OWM(bot.cfg['credentials']['owm'])
         else:
             self.owm = None
 
@@ -56,9 +52,12 @@ class Utility(Cog):
         api_base = 'https://od-api.oxforddictionaries.com/api/v1'
 
         # request headers
+        oxford = ctx.bot.cfg['credentials'].get('oxford', {})
+        if not oxford:
+            return await ctx.send('My bot owner hasn\'t set that up.')
         headers = {
-            'app_id': dog_config.oxford_creds['application_id'],
-            'app_key': dog_config.oxford_creds['application_key']
+            'app_id': oxford['application_id'],
+            'app_key': oxford['application_key']
         }
 
         search_params = {

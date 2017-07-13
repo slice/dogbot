@@ -8,7 +8,6 @@ import logging
 import discord
 from discord.ext import commands
 
-import dog_config as cfg
 from dog import Cog
 from dog.anime import Anime, anime_search
 from dog.core import utils
@@ -40,7 +39,7 @@ class Anime(Cog):
     async def anime(self, ctx, *, query: str):
         """ Searches for anime on MyAnimeList. """
         async with ctx.channel.typing():
-            results = (await anime_search(self.bot.session, query))
+            results = (await anime_search(self.bot, query))
             if results is None:
                 await ctx.send('\N{PENSIVE FACE} Found nothing.')
                 return
@@ -56,7 +55,7 @@ class Anime(Cog):
 
 
 def setup(bot):
-    if not hasattr(cfg, 'myanimelist'):
+    if 'myanimelist' not in bot.cfg['credentials']:
         logger.warning('No "myanimelist" attribute on config, not adding Anime cog.')
         return
     bot.add_cog(Anime(bot))

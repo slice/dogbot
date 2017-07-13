@@ -6,7 +6,6 @@ from collections import namedtuple
 
 import aiohttp
 
-import dog_config as cfg
 from dog.core import utils
 
 logger = logging.getLogger(__name__)
@@ -22,14 +21,14 @@ class Anime(namedtuple('Anime', ('id title english synonyms episodes score type'
         return '{0.title}{1}, {0.episodes} episode(s)'.format(self, english)
 
 
-async def anime_search(session: aiohttp.ClientSession, query: str):
+async def anime_search(bot, query: str):
     """ Searches for anime on MyAnimeList. Returns a list of `Anime` instances. """
-    mal_auth = getattr(cfg, 'myanimelist', {})
+    mal_auth = bot.cfg['credentials']['myanimelist']
     auth = aiohttp.BasicAuth(mal_auth['username'], mal_auth['password'])
     query_url = utils.urlescape(query)
     results = []
     try:
-        async with session.get(MAL_SEARCH + query_url, auth=auth) as resp:
+        async with bot.session.get(MAL_SEARCH + query_url, auth=auth) as resp:
             tree = ET.fromstring(await resp.text())
             for anime_tag in tree.findall('entry'):
                 results.append(Anime(**{a.tag: a.text for a in list(anime_tag)}))

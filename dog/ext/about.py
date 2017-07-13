@@ -13,7 +13,6 @@ from discord.ext import commands
 
 from dog import Cog
 from dog.core import utils
-from dog_config import github, owner_id
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ class About(Cog):
     @commands.command(aliases=['helpme', 'support'])
     async def wiki(self, ctx):
         """ Need help using Dogbot? """
-        wiki = 'https://github.com/slice/dogbot/wiki'
+        wiki = f'https://github.com/{ctx.bot.cfg["bot"]["github"]}/wiki'
         invite = 'https://discord.gg/Ucs96UH'
         await ctx.send(f'Need help with Dogbot? The wiki ({wiki}) has all of your answers! Support server: {invite}')
 
@@ -50,9 +49,10 @@ class About(Cog):
             .strip().decode('utf-8')
 
         if self.maker is None:
-            self.maker = discord.utils.get(self.bot.get_all_members(), id=owner_id)
+            self.maker = discord.utils.get(self.bot.get_all_members(), id=ctx.bot.cfg["bot"]["owner_id"])
 
         birthday = self.bot.user.created_at.strftime('%B %m (born %Y)')
+        github = ctx.bot.cfg["bot"]["github"]
 
         embed = discord.Embed(title='Dogbot',
             description=f'A handy Discord bot by {self.maker.mention} ({self.maker.id}).')
@@ -71,7 +71,7 @@ class About(Cog):
     @commands.command(name='github', aliases=['source'])
     async def _github(self, ctx):
         """ Tells you my GitHub link. """
-        gh = f'https://github.com/{github}'
+        gh = f'https://github.com/{ctx.bot.cfg["bot"]["github"]}'
         await ctx.send(f'I\'m on GitHub at {gh}. Feel free to use handy tidbits of my source code!')
 
 

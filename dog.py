@@ -1,19 +1,14 @@
 import asyncio
 import logging
-import os
 import sys
 
-from discord.ext import commands
+from ruamel.yaml import YAML
 
 from dog import DogBot
 from dog.core.bot import DogSelfbot
 
-try:
-    import dog_config as cfg
-except ModuleNotFoundError:
-    print('err: dog_config.py not found', file=sys.stderr)
-    print('err: please read the README.md file.', file=sys.stderr)
-    sys.exit(-1)
+with open('config.yml', 'r') as config_file:
+    cfg = YAML(typ='safe').load(config_file)
 
 # configure logging
 # set the root logger's info to INFO
@@ -57,8 +52,8 @@ except ModuleNotFoundError:
 additional_options = getattr(cfg, 'options', {})
 additional_options.update({
     'owner_id': getattr(cfg, 'owner_id', None),
-    'postgresql_auth': getattr(cfg, 'postgresql_auth', None),
-    'redis_url': getattr(cfg, 'redis_url', None)
+    'postgresql_auth': cfg['db']['postgres'],
+    'redis_url': cfg['db']['redis']
 })
 
 logger.info('Bot options: %s', additional_options)
@@ -67,13 +62,14 @@ logger.info('Bot options: %s', additional_options)
 selfbot_mode = '--selfbot' in ' '.join(sys.argv)
 if selfbot_mode:
     logger.warning('Running in selfbot mode!')
-    additional_options['postgresql_auth']['database'] = 'dog_selfbot'
-    d = DogSelfbot(**additional_options)
+    # change the database
+    additional_options['db']['postgres']['database'] = 'dog_selfbot'
+    d = DogSelfbot(cfg=cfg, **additional_options)
     d.load_exts_recursively('dog/selfext', 'Initial selfbot recursive load')
 else:
-    d = DogBot(**additional_options)
+    d = DogBot(cfg=cfg, **additional_options)
     d.load_exts_recursively('dog/ext', 'Initial recursive load')
-d.run(cfg.selfbot_token if selfbot_mode else cfg.token, bot=not selfbot_mode)
+d.run(cfg['tokens']['selfbot'] if selfbot_mode else cfg['tokens']['bot'], bot=not selfbot_mode)
 
 # close log handlers (why)
 # https://github.com/Rapptz/RoboDanny/blob/master/bot.py#L128-L132

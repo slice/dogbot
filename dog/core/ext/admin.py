@@ -15,7 +15,6 @@ from time import monotonic
 import discord
 from discord.ext import commands
 
-import dog_config as cfg
 from dog.core import botcollection, checks, utils
 from dog import Cog
 from dog.haste import haste
@@ -112,7 +111,7 @@ class Admin(Cog):
     @checks.bot_only()
     async def prefixes(self, ctx):
         """ Lists the bot's prefixes. """
-        prefixes = ', '.join([f'`{p}`' for p in cfg.prefixes])
+        prefixes = ', '.join([f'`{p}`' for p in ctx.bot.cfg['bot']['prefixes']])
         await ctx.send(f'My prefixes are: {prefixes}')
 
     @commands.command()

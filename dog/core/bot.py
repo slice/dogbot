@@ -9,7 +9,6 @@ import traceback
 from typing import List
 
 import discord
-import dog_config as cfg
 import praw
 import raven
 from discord.ext import commands
@@ -29,11 +28,14 @@ class DogBot(BaseBot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command_prefix=self.prefix, **kwargs)
 
+        # configuration dict
+        self.cfg = kwargs.get('cfg')
+
         # sentry connection for reporting exceptions
-        self.sentry = raven.Client(cfg.raven_client_url)
+        self.sentry = raven.Client(self.cfg['monitoring']['raven_client_url'])
 
         # praw (reddit)
-        self.praw = praw.Reddit(**cfg.reddit)
+        self.praw = praw.Reddit(**self.cfg['credentials']['reddit'])
 
         # tasks
         self.report_task = None
@@ -90,7 +92,7 @@ class DogBot(BaseBot):
         """ Returns prefixes for a message. """
         mention = [self.user.mention + ' ', f'<@!{self.user.id}> ']
         additional_prefixes = await self.get_prefixes(message.guild)
-        return cfg.prefixes + mention + additional_prefixes
+        return self.cfg['bot']['prefixes'] + mention + additional_prefixes
 
     async def close(self):
         # close stuff
@@ -127,7 +129,7 @@ class DogBot(BaseBot):
             This does not rely on `discord.commands.ext.Bot.command_prefix`,
             but rather the list of prefixes present in `dog_config`.
         """
-        return any([text.startswith(p) for p in cfg.prefixes])
+        return any([text.startswith(p) for p in cfg['bot']['prefixes']])
 
     async def send_modlog(self, guild: discord.Guild, *args, **kwargs):
         """
@@ -161,9 +163,9 @@ class DogBot(BaseBot):
             pass
 
     async def set_playing_statuses(self):
-        short_prefix = min(cfg.prefixes, key=len)
+        short_prefix = min(self.cfg['bot']['prefixes'], key=len)
         for shard in self.shards.values():
-            game = discord.Game(name=f'{shard.id + 1} | {short_prefix}help')
+            game = discord.Game(name=f'SH{shard.id} | {short_prefix}help')
             await shard.ws.change_presence(game=game)
 
     async def on_member_ban(self, guild, user):
@@ -198,7 +200,7 @@ class DogBot(BaseBot):
 
         async def report_guilds_task():
             # bail if we don't have the token
-            if not hasattr(cfg, 'discordpw_token'):
+            if 'discordpw_token' not in self.cfg['monitoring']:
                 logger.warning('Not going to submit guild count, no discord.pw token.')
                 return
 
@@ -206,7 +208,7 @@ class DogBot(BaseBot):
             while True:
                 guilds = len(self.guilds)
                 data = {'server_count': guilds}
-                headers = {'Authorization': cfg.discordpw_token}
+                headers = {'Authorization': self.cfg['monitoring']['discordpw_token']}
                 logger.info('POSTing guild count to abal\'s website...')
                 # HTTP POST to the endpoint
                 async with self.session.post(endpoint, json=data, headers=headers) as resp:
@@ -234,7 +236,7 @@ class DogBot(BaseBot):
         All parameters are passed to `send()`.
         """
         logger.info('Monitor sending.')
-        monitor_channels = getattr(cfg, 'owner_monitor_channels', [])
+        monitor_channels = self.cfg['monitoring'].get('monitor_channels', [])
         channels = [self.get_channel(c) for c in monitor_channels]
 
         # no monitor channels
