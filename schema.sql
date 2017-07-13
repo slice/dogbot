@@ -71,3 +71,8 @@ CREATE TABLE autoroles (
   PRIMARY KEY (guild_id, type)
 );
 
+CREATE TABLE IF NOT EXISTS globalbans (
+  user_id bigint primary key,
+  reason text,
+  created_at timestamp without time zone
+);

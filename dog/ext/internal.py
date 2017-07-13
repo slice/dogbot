@@ -1,8 +1,9 @@
 """
 Dogbot internal commands.
 """
-
+import datetime
 import io
+import logging
 import os
 from time import monotonic
 
@@ -18,6 +19,8 @@ DETAILED_PING = '''**message create:** {}
 **message edit:** {}
 **message delete:** {}
 '''
+
+logger = logging.getLogger(__name__)
 
 
 class Internal(Cog):
@@ -95,6 +98,92 @@ class Internal(Cog):
         """ Unblacklists a guild. """
         async with ctx.bot.pgpool.acquire() as conn:
             await conn.execute('DELETE FROM blacklisted_guilds WHERE guild_id = $1', guild)
+        await ctx.ok()
+
+    @commands.group(aliases=['gb'])
+    async def globalbans(self, ctx):
+        """ Manages global bot bans. """
+
+    @globalbans.command(name='flush')
+    async def gb_flush(self, ctx):
+        """
+        Flushes the global ban cache.
+
+        When someone speaks, Dogbot fetches whether that person has been banned or not, and stores
+        that value in Redis for 2 hours. When the value expires, Dogbot checks again. But while we
+        have the cached value during that 2 hour period, we go off of that instead of the actual banned
+        value. That is why there is "ban cached" and "actually banned". When we create a ban, the cached
+        value for that user is instantly invalidated, so the ban takes effect immediately. However, unbans do
+        not invalidate cache. With this command, Dogbot will check all cached bans and check if they are actually
+        banned. If they are, the cached value is removed so unbans will take effect immediately.
+        """
+        results = []
+
+        async for key in ctx.bot.redis.iscan(match='cache:globalbans:*'):
+            if (await ctx.bot.redis.get(key.decode())).decode() == 'not banned':
+                logger.debug('Ignoring present "not banned" cache value (%s).', key.decode())
+                continue
+
+            id = int(key.decode().split(':')[2])
+            logger.debug('Flushing ban for %s (%d)', key.decode(), id)
+
+            user = ctx.bot.get_user(id)
+            if not user:
+                # wat
+                results.append(f'\N{CROSS MARK} Could not resolve user `{id}`, not flushed.')
+                continue
+
+            async with ctx.bot.pgpool.acquire() as conn:
+                ban_row = await conn.fetchrow('SELECT * FROM globalbans WHERE user_id = $1', user.id)
+
+            if ban_row is None:
+                results.append(f'\N{WHITE HEAVY CHECK MARK} Removed ban for {user} (`{user.id}`).')
+                await ctx.bot.redis.delete(key.decode())
+                logger.debug('Removing ban for %s (%s) as part of flush operation.', key.decode(), user)
+            else:
+                results.append(f'\N{HAMMER} Persisting ban for {user} (`{user.id}`), still banned!')
+
+        await ctx.send('\n'.join(results) if results else 'Nothing happened.')
+
+    @globalbans.command(name='add')
+    async def gb_add(self, ctx, who: converters.RawMember, *, reason):
+        """ Adds a global ban. """
+        async with ctx.bot.pgpool.acquire() as conn:
+            try:
+                sql = 'INSERT INTO globalbans (user_id, reason, created_at) VALUES ($1, $2, $3)'
+                await conn.execute(sql, who.id, reason, datetime.datetime.utcnow())
+            except asyncpg.UniqueViolationError:
+                return await ctx.send('That user has already been global banned.')
+        # invalidate cache
+        logger.info('%s was just global banned, invalidating cached value.')
+        await ctx.bot.redis.delete(f'cache:globalbans:{who.id}')
+        await ctx.ok()
+
+    @globalbans.command(name='status')
+    async def gb_status(self, ctx, who: converters.RawMember):
+        """ Checks on global ban status. """
+        is_banned = await ctx.bot.is_global_banned(who)
+        is_banned_cached = (await ctx.bot.redis.get(f'cache:globalbans:{who.id}')).decode() == 'banned'
+
+        async with ctx.bot.pgpool.acquire() as conn:
+            actual_ban = await conn.fetchrow('SELECT * FROM globalbans WHERE user_id = $1', who.id)
+
+        embed = discord.Embed(color=(discord.Color.red() if is_banned else discord.Color.green()))
+        embed.set_author(name=who, icon_url=who.avatar_url_as(format='png'))
+        embed.add_field(name='Ban cached', value='Yes' if is_banned_cached else 'No')
+        embed.add_field(name='Actually banned', value='Yes' if actual_ban is not None else 'No')
+
+        if actual_ban:
+            embed.description = f'**Banned for:** {actual_ban["reason"]}'
+            embed.add_field(name='Banned', value=utils.ago(actual_ban["created_at"]))
+
+        await ctx.send(embed=embed)
+
+    @globalbans.command(name='remove')
+    async def gb_remove(self, ctx, who: converters.RawMember):
+        """ Removes a global ban. """
+        async with ctx.bot.pgpool.acquire() as conn:
+            await conn.execute('DELETE FROM globalbans WHERE user_id = $1', who.id)
         await ctx.ok()
 
     @commands.command()

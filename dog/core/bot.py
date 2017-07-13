@@ -46,8 +46,28 @@ class DogBot(BaseBot):
         self.prefix_cache = {}
         self.refuse_notify_left = []
 
+    async def is_global_banned(self, user: discord.User):
+        key = f'cache:globalbans:{user.id}'
+
+        if await self.redis.exists(key):
+            # use the cached value instead
+            return (await self.redis.get(key)).decode() == 'banned'
+
+        async with self.pgpool.acquire() as conn:
+            # grab the record from postgres, if any
+            banned = (await conn.fetchrow('SELECT * FROM globalbans WHERE user_id = $1', user.id)) is not None
+
+            # cache the banned value for 2 hours
+            await self.redis.set(key, 'banned' if banned else 'not banned', expire=7200)
+
+            # return whether banned or not
+            return banned
+
     async def on_message(self, msg):
         await self.redis.incr('stats:messages')
+
+        if not msg.author.bot and await self.is_global_banned(msg.author):
+            return
 
         await super().on_message(msg)
 
