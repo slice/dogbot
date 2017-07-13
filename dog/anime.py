@@ -3,7 +3,6 @@
 import logging
 import xml.etree.ElementTree as ET
 from collections import namedtuple
-from typing import List
 
 import aiohttp
 
@@ -23,7 +22,7 @@ class Anime(namedtuple('Anime', ('id title english synonyms episodes score type'
         return '{0.title}{1}, {0.episodes} episode(s)'.format(self, english)
 
 
-async def anime_search(session: aiohttp.ClientSession, query: str) -> List[Anime]:
+async def anime_search(session: aiohttp.ClientSession, query: str):
     """ Searches for anime on MyAnimeList. Returns a list of `Anime` instances. """
     mal_auth = getattr(cfg, 'myanimelist', {})
     auth = aiohttp.BasicAuth(mal_auth['username'], mal_auth['password'])
@@ -33,9 +32,8 @@ async def anime_search(session: aiohttp.ClientSession, query: str) -> List[Anime
         async with session.get(MAL_SEARCH + query_url, auth=auth) as resp:
             tree = ET.fromstring(await resp.text())
             for anime_tag in tree.findall('entry'):
-                results.append(Anime(**{a.tag: a.text for a in
-                                        list(anime_tag)}))
+                results.append(Anime(**{a.tag: a.text for a in list(anime_tag)}))
     except aiohttp.ClientResponseError:
         logger.info('Found no anime for %s', query)
-        return None
+        return
     return results
