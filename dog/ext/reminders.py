@@ -20,8 +20,7 @@ class Reminders(Cog):
     def __init__(self, bot):
         super().__init__(bot)
         self.bot = bot
-        self.queue = AsyncQueue(bot, 'Reminders', fulfill_item=self.fulfill_item,
-                                get_latest_item=self.get_latest_item)
+        self.queue = AsyncQueue(bot, 'Reminders', fulfill_item=self.fulfill_item, get_latest_item=self.get_latest_item)
 
     def __unload(self):
         self.queue.handler.cancel()
