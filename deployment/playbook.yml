@@ -53,8 +53,8 @@
       - run schema
   - name: copy configuration file
     copy:
-      src: ../dog_config.production.py
-      dest: /srv/dog/dog_config.py
+      src: ../config.prod.yml
+      dest: /srv/dog/config.yml
   handlers:
   - name: run schema
     shell: psql -U postgres -d dogbot -a -f /srv/dog/schema.sql
