@@ -15,3 +15,4 @@ pyowm
 parsedatetime
 timeago
 ruamel.yaml>=0.15
+datadog

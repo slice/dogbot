@@ -4,10 +4,10 @@ The core Dogbot bot.
 
 import asyncio
 import logging
-import random
 import traceback
 from typing import List
 
+import datadog as dd
 import discord
 import praw
 import raven
@@ -39,6 +39,7 @@ class DogBot(BaseBot):
 
         # tasks
         self.report_task = None
+        self.datadog_task = None
 
         # list of extensions to reload (this means that new extensions are not picked up)
         # this is here so we can d?reload even if an syntax error occurs and it won't be present
@@ -195,33 +196,55 @@ class DogBot(BaseBot):
             except discord.Forbidden:
                 logger.debug('Cannot announce ban, forbidden! gid=%d', guild.id)
 
+    async def report_guilds(self):
+        # bail if we don't have the token
+        if 'discordpw_token' not in self.cfg['monitoring']:
+            logger.warning('Not going to submit guild count, no discord.pw token.')
+            return
+
+        endpoint = f'https://bots.discord.pw/api/bots/{self.user.id}/stats'
+        while True:
+            guilds = len(self.guilds)
+            data = {'server_count': guilds}
+            headers = {'Authorization': self.cfg['monitoring']['discordpw_token']}
+            logger.info('POSTing guild count to abal\'s website...')
+            # HTTP POST to the endpoint
+            async with self.session.post(endpoint, json=data, headers=headers) as resp:
+                if resp.status != 200:
+                    # probably just a hiccup on abal's side
+                    logger.warning('Failed to post guild count, ignoring.')
+                else:
+                    logger.info('Posted guild count successfully! (%d guilds)', guilds)
+            await asyncio.sleep(60 * 10)  # only report every 10 minutes
+
+    async def datadog_report(self):
+        if 'datadog' not in self.cfg['monitoring']:
+            logger.warning('No DataDog configuration detected, not going to report statistics.')
+            return
+
+        dd.initialize(api_key=self.cfg['monitoring']['datadog']['api_key'],
+                      app_key=self.cfg['monitoring']['datadog']['app_key'])
+
+        while True:
+            def report():
+                dd.statsd.gauge('discord.guilds', len(self.guilds))
+                dd.statsd.gauge('discord.voice.clients', len(self.voice_clients))
+                dd.statsd.gauge('discord.users', len(self.users))
+                logger.debug('Successfully reported metrics.')
+            logger.debug('Reporting metrics to DataDog...')
+            await self.loop.run_in_executor(None, report)
+            await asyncio.sleep(5)
+
     async def on_ready(self):
         await super().on_ready()
 
-        async def report_guilds_task():
-            # bail if we don't have the token
-            if 'discordpw_token' not in self.cfg['monitoring']:
-                logger.warning('Not going to submit guild count, no discord.pw token.')
-                return
-
-            endpoint = f'https://bots.discord.pw/api/bots/{self.user.id}/stats'
-            while True:
-                guilds = len(self.guilds)
-                data = {'server_count': guilds}
-                headers = {'Authorization': self.cfg['monitoring']['discordpw_token']}
-                logger.info('POSTing guild count to abal\'s website...')
-                # HTTP POST to the endpoint
-                async with self.session.post(endpoint, json=data, headers=headers) as resp:
-                    if resp.status != 200:
-                        # probably just a hiccup on abal's side
-                        logger.warning('Failed to post guild count, ignoring.')
-                    else:
-                        logger.info('Posted guild count successfully! (%d guilds)', guilds)
-                await asyncio.sleep(60 * 10)  # only report every 10 minutes
-
         if not self.report_task:
-            logger.info('Creating bots.discord.pw task')
-            self.report_task = self.loop.create_task(report_guilds_task())
+            logger.info('Creating bots.discord.pw task.')
+            self.report_task = self.loop.create_task(self.report_guilds())
+
+        if not self.datadog_task:
+            logger.info('Creating DataDog task.')
+            self.datadog_task = self.loop.create_task(self.datadog_report())
 
         await self.set_playing_statuses()
 
