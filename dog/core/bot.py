@@ -217,6 +217,14 @@ class DogBot(BaseBot):
                     logger.info('Posted guild count successfully! (%d guilds)', guilds)
             await asyncio.sleep(60 * 10)  # only report every 10 minutes
 
+    async def datadog_increment(self, metric):
+        def run():
+            dd.statsd.increment(metric)
+        try:
+            await self.loop.run_in_executor(None, run)
+        except Exception:
+            logger.exception('Failed to report metric')
+
     async def datadog_report(self):
         if 'datadog' not in self.cfg['monitoring']:
             logger.warning('No DataDog configuration detected, not going to report statistics.')
@@ -231,6 +239,8 @@ class DogBot(BaseBot):
                     dd.statsd.gauge('discord.guilds', len(self.guilds))
                     dd.statsd.gauge('discord.voice.clients', len(self.voice_clients))
                     dd.statsd.gauge('discord.users', len(self.users))
+                    dd.statsd.gauge('discord.users.humans', sum(1 for user in self.users if not user.bot))
+                    dd.statsd.gauge('discord.users.bots', sum(1 for user in self.users if user.bot))
                 except RuntimeError:
                     logger.warning('Couldn\'t report metrics, trying again soon.')
                 else:
@@ -359,6 +369,7 @@ class DogBot(BaseBot):
             await g.owner.send(WELCOME_MESSAGE)
         except discord.Forbidden:
             logger.info('Failed to DM owner. Not caring...')
+        await self.datadog_increment('discord.guilds.additions')
 
     async def on_guild_remove(self, g):
         if g.id in self.refuse_notify_left:
@@ -375,6 +386,7 @@ class DogBot(BaseBot):
         ]
         await self.monitor_send(title='\N{OUTBOX TRAY} Removed from guild', fields=fields, color=0xff945b)
         await self.redis.incr('stats:guilds:removes')
+        await self.datadog_increment('discord.guilds.removals')
 
     async def config_get(self, guild: discord.Guild, name: str):
         """
@@ -409,6 +421,7 @@ class DogBot(BaseBot):
         location = '[DM] ' if isinstance(ctx.channel, discord.DMChannel) else '[Guild] '
         logger.info('%sCommand invocation by %s (%d) "%s" checks=%s', location, author, author.id, ctx.message.content,
                     ','.join(checks) or '(none)')
+        await self.datadog_increment('dogbot.commands')
 
     async def on_command_error(self, ctx, ex):
         if getattr(ex, 'should_suppress', False):
