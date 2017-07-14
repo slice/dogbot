@@ -227,10 +227,14 @@ class DogBot(BaseBot):
 
         while True:
             def report():
-                dd.statsd.gauge('discord.guilds', len(self.guilds))
-                dd.statsd.gauge('discord.voice.clients', len(self.voice_clients))
-                dd.statsd.gauge('discord.users', len(self.users))
-                logger.debug('Successfully reported metrics.')
+                try:
+                    dd.statsd.gauge('discord.guilds', len(self.guilds))
+                    dd.statsd.gauge('discord.voice.clients', len(self.voice_clients))
+                    dd.statsd.gauge('discord.users', len(self.users))
+                except RuntimeError:
+                    logger.warning('Couldn\'t report metrics, trying again soon.')
+                else:
+                    logger.debug('Successfully reported metrics.')
             logger.debug('Reporting metrics to DataDog...')
             await self.loop.run_in_executor(None, report)
             await asyncio.sleep(5)
