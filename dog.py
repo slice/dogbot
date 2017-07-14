@@ -63,7 +63,7 @@ selfbot_mode = '--selfbot' in ' '.join(sys.argv)
 if selfbot_mode:
     logger.warning('Running in selfbot mode!')
     # change the database
-    additional_options['db']['postgres']['database'] = 'dog_selfbot'
+    cfg['db']['postgres']['database'] = 'dog_selfbot'
     d = DogSelfbot(cfg=cfg, **additional_options)
     d.load_exts_recursively('dog/selfext', 'Initial selfbot recursive load')
 else:
