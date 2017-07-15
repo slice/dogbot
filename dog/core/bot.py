@@ -130,7 +130,7 @@ class DogBot(BaseBot):
             This does not rely on `discord.commands.ext.Bot.command_prefix`,
             but rather the list of prefixes present in `dog_config`.
         """
-        return any([text.startswith(p) for p in cfg['bot']['prefixes']])
+        return any([text.startswith(p) for p in self.cfg['bot']['prefixes']])
 
     async def send_modlog(self, guild: discord.Guild, *args, **kwargs):
         """
