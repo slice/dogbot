@@ -116,18 +116,17 @@ class BaseBot(ReloadableBot):
             # wat
             return
 
-        if self.session.closed:
-            logger.warning('Session was closed. Going to reopen.')
-            self.session = aiohttp.ClientSession(loop=self.loop)
-
         webhook_url = self.cfg['monitoring'].get('health_webhook', None)
 
         if not webhook_url:
             logger.debug('Ignoring post_to_webhook, no health_webhook! content=%s, embed=%s', content, embed)
             return
 
-        async with self.session as session:
-            await session.post(webhook_url, json={'content': content, 'embeds': [embed.to_dict()]})
+        if self.session.closed:
+            logger.warning('Cannot post to webhook -- it\'s closed! Bailing.')
+            return
+
+        await self.session.post(webhook_url, json={'content': content, 'embeds': [embed.to_dict()]})
 
     async def on_message(self, msg):
         # do not process messages from other bots
