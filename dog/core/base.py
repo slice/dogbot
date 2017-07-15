@@ -8,6 +8,7 @@ import sys
 import aiohttp
 import aioredis
 import asyncpg
+import discord
 from discord.ext import commands
 
 from dog.core.context import DogbotContext
@@ -110,6 +111,24 @@ class BaseBot(ReloadableBot):
         # load core extensions
         self.load_exts_recursively('dog/core/ext', 'Core recursive load')
 
+    async def post_to_webhook(self, content=None, *, embed: discord.Embed=None):
+        if not self.cfg:
+            # wat
+            return
+
+        if self.session.closed:
+            logger.warning('Session was closed. Going to reopen.')
+            self.session = aiohttp.ClientSession(loop=self.loop)
+
+        webhook_url = self.cfg['monitoring'].get('health_webhook', None)
+
+        if not webhook_url:
+            logger.debug('Ignoring post_to_webhook, no health_webhook! content=%s, embed=%s', content, embed)
+            return
+
+        async with self.session as session:
+            await session.post(webhook_url, json={'content': content, 'embeds': [embed.to_dict()]})
+
     async def on_message(self, msg):
         # do not process messages from other bots
         if msg.author.bot:
@@ -121,10 +140,24 @@ class BaseBot(ReloadableBot):
         ctx = await self.get_context(msg, cls=DogbotContext)
         await self.invoke(ctx)
 
+    async def on_shard_ready(self, shard_id):
+        embed = discord.Embed(title=f'Shard #{shard_id} is ready.', color=discord.Color.green())
+        await self.post_to_webhook(embed=embed)
+
+    async def on_resumed(self):
+        embed = discord.Embed(title='Resumed', description='The bot has resumed its connection to Discord.',
+                              color=discord.Color.orange())
+        await self.post_to_webhook(embed=embed)
+
     async def on_ready(self):
         print('Bot is ready!')
         print('[User]', self.user)
         print('[ID]  ', self.user.id)
+
+        ready_embed = discord.Embed(title='Bot is ready!',
+                                    description='The bot has connected to Discord. It is now ready to process commands.',
+                                    color=discord.Color.green())
+        await self.post_to_webhook(embed=ready_embed)
 
 
 class Selfbot(commands.Bot):
