@@ -56,10 +56,6 @@ class DogbotContext(commands.Context):
             # wait for a message
             msg = await self.wait_for_response()
 
-            # don't choke when using a selfbot
-            if msg.author == self.bot.user and msg.content.startswith('Pick one, or send'):
-                continue
-
             # user wants to cancel?
             if msg.content == 'cancel':
                 await self.send('Canceled selection.')

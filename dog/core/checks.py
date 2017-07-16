@@ -91,12 +91,3 @@ def is_moderator():
     """ Check: Checks if a person is a "Dogbot Moderator". """
     return commands.check(lambda ctx: is_dogbot_moderator(ctx))
 
-
-def selfbot_only():
-    """ Check: Checks if the bot is running in selfbot mode. """
-    return commands.check(lambda ctx: not ctx.bot.user.bot)
-
-
-def bot_only():
-    """ Check: Checks if the bot is running normally (not in selfbot mode). """
-    return commands.check(lambda ctx: ctx.bot.user.bot)

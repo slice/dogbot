@@ -1,9 +1,7 @@
 # bot
-dog_config.py
-dog_config.production.py
 *.log
-dog_blocked.json
 config*.yml
+data
 
 # rips
 *.zip

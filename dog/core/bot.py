@@ -13,7 +13,7 @@ import praw
 import raven
 from discord.ext import commands
 from dog.core import utils
-from dog.core.base import BaseBot, Selfbot
+from dog.core.base import BaseBot
 
 from . import botcollection, errors
 
@@ -468,8 +468,3 @@ class DogBot(BaseBot):
             # dispatch the message
             self.sentry.captureMessage(message)
             logger.error(message)
-
-
-class DogSelfbot(BaseBot, Selfbot):
-    def __init__(self, *args, **kwargs):
-        super().__init__(command_prefix='hey selfbot, ', *args, **kwargs)

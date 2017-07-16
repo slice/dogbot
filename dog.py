@@ -5,7 +5,6 @@ import sys
 from ruamel.yaml import YAML
 
 from dog import DogBot
-from dog.core.bot import DogSelfbot
 
 with open('config.yml', 'r') as config_file:
     cfg = YAML(typ='safe').load(config_file)
@@ -47,6 +46,17 @@ try:
 except ModuleNotFoundError:
     pass
 
+is_docker = '--docker' in ' '.join(sys.argv)
+if is_docker:
+    logger.info('Running in Docker mode.')
+    cfg['db']['redis'] = 'redis'
+    cfg['db']['postgres'] = {
+        'user': 'dogbot',
+        'database': 'dogbot',
+        'password': 'dogbot',
+        'host': 'postgres'
+    }
+    logger.debug('Finished database configuration: %s', cfg['db'])
 
 # gather additional options from the configuration file
 additional_options = getattr(cfg, 'options', {})
@@ -58,18 +68,10 @@ additional_options.update({
 
 logger.info('Bot options: %s', additional_options)
 
-# create dogbot instance
-selfbot_mode = '--selfbot' in ' '.join(sys.argv)
-if selfbot_mode:
-    logger.warning('Running in selfbot mode!')
-    # change the database
-    cfg['db']['postgres']['database'] = 'dog_selfbot'
-    d = DogSelfbot(cfg=cfg, **additional_options)
-    d.load_exts_recursively('dog/selfext', 'Initial selfbot recursive load')
-else:
-    d = DogBot(cfg=cfg, **additional_options)
-    d.load_exts_recursively('dog/ext', 'Initial recursive load')
-d.run(cfg['tokens']['selfbot'] if selfbot_mode else cfg['tokens']['bot'], bot=not selfbot_mode)
+# create and run the bot
+d = DogBot(cfg=cfg, **additional_options)
+d.load_exts_recursively('dog/ext', 'Initial recursive load')
+d.run(cfg['tokens']['bot'])
 
 # close log handlers (why)
 # https://github.com/Rapptz/RoboDanny/blob/master/bot.py#L128-L132
