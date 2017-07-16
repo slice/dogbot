@@ -161,7 +161,7 @@ class Config(Cog):
         cache = ctx.bot.prefix_cache.get(ctx.guild.id, [])
 
         try:
-            async with ctx.bot.pgpool.acquire() as conn:
+            async with ctx.acquire() as conn:
                 await conn.execute('INSERT INTO prefixes VALUES ($1, $2)', ctx.guild.id, prefix)
         except asyncpg.UniqueViolationError:
             await ctx.send('This server already has that prefix.')
@@ -174,7 +174,7 @@ class Config(Cog):
     @prefix.command(name='remove')
     async def prefix_remove(self, ctx: commands.Context, prefix: Prefix):
         """ Removes a prefix. """
-        async with ctx.bot.pgpool.acquire() as conn:
+        async with ctx.acquire() as conn:
             await conn.execute('DELETE FROM prefixes WHERE guild_id = $1 AND prefix = $2', ctx.guild.id,
                                prefix)
         try:

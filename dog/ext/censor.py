@@ -268,7 +268,7 @@ class Censorship(Cog):
         It means that Dogbot will kick upon someone violating the invites filter, and will ban upon someone violating
         the videosites filter.
         """
-        async with ctx.bot.pgpool.acquire() as conn:
+        async with ctx.acquire() as conn:
             punishments = await conn.fetch('SELECT * FROM censorship_punishments WHERE guild_id = $1', ctx.guild.id)
             status = {r['censorship_type'].lower(): r['punishment'].lower() for r in punishments}
             await ctx.send(utils.format_dict(status))

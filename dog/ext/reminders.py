@@ -80,7 +80,7 @@ class Reminders(Cog):
     @remind.command()
     async def list(self, ctx):
         """ Lists your reminders. """
-        async with ctx.bot.pgpool.acquire() as conn:
+        async with ctx.acquire() as conn:
             reminders = await conn.fetch('SELECT * FROM reminders WHERE author_id = $1', ctx.author.id)
             top = f'You currently have {len(reminders)} reminder(s).\n\n'
             lst = [f'#{r["id"]} `{r["note"]}` \N{EM DASH} due {utils.ago(r["due"])}' for r in reminders]
@@ -89,7 +89,7 @@ class Reminders(Cog):
     @remind.command()
     async def cancel(self, ctx, rid: int):
         """ Cancels a reminder. """
-        async with ctx.bot.pgpool.acquire() as conn:
+        async with ctx.acquire() as conn:
             reminder = await conn.fetchrow('SELECT * FROM reminders WHERE id = $1 AND author_id = $2',
                                            rid, ctx.author.id)
             if not reminder:

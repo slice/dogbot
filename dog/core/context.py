@@ -21,6 +21,9 @@ class DogbotContext(commands.Context):
             # the command message got deleted somehow
             pass
 
+    def acquire(self):
+        return self.bot.pgpool.acquire()
+
     async def wait_for_response(self):
         """
         Waits for a message response from the message author, then returns the

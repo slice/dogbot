@@ -111,7 +111,7 @@ class Autorole(Cog):
 
         log.debug('Adding autorole. (type=%s, roles=%s)', type, roles)
         try:
-            async with ctx.bot.pgpool.acquire() as conn:
+            async with ctx.acquire() as conn:
                 await conn.execute('INSERT INTO autoroles (guild_id, type, roles) VALUES ($1, $2, $3)', ctx.guild.id,
                                    type.name, list(map(lambda r: r.id, roles)))
         except asyncpg.UniqueViolationError:
@@ -121,7 +121,7 @@ class Autorole(Cog):
     @autorole.command()
     async def delete(self, ctx, type: AutoroleType):
         """ Deletes an autorole. """
-        async with ctx.bot.pgpool.acquire() as conn:
+        async with ctx.acquire() as conn:
             await conn.execute('DELETE FROM autoroles WHERE guild_id = $1 AND type = $2', ctx.guild.id, type.name)
         await ctx.ok()
 
@@ -136,7 +136,7 @@ class Autorole(Cog):
             formatted_roles = ', '.join([format_role(role_id) for role_id in record['roles']])
             return '{0[type]}: {1}'.format(record, formatted_roles)
 
-        async with ctx.bot.pgpool.acquire() as conn:
+        async with ctx.acquire() as conn:
             autoroles = await conn.fetch('SELECT * FROM autoroles WHERE guild_id = $1', ctx.guild.id)
         if not autoroles:
             return await ctx.send('There are no autoroles in this server.')

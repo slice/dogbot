@@ -73,7 +73,7 @@ class Internal(Cog):
         clients = ctx.bot.voice_clients
         embed.add_field(name='Voice', value=f'{len(clients)} voice client(s)')
 
-        async with ctx.bot.pgpool.acquire() as conn:
+        async with ctx.acquire() as conn:
             record = await conn.fetchrow('SELECT SUM(times_used) FROM command_statistics')
             embed.add_field(name='Commands Ran', value=utils.commas(record['sum']) + ' total')
 
@@ -86,7 +86,7 @@ class Internal(Cog):
 
         Blacklisted guilds will be automatically left by the bot upon being added to one.
         """
-        async with ctx.bot.pgpool.acquire() as conn:
+        async with ctx.acquire() as conn:
             try:
                 await conn.execute('INSERT INTO blacklisted_guilds VALUES ($1)', guild)
             except asyncpg.UniqueViolationError:
@@ -96,7 +96,7 @@ class Internal(Cog):
     @commands.command(aliases=['ubl'])
     async def unblacklist(self, ctx, guild: int):
         """ Unblacklists a guild. """
-        async with ctx.bot.pgpool.acquire() as conn:
+        async with ctx.acquire() as conn:
             await conn.execute('DELETE FROM blacklisted_guilds WHERE guild_id = $1', guild)
         await ctx.ok()
 
@@ -133,7 +133,7 @@ class Internal(Cog):
                 results.append(f'\N{CROSS MARK} Could not resolve user `{id}`, not flushed.')
                 continue
 
-            async with ctx.bot.pgpool.acquire() as conn:
+            async with ctx.acquire() as conn:
                 ban_row = await conn.fetchrow('SELECT * FROM globalbans WHERE user_id = $1', user.id)
 
             if ban_row is None:
@@ -148,7 +148,7 @@ class Internal(Cog):
     @globalbans.command(name='add')
     async def gb_add(self, ctx, who: converters.RawMember, *, reason):
         """ Adds a global ban. """
-        async with ctx.bot.pgpool.acquire() as conn:
+        async with ctx.acquire() as conn:
             try:
                 sql = 'INSERT INTO globalbans (user_id, reason, created_at) VALUES ($1, $2, $3)'
                 await conn.execute(sql, who.id, reason, datetime.datetime.utcnow())
@@ -165,7 +165,7 @@ class Internal(Cog):
         is_banned = await ctx.bot.is_global_banned(who)
         is_banned_cached = (await ctx.bot.redis.get(f'cache:globalbans:{who.id}')).decode() == 'banned'
 
-        async with ctx.bot.pgpool.acquire() as conn:
+        async with ctx.acquire() as conn:
             actual_ban = await conn.fetchrow('SELECT * FROM globalbans WHERE user_id = $1', who.id)
 
         embed = discord.Embed(color=(discord.Color.red() if is_banned else discord.Color.green()))
@@ -182,7 +182,7 @@ class Internal(Cog):
     @globalbans.command(name='remove')
     async def gb_remove(self, ctx, who: converters.RawMember):
         """ Removes a global ban. """
-        async with ctx.bot.pgpool.acquire() as conn:
+        async with ctx.acquire() as conn:
             await conn.execute('DELETE FROM globalbans WHERE user_id = $1', who.id)
         await ctx.ok()
 
