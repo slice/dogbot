@@ -218,16 +218,17 @@ class DogBot(BaseBot):
             await asyncio.sleep(60 * 10)  # only report every 10 minutes
 
     async def datadog_increment(self, metric):
-        def run():
-            dd.statsd.increment(metric)
+        if 'datadog' not in self.cfg['monitoring']:
+            return
+
         try:
-            await self.loop.run_in_executor(None, run)
+            await self.loop.run_in_executor(None, dd.statsd.increment, metric)
         except Exception:
             logger.exception('Failed to report metric')
 
     async def datadog_report(self):
         if 'datadog' not in self.cfg['monitoring']:
-            logger.warning('No DataDog configuration detected, not going to report statistics.')
+            logger.warning('No Datadog configuration detected, not going to report statistics.')
             return
 
         dd.initialize(api_key=self.cfg['monitoring']['datadog']['api_key'],

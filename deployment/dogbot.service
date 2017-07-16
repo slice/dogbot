@@ -1,9 +1,0 @@
-[Unit]
-description=Discord bot
-
-[Service]
-WorkingDirectory=/srv/dog
-ExecStart=/bin/bash -c "source /usr/lib/venvs/dogbot/bin/activate && python3 /srv/dog/dog.py"
-
-[Install]
-WantedBy=multi-user.target
