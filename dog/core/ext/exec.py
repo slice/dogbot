@@ -136,12 +136,12 @@ class Exec(Cog):
                 # too long
                 try:
                     url = await haste(ctx.bot.session, stream + repr(ret))
-                    await ctx.send('Result was too long. ' + url)
+                    await ctx.send(ctx._('cmd.eval.long', url))
                 except KeyError:
                     # even hastebin couldn't handle it
-                    await ctx.send('Result was too long, even for Hastebin.')
+                    await ctx.send(ctx._('cmd.eval.huge'))
                 except aiohttp.ClientError:
-                    await ctx.send('Unable to send the result to Hastebin, it\'s probably down.')
+                    await ctx.send(ctx._('cmd.eval.pastebin_down'))
 
 
 def setup(bot):

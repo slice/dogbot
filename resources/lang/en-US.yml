@@ -1,0 +1,9 @@
+cmd:
+  ping:
+    pre: 'Pong!'
+    post: 'Pong! RTT: `{rtt:.2f}ms`'
+  prefixes: 'My prefixes are: {prefixes}'
+  eval:
+    long: 'Result was too long. {}'
+    huge: 'Result was too long, even for Pastebin.'
+    pastebin_down: 'Result was too long. Unable to contact Pastebin.'

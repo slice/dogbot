@@ -15,9 +15,7 @@ from time import monotonic
 import discord
 from discord.ext import commands
 
-from dog.core import botcollection, utils
 from dog import Cog
-from dog.haste import haste
 
 logger = logging.getLogger(__name__)
 
@@ -55,15 +53,9 @@ class Admin(Cog):
     @commands.command()
     async def ping(self, ctx):
         """ You know what this does. """
-
-        # get rtt
         begin = monotonic()
-        msg = await ctx.send('Pong!')
-        end = monotonic()
-
-        rtt = round((end - begin) * 1000, 2)
-
-        await msg.edit(content=f'Pong! \N{EM DASH} RTT: `{rtt}ms`')
+        msg = await ctx.send(ctx._('cmd.ping.pre'))
+        await msg.edit(content=ctx._('cmd.ping.post', rtt=(monotonic() - begin) * 100))
 
     @commands.command()
     @commands.is_owner()
@@ -94,7 +86,7 @@ class Admin(Cog):
     async def prefixes(self, ctx):
         """ Lists the bot's prefixes. """
         prefixes = ', '.join([f'`{p}`' for p in ctx.bot.cfg['bot']['prefixes']])
-        await ctx.send(f'My prefixes are: {prefixes}')
+        await ctx.send(ctx._('cmd.prefixes', prefixes=prefixes))
 
     @commands.command()
     @commands.is_owner()

@@ -12,6 +12,8 @@ import discord
 import praw
 import raven
 from discord.ext import commands
+from ruamel.yaml import YAML
+
 from dog.core import utils
 from dog.core.base import BaseBot
 
@@ -88,6 +90,14 @@ class DogBot(BaseBot):
             if prefixes and not self.prefix_cache.get(guild.id):
                 self.prefix_cache[guild.id] = prefix_strings
             return [] if not prefixes else prefix_strings
+
+    def lang(self, key: str, lang: str='en-US'):
+        with open(f'./resources/lang/{lang}.yml') as f:
+            root = YAML(typ='safe').load(f)
+        current = root
+        for part in key.split('.'):
+            current = current[part]
+        return current
 
     async def prefix(self, bot, message: discord.Message):
         """ Returns prefixes for a message. """

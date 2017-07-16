@@ -24,6 +24,10 @@ class DogbotContext(commands.Context):
     def acquire(self):
         return self.bot.pgpool.acquire()
 
+    def _(self, key: str, *args, **kwargs):
+        val = self.bot.lang(key, 'en-US')
+        return val if (not args and not kwargs) else val.format(*args, **kwargs)
+
     async def wait_for_response(self):
         """
         Waits for a message response from the message author, then returns the
