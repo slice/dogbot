@@ -30,22 +30,6 @@ def _restart():
 class Admin(Cog):
     @commands.command()
     @commands.is_owner()
-    async def leave_collections(self, ctx):
-        """ Leaves collections. """
-        left_guilds = []
-        for g in ctx.bot.guilds:
-            if await botcollection.is_bot_collection(ctx.bot, g):
-                ratio = botcollection.user_to_bot_ratio(g)
-                left_guilds.append(f'\N{BULLET} {g.name} (`{g.id}`, ratio=`{ratio}`)')
-                await ctx.bot.notify_think_is_collection(g)
-                await g.leave()
-        if not left_guilds:
-            return await ctx.send('\N{SMIRKING FACE} No collections!')
-        await ctx.send('\n'.join(left_guilds))
-        await ctx.send(f'Left `{len(left_guilds)}` guilds in total.')
-
-    @commands.command()
-    @commands.is_owner()
     async def update(self, ctx, is_hot: str = None):
         """ Updates dogbot from GitHub. """
         msg = await ctx.send('Fetching updates...')

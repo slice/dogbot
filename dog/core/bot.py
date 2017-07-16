@@ -293,38 +293,6 @@ class DogBot(BaseBot):
         except discord.Forbidden:
             logger.warning('Forbidden to send to monitoring channel -- ignoring.')
 
-    async def notify_think_is_collection(self, guild: discord.Guild):
-        """
-        Notifies a guild that they are a collection.
-
-        Steps are taken in order to notify a guild:
-
-        - Send it to the default channel, but if that doesn't work, then
-        - DM the owner of the guild, but if that doesn't work, then
-        - Loop through all channels in the guild and message the first sendable
-          one that we find.
-
-        """
-        support_invite = 'discord.gg/3dd7czT'
-        header_public = "Hi there! Somebody added me to this server, "
-        header_dm = f"Hi there! Somebody added me to your server, {guild.name} (`{guild.id}`), "
-        content = """but my algorithms tell me that this is a bot collecion! (A server dedicated to keeping loads of
-        bots in one place, which I don't like!) If this server is not a bot collection, please talk to me, here:
-        {invite}, and I'll try to get back to you as soon as possible (make sure to include the ID of your server so I
-        can whitelist you)! Thanks!
-        """.strip().replace('\n', ' ')
-
-        try:
-            await guild.default_channel.send(header_public + content.format(invite=support_invite))
-            logger.info('Notified %s (%d) that they were a collection.',
-                        guild.name, guild.id)
-        except discord.Forbidden:
-            logger.info('Couldn\'t send to default channel. DMing owner!')
-            try:
-                await guild.owner.send(header_dm + content)
-            except discord.Forbidden:
-                logger.info('Couldn\'t inform the server at all. Giving up.')
-
     async def on_guild_join(self, g):
         # calculate the utb ratio
         ratio = botcollection.user_to_bot_ratio(g)
@@ -337,46 +305,27 @@ class DogBot(BaseBot):
 
         logger.info('New guild: %s (%d)', g.name, g.id)
 
-        if await botcollection.is_bot_collection(self, g):
-            # uh oh!
-            logger.info('I think %s (%d) by %s is a bot collection/is blacklisted! Leaving.',
-                        g.name, g.id, str(g.owner))
+        is_collection = await botcollection.is_bot_collection(self, g)
+        should_detect_collections = self.cfg['bot'].get('bot_collection_detection', False)
 
-            # notify that i'm leaving a collection
-            is_blacklisted = await botcollection.is_blacklisted(self, g.id)
-            if not is_blacklisted:
-                # if they are a collection, just straight up leave (don't send a message)
-                await self.notify_think_is_collection(g)
-
+        if await botcollection.is_blacklisted(self, g) or (is_collection and should_detect_collections):
             # leave it
             self.refuse_notify_left.append(g.id)
             await g.leave()
 
             # monitor
-            title = '\N{RADIOACTIVE SIGN} ' + ('Left blacklisted guild' if is_blacklisted else 'Left bot collection')
+            title = '\N{RADIOACTIVE SIGN} ' + 'Left toxic guild'
             return await self.monitor_send(title=title, fields=fields, color=0xff655b)
 
         # monitor
         await self.monitor_send(title='\N{INBOX TRAY} Added to new guild', fields=fields, color=0x71ff5e)
         await self.redis.incr('stats:guilds:adds')
-
-        WELCOME_MESSAGE = ('\N{DOG FACE} Woof! Hey there! I\'m Dogbot! To get a list of all of my '
-                           'commands, type `d?help` in chat, so I can DM you my commands! If you '
-                           'need help, need to report a bug, or just want to request a feature, '
-                           'please join the support server: https://discord.gg/3dd7czT Thanks!')
-
-        logger.info('PMing owner of %s (%d)...', g.name, g.id)
-        try:
-            await g.owner.send(WELCOME_MESSAGE)
-        except discord.Forbidden:
-            logger.info('Failed to DM owner. Not caring...')
         await self.datadog_increment('discord.guilds.additions')
 
     async def on_guild_remove(self, g):
         if g.id in self.refuse_notify_left:
             # refuse to notify that we got removed from the guild, because the "left bot collection"/"left blacklisted"
             # monitor message already does that
-            logger.debug('Refusing to notify guild leave, already sent a message about that. gid=%d', g.id)
             self.refuse_notify_left.remove(g.id)
             return
 
