@@ -3,18 +3,8 @@
 config*.yml
 data
 
-# rips
-*.zip
-
-# docs
-documentation/build
-
 # idea
 .idea
-
-# deployment
-fabfile.py
-playbook.retry
 
 # python
 __pycache__
