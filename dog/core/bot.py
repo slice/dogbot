@@ -291,7 +291,7 @@ class DogBot(BaseBot):
         is_collection = await botcollection.is_bot_collection(self, g)
         should_detect_collections = self.cfg['bot'].get('bot_collection_detection', False)
 
-        if await botcollection.is_blacklisted(self, g) or (is_collection and should_detect_collections):
+        if await botcollection.is_blacklisted(self, g.id) or (is_collection and should_detect_collections):
             # leave it
             self.refuse_notify_left.append(g.id)
             await g.leave()
