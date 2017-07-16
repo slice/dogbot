@@ -166,7 +166,7 @@ class DogBot(BaseBot):
     async def set_playing_statuses(self):
         short_prefix = min(self.cfg['bot']['prefixes'], key=len)
         for shard in self.shards.values():
-            game = discord.Game(name=f'SH{shard.id} | {short_prefix}help')
+            game = discord.Game(name=f'{short_prefix}help | shard {shard.id}')
             await shard.ws.change_presence(game=game)
 
     async def on_member_ban(self, guild, user):
