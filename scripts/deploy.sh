@@ -4,6 +4,6 @@ scp config.prod.yml shiba:~/dogbot/config.yml
 
 ssh shiba -t << ENDSSH
 cd ~/dogbot; git pull
-cd ~/dogbot; docker-compose stop
+cd ~/dogbot; docker-compose kill
 cd ~/dogbot; docker-compose up -d --build --force-recreate
 ENDSSH
