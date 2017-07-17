@@ -243,7 +243,7 @@ class Music(Cog):
                 del self.leave_tasks[member.guild.id]
                 logger.debug('Cancelling leave task for guild %d.', member.guild.id)
 
-    @commands.group(aliases=['m', 'mus'])
+    @commands.group(aliases=['m', 'mus'], hidden=True)
     @commands.guild_only()
     async def music(self, ctx):
         """ Music. Beep boop! """

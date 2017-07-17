@@ -12,10 +12,7 @@ import random
 from discord.ext import commands
 
 from dog import Cog
-from dog.core import checks, utils, converters
-
-SHIBE_ENDPOINT = 'http://shibe.online/api/shibes?count=1&urls=true'
-GOOGLE_COMPLETE = 'https://www.google.com/complete/search'
+from dog.core import checks, utils
 
 logger = logging.getLogger(__name__)
 
@@ -53,40 +50,19 @@ class Fun(Cog):
         with open('resources/dogfacts.txt') as dogfacts:
             self.dogfacts = [fact.strip() for fact in dogfacts.readlines()]
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.cooldown(1, 1, commands.BucketType.channel)
     async def clap(self, ctx, *, text: commands.clean_content):
         """👏MAKES👏TEXT👏LOOK👏LIKE👏THIS👏"""
         clap = '\N{CLAPPING HANDS SIGN}'
         await ctx.send(clap + text.replace(' ', clap) + clap)
 
-    @commands.command()
+    @commands.command(hidden=True)
     async def mock(self, ctx, *, text: commands.clean_content):
         """Mocks."""
         ev = random.randint(2, 4)
         result = [character.upper() if not text.index(character) % ev == 0 else character.lower() for character in text]
         await ctx.send(''.join(result))
-
-    @commands.command()
-    async def complete(self, ctx, *, text: str):
-        """ Pushes text through Google search's autocomplete. """
-        async with ctx.channel.typing():
-            payload = {
-                'q': text, 'client': 'hp', 'hl': 'en', 'gs_rn': 64, 'gs_ri': 'hp', 'cp': 5, 'gs_id': 'w', 'xhr': 't'
-            }
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029'
-                              '.96 Safari/537.36'
-            }
-
-            try:
-                async with self.bot.session.get(GOOGLE_COMPLETE, headers=headers, params=payload) as resp:
-                    result = random.choice((await resp.json())[1])[0]
-                    await ctx.send(utils.strip_tags(result))
-            except aiohttp.ClientError:
-                await ctx.send('Something went wrong, try again.')
-            except IndexError:
-                await ctx.send('No results.')
 
     @commands.command()
     @checks.is_moderator()
@@ -118,29 +94,6 @@ class Fun(Cog):
             if not result:
                 return await ctx.send('No results!')
             await ctx.send(embed=make_urban_embed(result))
-
-    @commands.command()
-    @commands.cooldown(1, 2, commands.BucketType.user)
-    async def shibe(self, ctx):
-        """
-        Posts a random Shiba Inu picture.
-
-        The pictures are from shibe.online.
-        """
-        async with ctx.channel.typing():
-            try:
-                resp = await utils.get_json(self.bot.session, SHIBE_ENDPOINT)
-            except aiohttp.ClientError:
-                return await ctx.send('\N{DISAPPOINTED FACE} Failed to contact the shibe API.')
-            dog_url = resp[0]
-            await ctx.send(embed=discord.Embed().set_image(url=dog_url))
-
-    @commands.command()
-    @commands.guild_only()
-    @checks.config_is_set('woof_command_enabled')
-    async def woof(self, ctx):
-        """ A sample, secret command. """
-        await ctx.send('Woof!')
 
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
