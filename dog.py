@@ -59,7 +59,7 @@ if is_docker:
     logger.debug('Finished database configuration: %s', cfg['db'])
 
 # gather additional options from the configuration file
-additional_options = getattr(cfg, 'options', {})
+additional_options = cfg['bot'].get('options', {})
 additional_options.update({
     'owner_id': getattr(cfg, 'owner_id', None),
     'postgresql_auth': cfg['db']['postgres'],
