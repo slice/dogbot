@@ -31,7 +31,7 @@ class Admin(Cog):
         """ You know what this does. """
         begin = monotonic()
         msg = await ctx.send(ctx._('cmd.ping.pre'))
-        await msg.edit(content=ctx._('cmd.ping.post', rtt=(monotonic() - begin) * 100))
+        await msg.edit(content=ctx._('cmd.ping.post', rtt=(monotonic() - begin) * 1000))
 
     @commands.command()
     @commands.is_owner()
