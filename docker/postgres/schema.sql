@@ -86,3 +86,9 @@ CREATE TABLE guilds (
   id bigint primary key,
   owner bigint references users(id)
 );
+
+CREATE TABLE profile_descriptions (
+  id bigint primary key,
+  description text,
+  color int
+);

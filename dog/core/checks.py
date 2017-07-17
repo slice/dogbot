@@ -75,9 +75,7 @@ def bot_perms(**permissions):
 
 
 def is_dogbot_moderator(ctx):
-    """
-    Returns whether a person is a "Dogbot Moderator".
-    """
+    """ Returns whether a person is a "Dogbot Moderator". """
     if isinstance(ctx.channel, discord.DMChannel):
         return False
     names = [r.name for r in ctx.author.roles]
@@ -91,3 +89,15 @@ def is_moderator():
     """ Check: Checks if a person is a "Dogbot Moderator". """
     return commands.check(lambda ctx: is_dogbot_moderator(ctx))
 
+
+def is_supporter(bot, user):
+    """ Returns whether a user has the supporter role in the woof server. """
+    woof_guild: discord.Guild = bot.get_guild(bot.cfg['bot']['woof']['guild_id'])
+    if not woof_guild or user not in woof_guild.members:
+        return False
+    woof_member = woof_guild.get_member(user.id)
+    return bot.cfg['bot']['woof']['donator_role'] in [r.id for r in woof_member.roles]
+
+
+def is_supporter_check():
+    return commands.check(lambda ctx: is_supporter(ctx.bot, ctx.author))

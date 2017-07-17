@@ -1,13 +1,13 @@
 """
 Information extension.
 """
-import datetime
+import logging
 
 import discord
 from discord.ext import commands
 
 from dog import Cog
-from dog.core import utils
+from dog.core import utils, checks
 
 cm = lambda v: utils.commas(v)
 
@@ -19,10 +19,12 @@ SERVER_INFO_COUNT = '''{} role(s)
 {} text channel(s), {} voice channel(s)
 {} channel(s)'''
 
+logger = logging.getLogger(__name__)
+
 
 
 class Info(Cog):
-    @commands.command(aliases=['user'])
+    @commands.group(aliases=['user'], invoke_without_command=True)
     @commands.guild_only()
     async def profile(self, ctx, *, who: discord.Member = None):
         """ Shows information about a user. """
@@ -38,6 +40,14 @@ class Info(Cog):
         shared_servers = len([g for g in ctx.bot.guilds if who in g.members])
         embed.add_field(name='Shared Servers', value=shared_servers)
 
+        if checks.is_supporter(ctx.bot, who):
+            async with ctx.acquire() as conn:
+                desc = await conn.fetchrow('SELECT * FROM profile_descriptions WHERE id = $1', who.id)
+                if desc:
+                    embed.color = discord.Color(desc['color'])
+                    embed.add_field(name='Description', value=desc['description'])
+                    logger.debug('Ok, populated.')
+
         # joined
         def add_joined_field(*, attr, name, **kwargs):
             dt = getattr(who, attr)
@@ -46,6 +56,18 @@ class Info(Cog):
         add_joined_field(attr='created_at', name='Joined Discord', inline=False)
 
         await ctx.send(embed=embed)
+
+    @profile.command(name='describe')
+    @checks.is_supporter_check()
+    async def profile_describe(self, ctx, color: discord.Color, *, description):
+        """ Sets your profile description. Supporter only. """
+        if len(description) > 1024:
+            return await ctx.send('That description is too long. There is a maximum of 1024 characters.')
+        async with ctx.acquire() as conn:
+            sql = """INSERT INTO profile_descriptions (id, description, color) VALUES ($1, $2, $3)
+                     ON CONFLICT (id) DO UPDATE SET description = $2, color = $3"""
+            await conn.execute(sql, ctx.author.id, description, color.value)
+        await ctx.send('Updated.')
 
     @commands.command(aliases=['guild'])
     @commands.guild_only()
