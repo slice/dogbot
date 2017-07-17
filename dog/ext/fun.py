@@ -14,6 +14,8 @@ from discord.ext import commands
 from dog import Cog
 from dog.core import checks, utils
 
+SHIBE_ENDPOINT = 'http://shibe.online/api/shibes?count=1&urls=true'
+
 logger = logging.getLogger(__name__)
 
 
@@ -94,6 +96,17 @@ class Fun(Cog):
             if not result:
                 return await ctx.send('No results!')
             await ctx.send(embed=make_urban_embed(result))
+
+    @commands.command(aliases=['shiba', 'dog'])
+    @commands.cooldown(1, 2, commands.BucketType.user)
+    async def shibe(self, ctx):
+        """ Posts a random Shiba Inu picture. """
+        async with ctx.typing():
+           try:
+               resp = await utils.get_json(ctx.bot.session, SHIBE_ENDPOINT)
+           except aiohttp.ClientError:
+               return await ctx.send('Failed to contact the Shibe API. Try again later.')
+           await ctx.send(embed=discord.Embed().set_image(url=resp[0]))
 
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
