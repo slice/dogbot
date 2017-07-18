@@ -7,3 +7,8 @@ cmd:
     long: 'Result was too long. {}'
     huge: 'Result was too long, even for Pastebin.'
     pastebin_down: 'Result was too long. Unable to contact Pastebin.'
+  wiki: >
+    Need help with Dogbot? Visit the wiki! {wiki}
+
+    Alternatively, you can ask help in the support server: {invite} Make sure
+    to talk in #support!

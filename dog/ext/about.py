@@ -34,13 +34,8 @@ class About(Cog):
     async def wiki(self, ctx):
         """ Need help using Dogbot? """
         wiki = f'https://github.com/{ctx.bot.cfg["bot"]["github"]}/wiki'
-        invite = 'https://discord.gg/Ucs96UH'
-        await ctx.send(f'Need help with Dogbot? The wiki ({wiki}) has all of your answers! Support server: {invite}')
-
-    @commands.command(hidden=True)
-    async def command_list(self, ctx):
-        """ Shows you my detailed list of commands. """
-        await ctx.send('The command list has been deprecated in favor of my `d?help` command.')
+        invite = ctx.bot.cfg['bot']['woof']['invite']
+        await ctx.send(ctx._('cmd.wiki', wiki=wiki, invite=invite))
 
     @commands.command(aliases=['info'])
     async def about(self, ctx):
