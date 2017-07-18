@@ -214,8 +214,7 @@ class DogBot(BaseBot):
             logger.warning('No Datadog configuration detected, not going to report statistics.')
             return
 
-        dd.initialize(api_key=self.cfg['monitoring']['datadog']['api_key'],
-                      app_key=self.cfg['monitoring']['datadog']['app_key'])
+        dd.initialize(**self.cfg['monitoring']['datadog'])
 
         while True:
             def report():

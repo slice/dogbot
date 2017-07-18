@@ -2,6 +2,7 @@
 *.log
 config*.yml
 data
+.env
 
 # idea
 .idea

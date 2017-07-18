@@ -4,6 +4,10 @@ services:
     build: ./docker/postgres
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
+  datadog:
+    image: datadog/docker-dd-agent:latest-dogstatsd
+    environment:
+      - 'API_KEY=${DATADOG_API_KEY}'
   redis:
     image: redis:latest
     command: redis-server
