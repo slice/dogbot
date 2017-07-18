@@ -12,3 +12,11 @@ cmd:
 
     Alternatively, you can ask help in the support server: {invite} Make sure
     to talk in #support!
+  about:
+    title: Woof
+    description: A utility Discord bot by {maker.mention} (`{maker.id}`)
+    birthday: '%B %m (born %Y)'
+    fields:
+      git_rev: Git revision
+      github_repo: GitHub repo
+      birthday: Birthday

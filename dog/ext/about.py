@@ -46,15 +46,16 @@ class About(Cog):
         if self.maker is None:
             self.maker = discord.utils.get(self.bot.get_all_members(), id=ctx.bot.cfg["bot"]["owner_id"])
 
-        birthday = self.bot.user.created_at.strftime('%B %m (born %Y)')
+        birthday = self.bot.user.created_at.strftime(ctx._('cmd.about.birthday'))
         github = ctx.bot.cfg["bot"]["github"]
 
-        embed = discord.Embed(title='Dogbot',
-            description=f'A handy Discord bot by {self.maker.mention} ({self.maker.id}).')
+        embed = discord.Embed(title=ctx._('cmd.about.title'), description=ctx._('cmd.about.description',
+                                                                                maker=self.maker))
         rev_link = f'[{git_revision}](https://github.com/{github}/commit/{git_revision})'
-        embed.add_field(name='Git revision', value=rev_link)
-        embed.add_field(name='GitHub repository', value='[{0}](https://www.github.com/{0})'.format(github))
-        embed.add_field(name='Birthday', value=birthday)
+        embed.add_field(name=ctx._('cmd.about.fields.git_rev'), value=rev_link)
+        embed.add_field(name=ctx._('cmd.about.fields.github_repo'), value='[{0}](https://www.github.com/{0})'.format(
+            github))
+        embed.add_field(name=ctx._('cmd.about.fields.birthday'), value=birthday)
         embed.set_author(name=f'{self.maker.name}#{self.maker.discriminator}', icon_url=self.maker.avatar_url)
 
         pyversion = platform.python_version()
