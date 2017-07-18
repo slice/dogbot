@@ -231,6 +231,11 @@ class Utility(Cog):
             pass
         await poll_msg.edit(embed=embed)
 
+    @poll.error
+    async def poll_error(self, ctx, error):
+        if isinstance(error, commands.CommandInvokeError) and isinstance(error.original, discord.NotFound):
+            error.should_suppress = True
+
     @commands.command()
     async def jisho(self, ctx, *, query: str):
         """ Looks up Jisho definitions. """
