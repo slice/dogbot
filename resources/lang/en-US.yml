@@ -1,4 +1,14 @@
 cmd:
+  config:
+    set:
+      invalid: >
+        That configuration key is invalid. Execute `d?cfg permitted` to see a list
+        of all settable configuration keys. See {wikipage} for more help.
+    list:
+      none: >
+        There are no set configuration keys in this server!
+
+        Try running `d?cfg permitted` to see a list of configurable keys.
   ping:
     pre: 'Pong!'
     post: 'Pong! RTT: `{rtt:.2f}ms`'
