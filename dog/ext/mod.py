@@ -306,16 +306,6 @@ class Mod(Cog):
         else:
             await ctx.ok()
 
-    def _embed_field_for(self, member):
-        return f'{member.mention} {member}'
-
-    def _make_action_embed(self, executor, victim, **kwargs):
-        embed = discord.Embed(**kwargs)
-        embed.add_field(name='Who did it', value=self._embed_field_for(executor))
-        embed.add_field(name='Who was it', value=self._embed_field_for(victim))
-        embed.set_footer(text=utils.now())
-        return embed
-
     @commands.command()
     @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
@@ -329,6 +319,25 @@ class Mod(Cog):
         perms = discord.Permissions(permissions=0)
         await ctx.guild.create_role(name=name, permissions=perms)
         await ctx.ok()
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.has_permissions(manage_roles=True)
+    @checks.bot_perms(manage_roles=True)
+    async def empty_out(self, ctx, *, role: discord.Role):
+        """
+        Empties out a role's permissions.
+
+        This effectively turn it into a vanity role.
+        """
+        if role > ctx.guild.me.top_role:
+            return await ctx.send('My position on the role hierarchy is lower than that role, so I can\'t edit it.')
+
+        try:
+            await role.edit(permissions=discord.Permissions(permissions=0))
+            await ctx.ok()
+        except discord.Forbidden:
+            await ctx.send('I can\'t do that.')
 
     @commands.command()
     @commands.guild_only()
