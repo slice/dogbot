@@ -79,7 +79,7 @@ class Config(Cog):
     @config.command(name='list', aliases=['ls'])
     async def config_list(self, ctx):
         """ Lists set configuration keys for this server. """
-        keys = [k.decode().split(':')[1] for k in await self.bot.redis.keys(f'{ctx.guild.id}:*')]
+        keys = [k.decode().split(':')[1] async for k in self.bot.redis.iscan(match=f'{ctx.guild.id}:*')]
         if not keys:
             await ctx.send('No set configuration keys in this server!'
                            '\nTry running `d?config permitted` to see a list'
@@ -118,7 +118,7 @@ class Config(Cog):
         """
 
     @prefix.command(name='add')
-    async def prefix_add(self, ctx: commands.Context, prefix: Prefix):
+    async def prefix_add(self, ctx, prefix: Prefix):
         """
         Adds a prefix.
 
@@ -143,7 +143,7 @@ class Config(Cog):
         await ctx.ok()
 
     @prefix.command(name='remove')
-    async def prefix_remove(self, ctx: commands.Context, prefix: Prefix):
+    async def prefix_remove(self, ctx, prefix: Prefix):
         """ Removes a prefix. """
         async with ctx.acquire() as conn:
             await conn.execute('DELETE FROM prefixes WHERE guild_id = $1 AND prefix = $2', ctx.guild.id,
