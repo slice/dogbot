@@ -20,29 +20,6 @@ def config_is_set(name: str):
     return commands.check(_predicate)
 
 
-def global_config_is_set(name: str):
-    """ Check: Checks if a global configuration key is set. """
-    async def _predicate(ctx: commands.Context):
-        return await ctx.bot.redis.get(name) is not None
-
-    return commands.check(_predicate)
-
-
-def global_config_is_not_set(name: str):
-    """
-    Check: Checks if a global configuration key is **not** set.
-
-    For example: ::
-
-        @checks.global_config_is_not_set('explode_world')
-
-    """
-    async def _predicate(ctx):
-        return await ctx.bot.redis.get(name) is None
-
-    return commands.check(_predicate)
-
-
 def _beautify_permission_code(p):
     return p.replace('_', ' ').replace('guild', 'server').title()
 

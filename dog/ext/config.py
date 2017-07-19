@@ -1,8 +1,5 @@
 """
 Contains commands that have to do with configuring the bot for your server.
-
-This extension also contains commands that globally configure the bot, but only
-the owner can use those.
 """
 
 import logging
@@ -40,32 +37,6 @@ class Config(Cog):
             'pollr_announce',
             'log_all_message_events'
         ]
-
-    @commands.group(aliases=['gcfg'])
-    @commands.is_owner()
-    async def global_config(self, ctx):
-        """ Manages global configuration for the bot. """
-
-    @global_config.command(name='set')
-    async def global_config_set(self, ctx, name: str, value: str='on'):
-        """ Sets a config field. """
-        await self.bot.redis.set(name, value)
-        await ctx.ok()
-
-    @global_config.command(name='remove', aliases=['rm', 'del', 'delete'])
-    async def global_config_remove(self, ctx, name: str):
-        """ Remove a config field. """
-        await self.bot.redis.delete(name)
-        await ctx.ok()
-
-    @global_config.command(name='get', aliases=['cat'])
-    async def global_config_get(self, ctx, name: str):
-        """ Views a config field. """
-        value = await self.bot.redis.get(name)
-        if value is None:
-            await ctx.send(f'`{name}` is unset.')
-        else:
-            await ctx.send(f'`{name}`: {value.decode()}')
 
     @commands.group(aliases=['cfg'])
     @commands.guild_only()
