@@ -16,30 +16,7 @@ from dog.core.utils import AsyncQueue
 logger = logging.getLogger(__name__)
 
 
-class Reminders(Cog):
-    def __init__(self, bot):
-        super().__init__(bot)
-        self.bot = bot
-        self.queue = AsyncQueue(bot, 'Reminders', fulfill_item=self.fulfill_item, get_latest_item=self.get_latest_item)
-
-    def __unload(self):
-        self.queue.handler.cancel()
-
-    async def create_reminder(self, ctx, due, note):
-        async with self.bot.pgpool.acquire() as conn:
-            cid = ctx.channel.id if isinstance(ctx.channel, discord.TextChannel) else ctx.author.id
-            await conn.execute('INSERT INTO reminders (author_id, channel_id, note, due) VALUES ($1, $2, $3, $4)',
-                               ctx.author.id, cid, note, due)
-        logger.debug('Creating reminder -- due=%s note=%s cid=%d aid=%d', due, note, cid, ctx.author.id)
-
-        # we just created a reminder, we definitely have one now!
-        self.queue.has_item.set()
-
-        # check if it's earlier
-        if self.queue.current_item and self.queue.current_item['due'] > due:
-            logger.debug('Got a reminder that is due earlier than the current one, rebooting task!')
-            self.queue.reboot()
-
+class ReminderQueue(AsyncQueue):
     async def get_latest_item(self):
         async with self.bot.pgpool.acquire() as conn:
             latest_reminder = await conn.fetchrow('SELECT * FROM reminders ORDER BY due ASC LIMIT 1')
@@ -67,6 +44,31 @@ class Reminders(Cog):
         logger.debug('Removing reminder %d', reminder['id'])
         async with self.bot.pgpool.acquire() as conn:
             await conn.execute('DELETE FROM reminders WHERE id = $1', reminder['id'])
+
+
+class Reminders(Cog):
+    def __init__(self, bot):
+        super().__init__(bot)
+        self.bot = bot
+        self.queue = ReminderQueue(bot, 'Reminders')
+
+    def __unload(self):
+        self.queue.handler.cancel()
+
+    async def create_reminder(self, ctx, due, note):
+        async with self.bot.pgpool.acquire() as conn:
+            cid = ctx.channel.id if isinstance(ctx.channel, discord.TextChannel) else ctx.author.id
+            await conn.execute('INSERT INTO reminders (author_id, channel_id, note, due) VALUES ($1, $2, $3, $4)',
+                               ctx.author.id, cid, note, due)
+        logger.debug('Creating reminder -- due=%s note=%s cid=%d aid=%d', due, note, cid, ctx.author.id)
+
+        # we just created a reminder, we definitely have one now!
+        self.queue.has_item.set()
+
+        # check if it's earlier
+        if self.queue.current_item and self.queue.current_item['due'] > due:
+            logger.debug('Got a reminder that is due earlier than the current one, rebooting task!')
+            self.queue.reboot()
 
     @commands.group(invoke_without_command=True)
     async def remind(self, ctx, due_in: converters.HumanTime, *, note: commands.clean_content):
