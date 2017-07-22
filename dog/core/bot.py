@@ -34,7 +34,7 @@ class DogBot(BaseBot):
         self.cfg = kwargs.get('cfg')
 
         # sentry connection for reporting exceptions
-        self.sentry = raven.Client(self.cfg['monitoring']['raven_client_url'])
+        self.sentry = raven.Client(self.cfg['monitoring'].get('raven_client_url', ''))
 
         # praw (reddit)
         self.praw = praw.Reddit(**self.cfg['credentials']['reddit'])
