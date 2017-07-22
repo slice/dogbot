@@ -23,7 +23,7 @@ credentials:
   oxford: # optional
     application_id: '<oxford app id>'
     application_key: '<oxford app key>'
-  reddit:
+  reddit: # optional
     client_id: '<reddit app client id>'
     client_secret: '<reddit app secret>'
     user_agent: 'discord:dogbot:v1.0.0 (by /u/<reddit username>)'

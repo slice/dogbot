@@ -37,7 +37,8 @@ class DogBot(BaseBot):
         self.sentry = raven.Client(self.cfg['monitoring'].get('raven_client_url', ''))
 
         # praw (reddit)
-        self.praw = praw.Reddit(**self.cfg['credentials']['reddit'])
+        if 'reddit' in self.cfg['credentials']:
+            self.praw = praw.Reddit(**self.cfg['credentials']['reddit'])
 
         # tasks
         self.report_task = None
