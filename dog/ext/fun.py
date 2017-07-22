@@ -14,10 +14,12 @@ from discord.ext import commands
 from dog import Cog
 from dog.core import checks, utils
 
+FW_TRANSLATE = str.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890',
+    'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ１２３４５６７８９０')
+
 SHIBE_ENDPOINT = 'http://shibe.online/api/shibes?count=1&urls=true'
 
 logger = logging.getLogger(__name__)
-
 
 UrbanDefinition = namedtuple('UrbanDefinition', [
     'word', 'definition', 'thumbs_up', 'thumbs_down', 'example',
@@ -55,16 +57,26 @@ class Fun(Cog):
     @commands.command(hidden=True)
     @commands.cooldown(1, 1, commands.BucketType.channel)
     async def clap(self, ctx, *, text: commands.clean_content):
-        """👏MAKES👏TEXT👏LOOK👏LIKE👏THIS👏"""
+        """ 👏MAKES👏TEXT👏LOOK👏LIKE👏THIS👏 """
         clap = '\N{CLAPPING HANDS SIGN}'
         await ctx.send(clap + text.replace(' ', clap) + clap)
 
     @commands.command(hidden=True)
     async def mock(self, ctx, *, text: commands.clean_content):
-        """Mocks."""
+        """ Mocks. """
         ev = random.randint(2, 4)
         result = [character.upper() if not text.index(character) % ev == 0 else character.lower() for character in text]
         await ctx.send(''.join(result))
+
+    @commands.command(hidden=True)
+    async def spaced(self, ctx, *, text: commands.clean_content):
+        """ S P A C E D """
+        await ctx.send(text.replace('', ' ').strip())
+
+    @commands.command(hidden=True, aliases=['fw'])
+    async def fullwidth(self, ctx, *, text: commands.clean_content):
+        """ ＡＥＳＴＨＥＴＩＣ """
+        await ctx.send(text.upper().translate(FW_TRANSLATE))
 
     @commands.command()
     @checks.is_moderator()
