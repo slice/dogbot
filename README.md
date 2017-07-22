@@ -30,10 +30,10 @@ credentials:
 db:
   redis: '<redis host>'
   postgres:
-      user: '<postgres role name>'
-      password: '<postgres role password>'
-      database: '<postgres db name>'
-      host: '<postgres host>'
+    user: '<postgres role name>'
+    password: '<postgres role password>'
+    database: '<postgres db name>'
+    host: '<postgres host>'
 monitoring:
   health_webhook: '<webhook url with token>' # optional
   datadog: # optional
