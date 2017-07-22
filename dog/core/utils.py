@@ -205,16 +205,13 @@ zalgo_glyphs = [
 
 
 class AsyncQueue:
-    def __init__(self, bot, name, *, get_latest_item, fulfill_item):
+    def __init__(self, bot, name):
         self.name = name
         self.bot = bot
 
         self.current_item = None
         self.handler = bot.loop.create_task(self.handle())
         self.has_item = asyncio.Event()
-
-        self.get_latest_item = get_latest_item
-        self.fulfill_item = fulfill_item
 
         self._log('debug', 'Created!')
 
@@ -225,6 +222,12 @@ class AsyncQueue:
     def _log(self, level, msg, *args):
         # ugh
         logger.log(getattr(logging, level.upper(), logging.INFO), f'[Queue] {self.name}: {msg}', *args)
+
+    async def get_latest_item(self):
+        raise NotImplementedError
+
+    async def fulfill_item(self, item):
+        raise NotImplementedError
 
     async def handle(self):
         self._log('debug', 'Handler started.')
