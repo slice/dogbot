@@ -98,6 +98,7 @@ class Reminders(Cog):
                 return await ctx.send('I couldn\'t find that reminder, or you didn\'t create that one.')
             await conn.execute('DELETE FROM reminders WHERE id = $1', rid)
             await ctx.send('Alright, I went ahead and cancelled that one for you.')
+            self.queue.has_item.clear()
             self.queue.reboot()
 
 
