@@ -14,8 +14,8 @@ from discord.ext import commands
 from dog import Cog
 from dog.core import checks, utils
 
-FW_TRANSLATE = str.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890',
-    'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ１２３４５６７８９０')
+FW_TRANSLATE = str.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890\',.:;!?" ',
+    'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ１２３４５６７８９０＇，．：；！？＂　')
 
 SHIBE_ENDPOINT = 'http://shibe.online/api/shibes?count=1&urls=true'
 
