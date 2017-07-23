@@ -155,8 +155,11 @@ class Utility(Cog):
         """
         Creates a poll.
 
-        `conclude_on_votes` specifies how many votes are required in order to end the poll. Users
+        conclude_on_votes specifies how many votes are required in order to end the poll. Users
         vote on the poll with reactions.
+
+        The poll creator can stop the poll at any time by reacting to the poll message
+        with the "octagonal sign" emoji.
         """
 
         if not ctx.guild:
@@ -206,6 +209,11 @@ class Utility(Cog):
             if isinstance(reaction.emoji, discord.Emoji):
                 # ignore custom emoji
                 continue
+
+            if reaction.emoji == '\N{OCTAGONAL SIGN}' and adder == ctx.author:
+                # stop the poll
+                logger.debug('Poll was forcefully concluded.')
+                break
 
             # check if it was a number emoji
             if len(reaction.emoji) != 2 or reaction.emoji[1] != '\u20e3':
