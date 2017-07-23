@@ -312,6 +312,10 @@ class Censorship(Cog):
         if any([role.id in await self.get_guild_exceptions(msg.guild) for role in msg.author.roles]):
             return
 
+        # don't censor myself
+        if msg.author == self.bot.user:
+            return
+
         for censorship_filter in censors:
             if await self.should_censor(msg, censorship_filter):
                 await self.censor_message(msg, censorship_filter.mod_log_description)
