@@ -162,6 +162,43 @@ class Mod(Cog):
 
     @commands.command()
     @commands.guild_only()
+    @checks.bot_perms(manage_roles=True)
+    @checks.is_moderator()
+    async def lock(self, ctx):
+        """
+        Locks chat.
+
+        This works by denying @everyone Send Messages.
+        """
+        try:
+            await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=False)
+        except discord.Forbidden:
+            await ctx.send('I can\'t do that!')
+        else:
+            await ctx.ok()
+
+    @commands.command()
+    @commands.guild_only()
+    @checks.bot_perms(manage_roles=True)
+    @checks.is_moderator()
+    async def unlock(self, ctx, explicit: bool = False):
+        """
+        Unlocks chat.
+
+        This works by changing @everyone's Send Message permission
+        back to neutral. To explicitly allow, pass "yes" as the first
+        parameter.
+        """
+        value = True if explicit else None
+        try:
+            await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=value)
+        except discord.Forbidden:
+            await ctx.send('I can\'t do that!')
+        else:
+            await ctx.ok()
+
+    @commands.command()
+    @commands.guild_only()
     @checks.bot_perms(view_audit_log=True)
     @checks.is_moderator()
     async def who_kicked(self, ctx, *, someone: str):
