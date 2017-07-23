@@ -285,8 +285,9 @@ class Censorship(Cog):
             await self.bot.send_modlog(msg.guild, ':x: I failed to censor a message because '
                                        'I couldn\'t delete it! Please fix my permissions.')
         else:
-            embed = self.bot.get_cog('Modlog')._make_message_embed(msg, title=title)
-            await self.bot.send_modlog(msg.guild, embed=embed)
+            ml_msg = f'\u002a\u20e3 Message by {msg.author} censored: {title}: {msg.content}'
+            ml_msg = self.bot.get_cog('Modlog').modlog_msg(ml_msg)
+            await self.bot.send_modlog(msg.guild, ml_msg)
 
     async def get_guild_exceptions(self, guild: discord.Guild):
         """ Returns the list of exception role IDs that a guild has. """
@@ -313,7 +314,7 @@ class Censorship(Cog):
 
         for censorship_filter in censors:
             if await self.should_censor(msg, censorship_filter):
-                await self.censor_message(msg, f'\u002a\u20e3 {censorship_filter.mod_log_description}')
+                await self.censor_message(msg, censorship_filter.mod_log_description)
 
                 # punish the user
                 try:
