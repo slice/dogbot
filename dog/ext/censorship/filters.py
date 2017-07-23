@@ -54,3 +54,9 @@ class ZalgoCensorshipFilter(CensorshipFilter):
 
     async def does_violate(self, msg: discord.Message) -> bool:
         return any([glyph in msg.content for glyph in utils.zalgo_glyphs])
+
+
+class CapsCensorshipFilter(ReCensorshipFilter):
+    censor_type = CensorType.CAPS
+    mod_log_description = 'Excessive caps censored'
+    regex = re.compile(r'[A-Z]{10,}')

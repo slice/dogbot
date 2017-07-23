@@ -12,7 +12,7 @@ from dog import Cog
 from dog.core import utils
 from dog.ext.censorship import CensorshipFilter, CensorType, PunishmentType
 from dog.ext.censorship.filters import InviteCensorshipFilter, VideositeCensorshipFilter, ZalgoCensorshipFilter, \
-    MediaLinksCensorshipFilter, ExecutableLinksCensorshipFilter
+    MediaLinksCensorshipFilter, ExecutableLinksCensorshipFilter, CapsCensorshipFilter
 
 logger = logging.getLogger(__name__)
 
@@ -305,7 +305,7 @@ class Censorship(Cog):
             return
 
         censors = (InviteCensorshipFilter, VideositeCensorshipFilter, ZalgoCensorshipFilter,
-                   MediaLinksCensorshipFilter, ExecutableLinksCensorshipFilter)
+                   MediaLinksCensorshipFilter, ExecutableLinksCensorshipFilter, CapsCensorshipFilter)
 
         # if the message author has a role that has been excepted, don't even check the message
         if any([role.id in await self.get_guild_exceptions(msg.guild) for role in msg.author.roles]):

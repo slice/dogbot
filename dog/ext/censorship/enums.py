@@ -10,6 +10,7 @@ class CensorType(utils.EnumConverter, Enum):
     ZALGO = 3
     MEDIALINKS = 4
     EXECUTABLELINKS = 5
+    CAPS = 6
 
 
 class PunishmentType(utils.EnumConverter, Enum):
