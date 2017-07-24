@@ -28,7 +28,7 @@ class Config(Cog):
             'woof_command_enabled',
             'unmute_announce',
             'mutesetup_disallow_read',
-            'invisible_announce',
+            'invisible_nag',
             'modlog_filter_allow_bot',
             'welcome_message',
             'modlog_notrack_deletes',
