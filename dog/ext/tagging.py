@@ -66,7 +66,7 @@ class Tagging(Cog):
 
     @commands.group(invoke_without_command=True)
     @commands.guild_only()
-    async def tag(self, ctx, name: str, *, value: commands.clean_content=None):
+    async def tag(self, ctx, name: commands.clean_content, *, value: commands.clean_content=None):
         """
         Tag related operations.
 
