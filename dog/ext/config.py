@@ -34,7 +34,7 @@ class Config(Cog):
             'modlog_notrack_deletes',
             'modlog_notrack_edits',
             'modlog_channel_id',
-            'pollr_announce',
+            'pollr_mod_log',
             'log_all_message_events'
         ]
 
