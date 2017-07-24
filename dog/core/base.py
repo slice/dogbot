@@ -17,26 +17,51 @@ from dog.core.helpformatter import DogbotHelpFormatter
 logger = logging.getLogger(__name__)
 
 
-class ReloadableBot(commands.AutoShardedBot):
-    """ A bot subclass that contains utility methods that aid in reloading cogs and extensions, and recursively
-    loading extensions. """
+class BotBase(commands.bot.BotBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs, formatter=DogbotHelpFormatter())
+
+        # configuration dict
+        self.cfg = kwargs.get('cfg', [])
+
+        # aiohttp session used for fetching data
+        self.session = aiohttp.ClientSession(loop=self.loop)
+
+        # boot time (for uptime)
+        self.boot_time = datetime.datetime.utcnow()
+
+        # aioredis connection
+        redis_coroutine = aioredis.create_redis(
+            (self.cfg['db']['redis'], 6379), loop=self.loop)
+        self.redis = self.loop.run_until_complete(redis_coroutine)
+
+        # asyncpg
+        pg = self.cfg['db']['postgres']
+        self.database = pg['database']
+        self.pgpool = self.loop.run_until_complete(asyncpg.create_pool(**pg))
+
+        # load core extensions
+        self.load_exts_recursively('dog/core/ext', 'Core recursive load')
+
     def load_exts_recursively(self, directory: str, prefix: str = 'Recursive load'):
         """ Loads extensions from a directory recursively. """
+
+        # filter out files that we don't need
         def ext_filter(f):
-            return f not in ('__init__.py', '__pycache__') and not f.endswith('.pyc')
+            return f not in ('__init__.py', '__pycache__', '.DS_Store') and not f.endswith('.pyc')
 
         exts = []
 
         # walk the ext directory to find extensions
         for path, _, files in os.walk(directory):
-            # replace the base path/like/this to path.like.this
-            # add the filename at the end, but without the .py
-            # filter out stuff we don't need
+            # replace the base path/like/this to path.like.this, and add the filename at the end, but without the .py
             exts += [path.replace('/', '.').replace('\\', '.') + '.' + file.replace('.py', '')
                      for file in filter(ext_filter, files)]
 
-        for ext in exts:
+        logger.debug('Extensions to load: %s', exts)
 
+        for ext in exts:
+            # check if it has setup, to avoid loading non-extensions
             module = importlib.import_module(ext)
             if hasattr(module, 'setup'):
                 logger.info('%s: %s', prefix, ext)
@@ -44,7 +69,7 @@ class ReloadableBot(commands.AutoShardedBot):
             else:
                 logger.debug('Skipping %s, doesn\'t seem to be an extension.', ext)
 
-        # update exts to load
+        # keep track of a list of extensions to load
         self._exts_to_load = list(self.extensions.keys()).copy()
 
     def reload_extension(self, name: str):
@@ -83,36 +108,11 @@ class ReloadableBot(commands.AutoShardedBot):
             importlib.reload(module)
         logger.info('Finished reloading bot modules!')
 
-
-class BaseBot(ReloadableBot):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs, formatter=DogbotHelpFormatter())
-
-        # aiohttp session used for fetching data
-        self.session = aiohttp.ClientSession(loop=self.loop)
-
-        # boot time (for uptime)
-        self.boot_time = datetime.datetime.utcnow()
-
-        # hack because __init__ cannot be async
-        redis_coroutine = aioredis.create_redis(
-            (kwargs.pop('redis_url'), 6379), loop=self.loop)
-
-        # aioredis connection
-        self.redis = self.loop.run_until_complete(redis_coroutine)
-
-        # asyncpg
-        pg = kwargs.pop('postgresql_auth')
-        self.database = pg['database']
-        self.pgpool = self.loop.run_until_complete(asyncpg.create_pool(**pg))
-
-        # load core extensions
-        self.load_exts_recursively('dog/core/ext', 'Core recursive load')
-
     async def post_to_webhook(self, content=None, *, embed: discord.Embed=None):
-        if not self.cfg:
-            # wat
-            return
+        """ Posts to the configured health webhook.
+
+        If a health webhook is not configured, then Dogbot does nothing.
+        """
 
         webhook_url = self.cfg['monitoring'].get('health_webhook', None)
 
@@ -151,8 +151,7 @@ class BaseBot(ReloadableBot):
         print('[User]', self.user)
         print('[ID]  ', self.user.id)
 
-        ready_embed = discord.Embed(title='Bot is ready!',
-                                    description='The bot has connected to Discord. It is now ready to process commands.',
+        ready_embed = discord.Embed(title='Bot is ready!', description='The bot has connected to Discord.',
                                     color=discord.Color.green())
         await self.post_to_webhook(embed=ready_embed)
 

@@ -15,23 +15,20 @@ from discord.ext import commands
 from ruamel.yaml import YAML
 
 from dog.core import utils
-from dog.core.base import BaseBot
+from dog.core.base import BotBase
 
 from . import botcollection, errors
 
 logger = logging.getLogger(__name__)
 
 
-class DogBot(BaseBot):
+class DogBot(BotBase, discord.AutoShardedClient):
     """
     The main DogBot bot. It is automatically sharded. All parameters are passed
     to the constructor of :class:`discord.commands.AutoShardedBot`.
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command_prefix=self.prefix, **kwargs)
-
-        # configuration dict
-        self.cfg = kwargs.get('cfg')
 
         # sentry connection for reporting exceptions
         self.sentry = raven.Client(self.cfg['monitoring'].get('raven_client_url', ''))

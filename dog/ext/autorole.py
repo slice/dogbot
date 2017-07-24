@@ -86,7 +86,7 @@ class Autorole(Cog):
         roles_added = await self.assign_roles(type, member)
 
         if isinstance(roles_added, list) and len(roles_added) == 0:
-            # no autoroles, don't log
+            # no autoroles were added, don't log
             return
 
         # make embed

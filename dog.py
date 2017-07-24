@@ -6,11 +6,11 @@ from ruamel.yaml import YAML
 
 from dog import DogBot
 
+# load yaml configuration
 with open('config.yml', 'r') as config_file:
     cfg = YAML(typ='safe').load(config_file)
 
-# configure logging
-# set the root logger's info to INFO
+# configure logging, and set the root logger's info to INFO
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
 
@@ -18,6 +18,7 @@ root_logger.setLevel(logging.INFO)
 console_fmt = logging.Formatter('[{asctime}] [{levelname: <7}] {name}: {message}', '%I:%M:%S %p', style='{')
 nice_fmt = logging.Formatter('%(asctime)s [%(name)s %(levelname)s] %(message)s', '%m/%d/%Y %I:%M:%S %p')
 
+# enable debug logging for us, but not for discord
 logging.getLogger('discord').setLevel(logging.INFO)
 logging.getLogger('dog').setLevel(logging.DEBUG)
 
@@ -58,12 +59,10 @@ if is_docker:
     }
     logger.debug('Finished database configuration: %s', cfg['db'])
 
-# gather additional options from the configuration file
+# additional options are passed directly to the bot as kwargs
 additional_options = cfg['bot'].get('options', {})
 additional_options.update({
-    'owner_id': getattr(cfg, 'owner_id', None),
-    'postgresql_auth': cfg['db']['postgres'],
-    'redis_url': cfg['db']['redis']
+    'owner_id': getattr(cfg, 'owner_id', None)
 })
 
 logger.info('Bot options: %s', additional_options)
