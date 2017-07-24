@@ -24,7 +24,7 @@ class Config(Cog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.permitted_keys = [
+        self.permitted_keys = (
             'woof_command_enabled',
             'unmute_announce',
             'mutesetup_disallow_read',
@@ -36,7 +36,7 @@ class Config(Cog):
             'modlog_channel_id',
             'pollr_mod_log',
             'log_all_message_events'
-        ]
+        )
 
     @commands.group(aliases=['cfg'])
     @commands.guild_only()
