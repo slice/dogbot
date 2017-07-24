@@ -25,8 +25,6 @@ class Config(Cog):
         super().__init__(*args, **kwargs)
 
         self.permitted_keys = (
-            'woof_command_enabled',
-            'unmute_announce',
             'mutesetup_disallow_read',
             'invisible_nag',
             'modlog_filter_allow_bot',
