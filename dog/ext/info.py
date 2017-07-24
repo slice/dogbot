@@ -24,6 +24,28 @@ logger = logging.getLogger(__name__)
 
 
 class Info(Cog):
+    @commands.command(aliases=['perms'])
+    @commands.guild_only()
+    async def permissions(self, ctx):
+        """
+        Views my permissions in this server.
+
+        This does not view my permissions in this channel. In other words,
+        channel permission overwrites are not taken into account here.
+        """
+        perms = ctx.guild.me.guild_permissions
+
+        paginator = commands.Paginator()
+
+        max_perm_length = max(len(checks.beautify_permission_name(p[0])) for p in perms)
+
+        for attr, value in perms:
+            indicator = '\U00002705' if value else '\U0000274c'
+            paginator.add_line(f'{checks.beautify_permission_name(attr): <{max_perm_length}} {indicator}')
+
+        for page in paginator.pages:
+            await ctx.send(page)
+
     @commands.group(aliases=['user'], invoke_without_command=True)
     @commands.guild_only()
     async def profile(self, ctx, *, who: discord.Member = None):
