@@ -134,6 +134,7 @@ class BotBase(commands.bot.BotBase):
         # wait until ready before processing any messages
         await self.wait_until_ready()
 
+        # invoke context
         ctx = await self.get_context(msg, cls=DogbotContext)
         await self.invoke(ctx)
 

@@ -60,7 +60,7 @@ class Info(Cog):
     @profile.command(name='describe')
     @checks.is_supporter_check()
     async def profile_describe(self, ctx, color: discord.Color, *, description):
-        """ Sets your profile description. Supporter only. """
+        """ Sets your profile description and color. Supporter only. """
         if len(description) > 1024:
             return await ctx.send('That description is too long. There is a maximum of 1024 characters.')
         async with ctx.acquire() as conn:
@@ -105,13 +105,60 @@ class Info(Cog):
     @commands.command()
     @commands.guild_only()
     async def roles(self, ctx):
-        """ Views the roles (and their IDs) in this server. """
+        """
+        Views detailed information about the roles in this server.
+
+        Information is presented in a table-like layout.
+
+        Columns:
+            - Role position
+                The role's position in the hierarchy. The bottom role is #0.
+            - Role name
+            - Role color
+            - Role ID
+            - Role properties
+            - Role members
+
+        Role properties:
+            Role properties are represented as a sequence of characters.
+            Each character has a separate meaning.
+
+            H: This role is hoisted.
+            M: This role is managed.
+            @: This role is mentionable by everyone.
+            D: This role is the default role (@everyone).
+            A: This role has the "Administrator" permission.
+            E: This role has the "Mention Everyone" permission.
+        """
+        paginator = commands.Paginator()
+
         sorted_roles = sorted(ctx.guild.roles, key=lambda r: r.position, reverse=True)
-        code = '```\n' + '\n'.join([f'\N{BULLET} {r.name} ({r.id})' for r in sorted_roles]) + '\n```'
-        try:
-            await ctx.send(code)
-        except discord.HTTPException:
-            await ctx.send(f'You have too many roles ({len(ctx.guild.roles)}) for me to list!')
+        longest_role_name = max(map(lambda r: len(r.name), ctx.guild.roles))
+
+        # add lines
+        for role in sorted_roles:
+            # compile a list of role properties
+            attrs = {
+                # role attributes
+                'H': role.hoist, 'M': role.managed, '@': role.mentionable, 'D': role.is_default(),
+
+                # role permissions
+                'A': role.permissions.administrator, 'E': role.permissions.mention_everyone
+            }
+            properties = ''.join(rep for rep, val in attrs.items() if val)
+
+            # how many members?
+            members = utils.commas(len(role.members))
+
+            # get color
+            color = 'default' if role.color == discord.Color.default() else str(role.color)
+
+            fmt = (f'{role.position: <2} {role.name: <{longest_role_name}} {color} {role.id: <18} '
+                   f'{properties: <{len(attrs)}} {members: <4}')
+            paginator.add_line(fmt)
+
+        for page in paginator.pages:
+            await ctx.send(page)
 
     def _make_joined_embed(self, member):
         embed = utils.make_profile_embed(member)
