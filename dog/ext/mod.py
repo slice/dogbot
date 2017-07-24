@@ -23,10 +23,10 @@ class Mod(Cog):
         if not isinstance(ctx.channel, discord.abc.GuildChannel):
             return True
 
-        banned_names = [
+        banned_names = (
             'Can\'t Use Dog', 'can\'t use dog', 'Dog Plonk', 'dog plonk',
             'Banned from Dog', 'banned from dog'
-        ]
+        )
 
         if any([discord.utils.get(ctx.author.roles, name=name) for name in banned_names]):
             return False
