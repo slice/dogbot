@@ -65,7 +65,7 @@ class Autorole(Cog):
             roles_to_add = list(filter(lambda r: r is not None, roles_to_add))
 
             if not roles_to_add:
-                # no roles?
+                # no roles to add
                 return
 
             log.debug('Adding {} roles to {}.'.format(len(roles_to_add), member))
@@ -90,14 +90,17 @@ class Autorole(Cog):
             return
 
         # make embed
-        embed = self.bot.get_cog('Modlog')._make_profile_embed(member, omit_registered=True)
-        embed.title = (f'\N{BOOKMARK} Automatically assigned roles for {type}' if isinstance(roles_added, list) else
-                       f'\N{CLOSED BOOK} Failed to automatically assign roles for {type}')
+        mem = f'{member} (`{member.id}`)'
+        fmt = (f'\N{BOOKMARK} Automatically assigned roles to {mem}' if isinstance(roles_added, list) else
+               f'\N{CLOSED BOOK} Failed to automatically assign roles for {mem}')
         if roles_added:
-            embed.add_field(name='Roles', value=', '.join([r.mention for r in roles_added]))
+            roles = ', '.join(map(lambda r: r.name, roles_added))
+            fmt += f' - Added roles: {roles}'
+
+        msg = self.bot.get_cog('Modlog').modlog_msg(fmt)
 
         # send to modlog
-        await self.bot.send_modlog(member.guild, embed=embed)
+        await self.bot.send_modlog(member.guild, msg)
 
 
     @autorole.command()
