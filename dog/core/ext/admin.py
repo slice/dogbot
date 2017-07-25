@@ -16,6 +16,7 @@ import discord
 from discord.ext import commands
 
 from dog import Cog
+from dog.core import converters
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ class Admin(Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def set_avatar(self, ctx, *, url: str):
+    async def set_avatar(self, ctx, *, image_source: converters.ImageSourceConverter):
         """ Sets the bot's avatar. """
         async with self.bot.session.get(url) as resp:
             avatar_data = await resp.read()
