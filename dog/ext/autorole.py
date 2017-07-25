@@ -44,7 +44,7 @@ class Autorole(Cog):
             Deletes the autoroles for users.
         """
         if ctx.invoked_subcommand is None:
-            await ctx.send('You must specify a subcommand to run. For help, run `d?help ar`.')
+            await ctx.send('You must specify a valid subcommand to run. For help, run `d?help ar`.')
 
     async def assign_roles(self, type: str, member: discord.Member):
         async with self.bot.pgpool.acquire() as pg:
