@@ -1,9 +1,13 @@
 """
 Simple, embed+channel-based monitoring of Dogbot.
 """
+import logging
+import discord
 
 from dog import Cog
 from dog.core import botcollection, utils
+
+logger = logging.getLogger(__name__)
 
 
 class MonitorChannel(Cog):
@@ -63,7 +67,7 @@ class MonitorChannel(Cog):
         logger.info('New guild: %s (%d)', g.name, g.id)
         fields = self.guild_fields(g)
 
-        is_collection = await botcollection.is_bot_collection(self, g)
+        is_collection = await botcollection.is_bot_collection(self.bot, g)
         should_detect_collections = self.bot.cfg['bot'].get('bot_collection_detection', False)
 
         if await botcollection.is_blacklisted(self, g.id) or (is_collection and should_detect_collections):

@@ -20,10 +20,10 @@ class Datadog(Cog):
         if self.reporting_task:
             self.reporting_task.cancel()
 
-    async def on_guild_join(self):
+    async def on_guild_join(self, g):
         await self.datadog_increment('discord.guilds.additions')
 
-    async def on_guild_remove(self):
+    async def on_guild_remove(self, g):
         await self.datadog_increment('discord.guilds.removals')
 
     async def on_command(self, ctx):
