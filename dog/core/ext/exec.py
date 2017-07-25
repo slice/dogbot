@@ -56,12 +56,11 @@ def format_syntax_error(e: SyntaxError) -> str:
 class Exec(Cog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.last_result = None
 
-    @commands.command(name='eval', aliases=['exec', 'debug'])
-    @commands.is_owner()
-    async def _eval(self, ctx, *, code: str):
-        """ Executes Python code. """
+        self.last_result = None
+        self.previous_code = None
+
+    async def execute(self, ctx, code):
         log.info('Eval: %s', code)
 
         async def upload(file_name: str):
@@ -86,19 +85,11 @@ class Exec(Cog):
             '_send': send,
 
             # last result
-            '_': self.last_result
+            '_': self.last_result,
+            '_p': self.previous_code
         }
 
         env.update(globals())
-
-        # remove any markup that might be in the message
-        code = strip_code_markup(code)
-
-        # add an implicit return at the end
-        lines = code.split('\n')
-        if not lines[-1].startswith('return') and not lines[-1].startswith(' '):
-            lines[-1] = 'return ' + lines[-1]
-        code = '\n'.join(lines)
 
         # simulated stdout
         stdout = io.StringIO()
@@ -106,6 +97,7 @@ class Exec(Cog):
         # wrap the code in a function, so that we can use await
         wrapped_code = 'async def func():\n' + textwrap.indent(code, '    ')
 
+        # define the wrapped function
         try:
             exec(compile(wrapped_code, '<exec>', 'exec'), env)
         except SyntaxError as e:
@@ -113,10 +105,15 @@ class Exec(Cog):
 
         func = env['func']
         try:
+            # execute the code
             with redirect_stdout(stdout):
                 ret = await func()
         except Exception as e:
             # something went wrong
+            try:
+                await ctx.message.add_reaction('\N{EXCLAMATION QUESTION MARK}')
+            except:
+                pass
             stream = stdout.getvalue()
             await ctx.send('```py\n{}{}\n```'.format(stream, traceback.format_exc()))
         else:
@@ -124,7 +121,7 @@ class Exec(Cog):
             stream = stdout.getvalue()
 
             try:
-                await ctx.message.add_reaction('\u2705')
+                await ctx.message.add_reaction('\N{HUNDRED POINTS SYMBOL}')
             except:
                 # couldn't add the reaction, ignore
                 log.warning('Failed to add reaction to eval message, ignoring.')
@@ -143,6 +140,28 @@ class Exec(Cog):
                 except aiohttp.ClientError:
                     await ctx.send(ctx._('cmd.eval.pastebin_down'))
 
+    @commands.command(name='retry', hidden=True)
+    @commands.is_owner()
+    async def retry(self, ctx):
+        """ Retries the previously executed Python code. """
+        if not self.previous_code:
+            return await ctx.send('No previous code.')
+
+        await self.execute(ctx, self.previous_code)
+
+    @commands.command(name='eval', aliases=['exec', 'debug'])
+    @commands.is_owner()
+    async def _eval(self, ctx, *, code: str):
+        """ Executes Python code. """
+
+        # remove any markup that might be in the message
+        # TODO: converter
+        code = strip_code_markup(code)
+
+        # store previous code
+        self.previous_code = code
+
+        await self.execute(ctx, code)
 
 def setup(bot):
     bot.add_cog(Exec(bot))
