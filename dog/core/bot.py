@@ -7,7 +7,6 @@ import logging
 import traceback
 from typing import List
 
-import datadog as dd
 import discord
 import praw
 import raven
@@ -39,7 +38,6 @@ class DogBot(BotBase, discord.AutoShardedClient):
 
         # tasks
         self.report_task = None
-        self.datadog_task = None
 
         # list of extensions to reload (this means that new extensions are not picked up)
         # this is here so we can d?reload even if an syntax error occurs and it won't be present
@@ -198,48 +196,12 @@ class DogBot(BotBase, discord.AutoShardedClient):
                     logger.info('Posted guild count successfully! (%d guilds)', guilds)
             await asyncio.sleep(60 * 10)  # only report every 10 minutes
 
-    async def datadog_increment(self, metric):
-        if 'datadog' not in self.cfg['monitoring']:
-            return
-
-        try:
-            await self.loop.run_in_executor(None, dd.statsd.increment, metric)
-        except Exception:
-            logger.exception('Failed to report metric')
-
-    async def datadog_report(self):
-        if 'datadog' not in self.cfg['monitoring']:
-            logger.warning('No Datadog configuration detected, not going to report statistics.')
-            return
-
-        dd.initialize(**self.cfg['monitoring']['datadog'])
-
-        while True:
-            def report():
-                try:
-                    dd.statsd.gauge('discord.guilds', len(self.guilds))
-                    dd.statsd.gauge('discord.voice.clients', len(self.voice_clients))
-                    dd.statsd.gauge('discord.users', len(self.users))
-                    dd.statsd.gauge('discord.users.humans', sum(1 for user in self.users if not user.bot))
-                    dd.statsd.gauge('discord.users.bots', sum(1 for user in self.users if user.bot))
-                except RuntimeError:
-                    logger.warning('Couldn\'t report metrics, trying again soon.')
-                else:
-                    logger.debug('Successfully reported metrics.')
-            logger.debug('Reporting metrics to DataDog...')
-            await self.loop.run_in_executor(None, report)
-            await asyncio.sleep(5)
-
     async def on_ready(self):
         await super().on_ready()
 
         if not self.report_task:
             logger.info('Creating bots.discord.pw task.')
             self.report_task = self.loop.create_task(self.report_guilds())
-
-        if not self.datadog_task:
-            logger.info('Creating DataDog task.')
-            self.datadog_task = self.loop.create_task(self.datadog_report())
 
         await self.set_playing_statuses()
 
@@ -300,7 +262,6 @@ class DogBot(BotBase, discord.AutoShardedClient):
         # monitor
         await self.monitor_send(title='\N{INBOX TRAY} Added to new guild', fields=fields, color=0x71ff5e)
         await self.redis.incr('stats:guilds:adds')
-        await self.datadog_increment('discord.guilds.additions')
 
     async def on_guild_remove(self, g):
         if g.id in self.refuse_notify_left:
@@ -316,7 +277,6 @@ class DogBot(BotBase, discord.AutoShardedClient):
         ]
         await self.monitor_send(title='\N{OUTBOX TRAY} Removed from guild', fields=fields, color=0xff945b)
         await self.redis.incr('stats:guilds:removes')
-        await self.datadog_increment('discord.guilds.removals')
 
     async def config_get(self, guild: discord.Guild, name: str):
         """
@@ -351,7 +311,6 @@ class DogBot(BotBase, discord.AutoShardedClient):
         location = '[DM] ' if isinstance(ctx.channel, discord.DMChannel) else '[Guild] '
         logger.info('%sCommand invocation by %s (%d) "%s" checks=%s', location, author, author.id, ctx.message.content,
                     ','.join(checks) or '(none)')
-        await self.datadog_increment('dogbot.commands')
 
     async def on_command_error(self, ctx, ex):
         if getattr(ex, 'should_suppress', False):
