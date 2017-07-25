@@ -30,6 +30,11 @@ class About(Cog):
         link = discord.utils.oauth_url(client_id, permissions=perms)
         await ctx.send(link)
 
+    @commands.command(hidden=True, aliases=['ginvite', 'ginv', 'inv'])
+    async def generate_invite(self, ctx, client_id: int):
+        """ Generates an invite from a client ID. """
+        await ctx.send('<' + discord.utils.oauth_url(client_id) + '>')
+
     @commands.command(aliases=['helpme', 'support'])
     async def wiki(self, ctx):
         """ Need help using Dogbot? """
