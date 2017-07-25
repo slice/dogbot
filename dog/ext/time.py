@@ -25,8 +25,8 @@ class Time(Cog):
         except arrow.parser.ParserError:
             await ctx.send('Invalid timezone.')
 
-    @time.command(name='difference', aliases=['diff'])
-    async def time_difference(self, ctx, a, b):
+    @time.command(name='tzdifference', aliases=['tzdiff', 'tzd'])
+    async def time_tzdifference(self, ctx, a, b):
         """
         Views the difference between two timezones.
         """
