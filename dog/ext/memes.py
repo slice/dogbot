@@ -102,6 +102,12 @@ class Memes(Cog):
         im.close()
         im_data.close()
 
+    @commands.command(hidden=True)
+    async def b(self, ctx, *, text: commands.clean_content):
+        """ 🅱🅱🅱🅱🅱🅱🅱"""
+        text = ' '.join('\U0001f171' + w[1:] for w in text.split(' '))
+        await ctx.send(text.replace('b', '\U0001f171'))
+
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def mistake(self, ctx, image_source: converters.ImageSourceConverter):
