@@ -39,6 +39,8 @@ class Reddit(Cog):
 
         logger.info('Reddit cog created!')
 
+        self.praw = praw.Reddit(**bot.cfg['credentials']['reddit'])
+
         self.update_interval = UPDATE_INTERVAL
         self.fuzz_interval = FUZZ_INTERVAL
         self.feed_task = bot.loop.create_task(self.post_to_feeds())

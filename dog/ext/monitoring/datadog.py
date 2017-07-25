@@ -15,6 +15,11 @@ class Datadog(Cog):
         super().__init__(bot)
         self.reporting_task = bot.loop.create_task(self.datadog_report())
 
+    def __unload(self):
+        logger.debug('Cancelling Datadog reporting task.')
+        if self.reporting_task:
+            self.reporting_task.cancel()
+
     async def on_guild_join(self):
         await self.datadog_increment('discord.guilds.additions')
 
@@ -26,7 +31,7 @@ class Datadog(Cog):
 
     async def datadog_increment(self, metric):
         try:
-            await self.loop.run_in_executor(None, dd.statsd.increment, metric)
+            await self.bot.loop.run_in_executor(None, dd.statsd.increment, metric)
         except Exception:
             logger.exception('Failed to report metric')
 
@@ -49,12 +54,6 @@ class Datadog(Cog):
             logger.debug('Reporting metrics to DataDog...')
             await self.bot.loop.run_in_executor(None, report)
             await asyncio.sleep(5)
-
-
-    def __unload(self):
-        logger.debug('Cancelling Datadog reporting task.')
-        if self.reporting_task:
-            self.reporting_task.cancel()
 
 
 def setup(bot):

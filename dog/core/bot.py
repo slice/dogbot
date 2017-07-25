@@ -8,15 +8,13 @@ import traceback
 from typing import List
 
 import discord
-import praw
-import raven
 from discord.ext import commands
 from ruamel.yaml import YAML
 
 from dog.core import utils
 from dog.core.base import BotBase
 
-from . import botcollection, errors
+from . import errors
 
 logger = logging.getLogger(__name__)
 
@@ -29,23 +27,13 @@ class DogBot(BotBase, discord.AutoShardedClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command_prefix=self.prefix, **kwargs)
 
-        # sentry connection for reporting exceptions
-        self.sentry = raven.Client(self.cfg['monitoring'].get('raven_client_url', ''))
-
-        # praw (reddit)
-        if 'reddit' in self.cfg['credentials']:
-            self.praw = praw.Reddit(**self.cfg['credentials']['reddit'])
-
-        # tasks
-        self.report_task = None
-
         # list of extensions to reload (this means that new extensions are not picked up)
         # this is here so we can d?reload even if an syntax error occurs and it won't be present
         # in self.extensions
         self._exts_to_load = list(self.extensions.keys()).copy()
 
+        # custom prefix cache
         self.prefix_cache = {}
-        self.refuse_notify_left = []
 
     async def is_global_banned(self, user: discord.User):
         key = f'cache:globalbans:{user.id}'
@@ -108,9 +96,6 @@ class DogBot(BotBase, discord.AutoShardedClient):
         await self.pgpool.close()
         await self.session.close()
 
-        # cancel tasks
-        if self.report_task:
-            self.report_task.cancel()
         await super().close()
 
     async def command_is_disabled(self, guild: discord.Guild, command_name: str):
@@ -175,108 +160,10 @@ class DogBot(BotBase, discord.AutoShardedClient):
             game = discord.Game(name=f'{short_prefix}help | shard {shard.id}')
             await shard.ws.change_presence(game=game)
 
-    async def report_guilds(self):
-        # bail if we don't have the token
-        if 'discordpw_token' not in self.cfg['monitoring']:
-            logger.warning('Not going to submit guild count, no discord.pw token.')
-            return
-
-        endpoint = f'https://bots.discord.pw/api/bots/{self.user.id}/stats'
-        while True:
-            guilds = len(self.guilds)
-            data = {'server_count': guilds}
-            headers = {'Authorization': self.cfg['monitoring']['discordpw_token']}
-            logger.info('POSTing guild count to abal\'s website...')
-            # HTTP POST to the endpoint
-            async with self.session.post(endpoint, json=data, headers=headers) as resp:
-                if resp.status != 200:
-                    # probably just a hiccup on abal's side
-                    logger.warning('Failed to post guild count, ignoring.')
-                else:
-                    logger.info('Posted guild count successfully! (%d guilds)', guilds)
-            await asyncio.sleep(60 * 10)  # only report every 10 minutes
-
     async def on_ready(self):
         await super().on_ready()
 
-        if not self.report_task:
-            logger.info('Creating bots.discord.pw task.')
-            self.report_task = self.loop.create_task(self.report_guilds())
-
         await self.set_playing_statuses()
-
-    async def monitor_send(self, *args, **kwargs):
-        """
-        Sends a message to the monitoring channel.
-
-        The monitoring channel is a channel usually only visible to the bot
-        owner that will have messages like "New guild!" and "Left guild..."
-        sent to it.
-
-        All parameters are passed to `send()`.
-        """
-        logger.info('Monitor sending.')
-        monitor_channels = self.cfg['monitoring'].get('monitor_channels', [])
-        channels = [self.get_channel(c) for c in monitor_channels]
-
-        # no monitor channels
-        if not any(channels):
-            return
-
-        # form embed
-        fields = kwargs.pop('fields', [])
-        embed = discord.Embed(**kwargs)
-        for name, value in fields:
-            embed.add_field(name=name, value=value)
-
-        try:
-            for channel in channels:
-                await channel.send(*args, embed=embed)
-        except discord.Forbidden:
-            logger.warning('Forbidden to send to monitoring channel -- ignoring.')
-
-    async def on_guild_join(self, g):
-        # calculate the utb ratio
-        ratio = botcollection.user_to_bot_ratio(g)
-        diff = utils.ago(g.created_at)
-        fields = [
-            ('Guild', f'{g.name}\n`{g.id}`'),
-            ('Owner', f'{g.owner.mention} {g.owner}\n`{g.owner.id}`'),
-            ('Info', f'Created {diff}\nMembers: {len(g.members)}\nUTB ratio: {ratio}')
-        ]
-
-        logger.info('New guild: %s (%d)', g.name, g.id)
-
-        is_collection = await botcollection.is_bot_collection(self, g)
-        should_detect_collections = self.cfg['bot'].get('bot_collection_detection', False)
-
-        if await botcollection.is_blacklisted(self, g.id) or (is_collection and should_detect_collections):
-            # leave it
-            self.refuse_notify_left.append(g.id)
-            await g.leave()
-
-            # monitor
-            title = '\N{RADIOACTIVE SIGN} ' + 'Left toxic guild'
-            return await self.monitor_send(title=title, fields=fields, color=0xff655b)
-
-        # monitor
-        await self.monitor_send(title='\N{INBOX TRAY} Added to new guild', fields=fields, color=0x71ff5e)
-        await self.redis.incr('stats:guilds:adds')
-
-    async def on_guild_remove(self, g):
-        if g.id in self.refuse_notify_left:
-            # refuse to notify that we got removed from the guild, because the "left bot collection"/"left blacklisted"
-            # monitor message already does that
-            self.refuse_notify_left.remove(g.id)
-            return
-
-        diff = utils.ago(g.created_at)
-        fields = [
-            ('Guilds', f'{g.name}\n`{g.id}`'),
-            ('Info', f'Created {diff}\nMembers: {len(g.members)}')
-        ]
-        await self.monitor_send(title='\N{OUTBOX TRAY} Removed from guild', fields=fields, color=0xff945b)
-        await self.redis.incr('stats:guilds:removes')
 
     async def config_get(self, guild: discord.Guild, name: str):
         """
@@ -346,14 +233,12 @@ class DogBot(BotBase, discord.AutoShardedClient):
                     return
                 return await self.handle_forbidden(ctx)
 
-            tb = ''.join(traceback.format_exception(
-                type(ex.original), ex.original,
-                ex.original.__traceback__
-            ))
+            # get the traceback
+            tb = ''.join(traceback.format_exception(type(ex.original), ex.original, ex.original.__traceback__))
 
+            # form a good human-readable message
             header = f'Command error: {type(ex.original).__name__}: {ex.original}'
             message = header + '\n' + str(tb)
 
-            # dispatch the message
-            self.sentry.captureMessage(message)
+            self.dispatch('uncaught_command_invoke_error', ex.original, (message, tb))
             logger.error(message)
