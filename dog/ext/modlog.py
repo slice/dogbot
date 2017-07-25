@@ -54,8 +54,10 @@ class Modlog(Cog):
                 await self.bot.config_is_set(before.guild, 'modlog_notrack_edits')):
             return
 
-        msg = self.modlog_msg(f'\N{MEMO} Message by {before.author} edited: `{before.content}` to `{after.content}`')
-        await self.bot.send_modlog(before.guild, msg)
+        m_before = utils.prevent_codeblock_breakout(utils.truncate(before.content, 850))
+        m_after = utils.prevent_codeblock_breakout(utils.truncate(after.content, 850))
+        fmt = f'\N{MEMO} Message by {before.author} edited: ```{m_before}``` to ```{m_after}```'
+        await self.bot.send_modlog(before.guild, self.modlog_msg(fmt))
 
     async def on_member_update(self, before: discord.Member, after: discord.Member):
         if before.nick != after.nick:
@@ -77,10 +79,9 @@ class Modlog(Cog):
             if not await self.bot.config_is_set(msg.guild, 'modlog_filter_allow_bot'):
                 return
 
-        content = utils.truncate(msg.content, 1500)
-        modlog_msg = self.modlog_msg(f'\U0001f6ae Message by {msg.author} deleted: `{content}` ({len(msg.attachments)} '
-                              f'attachments)')
-        await self.bot.send_modlog(msg.guild, modlog_msg)
+        content = utils.prevent_codeblock_breakout(utils.truncate(msg.content, 1500))
+        fmt = f'\U0001f6ae Message by {msg.author} deleted: ```{content}``` ({len(msg.attachments)} attachments)'
+        await self.bot.send_modlog(msg.guild, self.modlog_msg(fmt))
 
     async def on_member_join(self, member: discord.Member):
         new = '\N{SQUARED NEW} ' if (datetime.datetime.utcnow() - member.created_at).total_seconds() <= 604800 else ''

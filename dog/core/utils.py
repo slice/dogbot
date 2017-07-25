@@ -111,7 +111,7 @@ def format_dict(d: Dict[Any, Any], *, style='equals') -> str:
 
 
 def prevent_codeblock_breakout(text: str) -> str:
-    return text.replace('`', '\u200b`')
+    return text.replace('`', '\u200b`\u200b')
 
 
 def make_profile_embed(member: discord.Member):
