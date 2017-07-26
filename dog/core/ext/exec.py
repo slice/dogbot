@@ -14,6 +14,7 @@ Features:
     - _get and _find instantly available without having to import discord
     - Redirects stdout so you can print()
     - Sane syntax error reporting
+    - Quickly retry evaluations
 """
 
 import io
@@ -77,6 +78,10 @@ class Exec(Cog):
             'guild': ctx.guild,
             'channel': ctx.channel,
             'me': ctx.message.author,
+
+            # modules
+            'discord': discord,
+            'commands': commands,
 
             # utilities
             '_get': discord.utils.get,

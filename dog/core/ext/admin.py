@@ -1,9 +1,7 @@
 """
-Commands that are used to administrate the bot itself, not for your servers.
+Commands that are used to administrate the bot itself.
 It also contains some utility commands that are used to check the health of the
 bot, like d?ping.
-
-Debugging commands like d?eval are also in this extension.
 """
 
 import logging
