@@ -25,6 +25,11 @@ async def is_publicly_visible(bot, channel: discord.TextChannel) -> bool:
 
 
 class Modlog(Cog):
+    def __init__(self, bot):
+        super().__init__(bot)
+        self.ban_debounces = []
+        self.bulk_deletes = []
+
     def modlog_msg(self, msg):
         now = datetime.datetime.utcnow()
         return '`[{0.hour:02d}:{0.minute:02d}]` {1}'.format(now, msg)
@@ -67,8 +72,22 @@ class Modlog(Cog):
             msg = self.modlog_msg(f'\N{NAME BADGE} Username for {before} updated: `{before.name}` to `{after.name}`')
             await self.bot.send_modlog(before.guild, msg)
 
+    async def on_raw_bulk_message_delete(self, message_ids, channel_id):
+        self.bulk_deletes += message_ids
+
+        channel = discord.utils.get(self.bot.get_all_channels(), id=channel_id)
+        if not channel:
+            return
+        fmt = self.modlog_msg(f'\U0001f6ae {len(message_ids)} message(s) deleted in {channel.mention}')
+        await self.bot.send_modlog(channel.guild, fmt)
+
     async def on_message_delete(self, msg: discord.Message):
         if not isinstance(msg.channel, discord.TextChannel):
+            return
+
+        # do not process message deletes
+        # TODO: do this but cleanly, maybe paste website?
+        if msg.id in self.bulk_deletes:
             return
 
         if (not await is_publicly_visible(self.bot, msg.channel) or
@@ -88,37 +107,68 @@ class Modlog(Cog):
         msg = self.modlog_msg(f'\N{INBOX TRAY} {new}{member} joined, created {utils.ago(member.created_at)}')
         await self.bot.send_modlog(member.guild, msg)
 
-    async def on_member_remove(self, member: discord.Member):
-        bounce = '\U0001f3c0 ' if (datetime.datetime.utcnow() - member.joined_at).total_seconds() <= 1500 else ''
+    def format_member_departure(self, member, *, verb='left', emoji='\N{OUTBOX TRAY}'):
         created_ago = utils.ago(member.created_at)
-        joined_ago = utils.ago(member.joined_at)
-        msg = self.modlog_msg(f'\N{OUTBOX TRAY} {bounce}{member} left, created {created_ago}, joined {joined_ago}')
 
-        # send message
+        # if it's a user, return bare info
+        if isinstance(member, discord.User):
+            return f'{emoji} {member} {verb}, created {created_ago}'
+
+        bounce = '\U0001f3c0 ' if (datetime.datetime.utcnow() - member.joined_at).total_seconds() <= 1500 else ''
+        joined_ago = utils.ago(member.joined_at)
+        return self.modlog_msg(f'{emoji} {bounce}{member} {verb}, created {created_ago}, joined {joined_ago}')
+
+    async def get_responsible(self, target, action):
+        try:
+            entries = await target.guild.audit_logs(limit=1, action=getattr(discord.AuditLogAction, action)).flatten()
+            def check(entry):
+                return entry.target == target and (datetime.datetime.utcnow() - entry.created_at).total_seconds() <= 2
+            return discord.utils.find(check, entries)
+        except discord.Forbidden:
+            pass
+
+    def format_reason(self, entry):
+        return f' with reason `{entry.reason}`' if entry.reason else ' with no attached reason'
+
+    async def on_member_ban(self, guild, user):
+        # don't make on_member_remove process this user's departure
+        self.ban_debounces.append(user.id)
+
+        msg = await self.bot.send_modlog(guild, self.format_member_departure(user, verb='banned', emoji='\N{HAMMER}'))
+
+        if not msg:
+            return
+
+        entry = await self.get_responsible(user, 'ban')
+
+        if not entry:
+            return
+
+        fmt = self.format_member_departure(user, verb=f'banned by {entry.user}{self.format_reason(entry)}',
+                                           emoji='\N{HAMMER}')
+        await msg.edit(content=fmt)
+
+    async def on_member_remove(self, member):
+        # this is called also when someone gets banned, but we don't want duplicate messages, so bail if
+        # this person got banned as we already send a message
+        if member.id in self.ban_debounces:
+            self.ban_debounces.remove(member.id)
+            return
+
+        msg = self.format_member_departure(member)
         ml_msg = await self.bot.send_modlog(member.guild, msg)
 
         if not ml_msg:
             return
 
-        try:
-            # query modlogs
-            entries = await member.guild.audit_logs(limit=3, action=discord.AuditLogAction.kick).flatten()
-            entry = discord.utils.get(entries, target=member)
-            if not entry:
-                # couldn't find entry, probably a natural leave
-                return
+        entry = await self.get_responsible(member, 'kick')
 
-            # format reason
-            reason = f' with reason `{entry.reason}`' if entry.reason else ' with no attached reason'
+        if not entry:
+            return
 
-            # form message
-            fmt = self.modlog_msg(
-                f'\N{WOMANS BOOTS} {member} was kicked by {entry.user}{reason}, created {created_ago}, joined '
-                f'{joined_ago}'
-            )
-            await ml_msg.edit(content=fmt)
-        except discord.Forbidden:
-            pass
+        reason = self.format_reason(entry)
+        fmt = self.format_member_departure(member, verb=f'kicked by {entry.user}{reason}', emoji='\N{WOMANS BOOTS}')
+        await ml_msg.edit(content=fmt)
 
     @commands.command(hidden=True)
     async def is_public(self, ctx, channel: discord.TextChannel=None):
