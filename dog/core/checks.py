@@ -69,11 +69,28 @@ def is_moderator():
 
 def is_supporter(bot, user):
     """ Returns whether a user has the supporter role in the woof server. """
+    # get the server
     woof_guild: discord.Guild = bot.get_guild(bot.cfg['bot']['woof']['guild_id'])
+
+    # guild doesn't exist, or user is not in the server
     if not woof_guild or user not in woof_guild.members:
         return False
+
+    # get the user, but in the woof server
     woof_member = woof_guild.get_member(user.id)
-    return bot.cfg['bot']['woof']['donator_role'] in [r.id for r in woof_member.roles]
+
+    # get the donator role id in the woof server
+    # or alternatively a list of role ids
+    donator_role = bot.cfg['bot']['woof']['donator_role']
+
+    # list of role ids that this user has
+    ids = [r.id for r in woof_member.roles]
+
+    # if there are multiple donator roles, check all of them
+    if isinstance(donator_role, list):
+        return any([donator_role_id in ids for donator_role_id in donator_role])
+    else:
+        return donator_role in ids
 
 
 def is_supporter_check():
