@@ -93,7 +93,32 @@ class Modlog(Cog):
         created_ago = utils.ago(member.created_at)
         joined_ago = utils.ago(member.joined_at)
         msg = self.modlog_msg(f'\N{OUTBOX TRAY} {bounce}{member} left, created {created_ago}, joined {joined_ago}')
-        await self.bot.send_modlog(member.guild, msg)
+
+        # send message
+        ml_msg = await self.bot.send_modlog(member.guild, msg)
+
+        if not ml_msg:
+            return
+
+        try:
+            # query modlogs
+            entries = await member.guild.audit_logs(limit=3, action=discord.AuditLogAction.kick).flatten()
+            entry = discord.utils.get(entries, target=member)
+            if not entry:
+                # couldn't find entry, probably a natural leave
+                return
+
+            # format reason
+            reason = f' with reason `{entry.reason}`' if entry.reason else ' with no attached reason'
+
+            # form message
+            fmt = self.modlog_msg(
+                f'\N{WOMANS BOOTS} {member} was kicked by {entry.user}{reason}, created {created_ago}, joined '
+                f'{joined_ago}'
+            )
+            await ml_msg.edit(content=fmt)
+        except discord.Forbidden:
+            pass
 
     @commands.command(hidden=True)
     async def is_public(self, ctx, channel: discord.TextChannel=None):

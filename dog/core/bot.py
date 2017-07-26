@@ -145,10 +145,10 @@ class DogBot(BotBase, discord.AutoShardedClient):
         # don't post to mod-log, couldn't find the channel
         if mod_log is None:
             return
-        
+
         try:
-            await mod_log.send(*args, **kwargs)
             await self.redis.incr('stats:modlog:sends')
+            return await mod_log.send(*args, **kwargs)
         except discord.Forbidden:
             # couldn't post to modlog
             logger.warning('Couldn\'t post to modlog for guild %d. No permissions.', guild.id)
