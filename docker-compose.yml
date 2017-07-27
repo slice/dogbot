@@ -22,7 +22,7 @@ services:
       - ./data/redis:/data
   bot:
     build: .
-    command: python dog.py --docker
+    command: ./scripts/wait-for-postgres.sh python dog.py --docker
     volumes:
       - .:/opt/dogbot
     depends_on:
