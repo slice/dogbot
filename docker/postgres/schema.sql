@@ -92,3 +92,21 @@ CREATE TABLE profile_descriptions (
   description text,
   color int
 );
+
+CREATE TABLE messages (
+  message_id bigint primary key,
+  guild_id bigint,
+  channel_id bigint,
+  author_id bigint,
+  created_at timestamp without time zone,
+
+  original_content text,
+  new_content text,
+
+  attachments jsonb,
+
+  deleted boolean,
+  edited boolean,
+  deleted_at timestamp without time zone,
+  edited_at timestamp without time zone
+);

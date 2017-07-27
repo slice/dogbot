@@ -20,6 +20,18 @@ class FormattedCustomEmoji(commands.Converter):
         return BareCustomEmoji(id=int(match.group(2)), name=match.group(1))
 
 
+class Flags(commands.Converter):
+    async def convert(self, ctx, argument):
+        result = {}
+        for flag in argument.split(' '):
+            if '=' in flag:
+                parts = flag.split('=')
+                result[parts[0][2:]] = parts[1]
+            else:
+                result[flag[2:]] = True
+        return result
+
+
 class RawMember(commands.Converter):
     async def convert(self, ctx, argument):
         # garbo
