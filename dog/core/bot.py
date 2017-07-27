@@ -184,13 +184,8 @@ class DogBot(BotBase, discord.AutoShardedClient):
         return await self.redis.exists(f'{guild.id}:{name}')
 
     async def handle_forbidden(self, ctx):
-        cant_respond = ("Hey! I can't respond because I don't have the `Send Messages` "
-                        "permission in the channel that you just sent that command in. Please "
-                        "ask a server moderator/administrator to sort this out for you, if "
-                        "applicable. If you are a server moderator/administrator, please fix "
-                        "my permissions!")
         if not ctx.guild.me.permissions_in(ctx.channel).send_messages and ctx.command:
-            await ctx.message.author.send(cant_respond)
+            await ctx.message.author.send(ctx._('misc.cant_respond'))
 
     async def on_command(self, ctx):
         author = ctx.message.author

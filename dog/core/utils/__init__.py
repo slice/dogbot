@@ -1,3 +1,7 @@
+"""
+Various utilities for Dogbot.
+"""
+
 from .enum import *
 from .formatting import *
 from .gfx import *

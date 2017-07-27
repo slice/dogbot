@@ -30,3 +30,8 @@ cmd:
       git_rev: Git revision
       github_repo: GitHub repo
       birthday: Birthday
+misc:
+  cant_respond: >
+    Hey! I can't respond to your command because I don't have the `Send Messages` permission
+    in the channel that you just sent that command in. Please ask a server moderator/administrator
+    to sort this out for you. If you are a server moderator/administrator, please fix my permissions!
