@@ -29,8 +29,8 @@ class Admin(Cog):
     async def ping(self, ctx):
         """ You know what this does. """
         begin = monotonic()
-        msg = await ctx.send(ctx._('cmd.ping.pre'))
-        await msg.edit(content=ctx._('cmd.ping.post', rtt=(monotonic() - begin) * 1000))
+        msg = await ctx.send(await ctx._('cmd.ping.pre'))
+        await msg.edit(content=await ctx._('cmd.ping.post', rtt=(monotonic() - begin) * 1000))
 
     @commands.command()
     @commands.is_owner()
@@ -61,7 +61,7 @@ class Admin(Cog):
     async def prefixes(self, ctx):
         """ Lists the bot's prefixes. """
         prefixes = ', '.join([f'`{p}`' for p in ctx.bot.cfg['bot']['prefixes']])
-        await ctx.send(ctx._('cmd.prefixes', prefixes=prefixes))
+        await ctx.send(await ctx._('cmd.prefixes', prefixes=prefixes))
 
     @commands.command()
     @commands.is_owner()

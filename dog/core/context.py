@@ -24,8 +24,17 @@ class DogbotContext(commands.Context):
     def acquire(self):
         return self.bot.pgpool.acquire()
 
-    def _(self, key: str, *args, **kwargs):
-        val = self.bot.lang(key, 'en-US')
+    async def preferred_lang(self):
+        user_lang = await self.bot.redis.get(f'i18n:user:{self.author.id}:lang')
+        if user_lang:
+            return user_lang.decode()
+        guild_lang = await self.bot.redis.get(f'i18n:guild:{self.guild.id}:lang')
+        if guild_lang:
+            return guild_lang.decode()
+        return 'en-US'
+
+    async def _(self, key: str, *args, **kwargs):
+        val = self.bot.lang(key, await self.preferred_lang())
         return val if (not args and not kwargs) else val.format(*args, **kwargs)
 
     async def wait_for_response(self):

@@ -138,12 +138,12 @@ class Exec(Cog):
                 # too long
                 try:
                     url = await haste(ctx.bot.session, stream + repr(ret))
-                    await ctx.send(ctx._('cmd.eval.long', url))
+                    await ctx.send(await ctx._('cmd.eval.long', url))
                 except KeyError:
                     # even hastebin couldn't handle it
-                    await ctx.send(ctx._('cmd.eval.huge'))
+                    await ctx.send(await ctx._('cmd.eval.huge'))
                 except aiohttp.ClientError:
-                    await ctx.send(ctx._('cmd.eval.pastebin_down'))
+                    await ctx.send(await ctx._('cmd.eval.pastebin_down'))
 
     @commands.command(name='retry', hidden=True)
     @commands.is_owner()

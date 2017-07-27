@@ -79,8 +79,11 @@ class DogBot(BotBase, discord.AutoShardedClient):
         with open(f'./resources/lang/{lang}.yml') as f:
             root = YAML(typ='safe').load(f)
         current = root
-        for part in key.split('.'):
-            current = current[part]
+        try:
+            for part in key.split('.'):
+                current = current[part]
+        except KeyError:
+            return key
         return current
 
     async def prefix(self, bot, message: discord.Message):
@@ -185,7 +188,7 @@ class DogBot(BotBase, discord.AutoShardedClient):
 
     async def handle_forbidden(self, ctx):
         if not ctx.guild.me.permissions_in(ctx.channel).send_messages and ctx.command:
-            await ctx.message.author.send(ctx._('misc.cant_respond'))
+            await ctx.message.author.send(await ctx._('misc.cant_respond'))
 
     async def on_command(self, ctx):
         author = ctx.message.author

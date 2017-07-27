@@ -53,7 +53,7 @@ class Config(Cog):
             return
 
         if name not in self.permitted_keys:
-            return await ctx.send(ctx._('cmd.config.set.invalid', wikipage=CONFIGKEYS_HELP))
+            return await ctx.send(await ctx._('cmd.config.set.invalid', wikipage=CONFIGKEYS_HELP))
 
         await self.bot.redis.set(f'{ctx.guild.id}:{name}', value)
         await ctx.ok()
@@ -75,7 +75,7 @@ class Config(Cog):
         """ Lists set configuration keys for this server. """
         keys = [k.decode().split(':')[1] async for k in self.bot.redis.iscan(match=f'{ctx.guild.id}:*')]
         if not keys:
-            return await ctx.send(ctx._('cmd.config.list.none'))
+            return await ctx.send(await ctx._('cmd.config.list.none'))
         await ctx.send('Set configuration keys in this server: ' + ', '.join(keys))
 
     @config.command(name='remove', aliases=['rm', 'del', 'delete'])
