@@ -24,6 +24,7 @@ class Lang(Cog):
         await ctx.ok()
 
     @commands.command(aliases=['sgl', 'ssl'])
+    @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     async def set_server_lang(self, ctx, lang: LangConverter):
         """ Sets the preferred language for this guild. """
