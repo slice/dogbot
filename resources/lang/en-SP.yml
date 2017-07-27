@@ -1,0 +1,28 @@
+cmd:
+  config:
+    set:
+      invalid: config key is invalid lol ur dum
+    list:
+      none: no config keys!!
+  ping:
+    pre: pongerino!!
+    post: 'pongerino! rtt: `{rtt:.2f}ms`'
+  prefixes: 'prefixes r: {prefixes}'
+  eval:
+    long: 'result was too long lol {}'
+    huge: 'result was huge lol'
+    pastebin_down: 'result was so huge we broke pastebin xddd'
+  wiki: >
+    nede help ?visit wiki!!! {wiki}
+
+    also u can ask 4 help here: {invite} talk in #support idiote
+  about:
+    title: woof!!
+    description: a dumb botto by {maker.mention} (`{maker.id}`)
+    birthday: '%B %m (created %Y)'
+    fields:
+      git_rev: git hash
+      github_repo: github repo
+      birthday: bday
+misc:
+  cant_respond: i can't send messages there idiot
