@@ -35,6 +35,7 @@ def format_record(r, cmd_flags):
     content = r['new_content'] or r['original_content']
     if 'always-show-original' in cmd_flags:
         content = r['original_content']
+    content = utils.truncate(content, 1500)
     created_at = '' if 'hide-dates' in cmd_flags else f'{r["created_at"].strftime("%y-%m-%d %H:%M")} '
     message_id = f"{r['message_id']} " if 'show-ids' in cmd_flags else ''
     attachments = f" {r['attachments']}" if 'show-attachments' in cmd_flags else ''
