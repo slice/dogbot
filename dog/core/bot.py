@@ -83,7 +83,8 @@ class DogBot(BotBase, discord.AutoShardedClient):
             for part in key.split('.'):
                 current = current[part]
         except KeyError:
-            return key
+            # return as en-us key when not found
+            return self.lang(key, 'en-US')
         return current
 
     async def prefix(self, bot, message: discord.Message):

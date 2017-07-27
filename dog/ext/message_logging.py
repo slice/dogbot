@@ -15,9 +15,15 @@ logger = logging.getLogger(__name__)
 def require_logging_enabled(func):
     @functools.wraps(func)
     async def wrapper(*args, **kwargs):
+        # do not log dms
+        if not args[1].guild:
+            return
+
         # args[0] = self, args[1] = msg
         if not await args[0].bot.redis.exists(f'message_logging:{args[1].guild.id}:enabled'):
             return
+
+        # don't log ourselves
         if args[1].author == args[0].bot.user:
             return
         return await func(*args, **kwargs)
