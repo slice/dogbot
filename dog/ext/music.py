@@ -36,7 +36,6 @@ SEARCHING_TEXT = (
 )
 
 FFMPEG_OPTIONS = {
-    'before_options': '-nostdin',
     'options': '-vn'  # disable video
 }
 
@@ -53,13 +52,12 @@ class YouTubeDLSource(discord.PCMVolumeTransformer):
         self.url = info.get('url')
 
     @classmethod
-    async def create(cls, url, *, loop=None):
-        loop = loop or asyncio.get_event_loop()
+    async def create(cls, url, bot):
+        future = bot.loop.run_in_executor(None, functools.partial(ytdl.extract_info, url, download=False))
 
-        future = loop.run_in_executor(None, functools.partial(ytdl.extract_info, url, download=False))
         # the extract_info call won't stop but w/e
         try:
-            info = await asyncio.wait_for(future, 12, loop=loop)
+            info = await asyncio.wait_for(future, 12, loop=bot.loop)
         except asyncio.TimeoutError:
             raise YouTubeError('That took too long to fetch! Make sure you aren\'t playing playlists \N{EM DASH} '
                                'those take too long to process!')
@@ -73,7 +71,8 @@ class YouTubeDLSource(discord.PCMVolumeTransformer):
             min = VIDEO_DURATION_LIMIT / 60
             raise YouTubeError('That video is too long! The maximum video duration is **{} minutes**.'.format(min))
 
-        return cls(discord.FFmpegPCMAudio(info['url'], **FFMPEG_OPTIONS), info)
+        executable = 'avconv' if 'docker' in bot.cfg else 'ffmpeg'
+        return cls(discord.FFmpegPCMAudio(info['url'], executable=executable, **FFMPEG_OPTIONS), info)
 
 
 async def youtube_search(bot, query):
@@ -441,7 +440,7 @@ class Music(Cog):
         # grab the source
         url = 'ytsearch:' + url if search else url
         try:
-            source = await YouTubeDLSource.create(url, loop=ctx.bot.loop)
+            source = await YouTubeDLSource.create(url, ctx.bot)
         except youtube_dl.DownloadError:
             return await msg.edit(content='\U0001f4ed YouTube gave me nothin\'.')
         except YouTubeError as yterr:

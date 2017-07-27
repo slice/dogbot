@@ -50,6 +50,7 @@ except ModuleNotFoundError:
 is_docker = '--docker' in ' '.join(sys.argv)
 if is_docker:
     logger.info('Running in Docker mode.')
+    cfg['docker'] = True
     cfg['db']['redis'] = 'redis'
     cfg['db']['postgres'] = {
         'user': 'dogbot',

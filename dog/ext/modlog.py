@@ -85,7 +85,7 @@ class Modlog(Cog):
         if not isinstance(msg.channel, discord.TextChannel):
             return
 
-        # do not process message deletes
+        # do not process bulk message deletes
         # TODO: do this but cleanly, maybe paste website?
         if msg.id in self.bulk_deletes:
             return

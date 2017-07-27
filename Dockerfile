@@ -9,8 +9,8 @@ RUN pip install -r /opt/dogbot/requirements.txt
 
 # install apt dependencies
 RUN apt-get update
-RUN apt-get install libffi-dev libopus-dev
-RUN apt-get install libmagickwand-dev
+RUN apt-get install libffi-dev libopus-dev postgresql-client -y
+RUN apt-get install libmagickwand-dev libav-tools -y
 
 # add source files
 ADD . /opt/dogbot
