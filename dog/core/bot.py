@@ -75,17 +75,25 @@ class DogBot(BotBase, discord.AutoShardedClient):
                 self.prefix_cache[guild.id] = prefix_strings
             return [] if not prefixes else prefix_strings
 
-    def lang(self, key: str, lang: str='en-US'):
+    def _get_lang_data(self, lang):
         with open(f'./resources/lang/{lang}.yml') as f:
-            root = YAML(typ='safe').load(f)
-        current = root
+            return YAML(typ='safe').load(f)
+
+    def _access_dot(self, dct, dot):
+        cur = dct
+        for part in dot.split('.'):
+            cur = cur[part]
+        return cur
+
+    def lang(self, key: str, lang: str='en-US'):
+        fallback_data = self._get_lang_data('en-US')
+        lang_data = self._get_lang_data(lang)
+
         try:
-            for part in key.split('.'):
-                current = current[part]
+            return self._access_dot(lang_data, key)
         except KeyError:
-            # return as en-us key when not found
-            return self.lang(key, 'en-US')
-        return current
+            # default to en-US
+            return self._access_dot(fallback_data, key)
 
     async def prefix(self, bot, message: discord.Message):
         """ Returns prefixes for a message. """
@@ -204,29 +212,29 @@ class DogBot(BotBase, discord.AutoShardedClient):
             return
 
         if ctx.command:
-            see_help = f'Run `d?help {ctx.command.qualified_name}` for more information.'
+            see_help = await ctx._('err.see_help', prefix=ctx.prefix, cmd=ctx.command.qualified_name)
 
         if isinstance(ex, commands.errors.BadArgument):
             message = str(ex)
             if not message.endswith('.'):
                 message = message + '.'
-            await ctx.send(f'Bad argument! {message} {see_help}')
+            await ctx.send(await ctx._('err.bad_arg', msg=message, see_help=see_help))
         elif isinstance(ex, commands.errors.MissingRequiredArgument):
-            await ctx.send(f'Uh oh! {ex} {see_help}')
+            await ctx.send(await ctx._('err.uh_oh', ex=ex, see_help=see_help))
         elif isinstance(ex, commands.NoPrivateMessage):
-            await ctx.send('You can\'t do that in a DM.')
+            await ctx.send(await ctx._('err.not_in_dm'))
         elif isinstance(ex, errors.InsufficientPermissions):
             await ctx.send(ex)
         elif isinstance(ex, commands.errors.DisabledCommand):
-            await ctx.send('That command has been globally disabled by the bot\'s owner.')
+            await ctx.send(await ctx._('err.globally_disabled'))
         elif isinstance(ex, asyncio.TimeoutError):
-            await ctx.send('A request in that command took too long to run. Try running the command again.')
+            await ctx.send(await ctx._('err.timeout'))
         elif isinstance(ex, commands.errors.CommandInvokeError):
             if isinstance(ex.original, discord.Forbidden):
                 if ctx.command.name == 'help':
                     # can't dm that person :(
                     try:
-                        await ctx.send(f'Hey, {ctx.author.mention}! I can\'t DM you my help. Do you have DMs enabled?')
+                        await ctx.send(await ctx._('err.dms_disabled', mention=ctx.author.mention))
                     except discord.Forbidden:
                         pass
                     return
