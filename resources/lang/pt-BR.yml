@@ -1,0 +1,38 @@
+cmd:
+  config:
+    set:
+      invalid: >
+        Essa configuração é inválida. Execute `d?cfg permitted` para ver uma lista
+        de todas as configurações que podem ser alteradas, veja {wikipage} para mais ajuda.
+    list:
+      none: >
+        Não existem nenhuma configuração setada para este servidor!
+
+        Tente rodar `d?cfg permitted` para ver uma lista de configurações
+  ping:
+    pre: 'Pong!'
+    post: 'Pong! RTT: `{rtt:.2f}ms`'
+  prefixes: 'Meus prefixos são: {prefixes}'
+  eval:
+    long: 'Resultado foi muito longo. {}'
+    huge: 'Resultado foi muito longo, até pro Pastebin.'
+    pastebin_down: 'Resultado foi muito longo, não conseguimos conectar com o Pastebin.'
+  wiki: >
+    Precisa de ajuda com o Dogbot? Visite a wiki! {wiki}
+
+    Ou você pode pedir ajuda no servidor de suporte: {invite} tenha certeza
+    de falar em #support!
+  about:
+    title: Woof
+    description: Um bot do Discord cheio de utilidades {maker.mention} (`{maker.id}`)
+    birthday: '%B %m (nasceu %Y)'
+    fields:
+      git_rev: Revisão Git
+      github_repo: Repositório GitHub
+      birthday: Aniversário
+misc:
+  cant_respond: >
+    Eu não consegui responder ao seu comando porquê eu não tenho a permissão de `Enviar Mensagens`
+    no canal que você acabou de mandar o comando. Por favor pergunte a um moderador ou administrador
+    do servidor para cuidar disso por você. Se você é um moderador ou administrador do servidor,
+    por favor conserte minhas permissões!
