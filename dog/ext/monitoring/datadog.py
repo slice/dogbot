@@ -29,6 +29,9 @@ class Datadog(Cog):
     async def on_command(self, ctx):
         await self.datadog_increment('dogbot.commands')
 
+    async def on_message(self, ctx):
+        await self.datadog_increment('discord.messages')
+
     async def datadog_increment(self, metric):
         try:
             await self.bot.loop.run_in_executor(None, dd.statsd.increment, metric)
