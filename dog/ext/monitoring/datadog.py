@@ -56,10 +56,7 @@ class Datadog(Cog):
                     dd.statsd.gauge('discord.users.bots', sum(1 for user in self.bot.users if user.bot))
                 except RuntimeError:
                     logger.warning('Couldn\'t report metrics, trying again soon.')
-                else:
-                    logger.debug('Successfully reported metrics.')
 
-            logger.debug('Reporting metrics to DataDog...')
             await self.bot.loop.run_in_executor(None, report)
             await asyncio.sleep(5)
 
