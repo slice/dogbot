@@ -1,6 +1,7 @@
 """
 Datadog reporting for Dogbot.
 """
+import asyncio
 import logging
 
 import datadog as dd
@@ -39,6 +40,10 @@ class Datadog(Cog):
             logger.exception('Failed to report metric')
 
     async def datadog_report(self):
+        # sleep because datadog could be starting
+        await asyncio.sleep(10)
+
+        # initialize
         dd.initialize(**self.bot.cfg['monitoring']['datadog'])
 
         while True:
