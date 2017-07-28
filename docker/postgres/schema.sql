@@ -1,3 +1,6 @@
+CREATE USER datadog WITH password 'datadog';
+GRANT SELECT ON pg_stat_database TO datadog;
+
 CREATE TABLE command_statistics (
   command_name text,
   times_used int,
