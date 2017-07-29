@@ -122,9 +122,11 @@ class Modlog(Cog):
         joined_ago = utils.ago(member.joined_at)
         return self.modlog_msg(f'{emoji} {bounce}{member} {verb}, created {created_ago}, joined {joined_ago}')
 
-    async def get_responsible(self, target, action):
+    async def get_responsible(self, target, action, *, guild=None):
+        gld = guild if isinstance(target, discord.User) else target.guild
         try:
-            entries = await target.guild.audit_logs(limit=1, action=getattr(discord.AuditLogAction, action)).flatten()
+            entries = await gld.audit_logs(limit=1, action=getattr(discord.AuditLogAction, action)).flatten()
+
             def check(entry):
                 return entry.target == target and (datetime.datetime.utcnow() - entry.created_at).total_seconds() <= 2
             return discord.utils.find(check, entries)
@@ -133,6 +135,22 @@ class Modlog(Cog):
 
     def format_reason(self, entry):
         return f' with reason `{entry.reason}`' if entry.reason else ' with no attached reason'
+
+    async def on_member_unban(self, guild, user):
+        base_msg = f'\N{HAMMER} {user} (`{user.id}`) was unbanned'
+        ml_msg = self.modlog_msg(base_msg + '.')
+        msg = await self.bot.send_modlog(guild, ml_msg)
+
+        if not msg:
+            return
+
+        entry = await self.get_responsible(user, 'unban', guild=guild)
+
+        if not entry:
+            return
+
+        ml_msg = self.modlog_msg(f'{base_msg} by {entry.user}{self.format_reason(entry)}.')
+        await msg.edit(content=ml_msg)
 
     async def on_member_ban(self, guild, user):
         # don't make on_member_remove process this user's departure
