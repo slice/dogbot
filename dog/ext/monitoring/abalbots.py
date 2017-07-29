@@ -20,6 +20,7 @@ class Abalbots(Cog):
         self.reporting_task.cancel()
 
     async def report(self):
+        await self.bot.wait_until_ready()
         logger.debug('Abal bot reporter task started.')
 
         endpoint = f'https://bots.discord.pw/api/bots/{self.bot.user.id}/stats'
