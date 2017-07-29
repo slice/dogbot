@@ -39,9 +39,8 @@ class MonitorChannel(Cog):
             return
 
         # form embed
-        fields = kwargs.pop('fields', [])
         embed = discord.Embed(**kwargs)
-        for name, value in fields:
+        for name, value in kwargs.get('fields', []):
             embed.add_field(name=name, value=value)
 
         try:
@@ -56,7 +55,7 @@ class MonitorChannel(Cog):
         humans = utils.commas(sum(1 for u in g.members if not u.bot))
         bots = utils.commas(sum(1 for u in g.members if u.bot))
 
-        fields = [
+        return [
             ('Guild', f'{g.name}\n`{g.id}`'),
             ('Owner', f'{g.owner.mention} {g.owner}\n`{g.owner.id}`'),
             ('Info', f'Created {utils.ago(g.created_at)}'),
@@ -70,7 +69,7 @@ class MonitorChannel(Cog):
         is_collection = await botcollection.is_bot_collection(self.bot, g)
         should_detect_collections = self.bot.cfg['bot'].get('bot_collection_detection', False)
 
-        if await botcollection.is_blacklisted(self, g.id) or (is_collection and should_detect_collections):
+        if await botcollection.is_blacklisted(self.bot, g.id) or (is_collection and should_detect_collections):
             # leave it
             self.refuse_notify_left.append(g.id)
             await g.leave()
