@@ -11,6 +11,7 @@ class CensorType(utils.EnumConverter, Enum):
     MEDIALINKS = 4
     EXECUTABLELINKS = 5
     CAPS = 6
+    CRASH_TEXT = 7
 
 
 class PunishmentType(utils.EnumConverter, Enum):

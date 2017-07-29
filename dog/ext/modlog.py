@@ -1,6 +1,5 @@
-"""
-Contains the moderator log.
-"""
+""" Contains the moderator log. """
+import asyncio
 import datetime
 
 import discord
@@ -29,6 +28,7 @@ class Modlog(Cog):
         super().__init__(bot)
         self.ban_debounces = []
         self.bulk_deletes = []
+        self.do_not_log_deletes = []
 
     def modlog_msg(self, msg):
         now = datetime.datetime.utcnow()
@@ -85,9 +85,13 @@ class Modlog(Cog):
         if not isinstance(msg.channel, discord.TextChannel):
             return
 
+        # race conditions, yay!
+        # we do this because this message could possibly maybe be censored
+        await asyncio.sleep(0.5)
+
         # do not process bulk message deletes
         # TODO: do this but cleanly, maybe paste website?
-        if msg.id in self.bulk_deletes:
+        if msg.id in self.bulk_deletes or msg.id in self.do_not_log_deletes:
             return
 
         if (not await is_publicly_visible(self.bot, msg.channel) or

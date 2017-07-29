@@ -11,6 +11,15 @@ class ReCensorshipFilter(CensorshipFilter):
         return self.regex.search(msg.content) is not None
 
 
+class CrashTextCensorshipFilter(ReCensorshipFilter):
+    censor_type = CensorType.CRASH_TEXT
+    mod_log_description = 'Crash text censored'
+    show_content = False
+
+    async def does_violate(self, msg):
+        return '\U0000094c' in msg.content
+
+
 class InviteCensorshipFilter(ReCensorshipFilter):
     censor_type = CensorType.INVITES
     mod_log_description = 'Invite censored'

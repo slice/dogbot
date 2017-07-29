@@ -12,7 +12,7 @@ from dog import Cog
 from dog.core import utils
 from dog.ext.censorship import CensorshipFilter, CensorType, PunishmentType
 from dog.ext.censorship.filters import InviteCensorshipFilter, VideositeCensorshipFilter, ZalgoCensorshipFilter, \
-    MediaLinksCensorshipFilter, ExecutableLinksCensorshipFilter, CapsCensorshipFilter
+    MediaLinksCensorshipFilter, ExecutableLinksCensorshipFilter, CapsCensorshipFilter, CrashTextCensorshipFilter
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class Censorship(Cog):
         async with self.bot.pgpool.acquire() as conn:
             enabled = (await conn.fetchrow(sql, guild.id))['enabled']
         return what.name in enabled
-    
+
     async def has_censorship_record(self, guild: discord.Guild) -> bool:
         """ Returns whether a censorship record is present for a guild. """
         sql = 'SELECT * FROM censorship WHERE guild_id = $1'
@@ -277,15 +277,18 @@ class Censorship(Cog):
         """ Returns whether a message should be censored based on a censorship filter and censor type. """
         return await self.is_censoring(msg.guild, filter.censor_type) and await filter().does_violate(msg)
 
-    async def censor_message(self, msg: discord.Message, title: str):
+    async def censor_message(self, msg: discord.Message, filter):
         """ Censors a message, and posts to the modlog. """
         try:
             await msg.delete()
+            self.bot.get_cog('Modlog').do_not_log_deletes.append(msg.id)
         except discord.Forbidden:
             await self.bot.send_modlog(msg.guild, ':x: I failed to censor a message because '
                                        'I couldn\'t delete it! Please fix my permissions.')
         else:
-            ml_msg = f'\u002a\u20e3 Message by {msg.author} censored: {title}: {msg.content}'
+            title = filter.mod_log_description
+            content = f': {msg.content}' if getattr(filter, 'show_content', True) else ''
+            ml_msg = f'\u002a\u20e3 Message by {msg.author} censored: {title}{content}'
             ml_msg = self.bot.get_cog('Modlog').modlog_msg(ml_msg)
             await self.bot.send_modlog(msg.guild, ml_msg)
 
@@ -300,25 +303,26 @@ class Censorship(Cog):
         if not isinstance(msg.channel, discord.abc.GuildChannel) or isinstance(msg.author, discord.User):
             # no dms
             return
-        
+
         if not await self.has_censorship_record(msg.guild):
             # no censorship record yet!
             return
 
         censors = (InviteCensorshipFilter, VideositeCensorshipFilter, ZalgoCensorshipFilter,
-                   MediaLinksCensorshipFilter, ExecutableLinksCensorshipFilter, CapsCensorshipFilter)
+                   MediaLinksCensorshipFilter, ExecutableLinksCensorshipFilter, CapsCensorshipFilter,
+                   CrashTextCensorshipFilter)
 
         # if the message author has a role that has been excepted, don't even check the message
         if any([role.id in await self.get_guild_exceptions(msg.guild) for role in msg.author.roles]):
             return
 
-        # don't censor myself
-        if msg.author == self.bot.user:
+        # don't censor myself or other bots
+        if msg.author == self.bot.user or msg.author.bot:
             return
 
         for censorship_filter in censors:
             if await self.should_censor(msg, censorship_filter):
-                await self.censor_message(msg, censorship_filter.mod_log_description)
+                await self.censor_message(msg, censorship_filter)
 
                 # punish the user
                 try:
