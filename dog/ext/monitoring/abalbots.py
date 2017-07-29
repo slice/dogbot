@@ -1,6 +1,7 @@
 """
 bots.discord.pw reporting for Dogbot.
 """
+import asyncio
 import logging
 
 from dog import Cog
@@ -8,7 +9,7 @@ from dog import Cog
 logger = logging.getLogger(__name__)
 
 
-def Abalbots(Cog):
+class Abalbots(Cog):
     def __init__(self, bot):
         super().__init__(bot)
         self.reporting_interval = 60 * 10
