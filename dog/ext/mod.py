@@ -8,9 +8,20 @@ import discord
 from discord.ext import commands
 
 from dog import Cog
-from dog.core import checks, utils, converters
+from dog.core import checks, converters
 
 logger = logging.getLogger(__name__)
+
+
+class DeleteDays(commands.Converter):
+    async def convert(self, ctx, arg):
+        try:
+            days = int(arg)
+            if days < 0 or days > 7:
+                raise commands.BadArgument('Invalid delete_days: cannot be lower than 0, or higher than 7.')
+        except ValueError:
+            raise commands.BadArgument('Invalid delete_days: not a valid number.')
+        return days
 
 
 class Mod(Cog):
@@ -319,7 +330,26 @@ class Mod(Cog):
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @checks.bot_perms(ban_members=True)
-    async def ban(self, ctx, member: converters.RawMember, delete_days: int = 7, *, reason: str = None):
+    async def softban(self, ctx, member: discord.Member, delete_days: DeleteDays=2, *, reason: str=None):
+        """
+        Bans, then unbans someone.
+
+        This is used to kick someone, also removing their messages. Behaves similarly to d?ban.
+        """
+        try:
+            reason = f'(Softban by {ctx.author}) {reason}'
+            await member.ban(delete_message_days=delete_days, reason=reason)
+            await member.unban(reason=reason)
+        except discord.Forbidden:
+            await ctx.send("I can't do that.")
+        else:
+            await ctx.send(f'\N{OK HAND SIGN} **Soft**banned {member} (`{member.id}`).')
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.has_permissions(ban_members=True)
+    @checks.bot_perms(ban_members=True)
+    async def ban(self, ctx, member: converters.RawMember, delete_days: DeleteDays=2, *, reason: str=None):
         """
         Bans someone.
 
@@ -330,18 +360,14 @@ class Mod(Cog):
         If you don't want to delete any messages, specify 0 for delete_days. delete_days has a
         maximum of 7. By default, 7 days worth of messages are deleted.
         """
-
-        if delete_days > 7:
-            raise commands.errors.BadArgument('`delete_days` has a maximum of 7.')
-
         try:
-            await ctx.guild.ban(member, delete_message_days=delete_days, reason=reason)
+            await member.ban(delete_message_days=delete_days, reason=f'(By {ctx.author}) {reason}')
         except discord.Forbidden:
-            await ctx.send('I can\'t do that.')
+            await ctx.send("I can't do that.")
         except discord.NotFound:
-            await ctx.send('I couldn\'t find that user.')
+            await ctx.send("User not found.")
         else:
-            await ctx.ok()
+            await ctx.send(f'\N{OK HAND SIGN} Banned {member} (`{member.id}`).')
 
     @commands.command()
     @commands.guild_only()
@@ -353,8 +379,7 @@ class Mod(Cog):
 
         A vanity role is defined as a role with no permissions.
         """
-        perms = discord.Permissions(permissions=0)
-        await ctx.guild.create_role(name=name, permissions=perms)
+        await ctx.guild.create_role(name=name, permissions=discord.Permissions(permissions=0))
         await ctx.ok()
 
     @commands.command()
