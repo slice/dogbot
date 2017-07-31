@@ -44,7 +44,7 @@ class Config(Cog):
             await ctx.send('You need to specify a valid subcommand to run. For help, run `d?help cfg`.')
 
     @config.command(name='set')
-    async def config_set(self, ctx, name: str, value: str='on'):
+    async def config_set(self, ctx, name: str, *, value: str='on'):
         """ Sets a config field for this server. """
 
         if len(value) > 1000:
