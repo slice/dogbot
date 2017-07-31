@@ -25,7 +25,6 @@ class Config(Cog):
         super().__init__(*args, **kwargs)
 
         self.permitted_keys = (
-            'mutesetup_disallow_read',
             'invisible_nag',
             'modlog_filter_allow_bot',
             'welcome_message',
