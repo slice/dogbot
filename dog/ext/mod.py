@@ -156,7 +156,11 @@ class Mod(Cog):
         for var, value in transformations.items():
             welcome_message = welcome_message.replace(var, value)
 
-        await member.guild.default_channel.send(welcome_message)
+        try:
+            channel = discord.utils.get(member.guild.text_channels, name='welcome')
+            await channel.send(welcome_message)
+        except discord.Forbidden:
+            logger.warning("Couldn't send welcome message for guild %d, no perms.", member.guild.id)
 
     @commands.command()
     @commands.guild_only()

@@ -302,12 +302,6 @@ class Utility(Cog):
         # send
         await ctx.send(embed=wrapper_embed)
 
-    @commands.command()
-    @commands.guild_only()
-    async def default_channel(self, ctx):
-        """ Shows you the default channel. """
-        await ctx.send(ctx.guild.default_channel.mention)
-
     @commands.command(name='calc')
     async def calc(self, ctx, *, expression: str):
         """ Evaluates a math expression. """

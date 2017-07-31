@@ -22,7 +22,7 @@ class PollrBans(Cog):
         ban = '**Ban:** {0} (`{0.id}`)\n'.format(user)
 
         # get my permissions
-        perms = guild.default_channel.permissions_for(guild.me)
+        perms = guild.me.guild_permissions
 
         if perms.view_audit_log:
             await asyncio.sleep(0.5)  # wait a bit
