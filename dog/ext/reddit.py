@@ -72,7 +72,7 @@ class Reddit(Cog):
             return not post.stickied and appropriate
 
         # get the sub
-        sub = self.bot.praw.subreddit(sub)
+        sub = self.praw.subreddit(sub)
 
         logger.debug('Attempting to fetch subreddit: %s inside of executor, this can time out', sub)
 
@@ -208,10 +208,14 @@ class Reddit(Cog):
     async def hot(self, ctx, sub: str):
         """ Fetches hot posts from a subreddit. """
         try:
-            post = await self.get_hot(ctx.channel, sub)
-            await ctx.send(embed=create_post_embed(post))
-        except:
-            await ctx.send('Failed to grab a post.')
+            async with ctx.typing():
+                post = await self.get_hot(ctx.channel, sub)
+                if not post:
+                    return await ctx.send('No suitable posts were found.')
+                await ctx.send(embed=create_post_embed(post))
+        except Exception as e:
+            await ctx.send('Failed to grab a post, sorry!')
+            logger.exception('Failed to grab a post:')
 
     @commands.group()
     @commands.guild_only()
