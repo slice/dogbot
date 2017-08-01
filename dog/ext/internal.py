@@ -2,14 +2,11 @@
 Dogbot internal commands.
 """
 import datetime
-import io
 import logging
 import os
-from time import monotonic
 
 import asyncpg
 import discord
-import objgraph
 import psutil
 from discord.ext import commands
 from dog import Cog

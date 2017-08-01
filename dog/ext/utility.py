@@ -5,7 +5,6 @@ Contains utility commands that help you get stuff done.
 import logging
 import operator
 import random
-from typing import Any, Dict, List
 
 import aiohttp
 import discord
@@ -18,7 +17,7 @@ from dog.core import utils, converters
 logger = logging.getLogger(__name__)
 
 
-async def jisho(session: aiohttp.ClientSession, query: str) -> Dict[Any, Any]:
+async def jisho(session: aiohttp.ClientSession, query: str):
     """ Searches Jisho, and returns definition data as a `dict`. """
     query_url = utils.urlescape(query)
     jisho_endpoint = 'http://jisho.org/api/v1/search/words?keyword={}'
@@ -90,9 +89,10 @@ class Utility(Cog):
         # combine senses
         definitions = []
         examples = []
+
         def add_sense(sense):
             nonlocal definitions, examples
-            if not 'definitions' in sense:
+            if 'definitions' not in sense:
                 return  # don't bother
             if 'definitions' in sense:
                 definitions += sense['definitions']

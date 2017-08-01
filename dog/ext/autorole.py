@@ -75,9 +75,10 @@ class Autorole(Cog):
                 await member.add_roles(*roles_to_add)
             except discord.Forbidden:
                 log.warning('Failed to autorole %s. Forbidden!', member)
+            except discord.NotFound:
+                log.warning('Failed to autorole %s, not found?', member)
             else:
                 return roles_to_add
-
 
     async def on_member_join(self, member: discord.Member):
         type = 'bot' if member.bot else 'user'
@@ -101,7 +102,6 @@ class Autorole(Cog):
 
         # send to modlog
         await self.bot.send_modlog(member.guild, msg)
-
 
     @autorole.command()
     async def add(self, ctx, type: AutoroleType, *roles: discord.Role):

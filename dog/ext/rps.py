@@ -41,7 +41,7 @@ class RPS(Cog):
             desc = ('React with what you want to play. If you don\'t wish to be challenged to RPS, '
                     'type `d?rps exclude` to exclude yourself from being challenged.')
             desc_prefix = ('You have been challenged by {}!\n\n'.format(ctx.author.mention)
-                if who == opponent else 'Because you initiated the game, you go first.\n\n')
+                           if who == opponent else 'Because you initiated the game, you go first.\n\n')
             embed = discord.Embed(title='Rock, paper, scissors!',
                                   description=desc_prefix + desc)
             msg = await who.send(embed=embed)

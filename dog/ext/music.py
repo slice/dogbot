@@ -219,6 +219,7 @@ class Music(Cog):
             if not vc.is_paused():
                 logger.debug('Automatically pausing stream.')
                 vc.pause()
+
             async def leave():
                 await asyncio.sleep(TIMEOUT)  # 5 minutes
                 if vc.is_connected():

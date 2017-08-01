@@ -14,7 +14,7 @@ class Time(Cog):
     @time.command(name='in')
     async def time_in(self, ctx, *, timezone):
         """
-        Views time in a timezone. 
+        Views time in a timezone.
 
         List of valid timezone specifiers: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
         The "TZ" column is what you want. You can also specify a UTC offset.

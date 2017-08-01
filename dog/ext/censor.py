@@ -196,8 +196,10 @@ class Censorship(Cog):
 
         is_censoring = await self.is_censoring(ctx.guild, censor_type)
 
-        await ctx.send((f'Yes, ' if is_censoring else 'No, ') + f'`{censor_type.name}` are ' + ('not ' if not
-                        is_censoring else '') + 'being censored.')
+        fmt_begin = f'Yes, ' if is_censoring else 'No, '
+        fmt_status = 'not ' if not is_censoring else ''
+        fmt = f'{fmt_begin} `{censor_type.name}` are {fmt_status}being censored.'
+        await ctx.send(fmt)
 
     @censorship.command(name='uncensor')
     async def _uncensor(self, ctx, censor_type: CensorType):

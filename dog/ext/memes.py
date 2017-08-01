@@ -104,16 +104,14 @@ class Memes(Cog):
 
     @commands.command(hidden=True)
     async def b(self, ctx, *, text: commands.clean_content):
-        """ 🅱🅱🅱🅱🅱🅱🅱"""
+        """ 🅱🅱🅱🅱🅱🅱🅱 """
         text = ' '.join('\U0001f171' + w[1:] for w in text.split(' '))
         await ctx.send(text.replace('b', '\U0001f171'))
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def mistake(self, ctx, image_source: converters.ImageSourceConverter):
-        """
-        For really big mistakes.
-        """
+        """ For really big mistakes. """
         async with ctx.typing():
             m = Meme('resources/memes/mistake.png', ctx)
             await m.cache(image_source, (250, 250))

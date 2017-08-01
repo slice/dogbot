@@ -7,7 +7,6 @@ import logging
 import random
 
 import discord
-import functools
 import praw
 import prawcore
 from discord.ext import commands
@@ -30,7 +29,6 @@ def create_post_embed(post) -> discord.Embed:
     if is_image:
         embed.set_image(url=post.url)
     return embed
-
 
 
 class Reddit(Cog):

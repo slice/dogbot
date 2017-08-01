@@ -9,8 +9,11 @@ from discord.ext import commands
 from dog import Cog
 from dog.core import utils, checks
 
-cm = lambda v: utils.commas(v)
 
+def cm(v):
+    return utils.commas(v)
+
+    
 SERVER_INFO_MEMBERS = '''{} total member(s)
 {} online, {} offline
 {}% online'''
@@ -20,7 +23,6 @@ SERVER_INFO_COUNT = '''{} role(s)
 {} channel(s)'''
 
 logger = logging.getLogger(__name__)
-
 
 
 class Info(Cog):

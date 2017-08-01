@@ -14,8 +14,10 @@ from discord.ext import commands
 from dog import Cog
 from dog.core import checks, utils
 
-FW_TRANSLATE = str.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890\',.:;!?" ',
-    'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ１２３４５６７８９０＇，．：；！？＂　')
+FW_TRANSLATE = str.maketrans(
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890\',.:;!?" ',
+    'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ１２３４５６７８９０＇，．：；！？＂　'
+)
 
 SHIBE_ENDPOINT = 'http://shibe.online/api/shibes?count=1&urls=true'
 
@@ -114,11 +116,11 @@ class Fun(Cog):
     async def shibe(self, ctx):
         """ Posts a random Shiba Inu picture. """
         async with ctx.typing():
-           try:
-               resp = await utils.get_json(ctx.bot.session, SHIBE_ENDPOINT)
-           except aiohttp.ClientError:
-               return await ctx.send('Failed to contact the Shibe API. Try again later.')
-           await ctx.send(embed=discord.Embed().set_image(url=resp[0]))
+            try:
+                resp = await utils.get_json(ctx.bot.session, SHIBE_ENDPOINT)
+            except aiohttp.ClientError:
+                return await ctx.send('Failed to contact the Shibe API. Try again later.')
+            await ctx.send(embed=discord.Embed().set_image(url=resp[0]))
 
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)

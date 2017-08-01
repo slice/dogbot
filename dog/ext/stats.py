@@ -67,9 +67,11 @@ class Stats(Cog):
     @commands.command()
     async def stats(self, ctx):
         """ Shows participation info about the bot. """
+        # TODO: Make this function neater. It's currently trash.
 
         # member stats
         all_members = list(self.bot.get_all_members())
+
         def filter_members_by_status(status):
             return len([m for m in all_members if m.status == status])
         num_members = len(all_members)
@@ -93,7 +95,8 @@ class Stats(Cog):
         average_member_count = int(sum(member_counts) / len(member_counts))
         uptime = str(datetime.datetime.utcnow() - self.bot.boot_time)[:-7]
 
-        cm = lambda v: utils.commas(v)
+        def cm(v):
+            return utils.commas(v)
 
         embed = discord.Embed(title='Statistics')
         embed.set_footer(text=f'Booted at {utils.standard_datetime(self.bot.boot_time)} UTC')
@@ -111,7 +114,6 @@ class Stats(Cog):
         for name, value in fields.items():
             embed.add_field(name=name, value=value)
         await ctx.send(embed=embed)
-
 
     @commands.command(aliases=['cstats'])
     async def command_stats(self, ctx, *, command: str=None):

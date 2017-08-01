@@ -3,7 +3,6 @@ Contains commands that shows information about the bot itself, like statistics,
 and who made me.
 """
 
-import datetime
 import logging
 import platform
 from subprocess import check_output
@@ -12,7 +11,6 @@ import discord
 from discord.ext import commands
 
 from dog import Cog
-from dog.core import utils
 
 logger = logging.getLogger(__name__)
 
