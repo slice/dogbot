@@ -9,7 +9,6 @@ import random
 import aiohttp
 import discord
 import pyowm
-from asteval import Interpreter
 from discord.ext import commands
 from dog import Cog
 from dog.core import utils, converters
@@ -301,16 +300,6 @@ class Utility(Cog):
 
         # send
         await ctx.send(embed=wrapper_embed)
-
-    @commands.command(name='calc')
-    async def calc(self, ctx, *, expression: str):
-        """ Evaluates a math expression. """
-        terp = Interpreter()
-        result = terp.eval(expression)
-        if result != '' and result is not None:
-            await ctx.send(result)
-        else:
-            await ctx.send('Empty result.')
 
     @commands.command(aliases=['random', 'choose'])
     async def pick(self, ctx, *args):

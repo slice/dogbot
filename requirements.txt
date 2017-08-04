@@ -1,6 +1,5 @@
 aioredis
 arrow
-asteval
 asyncpg
 beautifulsoup4
 datadog
