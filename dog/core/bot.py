@@ -5,13 +5,11 @@ The core Dogbot bot.
 import asyncio
 import logging
 import traceback
-from typing import List
 
 import discord
 from discord.ext import commands
 from ruamel.yaml import YAML
 
-from dog.core import utils
 from dog.core.base import BotBase
 
 from . import errors
@@ -247,5 +245,5 @@ class DogBot(BotBase, discord.AutoShardedClient):
             header = f'Command error: {type(ex.original).__name__}: {ex.original}'
             message = header + '\n' + str(tb)
 
-            self.dispatch('uncaught_command_invoke_error', ex.original, (message, tb))
+            self.dispatch('uncaught_command_invoke_error', ex.original, (message, tb, ctx))
             logger.error(message)
