@@ -38,7 +38,11 @@ class ReminderQueue(AsyncQueue):
             logger.debug('Not totally fulfilling reminder -- couldn\'t find author. rid=%d', reminder['id'])
             return
         else:
-            await author.send(f'\N{ALARM CLOCK} {reminder["note"]}')
+            try:
+                await author.send(f'\N{ALARM CLOCK} {reminder["note"]}')
+            except:
+                # lol
+                pass
 
         # remove it from the database
         logger.debug('Removing reminder %d', reminder['id'])
