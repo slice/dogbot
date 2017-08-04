@@ -153,7 +153,7 @@ class Tagging(Cog):
         tag = await self.get_tag(ctx, name)
 
         if not tag:
-            await ctx.send('\N{CONFUSED FACE} Not found.')
+            return await ctx.send('\N{CONFUSED FACE} Not found.')
 
         content = tag.value
         escape_regex = r'(`|\*|~|_|<|\\)'
