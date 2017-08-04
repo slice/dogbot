@@ -2,12 +2,15 @@ import discord
 
 
 def user_to_bot_ratio(guild: discord.Guild):
-    """ Calculates the user to bot ratio for a guild. """
-    bots = len(list(filter(lambda u: u.bot, guild.members)))
-    users = len(list(filter(lambda u: not u.bot, guild.members)))
+    bots, users = 0, 0
+    for member in guild.bots:
+        if member.bot:
+            bots += 1
+        else:
+            users += 1
 
-    ratio = bots / users
-    return ratio
+    return bots / users
+
 
 async def is_blacklisted(bot, guild_id: int) -> bool:
     """ Returns a bool indicating whether a guild has been blacklisted. """
