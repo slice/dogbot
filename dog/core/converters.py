@@ -94,5 +94,5 @@ class Guild(commands.Converter):
             if not guild:
                 raise commands.BadArgument(f'A guild by the ID of {guild_id} was not found.')
             return guild
-        except TypeError:
+        except ValueError:
             raise commands.BadArgument('Invalid guild ID.')
