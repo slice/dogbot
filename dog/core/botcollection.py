@@ -3,7 +3,7 @@ import discord
 
 def user_to_bot_ratio(guild: discord.Guild):
     bots, users = 0, 0
-    for member in guild.bots:
+    for member in guild.members:
         if member.bot:
             bots += 1
         else:
