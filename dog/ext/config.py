@@ -159,5 +159,6 @@ class Config(Cog):
         footer = 'View non-supplemental prefixes with `d?prefixes`.'
         await ctx.send(f'Supplemental prefixes for this server: {prefix_list}\n\n' + footer)
 
+
 def setup(bot):
     bot.add_cog(Config(bot))
