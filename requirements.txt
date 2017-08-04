@@ -17,3 +17,4 @@ ruamel.yaml>=0.15
 timeago
 wand
 youtube_dl
+bugsnag
