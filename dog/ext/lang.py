@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 import discord
 from discord.ext import commands
@@ -19,15 +20,26 @@ class LangConverter(commands.Converter):
 class Lang(Cog):
     @commands.command(aliases=['sml'])
     async def set_my_lang(self, ctx, lang: LangConverter):
-        """ Sets your preferred language. """
+        """
+        Sets your preferred language.
+
+        Your preferred language overrides the server's preferred language
+        when you run a command (it only applies to you).
+        """
         await ctx.bot.redis.set(f'i18n:user:{ctx.author.id}:lang', lang)
         await ctx.ok()
 
-    @commands.command(aliases=['sgl', 'ssl'])
+    @commands.command()
+    async def langs(self, ctx):
+        """ Lists supported languages. """
+        langs = [p.stem for p in pathlib.Path('./resources/lang/').glob('*.yml')]
+        await ctx.send(', '.join(langs))
+
+    @commands.command(aliases=['ssl'])
     @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     async def set_server_lang(self, ctx, lang: LangConverter):
-        """ Sets the preferred language for this guild. """
+        """ Sets the preferred language for this server. """
         await ctx.bot.redis.set(f'i18n:guild:{ctx.guild.id}:lang', lang)
         await ctx.ok()
 
