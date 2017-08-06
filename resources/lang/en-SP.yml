@@ -1,3 +1,11 @@
+err:
+  see_help: for help, `{prefix}help {cmd}`
+  bad_arg: bad arg! {msg} {see_help}
+  uh_oh: lol. {ex} {see_help}
+  not_in_dm: "not in dm idiot"
+  globally_disabled: "that command has been disabled"
+  timeout: command took too long, try again pls!
+  dms_disabled: idiot {mention}, enable dms so i can help u
 cmd:
   config:
     set:
