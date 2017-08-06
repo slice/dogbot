@@ -1,10 +1,14 @@
+import argparse
 import asyncio
 import logging
-import sys
 
 from ruamel.yaml import YAML
 
 from dog import DogBot
+
+parser = argparse.ArgumentParser(description='Dogbot.')
+parser.add_argument('--docker', action='store_true', help='Enables Docker mode.', default=False)
+args = parser.parse_args()
 
 # load yaml configuration
 with open('config.yml', 'r') as config_file:
@@ -47,8 +51,7 @@ try:
 except ModuleNotFoundError:
     pass
 
-is_docker = '--docker' in ' '.join(sys.argv)
-if is_docker:
+if args.docker:
     logger.info('Running in Docker mode.')
     cfg['docker'] = True
     cfg['db']['redis'] = 'redis'
@@ -58,7 +61,7 @@ if is_docker:
         'password': 'dogbot',
         'host': 'postgres'
     }
-    logger.debug('Finished database configuration: %s', cfg['db'])
+    logger.debug('Finished patching database configuration: %s', cfg['db'])
 
 # additional options are passed directly to the bot as kwargs
 additional_options = cfg['bot'].get('options', {})
