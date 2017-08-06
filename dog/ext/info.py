@@ -61,7 +61,7 @@ class Info(Cog):
         embed.add_field(name='Roles', value=' '.join([r.mention for r in who.roles if r != ctx.guild.default_role]))
 
         # shared servers
-        shared_servers = len([g for g in ctx.bot.guilds if who in g.members])
+        shared_servers = sum(1 for g in ctx.bot.guilds if who in g.members)
         embed.add_field(name='Shared Servers', value=shared_servers)
 
         if checks.is_supporter(ctx.bot, who):
