@@ -13,7 +13,7 @@ from dog.core import utils, checks
 def cm(v):
     return utils.commas(v)
 
-    
+
 SERVER_INFO_MEMBERS = '''{} total member(s)
 {} online, {} offline
 {}% online'''
@@ -190,7 +190,6 @@ class Info(Cog):
         embed.add_field(name='Joined Discord',
                         value=f'{joined_dif}\n{utils.standard_datetime(member.created_at)} UTC')
         return embed
-
 
     @commands.command()
     @commands.guild_only()
