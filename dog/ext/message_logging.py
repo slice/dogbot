@@ -35,12 +35,19 @@ def format_record(r, cmd_flags):
     Formats a messages row.
     """
     flags = {'E': r['edited'], 'D': r['deleted']}
+
+    # render the flags
     flags_rendered = ''.join(fl for fl, value in flags.items() if value)
+    # empty out of we are hiding flags, else pad it out
     flags_rendered = '' if 'hide-flags' in cmd_flags else f'{flags_rendered: <{len(flags)}} '
 
+    # decide which content to show
     content = r['new_content'] or r['original_content']
-    if 'always-show-original' in cmd_flags:
+    # override on show-original
+    if 'show-original' in cmd_flags:
         content = r['original_content']
+
+    # truncate
     content = utils.truncate(content, 1500)
     created_at = '' if 'hide-dates' in cmd_flags else f'{r["created_at"].strftime("%y-%m-%d %H:%M")} '
     message_id = f"{r['message_id']} " if 'show-ids' in cmd_flags else ''
@@ -110,29 +117,26 @@ class MessageLogging(Cog):
 
         paginator = commands.Paginator()
 
+        flag_processors = {
+            'has-attachments': lambda value, msg: json.loads(msg['attachments']),
+            'contains': lambda value, msg: value in msg,
+            'edited': lambda value, msg: msg['edited'],
+            'deleted': lambda value, msg: msg['deleted'],
+            'channel': lambda value, msg: msg['channel_id'] == int(value),
+            'mentions': lambda value, msg: re.search(f'<@!?{value}>', content) is None
+        }
+
         # add messages
         for msg in messages:
-            attachments = json.loads(msg['attachments'])
             content = msg['new_content'] or msg['original_content']
-            mentions = re.findall(r'<@!?(\d+)>', content)
 
-            # obey flags
-            if not attachments and 'has-attachments' in flags:
-                continue
-            if 'contains' in flags and flags['contains'] not in content:
-                continue
-            if 'edited' in flags and not msg['edited']:
-                continue
-            if 'deleted' in flags and not msg['deleted']:
-                continue
-            if 'channel' in flags and not msg['channel_id'] == int(flags['channel']):
-                continue
-            if 'mention-count' in flags and len(mentions) != int(flags['mention-count']):
-                continue
-            if 'mentions' in flags and (re.search(f'<@!?{flags["mentions"]}>', content) is None):
-                continue
+            failed_flags = False
+            for flag_name, processor in flag_processors.items():
+                if flag_name in flags and not processor(flags[flag_name], msg):
+                    failed_flags = True
 
-            paginator.add_line(format_record(msg, flags))
+            if not failed_flags:
+                paginator.add_line(format_record(msg, flags))
 
         # send pages
         if not paginator.pages:
