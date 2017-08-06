@@ -108,7 +108,17 @@ class MessageLogging(Cog):
     @commands.command()
     @checks.is_moderator()
     async def archive(self, ctx, user: discord.User, amount: int, *, flags: converters.Flags={}):
-        """ Fetches logged messages from a user. """
+        """
+        Fetches logged messages from a user.
+
+        Only Dogbot Moderators can do this.
+
+        The amount you specify is not equal to the amount of messages that will be shown to you.
+        Rather, it will be the amount of messages that are fetched from the bot's database.
+
+        Flags allow you to specify which messages you want to see, or how you want to see them.
+        For more information, see https://github.com/slice/dogbot/wiki/Message-Logging.
+        """
         async with ctx.acquire() as conn:
             fetch_sql = """
                 SELECT * FROM messages WHERE author_id = $1 AND guild_id = $2 ORDER BY created_at DESC LIMIT $3
