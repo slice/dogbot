@@ -101,7 +101,7 @@ class BotBase(commands.bot.BotBase):
     def reload_modules(self):
         """ Reloads all Dogbot related modules. """
         # get applicable modules to reload
-        modules = {k: m for k, m in sys.modules.items() if 'dog' in k and 'ext' not in k and
+        modules = {k: m for k, m in sys.modules.items() if ('dog' in k and 'datadog' not in k) and 'ext' not in k and
                    k != 'dog'}
         for name, module in modules.items():
             logger.info('Reloading bot module: %s', name)
