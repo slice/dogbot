@@ -7,6 +7,7 @@ import logging
 import discord
 from discord.ext import commands
 
+import emoji
 from dog import Cog
 from dog.core import checks, converters
 
@@ -116,6 +117,17 @@ class Mod(Cog):
     async def purge_bot(self, ctx, amount: int = 5):
         """ Purges <n> messages by bots. """
         await self.base_purge(ctx, amount, lambda m: m.author.bot)
+
+    @purge.command(name='emoji', aliases=['emojis'])
+    @commands.guild_only()
+    @checks.bot_perms(manage_messages=True, read_message_history=True)
+    @checks.is_moderator()
+    async def purge_emoji(self, ctx, amount: int = 5, minimum_emoji: int = 3):
+        """ Purges <n> messages with at least 3 emoji (by default). """
+        def message_check(msg):
+            emoji_count = sum(1 for c in msg.content if c in emoji.UNICODE_EMOJI)
+            return emoji_count >= minimum_emoji
+        await self.base_purge(ctx, amount, message_check)
 
     @commands.command()
     @commands.guild_only()
