@@ -46,17 +46,16 @@ class Autorole(Cog):
         if ctx.invoked_subcommand is None:
             await ctx.send('You must specify a valid subcommand to run. For help, run `d?help ar`.')
 
-    async def assign_roles(self, type: str, member: discord.Member):
+    async def assign_roles(self, autorole_type: str, member: discord.Member):
         async with self.bot.pgpool.acquire() as pg:
             # fetch autoroles for that user
-            autorole = await pg.fetchrow('SELECT * FROM autoroles WHERE guild_id = $1 AND type = $2', member.guild.id,
-                                         type)
-            if not autorole:
-                # log.debug('Ignoring autorole for guild %d -- no autorole for type "%s"!', member.guild.id, type)
+            record = await pg.fetchrow('SELECT * FROM autoroles WHERE guild_id = $1 AND type = $2', member.guild.id,
+                                       autorole_type)
+            if not record:
                 return []
 
             # get the role ids we need
-            role_ids = autorole['roles']
+            role_ids = record['roles']
 
             # collect roles to add
             roles_to_add = [discord.utils.get(member.guild.roles, id=role_id) for role_id in role_ids]
@@ -136,14 +135,14 @@ class Autorole(Cog):
             return role.name if role else '`<dead role>`'
 
         def format_record(record):
-            formatted_roles = ', '.join([format_role(role_id) for role_id in record['roles']])
+            formatted_roles = ', '.join(format_role(role_id) for role_id in record['roles'])
             return '{0[type]}: {1}'.format(record, formatted_roles)
 
         async with ctx.acquire() as conn:
             autoroles = await conn.fetch('SELECT * FROM autoroles WHERE guild_id = $1', ctx.guild.id)
         if not autoroles:
             return await ctx.send('There are no autoroles in this server.')
-        await ctx.send('\n'.join([format_record(r) for r in autoroles]))
+        await ctx.send('\n'.join(format_record(r) for r in autoroles))
 
 
 def setup(bot):
