@@ -336,7 +336,7 @@ class Mod(Cog):
     async def kick(self, ctx, member: discord.Member, *, reason: str = None):
         """ Kicks someone. """
         try:
-            await ctx.guild.kick(member, reason=reason)
+            await ctx.guild.kick(member, reason=f'(By {ctx.author}) {reason or "No reason provided."}')
         except discord.Forbidden:
             await ctx.send('I can\'t do that.')
         else:
@@ -353,7 +353,7 @@ class Mod(Cog):
         This is used to kick someone, also removing their messages. Behaves similarly to d?ban.
         """
         try:
-            reason = f'(Softban by {ctx.author}) {reason}'
+            reason = f'(Softban by {ctx.author}) {reason or "No reason provided."}'
             await member.ban(delete_message_days=delete_days, reason=reason)
             await member.unban(reason=reason)
         except discord.Forbidden:
@@ -377,6 +377,7 @@ class Mod(Cog):
         maximum of 7. By default, 7 days worth of messages are deleted.
         """
         try:
+            reason = reason or 'No reason provided.'
             await member.ban(delete_message_days=delete_days, reason=f'(By {ctx.author}) {reason}')
         except discord.Forbidden:
             await ctx.send("I can't do that.")
