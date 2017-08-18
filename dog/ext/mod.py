@@ -374,11 +374,11 @@ class Mod(Cog):
         users who are not present in the server.
 
         If you don't want to delete any messages, specify 0 for delete_days. delete_days has a
-        maximum of 7. By default, 7 days worth of messages are deleted.
+        maximum of 7. By default, 2 days worth of messages are deleted.
         """
         try:
             reason = reason or 'No reason provided.'
-            await member.ban(delete_message_days=delete_days, reason=f'(By {ctx.author}) {reason}')
+            await ctx.guild.ban(member, delete_message_days=delete_days, reason=f'(By {ctx.author}) {reason}')
         except discord.Forbidden:
             await ctx.send("I can't do that.")
         except discord.NotFound:
