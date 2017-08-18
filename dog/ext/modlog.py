@@ -122,10 +122,9 @@ class Modlog(Cog):
         joined_ago = utils.ago(member.joined_at)
         return self.modlog_msg(f'{emoji} {bounce}{member} {verb}, created {created_ago}, joined {joined_ago}')
 
-    async def get_responsible(self, target, action, *, guild=None):
-        gld = guild if isinstance(target, discord.User) else target.guild
+    async def get_responsible(self, guild, target, action):
         try:
-            entries = await gld.audit_logs(limit=1, action=getattr(discord.AuditLogAction, action)).flatten()
+            entries = await guild.audit_logs(limit=1, action=getattr(discord.AuditLogAction, action)).flatten()
 
             def check(entry):
                 return entry.target == target and (datetime.datetime.utcnow() - entry.created_at).total_seconds() <= 2
@@ -144,7 +143,7 @@ class Modlog(Cog):
         if not msg:
             return
 
-        entry = await self.get_responsible(user, 'unban', guild=guild)
+        entry = await self.get_responsible(guild, user, 'unban')
 
         if not entry:
             return
@@ -161,7 +160,7 @@ class Modlog(Cog):
         if not msg:
             return
 
-        entry = await self.get_responsible(user, 'ban')
+        entry = await self.get_responsible(guild, user, 'ban')
 
         if not entry:
             return
@@ -183,7 +182,7 @@ class Modlog(Cog):
         if not ml_msg:
             return
 
-        entry = await self.get_responsible(member, 'kick')
+        entry = await self.get_responsible(member.guild, member, 'kick')
 
         if not entry:
             return

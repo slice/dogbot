@@ -384,7 +384,8 @@ class Mod(Cog):
         except discord.NotFound:
             await ctx.send("User not found.")
         else:
-            await ctx.send(f'\N{OK HAND SIGN} Banned {member} (`{member.id}`).')
+            banned = str(await ctx.bot.get_user_info(member.id)) if isinstance(member, discord.Object) else str(member)
+            await ctx.send(f'\N{OK HAND SIGN} Banned {banned} (`{member.id}`).')
 
     @commands.command()
     @commands.guild_only()
