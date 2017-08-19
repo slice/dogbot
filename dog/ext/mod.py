@@ -255,9 +255,6 @@ class Mod(Cog):
 
         Any existing permission overwrites for the target is preserved.
         """
-        if ctx.channel.is_default():
-            await ctx.send('Members cannot be blocked from the default channel.')
-            return
         existing_overwrite = ctx.channel.overwrites_for(someone)
         existing_overwrite.read_messages = False
         await ctx.channel.set_permissions(someone, overwrite=existing_overwrite)
