@@ -6,7 +6,6 @@ bot, like d?ping.
 
 import logging
 import os
-import subprocess
 import sys
 from time import monotonic
 
@@ -60,8 +59,20 @@ class Admin(Cog):
     @commands.command()
     async def prefixes(self, ctx):
         """ Lists the bot's prefixes. """
+
+        # global prefixes
         prefixes = ', '.join(f'`{p}`' for p in ctx.bot.cfg['bot']['prefixes'])
-        await ctx.send(await ctx._('cmd.prefixes', prefixes=prefixes))
+
+        msg = await ctx._('cmd.prefix.prefixes', prefixes=prefixes)
+
+        # if this guild is in the prefix cache, tack on the guild's additional prefixes too
+        if ctx.guild.id in ctx.bot.prefix_cache:
+            suppl_prefixes = ctx.bot.prefix_cache[ctx.guild.id]
+            if suppl_prefixes:
+                suppl_prefix_list = ', '.join(f'`{p}`' for p in suppl_prefixes)
+                msg += '\n' + await ctx._('cmd.prefix.prefixes_guild', prefixes=suppl_prefix_list)
+
+        await ctx.send(msg)
 
     @commands.command()
     @commands.is_owner()

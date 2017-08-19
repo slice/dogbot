@@ -20,7 +20,10 @@ cmd:
   ping:
     pre: 'Pong!'
     post: 'Pong! RTT: `{rtt:.2f}ms`'
-  prefixes: 'My prefixes are: {prefixes}'
+  prefix:
+    prefixes: 'My prefixes are: {prefixes}'
+    prefixes_guild: 'My prefixes in this server are: {prefixes}'
+    prefix_not_found: "That prefix isn't being used here. List prefixes with `d?prefix list`."
   eval:
     long: 'Result was too long. {}'
     huge: 'Result was too long, even for Pastebin.'

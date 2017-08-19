@@ -135,6 +135,10 @@ class Config(Cog):
     @prefix.command(name='remove')
     async def prefix_remove(self, ctx, prefix: Prefix):
         """ Removes a prefix. """
+        if ctx.guild.id not in ctx.bot.prefix_cache or prefix not in ctx.bot.prefix_cache[ctx.guild.id]:
+            await ctx.send(await ctx._('cmd.prefix.prefix_not_found'))
+            return
+
         async with ctx.acquire() as conn:
             await conn.execute('DELETE FROM prefixes WHERE guild_id = $1 AND prefix = $2', ctx.guild.id,
                                prefix)
@@ -156,8 +160,7 @@ class Config(Cog):
             return await ctx.send('There are no supplemental prefixes for this server. Add one with ' +
                                   '`d?prefix add <prefix>`.')
         prefix_list = ', '.join(f'`{p}`' for p in prefixes)
-        footer = 'View non-supplemental prefixes with `d?prefixes`.'
-        await ctx.send(f'Supplemental prefixes for this server: {prefix_list}\n\n' + footer)
+        await ctx.send(f'Prefixes for this server: {prefix_list}')
 
 
 def setup(bot):
