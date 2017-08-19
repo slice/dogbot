@@ -42,7 +42,7 @@ class Meme:
         self.draw = ImageDraw.Draw(self.source)
         self.font = ImageFont.truetype('resources/font/SourceSansPro-Regular.ttf', text_size)
 
-    async def cache(self, url, size=None, ):
+    async def cache(self, url, size=None):
         if url in self.image_cache:
             return
 

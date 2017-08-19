@@ -155,4 +155,3 @@ class BotBase(commands.bot.BotBase):
         ready_embed = discord.Embed(title='Bot is ready!', description='The bot has connected to Discord.',
                                     color=discord.Color.green())
         await self.post_to_webhook(embed=ready_embed)
-

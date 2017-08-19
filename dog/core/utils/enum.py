@@ -1,5 +1,6 @@
 from discord.ext import commands
 
+
 class EnumConverter:
     @classmethod
     async def convert(cls, ctx, arg):
