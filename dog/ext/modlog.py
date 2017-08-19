@@ -54,13 +54,14 @@ class Modlog(Cog):
 
         if before.channel is not None and after.channel is None:
             # left
-            await send(self.modlog_msg(f'{voice} {describe(member)} left {before.channel}'))
+            await send(self.modlog_msg(f'{voice} {describe(member)} left {describe(before.channel)}'))
         elif before.channel is None and after.channel is not None:
             # joined
-            await send(self.modlog_msg(f'{voice} {describe(member)} joined {after.channel}'))
+            await send(self.modlog_msg(f'{voice} {describe(member)} joined {describe(after.channel)}'))
         elif before.channel != after.channel:
             # moved
-            await send(self.modlog_msg(f'{voice} {describe(member)} moved from {before.channel} to {after.channel}'))
+            channels = f'{describe(before.channel)} to {describe(after.channel)}'
+            await send(self.modlog_msg(f'{voice} {describe(member)} moved from {channels}'))
 
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
         if before.author.bot or before.content == after.content:
