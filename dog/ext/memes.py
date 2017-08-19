@@ -82,7 +82,7 @@ class Memes(Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def jpeg(self, ctx, image_source: converters.ImageSourceConverter):
+    async def jpeg(self, ctx, image_source: converters.Image):
         """
         Drastically lowers an image's quality.
 
@@ -110,7 +110,7 @@ class Memes(Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def mistake(self, ctx, image_source: converters.ImageSourceConverter):
+    async def mistake(self, ctx, image_source: converters.Image):
         """ For really big mistakes. """
         async with ctx.typing():
             m = Meme('resources/memes/mistake.png', ctx)
@@ -121,7 +121,7 @@ class Memes(Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def trustnobody(self, ctx, image_source: converters.ImageSourceConverter):
+    async def trustnobody(self, ctx, image_source: converters.Image):
         """ Trust nobody, not even yourself. """
         async with ctx.typing():
             m = Meme('resources/memes/trust_nobody.png', ctx)
@@ -137,7 +137,7 @@ class Memes(Cog):
 
     @commands.command(hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def youvs(self, ctx, a: converters.ImageSourceConverter, b: converters.ImageSourceConverter):
+    async def youvs(self, ctx, a: converters.Image, b: converters.Image):
         """ You vs. the guy she tells you not to worry about """
         async with ctx.typing():
             m = Meme('resources/memes/you_vs.png', ctx)
@@ -150,7 +150,7 @@ class Memes(Cog):
 
     @commands.command(hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def drake(self, ctx, yay: converters.ImageSourceConverter, nay: converters.ImageSourceConverter):
+    async def drake(self, ctx, yay: converters.Image, nay: converters.Image):
         """ yay, nay """
         async with ctx.typing():
             m = Meme('resources/memes/drake.png', ctx)
@@ -173,7 +173,7 @@ class Memes(Cog):
 
     @commands.command(aliases=['handicap'], hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def handicapped(self, ctx, image_source: converters.ImageSourceConverter, *, text: commands.clean_content):
+    async def handicapped(self, ctx, image_source: converters.Image, *, text: commands.clean_content):
         """ Sir, this spot is for the handicapped only!.. """
         async with ctx.typing():
             m = Meme('resources/memes/handicap.png', ctx, text_size=24)
@@ -191,7 +191,7 @@ class Memes(Cog):
 
     @commands.command(hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def floor(self, ctx, image_source: converters.ImageSourceConverter, *, text: commands.clean_content):
+    async def floor(self, ctx, image_source: converters.Image, *, text: commands.clean_content):
         """
         The floor is...
 
@@ -212,7 +212,7 @@ class Memes(Cog):
 
     @commands.command(hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def forbidden(self, ctx, *, image_source: converters.ImageSourceConverter = None):
+    async def forbidden(self, ctx, *, image_source: converters.Image = None):
         """ At last! I am free to think the forbidden thoughts. """
         image_source = image_source or ctx.author.avatar_url_as(format='png')
 
@@ -249,7 +249,7 @@ class Memes(Cog):
 
     @commands.command(hidden=True)
     @commands.cooldown(1, 2, commands.BucketType.user)
-    async def pixelate(self, ctx, image_source: converters.ImageSourceConverter, size: int=15):
+    async def pixelate(self, ctx, image_source: converters.Image, size: int=15):
         """ Pixelates something. """
         if size < 5:
             await ctx.send('The minimum size is 5.')
@@ -264,7 +264,7 @@ class Memes(Cog):
 
     @commands.command(hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def wacky(self, ctx, image_source: converters.ImageSourceConverter = None):
+    async def wacky(self, ctx, image_source: converters.Image = None):
         """ Applies wacky effects to your avatar. """
         image_source = image_source or ctx.message.author.avatar_url_as(format='png')
 

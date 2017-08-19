@@ -33,7 +33,7 @@ class Admin(Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def set_avatar(self, ctx, *, image_source: converters.ImageSourceConverter):
+    async def set_avatar(self, ctx, *, image_source: converters.Image):
         """ Sets the bot's avatar. """
         async with self.bot.session.get(image_source) as resp:
             avatar_data = await resp.read()

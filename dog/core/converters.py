@@ -56,7 +56,7 @@ async def _get_recent_image(channel):
                 return attachment.proxy_url
 
 
-class ImageSourceConverter(commands.Converter):
+class Image(commands.Converter):
     async def convert(self, ctx, argument):
         # scan channel
         if argument == 'recent':
