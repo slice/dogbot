@@ -85,6 +85,16 @@ class Modlog(Cog):
             msg = self.modlog_msg(
                 f'\N{NAME BADGE} Username for {describe(before)} updated: `{before.name}` to `{after.name}`')
             await self.bot.send_modlog(before.guild, msg)
+        elif before.roles != after.roles:
+            differences = []
+            for role in before.roles:
+                if role not in after.roles:
+                    differences.append(f'{describe(role)} was removed')
+            for role in after.roles:
+                if role not in before.roles:
+                    differences.append(f'{describe(role)} was added')
+            msg = self.modlog_msg(f'\N{KEY} Roles for {describe(before)} were updated: {", ".join(differences)}')
+            await self.bot.send_modlog(before.guild, msg)
 
     async def on_raw_bulk_message_delete(self, message_ids, channel_id):
         self.bulk_deletes += message_ids
