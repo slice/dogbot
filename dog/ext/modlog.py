@@ -87,12 +87,8 @@ class Modlog(Cog):
             await self.bot.send_modlog(before.guild, msg)
         elif before.roles != after.roles:
             differences = []
-            for role in before.roles:
-                if role not in after.roles:
-                    differences.append(f'{describe(role)} was removed')
-            for role in after.roles:
-                if role not in before.roles:
-                    differences.append(f'{describe(role)} was added')
+            differences += [f'{describe(role)} was removed' for role in before.roles if role not in after.roles]
+            differences += [f'{describe(role)} was added' for role in after.roles if role not in before.roles]
             msg = self.modlog_msg(f'\N{KEY} Roles for {describe(before)} were updated: {", ".join(differences)}')
             await self.bot.send_modlog(before.guild, msg)
 
