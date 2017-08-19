@@ -13,7 +13,7 @@ class DogbotHelpFormatter(HelpFormatter):
 
     def format_help(self, description):
         # for each paragraph in the description, replace a newline with a space.
-        return '\n\n'.join([para.replace('\n', ' ') for para in description.split('\n\n')])
+        return '\n\n'.join(para.replace('\n', ' ') for para in description.split('\n\n'))
 
     async def format(self):
         """ A modified copy of Discord.py rewrite's vanilla HelpFormatter.format(). """
