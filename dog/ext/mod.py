@@ -246,7 +246,7 @@ class Mod(Cog):
     @commands.guild_only()
     @checks.bot_perms(manage_roles=True)
     @checks.is_moderator()
-    async def block(self, ctx, someone: discord.Member):
+    async def block(self, ctx, *, someone: discord.Member):
         """
         Blocks someone from reading your channel.
 
@@ -264,7 +264,7 @@ class Mod(Cog):
     @commands.guild_only()
     @checks.bot_perms(manage_roles=True)
     @checks.is_moderator()
-    async def unblock(self, ctx, someone: discord.Member):
+    async def unblock(self, ctx, *, someone: discord.Member):
         """
         Unblocks someone from reading your channel.
 
