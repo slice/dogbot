@@ -199,6 +199,9 @@ class DogBot(BotBase, discord.AutoShardedClient):
         return await self.redis.exists(f'{guild.id}:{name}')
 
     async def handle_forbidden(self, ctx):
+        if not ctx.guild.me:
+            return
+
         if not ctx.guild.me.permissions_in(ctx.channel).send_messages and ctx.command:
             await ctx.message.author.send(await ctx._('misc.cant_respond'))
 
