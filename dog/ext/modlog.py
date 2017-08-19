@@ -125,8 +125,8 @@ class Modlog(Cog):
             return
 
         content = utils.prevent_codeblock_breakout(utils.truncate(msg.content, 1500))
-        fmt = (f'\U0001f6ae Message by {describe(msg.author)} deleted: ```{content}``` ({len(msg.attachments)} '
-               'attachments)')
+        fmt = (f'\U0001f6ae Message by {describe(msg.author)} deleted in {msg.channel.mention}: ```{content}``` '
+               f'({len(msg.attachments)} attachment(s))')
         await self.bot.send_modlog(msg.guild, self.modlog_msg(fmt))
 
     async def on_member_join(self, member: discord.Member):
