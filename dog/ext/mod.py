@@ -86,7 +86,7 @@ class Mod(Cog):
         """
         await self.base_purge(ctx, amount)
 
-    @purge.command(name='by')
+    @purge.command(name='by', aliases=['from'])
     @commands.guild_only()
     @checks.bot_perms(manage_messages=True, read_message_history=True)
     @checks.is_moderator()
@@ -94,7 +94,7 @@ class Mod(Cog):
         """ Purges <n> messages from someone. """
         await self.base_purge(ctx, amount, lambda m: m.author == target)
 
-    @purge.command(name='embeds')
+    @purge.command(name='embeds', aliases=['e'])
     @commands.guild_only()
     @checks.bot_perms(manage_messages=True, read_message_history=True)
     @checks.is_moderator()
@@ -102,7 +102,7 @@ class Mod(Cog):
         """ Purges <n> messages containing embeds. """
         await self.base_purge(ctx, amount, lambda m: len(m.embeds) != 0)
 
-    @purge.command(name='attachments')
+    @purge.command(name='attachments', aliases=['images', 'uploads', 'i'])
     @commands.guild_only()
     @checks.bot_perms(manage_messages=True, read_message_history=True)
     @checks.is_moderator()
