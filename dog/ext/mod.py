@@ -57,8 +57,8 @@ class Mod(Cog):
 
     async def base_purge(self, ctx: commands.Context, limit: int, check=None, **kwargs):
         # check if it's too much
-        if limit > 1000:
-            await ctx.send('Too many messages to purge. 1,000 is the maximum.')
+        if limit > 5000:
+            await ctx.send('Too many messages to purge. 5,000 is the maximum.')
             return
 
         # purge the actual command message too
