@@ -33,6 +33,10 @@ class DogBot(BotBase, discord.AutoShardedClient):
         # custom prefix cache
         self.prefix_cache = {}
 
+    @property
+    def is_private(self):
+        return 'private' in self.cfg['bot'] and self.cfg['bot']['private']
+
     async def is_global_banned(self, user: discord.User):
         key = f'cache:globalbans:{user.id}'
 
@@ -148,10 +152,7 @@ class DogBot(BotBase, discord.AutoShardedClient):
             key = 'modlog_channel_id'
             manual_id = int(await self.config_get(guild, key))
             manual_mod_log = discord.utils.get(guild.text_channels, id=manual_id)
-            if manual_mod_log is not None:
-                logger.debug('Using a manual mod log for guild %d.', guild.id)
         except:
-            logger.debug('Using automatic mod log or guild %d.', guild.id)
             manual_mod_log = None
 
         mod_log = manual_mod_log or discord.utils.get(guild.text_channels, name='mod-log')

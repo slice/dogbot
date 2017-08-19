@@ -7,6 +7,9 @@ from discord.ext.commands.core import Command
 
 class DogbotHelpFormatter(HelpFormatter):
     def get_ending_note(self):
+        if self.context.bot.is_private:
+            return super().get_ending_note()
+
         note = super().get_ending_note()
         invite = self.context.bot.cfg['bot']['woof']['invite']
         return note if not self.is_bot() else note + '\nNeed help? Visit the support server: ' + invite

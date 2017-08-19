@@ -20,15 +20,18 @@ class About(Cog):
         super().__init__(bot)
         self.maker = None
 
-    @commands.command(aliases=['oauth'])
+    @commands.command(aliases=['inv'])
     async def invite(self, ctx):
-        """ Tells you my invite (OAuth) link. """
+        """ Tells you my invite link. """
+        if ctx.bot.is_private:
+            await ctx.send("This bot is private and can't be invited. Sorry!")
+            return
         perms = discord.Permissions(permissions=8)
         client_id = (await self.bot.application_info()).id
         link = discord.utils.oauth_url(client_id, permissions=perms)
-        await ctx.send(link)
+        await ctx.send(f'<{link}>')
 
-    @commands.command(hidden=True, aliases=['ginvite', 'ginv', 'inv'])
+    @commands.command(hidden=True, aliases=['ginvite', 'ginv'])
     async def generate_invite(self, ctx, client_id: int):
         """ Generates an invite from a client ID. """
         await ctx.send('<' + discord.utils.oauth_url(client_id) + '>')
