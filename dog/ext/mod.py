@@ -144,12 +144,17 @@ class Mod(Cog):
             target_id = int(target)
         except ValueError:
             target_id = None
+
+        # scan the audit logs for the action they specified
         async for entry in ctx.guild.audit_logs(limit=None):
+            # (id matches, or discordtag matches) && entry matches
             if (entry.target.id == target_id or str(entry.target) == target) and entry.action == al_action:
+                # make readable string
                 fmt = '{0} (`{0.id}`) has {3} {1} (`{1.id}`). Reason: {2}'
-                return await ctx.send(fmt.format(entry.user, entry.target,
-                                                 f'"{entry.reason}"' if entry.reason else
+                return await ctx.send(fmt.format(entry.user, entry.target, f'"{entry.reason}"' if entry.reason else
                                                  'No reason was provided.', action_past_tense))
+
+        # not found
         await ctx.send('I couldn\'t find the data from the audit logs. Sorry!')
 
     async def on_member_join(self, member):
@@ -183,7 +188,7 @@ class Mod(Cog):
         Checks who banned a user.
 
         You may only specify the ID of the user (looks like: 305470090822811668), or
-        the username and DiscordTag of a user (looks like: slice#0594).
+        the username and DiscordTag of a user (looks like: slice#4274).
         """
         await self._check_who_action(ctx, 'ban', someone, 'banned')
 
