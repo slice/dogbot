@@ -91,7 +91,11 @@ class DogBot(BotBase, discord.AutoShardedClient):
             return self._access_dot(lang_data, key)
         except KeyError:
             # default to en-US
-            return self._access_dot(fallback_data, key)
+            try:
+                return self._access_dot(fallback_data, key)
+            except KeyError:
+                # uhhh
+                return key
 
     async def prefix(self, bot, message: discord.Message):
         """ Returns prefixes for a message. """
