@@ -60,7 +60,7 @@ class Admin(Cog):
     @commands.command()
     async def prefixes(self, ctx):
         """ Lists the bot's prefixes. """
-        prefixes = ', '.join([f'`{p}`' for p in ctx.bot.cfg['bot']['prefixes']])
+        prefixes = ', '.join(f'`{p}`' for p in ctx.bot.cfg['bot']['prefixes'])
         await ctx.send(await ctx._('cmd.prefixes', prefixes=prefixes))
 
     @commands.command()

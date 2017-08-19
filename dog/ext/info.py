@@ -58,7 +58,7 @@ class Info(Cog):
         embed.set_thumbnail(url=who.avatar_url_as(format='png'))
 
         # roles
-        embed.add_field(name='Roles', value=' '.join([r.mention for r in who.roles if r != ctx.guild.default_role]))
+        embed.add_field(name='Roles', value=' '.join(r.mention for r in who.roles if r != ctx.guild.default_role))
 
         # shared servers
         shared_servers = sum(1 for g in ctx.bot.guilds if who in g.members)

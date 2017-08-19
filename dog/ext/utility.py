@@ -81,7 +81,7 @@ class Utility(Cog):
             lexical = results[0]['lexicalEntries'][0]
 
             if 'pronunciations' in lexical:
-                pronun = ','.join([p['phoneticSpelling'] for p in lexical['pronunciations'] if 'phoneticSpelling' in p])
+                pronun = ','.join(p['phoneticSpelling'] for p in lexical['pronunciations'] if 'phoneticSpelling' in p)
             else:
                 pronun = ''
 
@@ -107,10 +107,10 @@ class Utility(Cog):
                     for subsense in sense['subsenses']:
                         add_sense(subsense)
 
-        def_text = '\n'.join([f'\N{BULLET} {defn}' for defn in definitions])
+        def_text = '\n'.join(f'\N{BULLET} {defn}' for defn in definitions)
         embed = discord.Embed(title=utils.truncate(lexical['text'], 256), description=utils.truncate(def_text, 2048))
         if examples:
-            examples_text = '\n'.join([f'\N{BULLET} {example["text"]}' for example in examples])
+            examples_text = '\n'.join(f'\N{BULLET} {example["text"]}' for example in examples)
             embed.add_field(name='Examples', value=utils.truncate(examples_text, 1024))
         embed.set_footer(text=pronun)
         await ctx.send(embed=embed)

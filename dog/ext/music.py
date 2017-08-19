@@ -471,7 +471,7 @@ class Music(Cog):
         else:
             header = 'There are **{many}** item(s) in the queue. Run `d?m np` to view the currently playing song.\n\n'
             format = '{index}) {source.title} (<{source.info[webpage_url]}>)'
-            lst = '\n'.join([format.format(index=index + 1, source=source) for index, source in enumerate(queue)])
+            lst = '\n'.join(format.format(index=index + 1, source=source) for index, source in enumerate(queue))
             await ctx.send(header.format(many=len(queue)) + lst)
 
     @music.command(aliases=['p'])

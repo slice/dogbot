@@ -174,7 +174,7 @@ class Censorship(Cog):
     @censorship.command(name='list')
     async def _list(self, ctx):
         """ Lists the censorship types. """
-        types = ', '.join([f'`{t.name.lower()}`' for t in CensorType])
+        types = ', '.join(f'`{t.name.lower()}`' for t in CensorType)
         wiki = 'https://github.com/slice/dogbot/wiki/Censorship'
         await ctx.send(f'Censorship types: {types}\n\nTo see what these do, click here: <{wiki}>')
 

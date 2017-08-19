@@ -155,7 +155,7 @@ class Config(Cog):
         if not prefixes:
             return await ctx.send('There are no supplemental prefixes for this server. Add one with ' +
                                   '`d?prefix add <prefix>`.')
-        prefix_list = ', '.join([f'`{p}`' for p in prefixes])
+        prefix_list = ', '.join(f'`{p}`' for p in prefixes)
         footer = 'View non-supplemental prefixes with `d?prefixes`.'
         await ctx.send(f'Supplemental prefixes for this server: {prefix_list}\n\n' + footer)
 

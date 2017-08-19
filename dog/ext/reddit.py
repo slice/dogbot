@@ -240,7 +240,7 @@ class Reddit(Cog):
             if not feeds:
                 return await ctx.send('No feeds found! Set one up with `d?reddit watch <channel> <subreddit>`. See `d?help '
                                       'reddit watch` for more information.')
-            text = '\n'.join(['\N{BULLET} <#{}> (/r/{})'.format(r['channel_id'], r['subreddit']) for r in feeds])
+            text = '\n'.join('\N{BULLET} <#{}> (/r/{})'.format(r['channel_id'], r['subreddit']) for r in feeds)
             await ctx.send('**Feeds in {}:**\n\n{}'.format(ctx.guild.name, text))
 
     @reddit.command()
