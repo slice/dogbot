@@ -23,14 +23,14 @@ async def is_publicly_visible(bot, channel: discord.TextChannel) -> bool:
     return everyone_overwrite is None or everyone_overwrite[1].read_messages is not False
 
 
-def describe(person, *, before='', created=False, joined=False):
-    message = f'{person} (`{person.id}`)'
+def describe(thing, *, before='', created=False, joined=False):
+    message = f'{thing} (`{thing.id}`)'
     if before:
         message += ' ' + before
     if created:
-        message += f', created {utils.ago(person.created_at)}'
-    if joined and isinstance(person, discord.Member):
-        message += f', joined {utils.ago(person.joined_at)}'
+        message += f', created {utils.ago(thing.created_at)}'
+    if joined and isinstance(thing, discord.Member):
+        message += f', joined {utils.ago(thing.joined_at)}'
     return message
 
 
