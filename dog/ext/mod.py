@@ -355,7 +355,7 @@ class Mod(Cog):
         This is used to kick someone, also removing their messages. Behaves similarly to d?ban.
         """
         try:
-            reason = f'(Softban by {ctx.author}) {reason or "No reason provided."}'
+            reason = f'(Softbanned by {ctx.author}) {reason or "No reason provided."}'
             await member.ban(delete_message_days=delete_days, reason=reason)
             await member.unban(reason=reason)
         except discord.Forbidden:
@@ -380,7 +380,7 @@ class Mod(Cog):
         """
         try:
             reason = reason or 'No reason provided.'
-            await ctx.guild.ban(member, delete_message_days=delete_days, reason=f'(By {ctx.author}) {reason}')
+            await ctx.guild.ban(member, delete_message_days=delete_days, reason=f'(Banned by {ctx.author}) {reason}')
         except discord.Forbidden:
             await ctx.send("I can't do that.")
         except discord.NotFound:
@@ -399,7 +399,7 @@ class Mod(Cog):
 
         A vanity role is defined as a role with no permissions.
         """
-        await ctx.guild.create_role(name=name, permissions=discord.Permissions(permissions=0))
+        await ctx.guild.create_role(name=name, permissions=discord.Permissions.none())
         await ctx.ok()
 
     @commands.command()
