@@ -367,10 +367,10 @@ class Mod(Cog):
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @checks.bot_perms(ban_members=True)
-    async def unban(self, ctx, member: converters.RawMember, *, reason=''):
+    async def unban(self, ctx, member: converters.BannedUser, *, reason=''):
         """ Unbans someone. """
         await ctx.guild.unban(member, reason=f'(Unbanned by {ctx.author}) {reason or "No reason provided."}')
-        await ctx.ok()
+        await ctx.send(f'\N{OK HAND SIGN} Unbanned {member} (`{member.id}`).')
 
     @commands.command()
     @commands.guild_only()

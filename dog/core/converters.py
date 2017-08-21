@@ -32,6 +32,23 @@ class Flags(commands.Converter):
         return result
 
 
+class BannedUser(commands.Converter):
+    async def convert(self, ctx: commands.Context, argument):
+        def finder(entry):
+            try:
+                id = int(argument)
+            except ValueError:
+                id = None
+            return str(entry.user) == argument or entry.user.name == argument or entry.user.id == id
+        try:
+            entry = discord.utils.find(finder, await ctx.guild.bans())
+            if entry is None:
+                raise commands.BadArgument('Banned user not found. You can specify by ID, username, or username + discriminator.')
+            return entry.user
+        except discord.Forbidden:
+            raise commands.BadArgument("I can't view the bans for this server.")
+
+
 class RawMember(commands.Converter):
     async def convert(self, ctx, argument):
         # garbo
