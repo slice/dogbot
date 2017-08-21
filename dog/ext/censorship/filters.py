@@ -17,7 +17,7 @@ class CrashTextCensorshipFilter(ReCensorshipFilter):
     show_content = False
 
     async def does_violate(self, msg):
-        return '\U0000094c' in msg.content
+        return any(crash in msg.content for crash in ('\U000009e3', '\U0000094c'))
 
 
 class InviteCensorshipFilter(ReCensorshipFilter):
