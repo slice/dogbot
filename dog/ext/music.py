@@ -2,6 +2,7 @@
 Dogbot owner only music extension.
 """
 
+import audioop
 import asyncio
 import logging
 import random
@@ -44,7 +45,13 @@ class YouTubeError(commands.CommandError):
     pass
 
 
-class YouTubeDLSource(discord.PCMVolumeTransformer):
+class VolumeTransformer(discord.PCMVolumeTransformer):
+    def read(self):
+        ret = self.original.read()
+        return audioop.mul(ret, 2, self._volume)
+
+
+class YouTubeDLSource(VolumeTransformer):
     def __init__(self, source, info):
         super().__init__(source, 1.0)
         self.info = info
@@ -67,9 +74,9 @@ class YouTubeDLSource(discord.PCMVolumeTransformer):
             info = info['entries'][0]
 
         # check if it's too long
-        if info['duration'] >= VIDEO_DURATION_LIMIT:
-            min = VIDEO_DURATION_LIMIT / 60
-            raise YouTubeError('That video is too long! The maximum video duration is **{} minutes**.'.format(min))
+        # if info['duration'] >= VIDEO_DURATION_LIMIT:
+        #     min = VIDEO_DURATION_LIMIT / 60
+        #     raise YouTubeError('That video is too long! The maximum video duration is **{} minutes**.'.format(min))
 
         executable = 'avconv' if 'docker' in bot.cfg else 'ffmpeg'
         return cls(discord.FFmpegPCMAudio(info['url'], executable=executable, **FFMPEG_OPTIONS), info)
@@ -128,7 +135,7 @@ class State:
         # and play that.
         if self.looping and self.to_loop:
             logger.debug('Bypassing State.advance() logic, looping %s.', self.to_loop['url'])
-            self.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(self.to_loop['url'])))
+            self.play(VolumeTransformer(discord.FFmpegPCMAudio(self.to_loop['url'])))
             return
 
         # out of sources in the queue -- oh well.
@@ -409,8 +416,8 @@ class Music(Cog):
         if not vol:
             return await ctx.send('The volume is at: `{}%`'.format(ctx.guild.voice_client.source.volume * 100))
 
-        if vol > 200:
-            return await ctx.send('You can\'t set the volume over 200%.')
+        # if vol > 200:
+        #     return await ctx.send('You can\'t set the volume over 200%.')
 
         ctx.guild.voice_client.source.volume = vol / 100
         await ctx.ok()
