@@ -40,7 +40,7 @@ class RawMember(commands.Converter):
         except commands.BadArgument:
             try:
                 return discord.Object(id=int(argument))
-            except TypeError:
+            except ValueError:
                 raise commands.BadArgument('Invalid member ID. I also couldn\'t find the user by username.')
 
 
