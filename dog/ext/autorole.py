@@ -89,18 +89,7 @@ class Autorole(Cog):
             # no autoroles were added, don't log
             return
 
-        # make embed
-        mem = f'{member} (`{member.id}`)'
-        fmt = (f'\N{BOOKMARK} Automatically assigned roles to {mem}' if isinstance(roles_added, list) else
-               f'\N{CLOSED BOOK} Failed to automatically assign roles for {mem}')
-        if roles_added:
-            roles = ', '.join(map(lambda r: r.name, roles_added))
-            fmt += f' - Added roles: {roles}'
-
-        msg = self.bot.get_cog('Modlog').modlog_msg(fmt)
-
-        # send to modlog
-        await self.bot.send_modlog(member.guild, msg)
+        self.bot.dispatch('member_autorole', member, roles_added)
 
     @autorole.command()
     async def add(self, ctx, type: AutoroleType, *roles: discord.Role):

@@ -13,17 +13,24 @@ logger = logging.getLogger(__name__)
 
 
 async def is_publicly_visible(bot, channel: discord.TextChannel) -> bool:
-    """ Returns whether a channel is publicly visible with the default role. """
+    """
+    Returns whether a channel is publicly visible with the default role.
+
+    This will always return True if the guild has been configured to log all message
+    events.
+    """
     if await bot.config_is_set(channel.guild, 'log_all_message_events'):
-        logger.debug('All mesasge events are being logged for this guild, returning True.')
         return True
 
-    everyone_overwrite = discord.utils.find(lambda t: t[0].name == '@everyone',
-                                            channel.overwrites)
+    everyone_overwrite = discord.utils.find(lambda t: t[0].name == '@everyone', channel.overwrites)
     return everyone_overwrite is None or everyone_overwrite[1].read_messages is not False
 
 
 def describe(thing, *, before='', created=False, joined=False):
+    """
+    Returns a string representing an project. Usually consists of the object in string form,
+    then the object's ID in parentheses after.
+    """
     message = f'{thing} (`{thing.id}`)'
     if before:
         message += ' ' + before
@@ -37,33 +44,62 @@ def describe(thing, *, before='', created=False, joined=False):
 class Modlog(Cog):
     def __init__(self, bot):
         super().__init__(bot)
+
+        #: A list of user IDs to not process due to being banned.
         self.ban_debounces = []
+
+        #: A list of message IDs to not process due to them being bulk deleted.
         self.bulk_deletes = []
-        self.do_not_log_deletes = []
+
+        #: A list of message IDs to not process.
+        self.censored_messages = []
 
     def modlog_msg(self, msg):
         now = datetime.datetime.utcnow()
         return '`[{0.hour:02d}:{0.minute:02d}]` {1}'.format(now, msg)
 
+    async def log(self, guild, text):
+        return await self.bot.send_modlog(guild, self.modlog_msg(text))
+
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState,
                                     after: discord.VoiceState):
 
         async def send(m):
-            await self.bot.send_modlog((before.channel.guild if before.channel else after.channel.guild), m)
-        voice = '\N{PUBLIC ADDRESS LOUDSPEAKER}'
+            await self.log((before.channel.guild if before.channel else after.channel.guild), m)
+
+        emoji = '\N{PUBLIC ADDRESS LOUDSPEAKER}'
 
         if before.channel is not None and after.channel is None:
             # left
-            await send(self.modlog_msg(f'{voice} {describe(member)} left {describe(before.channel)}'))
+            await send(f'{emoji} {describe(member)} left {describe(before.channel)}')
         elif before.channel is None and after.channel is not None:
             # joined
-            await send(self.modlog_msg(f'{voice} {describe(member)} joined {describe(after.channel)}'))
+            await send(f'{emoji} {describe(member)} joined {describe(after.channel)}')
         elif before.channel != after.channel:
             # moved
-            channels = f'{describe(before.channel)} to {describe(after.channel)}'
-            await send(self.modlog_msg(f'{voice} {describe(member)} moved from {channels}'))
+            await send(f'{emoji} {describe(member)} moved from {describe(before.channel)} to {describe(after.channel)}')
+
+    async def on_message_censor(self, filter, msg):
+        # we don't want to log message deletes for this message
+        self.censored_messages.append(msg.id)
+
+        title = filter.mod_log_description
+        content = f': {msg.content}' if getattr(filter, 'show_content', True) else ''
+        await self.log(msg.guild, f'\u002a\u20e3 Message by {describe(msg.author)} censored: {title}{content}')
+
+    async def on_member_autorole(self, member: discord.Member, roles_added):
+        # make embed
+        msg = (f'\N{BOOKMARK} Automatically assigned roles to {describe(member)}' if isinstance(roles_added, list) else
+               f'\N{CLOSED BOOK} Failed to automatically assign roles for {describe(member)}')
+
+        if roles_added:
+            # if roles were added, add them to the message
+            msg += ', added roles: ' + ', '.join(describe(role) for role in roles_added)
+
+        await self.log(member.guild, msg)
 
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
+        # if message author was a bot, or the embeds were added by discord, bail
         if before.author.bot or before.content == after.content:
             return
 
@@ -71,47 +107,44 @@ class Modlog(Cog):
                 await self.bot.config_is_set(before.guild, 'modlog_notrack_edits')):
             return
 
-        m_before = utils.prevent_codeblock_breakout(utils.truncate(before.content, 850))
-        m_after = utils.prevent_codeblock_breakout(utils.truncate(after.content, 850))
-        fmt = f'\N{MEMO} Message by {describe(before.author)} edited: ```{m_before}``` to ```{m_after}```'
-        await self.bot.send_modlog(before.guild, self.modlog_msg(fmt))
+        m_before = utils.prevent_codeblock_breakout(utils.truncate(before.content, 900))
+        m_after = utils.prevent_codeblock_breakout(utils.truncate(after.content, 900))
+        fmt = f'\N{MEMO} Message by {describe(before.author)} edited: ```\n{m_before}\n``` to ```\n{m_after}\n```'
+        await self.log(before.guild, fmt)
 
     async def on_member_update(self, before: discord.Member, after: discord.Member):
         if before.nick != after.nick:
-            msg = self.modlog_msg(
-                f'\N{NAME BADGE} Nick for {describe(before)} updated: `{before.nick}` to `{after.nick}`')
-            await self.bot.send_modlog(before.guild, msg)
+            await self.log(before.guild,
+                           f'\N{NAME BADGE} Nick for {describe(before)} updated: `{before.nick}` to `{after.nick}`')
         elif before.name != after.name:
-            msg = self.modlog_msg(
-                f'\N{NAME BADGE} Username for {describe(before)} updated: `{before.name}` to `{after.name}`')
-            await self.bot.send_modlog(before.guild, msg)
+            await self.log(before.guild,
+                           f'\N{NAME BADGE} Username for {describe(before)} updated: `{before.name}` to `{after.name}`')
         elif before.roles != after.roles:
             differences = []
             differences += [f'{describe(role)} was removed' for role in before.roles if role not in after.roles]
             differences += [f'{describe(role)} was added' for role in after.roles if role not in before.roles]
-            msg = self.modlog_msg(f'\N{KEY} Roles for {describe(before)} were updated: {", ".join(differences)}')
-            await self.bot.send_modlog(before.guild, msg)
+            await self.log(before.guild, f'\N{KEY} Roles for {describe(before)} were updated: {", ".join(differences)}')
 
     async def on_raw_bulk_message_delete(self, message_ids, channel_id):
+        # add to list of bulk deletes so we don't process message delete events for these messages
         self.bulk_deletes += message_ids
 
-        channel = discord.utils.get(self.bot.get_all_channels(), id=channel_id)
+        channel = self.bot.get_channel(channel_id)
         if not channel:
             return
-        fmt = self.modlog_msg(f'\U0001f6ae {len(message_ids)} message(s) deleted in {channel.mention}')
-        await self.bot.send_modlog(channel.guild, fmt)
+        await self.log(channel.guild, f'\U0001f6ae {len(message_ids)} message(s) deleted in {channel.mention}')
 
     async def on_message_delete(self, msg: discord.Message):
         if not isinstance(msg.channel, discord.TextChannel):
             return
 
         # race conditions, yay!
-        # we do this because this message could possibly maybe be censored
+        # we do this because this message could possibly maybe be censored or bulk deleted
         await asyncio.sleep(0.5)
 
-        # do not process bulk message deletes
+        # do not process bulk message deletes, or message censors (the censor cog does that already)
         # TODO: do this but cleanly, maybe paste website?
-        if msg.id in self.bulk_deletes or msg.id in self.do_not_log_deletes:
+        if msg.id in self.bulk_deletes or msg.id in self.censored_messages:
             return
 
         # if this channel isn't publicly visible or deletes shouldn't be tracked, bail
@@ -119,20 +152,18 @@ class Modlog(Cog):
                 await self.bot.config_is_set(msg.guild, 'modlog_notrack_deletes')):
             return
 
-
         # if the author was a bot and we aren't configured to allow bots, return
         if msg.author.bot and not await self.bot.config_is_set(msg.guild, 'modlog_filter_allow_bot'):
             return
 
-        content = utils.prevent_codeblock_breakout(utils.truncate(msg.content, 1500))
-        fmt = (f'\U0001f6ae Message by {describe(msg.author)} deleted in {msg.channel.mention}: ```{content}``` '
+        content = utils.prevent_codeblock_breakout(utils.truncate(msg.content, 1800))
+        fmt = (f'\U0001f6ae Message by {describe(msg.author)} deleted in {msg.channel.mention}: ```\n{content}\n``` '
                f'({len(msg.attachments)} attachment(s))')
-        await self.bot.send_modlog(msg.guild, self.modlog_msg(fmt))
+        await self.log(msg.guild, fmt)
 
     async def on_member_join(self, member: discord.Member):
         new = '\N{SQUARED NEW} ' if (datetime.datetime.utcnow() - member.created_at).total_seconds() <= 604800 else ''
-        msg = self.modlog_msg(f'\N{INBOX TRAY} {new}{describe(member, created=True)}')
-        await self.bot.send_modlog(member.guild, msg)
+        await self.log(member.guild, f'\N{INBOX TRAY} {new}{describe(member, created=True)}')
 
     def format_member_departure(self, member, *, verb='left', emoji='\N{OUTBOX TRAY}'):
         # if it's a user, return bare info
@@ -140,25 +171,30 @@ class Modlog(Cog):
             return f'{emoji} {describe(member, before=verb, created=True)}'
 
         bounce = '\U0001f3c0 ' if (datetime.datetime.utcnow() - member.joined_at).total_seconds() <= 1500 else ''
-        return self.modlog_msg(f'{emoji} {bounce}{describe(member, before=verb, created=True, joined=True)}')
+        return f'{emoji} {bounce}{describe(member, before=verb, created=True, joined=True)}'
 
     async def get_responsible(self, guild, target, action):
+        """
+        Returns a audit log entry for some recent action performed on someone.
+        """
         try:
+            # get the audit logs for the action specified
             entries = await guild.audit_logs(limit=1, action=getattr(discord.AuditLogAction, action)).flatten()
 
+            # only check for entries performed on target, and happened in the last 2 seconds
             def check(entry):
                 return entry.target == target and (datetime.datetime.utcnow() - entry.created_at).total_seconds() <= 2
+
             return discord.utils.find(check, entries)
         except discord.Forbidden:
             pass
 
     def format_reason(self, entry):
-        return f' with reason `{entry.reason}`' if entry.reason else ' with no attached reason'
+        return f'with reason `{entry.reason}`' if entry.reason else 'with no attached reason'
 
     async def on_member_unban(self, guild, user):
         base_msg = f'\N{HAMMER} {describe(user)} was unbanned'
-        ml_msg = self.modlog_msg(base_msg + '.')
-        msg = await self.bot.send_modlog(guild, ml_msg)
+        msg = await self.log(guild, base_msg + '.')
 
         if not msg:
             return
@@ -168,15 +204,13 @@ class Modlog(Cog):
         if not entry:
             return
 
-        ml_msg = self.modlog_msg(f'{base_msg} by {describe(entry.user)}{self.format_reason(entry)}.')
-        await msg.edit(content=ml_msg)
+        await msg.edit(content=(self.modlog_msg(f'{base_msg} by {describe(entry.user)} {self.format_reason(entry)}.')))
 
     async def on_member_ban(self, guild, user):
         # don't make on_member_remove process this user's departure
         self.ban_debounces.append(user.id)
 
-        msg = await self.bot.send_modlog(guild,
-            self.modlog_msg(self.format_member_departure(user, verb='banned', emoji='\N{HAMMER}')))
+        msg = await self.log(guild, self.format_member_departure(user, verb='banned', emoji='\N{HAMMER}'))
 
         if not msg:
             return
@@ -186,7 +220,7 @@ class Modlog(Cog):
         if not entry:
             return
 
-        fmt = self.format_member_departure(user, verb=f'banned by {describe(entry.user)}{self.format_reason(entry)}',
+        fmt = self.format_member_departure(user, verb=f'banned by {describe(entry.user)} {self.format_reason(entry)}',
                                            emoji='\N{HAMMER}')
         await msg.edit(content=self.modlog_msg(fmt))
 
@@ -198,7 +232,7 @@ class Modlog(Cog):
             return
 
         msg = self.format_member_departure(member)
-        ml_msg = await self.bot.send_modlog(member.guild, msg)
+        ml_msg = await self.log(member.guild, msg)
 
         if not ml_msg:
             return
@@ -208,10 +242,9 @@ class Modlog(Cog):
         if not entry:
             return
 
-        reason = self.format_reason(entry)
-        fmt = self.format_member_departure(member, verb=f'kicked by {describe(entry.user)}{reason}',
+        fmt = self.format_member_departure(member, verb=f'kicked by {describe(entry.user)} {self.format_reason(entry)}',
                                            emoji='\N{WOMANS BOOTS}')
-        await ml_msg.edit(content=fmt)
+        await ml_msg.edit(content=self.modlog_msg(fmt))
 
     @commands.command(hidden=True)
     async def is_public(self, ctx, channel: discord.TextChannel=None):

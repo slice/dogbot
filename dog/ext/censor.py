@@ -281,18 +281,12 @@ class Censorship(Cog):
 
     async def censor_message(self, msg: discord.Message, filter):
         """ Censors a message, and posts to the modlog. """
+        self.bot.dispatch('message_censor', filter, msg)
         try:
             await msg.delete()
-            self.bot.get_cog('Modlog').do_not_log_deletes.append(msg.id)
         except discord.Forbidden:
-            await self.bot.send_modlog(msg.guild, ':x: I failed to censor a message because '
-                                       'I couldn\'t delete it! Please fix my permissions.')
-        else:
-            title = filter.mod_log_description
-            content = f': {msg.content}' if getattr(filter, 'show_content', True) else ''
-            ml_msg = f'\u002a\u20e3 Message by {msg.author} censored: {title}{content}'
-            ml_msg = self.bot.get_cog('Modlog').modlog_msg(ml_msg)
-            await self.bot.send_modlog(msg.guild, ml_msg)
+            msg = "\N{CROSS MARK} I failed to censor that message because I couldn't delete it."
+            await self.bot.send_modlog(msg.guild, msg)
 
     async def get_guild_exceptions(self, guild: discord.Guild):
         """ Returns the list of exception role IDs that a guild has. """
