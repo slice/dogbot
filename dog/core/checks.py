@@ -51,15 +51,19 @@ def bot_perms(**permissions):
     return commands.check(predicate)
 
 
+def member_is_moderator(member: discord.Member) -> bool:
+    names = [r.name for r in member.roles]
+    has_moderator_role = any([1 for name in names if name in mod_names])
+    has_manage_server = member.guild_permissions.manage_guild
+    is_server_owner = member.guild.owner == member
+    return has_moderator_role or has_manage_server or is_server_owner
+
+
 def is_dogbot_moderator(ctx):
     """ Returns whether a person is a "Dogbot Moderator". """
     if isinstance(ctx.channel, discord.DMChannel):
         return False
-    names = [r.name for r in ctx.author.roles]
-    has_moderator_role = any([1 for name in names if name in mod_names])
-    has_manage_server = ctx.author.guild_permissions.manage_guild
-    is_server_owner = ctx.guild.owner == ctx.author
-    return has_moderator_role or has_manage_server or is_server_owner
+    return member_is_moderator(ctx.author)
 
 
 def is_moderator():

@@ -333,6 +333,28 @@ class Mod(Cog):
 
     @commands.command()
     @commands.guild_only()
+    async def mods(self, ctx):
+        """
+        Shows mods in this server.
+
+        A mod is defined as a human in this server with the "Kick Members" permission, or is a Dogbot Moderator.
+        """
+        is_mod = lambda m: (m.guild_permissions.kick_members or checks.member_is_moderator(m)) and not m.bot
+        mods = [m for m in ctx.guild.members if is_mod(m)]
+
+        embed = discord.Embed(title='Moderators in ' + ctx.guild.name, color=discord.Color.blurple(),
+                              description=f'There are {len(mods)} mod(s) total in {ctx.guild.name}.')
+
+        for status in discord.Status:
+            those_mods = [m for m in mods if m.status is status]
+            if not those_mods:
+                continue
+            embed.add_field(name=str(status).title(), value='\n'.join(str(m) for m in those_mods))
+
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    @commands.guild_only()
     @commands.has_permissions(kick_members=True)
     @checks.bot_perms(kick_members=True)
     async def kick(self, ctx, member: discord.Member, *, reason: str = None):
