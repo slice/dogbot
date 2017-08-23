@@ -62,7 +62,7 @@ class ZalgoCensorshipFilter(CensorshipFilter):
     mod_log_description = 'Zalgo censored'
 
     async def does_violate(self, msg: discord.Message) -> bool:
-        return any([glyph in msg.content for glyph in utils.zalgo_glyphs])
+        return any(glyph in msg.content for glyph in utils.zalgo_glyphs)
 
 
 class CapsCensorshipFilter(ReCensorshipFilter):

@@ -25,7 +25,7 @@ async def is_bot_collection(bot, guild: discord.Guild):
         return True
 
     # keywords in the guild name
-    if any([keyword in guild.name.lower() for keyword in ('bot collection', 'bot hell')]):
+    if any(keyword in guild.name.lower() for keyword in ('bot collection', 'bot hell')):
         return True
 
     # special guilds that shouldn't be classified as a bot collection

@@ -59,7 +59,7 @@ async def update_statistics(pg: asyncpg.connection.Connection, ctx: commands.Con
 
 class Stats(Cog):
     async def on_command_completion(self, ctx):
-        if any(['is_owner' in fun.__qualname__ for fun in ctx.command.checks]):
+        if any('is_owner' in fun.__qualname__ for fun in ctx.command.checks):
             return
         async with self.bot.pgpool.acquire() as conn:
             await update_statistics(conn, ctx)

@@ -40,7 +40,7 @@ class Mod(Cog):
             'Banned from Dog', 'banned from dog'
         )
 
-        if any([discord.utils.get(ctx.author.roles, name=name) for name in banned_names]):
+        if any(discord.utils.get(ctx.author.roles, name=name) for name in banned_names):
             return False
 
         return not await self.bot.command_is_disabled(ctx.guild, ctx.command.name)

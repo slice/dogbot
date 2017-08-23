@@ -52,9 +52,9 @@ def bot_perms(**permissions):
 
 
 def member_is_moderator(member: discord.Member) -> bool:
-    """ Returns whether a person is a "Dogbot Moderator". """
+    """ Returns whether a discord.Member is a "Dogbot Moderator". """
     names = [r.name for r in member.roles]
-    has_moderator_role = any([1 for name in names if name in mod_names])
+    has_moderator_role = any(name in mod_names for name in names)
     has_manage_server = member.guild_permissions.manage_guild
     is_server_owner = member.guild.owner == member
     return has_moderator_role or has_manage_server or is_server_owner
@@ -93,10 +93,11 @@ def is_supporter(bot, user):
 
     # if there are multiple donator roles, check all of them
     if isinstance(donator_role, list):
-        return any([donator_role_id in ids for donator_role_id in donator_role])
+        return any(donator_role_id in ids for donator_role_id in donator_role)
     else:
         return donator_role in ids
 
 
 def is_supporter_check():
+    """ Check: is_supporter, but a check. """
     return commands.check(lambda ctx: is_supporter(ctx.bot, ctx.author))

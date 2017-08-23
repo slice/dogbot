@@ -20,7 +20,7 @@ FUZZ_INTERVAL = 5
 
 def create_post_embed(post) -> discord.Embed:
     endings = ('.gif', '.jpeg', '.png', '.jpg', '.webp')
-    is_image = not post.is_self and any([post.url.endswith(ending) for ending in endings])
+    is_image = not post.is_self and any(post.url.endswith(ending) for ending in endings)
 
     embed = discord.Embed(title=utils.truncate(post.title, 256),
                           url=post.url,
