@@ -365,7 +365,7 @@ class Mod(Cog):
         except discord.Forbidden:
             await ctx.send('I can\'t do that.')
         else:
-            await ctx.ok()
+            await ctx.send(f'\N{OK HAND SIGN} Kicked {describe(member)}.')
 
     @commands.command()
     @commands.guild_only()
@@ -384,7 +384,7 @@ class Mod(Cog):
         except discord.Forbidden:
             await ctx.send("I can't do that.")
         else:
-            await ctx.send(f'\N{OK HAND SIGN} **Soft**banned {describe(member)}')
+            await ctx.send(f'\N{OK HAND SIGN} **Soft**banned {describe(member)}.')
 
     @commands.command()
     @commands.guild_only()
@@ -393,7 +393,7 @@ class Mod(Cog):
     async def unban(self, ctx, member: converters.BannedUser, *, reason=''):
         """ Unbans someone. """
         await ctx.guild.unban(member, reason=f'(Unbanned by {ctx.author}) {reason or "No reason provided."}')
-        await ctx.send(f'\N{OK HAND SIGN} Unbanned {describe(member)}')
+        await ctx.send(f'\N{OK HAND SIGN} Unbanned {describe(member)}.')
 
     @commands.command()
     @commands.guild_only()
@@ -418,8 +418,8 @@ class Mod(Cog):
         except discord.NotFound:
             await ctx.send("User not found.")
         else:
-            banned = str(await ctx.bot.get_user_info(member.id)) if isinstance(member, discord.Object) else str(member)
-            await ctx.send(f'\N{OK HAND SIGN} Banned {describe(member.id)}')
+            banned = await ctx.bot.get_user_info(member.id) if isinstance(member, discord.Object) else member
+            await ctx.send(f'\N{OK HAND SIGN} Banned {describe(banned)}.')
 
     @commands.command()
     @commands.guild_only()
