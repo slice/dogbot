@@ -309,7 +309,7 @@ class Censorship(Cog):
                    CrashTextCensorshipFilter)
 
         # if the message author has a role that has been excepted, don't even check the message
-        if any(role.id in await self.get_guild_exceptions(msg.guild) for role in msg.author.roles):
+        if any([role.id in await self.get_guild_exceptions(msg.guild) for role in msg.author.roles]):
             return
 
         # don't censor myself or other bots
