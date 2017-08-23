@@ -10,6 +10,7 @@ from discord.ext import commands
 import emoji
 from dog import Cog
 from dog.core import checks, converters
+from dog.core.utils.formatting import describe
 
 logger = logging.getLogger(__name__)
 
@@ -383,7 +384,7 @@ class Mod(Cog):
         except discord.Forbidden:
             await ctx.send("I can't do that.")
         else:
-            await ctx.send(f'\N{OK HAND SIGN} **Soft**banned {member} (`{member.id}`).')
+            await ctx.send(f'\N{OK HAND SIGN} **Soft**banned {describe(member)}')
 
     @commands.command()
     @commands.guild_only()
@@ -392,7 +393,7 @@ class Mod(Cog):
     async def unban(self, ctx, member: converters.BannedUser, *, reason=''):
         """ Unbans someone. """
         await ctx.guild.unban(member, reason=f'(Unbanned by {ctx.author}) {reason or "No reason provided."}')
-        await ctx.send(f'\N{OK HAND SIGN} Unbanned {member} (`{member.id}`).')
+        await ctx.send(f'\N{OK HAND SIGN} Unbanned {describe(member)}')
 
     @commands.command()
     @commands.guild_only()
@@ -418,7 +419,7 @@ class Mod(Cog):
             await ctx.send("User not found.")
         else:
             banned = str(await ctx.bot.get_user_info(member.id)) if isinstance(member, discord.Object) else str(member)
-            await ctx.send(f'\N{OK HAND SIGN} Banned {banned} (`{member.id}`).')
+            await ctx.send(f'\N{OK HAND SIGN} Banned {describe(member.id)}')
 
     @commands.command()
     @commands.guild_only()

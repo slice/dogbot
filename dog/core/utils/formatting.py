@@ -99,3 +99,18 @@ def truncate(text: str, desired_length: int):
 def commas(number: 'Union[int, float]'):
     """ Adds American-style commas to an number. """
     return '{:,d}'.format(number)
+
+
+def describe(thing, *, before='', created=False, joined=False):
+    """
+    Returns a string representing an project. Usually consists of the object in string form,
+    then the object's ID in parentheses after.
+    """
+    message = f'{thing} (`{thing.id}`)'
+    if before:
+        message += ' ' + before
+    if created:
+        message += f', created {utils.ago(thing.created_at)}'
+    if joined and isinstance(thing, discord.Member):
+        message += f', joined {utils.ago(thing.joined_at)}'
+    return message

@@ -11,6 +11,7 @@ import psutil
 from discord.ext import commands
 from dog import Cog
 from dog.core import utils, converters
+from dog.core.utils.formatting import describe
 
 logger = logging.getLogger(__name__)
 
@@ -118,11 +119,11 @@ class Internal(Cog):
                 ban_row = await conn.fetchrow('SELECT * FROM globalbans WHERE user_id = $1', user.id)
 
             if ban_row is None:
-                results.append(f'\N{WHITE HEAVY CHECK MARK} Removed ban for {user} (`{user.id}`).')
+                results.append(f'\N{WHITE HEAVY CHECK MARK} Removed ban for {describe(user)}')
                 await ctx.bot.redis.delete(key.decode())
                 logger.debug('Removing ban for %s (%s) as part of flush operation.', key.decode(), user)
             else:
-                results.append(f'\N{HAMMER} Persisting ban for {user} (`{user.id}`), still banned!')
+                results.append(f'\N{HAMMER} Persisting ban for {describe(user)}, still banned!')
 
         await ctx.send('\n'.join(results) if results else 'Nothing happened.')
 

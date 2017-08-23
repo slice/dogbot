@@ -4,6 +4,7 @@ import logging
 import discord
 
 from dog import Cog
+from dog.core.utils.formatting import describe
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ class PollrBans(Cog):
             logger.debug('Not announcing ban, couldn\'t find channel. gid=%d', guild.id)
             return
 
-        ban = '**Ban:** {0} (`{0.id}`)\n'.format(user)
+        ban = f'**Ban:** {describe(user)}'
 
         # get my permissions
         perms = guild.me.guild_permissions
@@ -28,7 +29,7 @@ class PollrBans(Cog):
             await asyncio.sleep(0.5)  # wait a bit
             async for entry in guild.audit_logs(action=discord.AuditLogAction.ban, limit=5):
                 if entry.target == user:
-                    ban += f'**Responsible:** {entry.user} (`{entry.user.id}`)'
+                    ban += f'\n**Responsible:** {describe(entry.user)}'
                     if entry.reason:
                         ban += f'\n**Reason:** {entry.reason}'
                     break

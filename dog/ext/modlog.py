@@ -1,13 +1,14 @@
 """ Contains the moderator log. """
 import asyncio
 import datetime
+import logging
 
 import discord
-import logging
 from discord.ext import commands
 
 from dog import Cog
 from dog.core import utils
+from dog.core.utils import describe
 
 logger = logging.getLogger(__name__)
 
@@ -24,21 +25,6 @@ async def is_publicly_visible(bot, channel: discord.TextChannel) -> bool:
 
     everyone_overwrite = discord.utils.find(lambda t: t[0].name == '@everyone', channel.overwrites)
     return everyone_overwrite is None or everyone_overwrite[1].read_messages is not False
-
-
-def describe(thing, *, before='', created=False, joined=False):
-    """
-    Returns a string representing an project. Usually consists of the object in string form,
-    then the object's ID in parentheses after.
-    """
-    message = f'{thing} (`{thing.id}`)'
-    if before:
-        message += ' ' + before
-    if created:
-        message += f', created {utils.ago(thing.created_at)}'
-    if joined and isinstance(thing, discord.Member):
-        message += f', joined {utils.ago(thing.joined_at)}'
-    return message
 
 
 class Modlog(Cog):
