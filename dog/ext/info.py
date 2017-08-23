@@ -54,7 +54,7 @@ class Info(Cog):
         """ Shows information about a user. """
         who = who or ctx.author
 
-        embed = discord.Embed(title=f'{who} \N{EM DASH} {who.id}')
+        embed = discord.Embed(title=f'{who} \N{EM DASH} {who.id}' + (' <:bot:349717107124207617>' if who.bot else ''))
         embed.set_thumbnail(url=who.avatar_url_as(format='png'))
 
         # roles
