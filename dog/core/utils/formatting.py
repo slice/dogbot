@@ -101,16 +101,16 @@ def commas(number: 'Union[int, float]'):
     return '{:,d}'.format(number)
 
 
-def describe(thing, *, before='', created=False, joined=False):
+def describe(thing, *, mention=False, before='', created=False, joined=False):
     """
     Returns a string representing an project. Usually consists of the object in string form,
     then the object's ID in parentheses after.
     """
-    message = f'{thing} (`{thing.id}`)'
+    message = f'{thing if not mention else thing.mention} (`{thing.id}`)'
     if before:
         message += ' ' + before
     if created:
-        message += f', created {utils.ago(thing.created_at)}'
+        message += f', created {ago(thing.created_at)}'
     if joined and isinstance(thing, discord.Member):
-        message += f', joined {utils.ago(thing.joined_at)}'
+        message += f', joined {ago(thing.joined_at)}'
     return message
