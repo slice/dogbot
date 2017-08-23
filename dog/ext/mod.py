@@ -472,7 +472,7 @@ class Mod(Cog):
         for seeker in attention_seekers:
             try:
                 await seeker.edit(nick=replace_with)
-            except:
+            except (discord.HTTPException, discord.Forbidden):
                 succeeded -= 1
         failed_count = len(attention_seekers) - succeeded
         await ctx.send(f'Renamed {succeeded} attention seeker(s). Failed to rename {failed_count}.')
