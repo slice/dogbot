@@ -6,6 +6,7 @@ from .errors import InsufficientPermissions
 mod_names = [
     'Moderator', 'Mod',  # classic mod role names
     'moderator', 'mod',  # lowercase mod role names
+
     # dog specific
     'Dog Moderator', 'Woofer', 'woofer', 'dog moderator',
     'dog mod',
@@ -60,16 +61,9 @@ def member_is_moderator(member: discord.Member) -> bool:
     return has_moderator_role or has_manage_server or is_server_owner
 
 
-def is_dogbot_moderator(ctx):
-    """ Returns whether a person is a "Dogbot Moderator". """
-    if isinstance(ctx.channel, discord.DMChannel):
-        return False
-    return member_is_moderator(ctx.author)
-
-
 def is_moderator():
     """ Check: Checks if a person is a "Dogbot Moderator". """
-    return commands.check(lambda ctx: is_dogbot_moderator(ctx))
+    return commands.check(lambda ctx: member_is_moderator(ctx.author))
 
 
 def is_supporter(bot, user):

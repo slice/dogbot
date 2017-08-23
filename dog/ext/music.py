@@ -340,7 +340,7 @@ class Music(Cog):
         if not state.is_playing():
             return await ctx.send('I\'m not playing anything at the moment.')
 
-        if checks.is_dogbot_moderator(ctx):
+        if checks.member_is_moderator(ctx.author):
             logger.debug('Instantly skipping.')
             state.skip()
             return

@@ -59,7 +59,7 @@ class Tagging(Cog):
             return True
 
         # is dogbot moderator
-        if checks.is_dogbot_moderator(ctx):
+        if checks.member_is_moderator(ctx.author):
             return True
 
         return False
