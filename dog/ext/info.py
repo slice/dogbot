@@ -67,7 +67,6 @@ class Info(Cog):
                 if desc:
                     embed.color = discord.Color(desc['color'])
                     embed.add_field(name='Profile Description', value=desc['description'])
-                    logger.debug('Ok, populated.')
 
         def add_joined_field(*, attr, name, **kwargs):
             dt = getattr(who, attr)
@@ -92,7 +91,7 @@ class Info(Cog):
             sql = """INSERT INTO profile_descriptions (id, description, color) VALUES ($1, $2, $3)
                      ON CONFLICT (id) DO UPDATE SET description = $2, color = $3"""
             await conn.execute(sql, ctx.author.id, description, color.value)
-        await ctx.send('Updated.')
+        await ctx.send('\N{OK HAND SIGN} Updated your profile!')
 
     @commands.command(aliases=['guild'])
     @commands.guild_only()
