@@ -85,7 +85,7 @@ class RawMember(commands.Converter):
 
 
 SAFE_IMAGE_HOSTS = ('https://i.imgur.com', 'https://cdn.discordapp.com', 'https://images.discordapp.net',
-                    'https://i.redd.it')
+                    'https://i.redd.it', 'https://media.discordapp.net')
 
 
 async def _get_recent_image(channel):
