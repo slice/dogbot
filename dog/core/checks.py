@@ -52,6 +52,7 @@ def bot_perms(**permissions):
 
 
 def member_is_moderator(member: discord.Member) -> bool:
+    """ Returns whether a person is a "Dogbot Moderator". """
     names = [r.name for r in member.roles]
     has_moderator_role = any([1 for name in names if name in mod_names])
     has_manage_server = member.guild_permissions.manage_guild

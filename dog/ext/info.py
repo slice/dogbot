@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands
 
 from dog import Cog
-from dog.core import utils, checks
+from dog.core import utils, checks, converters
 
 
 def cm(v):
@@ -50,15 +50,12 @@ class Info(Cog):
 
     @commands.group(aliases=['user'], invoke_without_command=True)
     @commands.guild_only()
-    async def profile(self, ctx, *, who: discord.Member = None):
+    async def profile(self, ctx, *, who: converters.RawUser = None):
         """ Shows information about a user. """
         who = who or ctx.author
 
         embed = discord.Embed(title=f'{who} \N{EM DASH} {who.id}' + (' <:bot:349717107124207617>' if who.bot else ''))
         embed.set_thumbnail(url=who.avatar_url_as(format='png'))
-
-        # roles
-        embed.add_field(name='Roles', value=' '.join(r.mention for r in who.roles if r != ctx.guild.default_role))
 
         # shared servers
         shared_servers = sum(1 for g in ctx.bot.guilds if who in g.members)
@@ -69,15 +66,19 @@ class Info(Cog):
                 desc = await conn.fetchrow('SELECT * FROM profile_descriptions WHERE id = $1', who.id)
                 if desc:
                     embed.color = discord.Color(desc['color'])
-                    embed.add_field(name='Description', value=desc['description'])
+                    embed.add_field(name='Profile Description', value=desc['description'])
                     logger.debug('Ok, populated.')
 
-        # joined
         def add_joined_field(*, attr, name, **kwargs):
             dt = getattr(who, attr)
             embed.add_field(name=name, value=f'{utils.ago(dt)}\n{utils.standard_datetime(dt)} UTC', **kwargs)
-        add_joined_field(attr='joined_at', name='Joined this Server', inline=False)
         add_joined_field(attr='created_at', name='Joined Discord', inline=False)
+
+        if isinstance(who, discord.Member):
+            add_joined_field(attr='joined_at', name='Joined this Server', inline=False)
+            embed.add_field(name='Roles', value=' '.join(r.mention for r in who.roles if r != ctx.guild.default_role))
+        else:
+            embed.description = "**NOTE:** This user is not in this server."
 
         await ctx.send(embed=embed)
 

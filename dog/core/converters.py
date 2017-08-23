@@ -5,7 +5,7 @@ from collections import namedtuple
 import discord
 import parsedatetime
 from discord.ext import commands
-from discord.ext.commands import MemberConverter
+from discord.ext.commands import MemberConverter, UserConverter
 
 BareCustomEmoji = namedtuple('BareCustomEmoji', 'id name')
 
@@ -33,6 +33,9 @@ class Flags(commands.Converter):
 
 
 class BannedUser(commands.Converter):
+    """
+    A converter that attempts to a resolve a banned user by ID, username, or username#discriminator.
+    """
     async def convert(self, ctx: commands.Context, argument):
         def finder(entry):
             try:
@@ -49,7 +52,27 @@ class BannedUser(commands.Converter):
             raise commands.BadArgument("I can't view the bans for this server.")
 
 
+class RawUser(commands.Converter):
+    """
+    A MemberConverter that falls back to UserConverter, then get_user_info.
+    """
+    async def convert(self, ctx, argument):
+        for converter in (MemberConverter, UserConverter):
+            try:
+                return await converter().convert(ctx, argument)
+            except commands.BadArgument:
+                pass
+
+        try:
+            return await ctx.bot.get_user_info(argument)
+        except (discord.NotFound, discord.HTTPException):
+            raise commands.BadArgument("That user wasn't found.")
+
+
 class RawMember(commands.Converter):
+    """
+    A converter that attempts to convert to user, then falls back to a discord.Object with an ID.
+    """
     async def convert(self, ctx, argument):
         # garbo
         try:
@@ -74,6 +97,13 @@ async def _get_recent_image(channel):
 
 
 class Image(commands.Converter):
+    """
+    Resolves an image, returns the URL to the image.
+
+    Could be passed "recent" in order to scan the channel for recent images.
+    Could be passed a member in order to use their avatar.
+    Could be passed an image URL to use it, however, only certain image hosts will work.
+    """
     async def convert(self, ctx, argument):
         # scan channel
         if argument == 'recent':
