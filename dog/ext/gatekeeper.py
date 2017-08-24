@@ -16,7 +16,7 @@ class Gatekeeper(Cog):
     )
 
     async def __local_check(self, ctx):
-        return checks.member_is_moderator(ctx.author) and ctx.guild
+        return ctx.guild and checks.member_is_moderator(ctx.author)
 
     async def on_member_join(self, member: discord.Member):
         if not await self.bot.redis.exists(f'gatekeeper:{member.guild.id}:enabled'):
