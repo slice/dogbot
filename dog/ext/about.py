@@ -31,9 +31,10 @@ class About(Cog):
         await ctx.send(f'<{link}>')
 
     @commands.command(hidden=True, aliases=['ginvite', 'ginv'])
-    async def generate_invite(self, ctx, client_id: int):
-        """ Generates an invite from a client ID. """
-        await ctx.send('<' + discord.utils.oauth_url(client_id) + '>')
+    async def generate_invite(self, ctx, *client_ids: int):
+        """ Generates Discord invite URL(s) from a client ID. """
+        urls = ['<' + discord.utils.oauth_url(client_id) + '>' for client_id in client_ids]
+        await ctx.send('\n'.join(urls))
 
     @commands.command(aliases=['helpme', 'support'])
     async def wiki(self, ctx):
