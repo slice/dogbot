@@ -95,7 +95,8 @@ class Modlog(Cog):
 
         m_before = utils.prevent_codeblock_breakout(utils.truncate(before.content, 900))
         m_after = utils.prevent_codeblock_breakout(utils.truncate(after.content, 900))
-        fmt = f'\N{MEMO} Message by {describe(before.author)} edited: ```\n{m_before}\n``` to ```\n{m_after}\n```'
+        fmt = (f'\N{MEMO} Message by {describe(before.author)} in {describe(before.channel, mention=True)} edited: '
+               f'```\n{m_before}\n``` to ```\n{m_after}\n```')
         await self.log(before.guild, fmt)
 
     async def on_member_update(self, before: discord.Member, after: discord.Member):
