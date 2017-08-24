@@ -101,6 +101,21 @@ def commas(number: 'Union[int, float]'):
     return '{:,d}'.format(number)
 
 
+def filesize(bytes: int) -> str:
+    """
+    Converts a bytesize to a human-readable filesize.
+
+    Only supports MB and KB.
+
+    :param bytes: The amount of bytes.
+    :return: The human-readable filesize.
+    """
+    if bytes > 10 ** 5 * 5:  # 0.5 MB
+        return f'{round(bytes / 10 ** 6, 2)} MB'
+    else:
+        return f'{round(bytes / 1000, 2)} KB'
+
+
 def describe(thing, *, mention=False, before='', created=False, joined=False):
     """
     Returns a string representing an project. Usually consists of the object in string form,
