@@ -26,9 +26,8 @@ class About(Cog):
         if ctx.bot.is_private:
             await ctx.send("This bot is private and can't be invited. Sorry!")
             return
-        perms = discord.Permissions(permissions=8)
-        client_id = (await self.bot.application_info()).id
-        link = discord.utils.oauth_url(client_id, permissions=perms)
+        link = discord.utils.oauth_url((await self.bot.application_info()).id,
+                                       permissions=(discord.Permissions.none()))
         await ctx.send(f'<{link}>')
 
     @commands.command(hidden=True, aliases=['ginvite', 'ginv'])
