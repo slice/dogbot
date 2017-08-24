@@ -40,6 +40,9 @@ class Modlog(Cog):
         #: A list of message IDs to not process.
         self.censored_messages = []
 
+        #: A dict of role additions to not process.
+        self.autorole_debounces = {}
+
     def modlog_msg(self, msg):
         now = datetime.datetime.utcnow()
         return '`[{0.hour:02d}:{0.minute:02d}]` {1}'.format(now, msg)
@@ -81,6 +84,7 @@ class Modlog(Cog):
         if roles_added:
             # if roles were added, add them to the message
             msg += ', added roles: ' + ', '.join(describe(role) for role in roles_added)
+            self.autorole_debounces[member.id] = [role.id for role in roles_added]
 
         await self.log(member.guild, msg)
 
@@ -109,9 +113,19 @@ class Modlog(Cog):
         elif before.roles != after.roles:
             added_roles = [role for role in after.roles if role not in before.roles]
             removed_roles = [role for role in before.roles if role not in after.roles]
+
             differences = []
             differences += [f'<:ya:318595000311087105> {describe(role)} ' for role in added_roles]
             differences += [f'<:na:318595010385674240> {describe(role)}' for role in removed_roles]
+
+            # if we're in the autorole debounce dict, and all of out added roles are in the dict, and we have no
+            # removed roles, bounce!
+            if (before.id in self.autorole_debounces and
+                    all(role.id in self.autorole_debounces[before.id] for role in added_roles) and
+                    not removed_roles):
+                del self.autorole_debounces[before.id]
+                return
+
             await self.log(before.guild, f'\N{KEY} Roles for {describe(before)} were updated: {", ".join(differences)}')
 
     async def on_raw_bulk_message_delete(self, message_ids, channel_id):
