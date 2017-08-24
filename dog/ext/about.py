@@ -33,6 +33,8 @@ class About(Cog):
     @commands.command(hidden=True, aliases=['ginvite', 'ginv'])
     async def generate_invite(self, ctx, *client_ids: int):
         """ Generates Discord invite URL(s) from a client ID. """
+        if len(client_ids) > 25:
+            return await ctx.send("That's too many for me. No more than 25, please!")
         urls = ['<' + discord.utils.oauth_url(client_id) + '>' for client_id in client_ids]
         await ctx.send('\n'.join(urls))
 
