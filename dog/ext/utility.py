@@ -281,7 +281,7 @@ class Utility(Cog):
         """
         if target is None:
             target = ctx.message.author
-        await ctx.send(target.avatar_url)
+        await ctx.send(target.avatar_url_as(format='png'))
 
     @commands.command()
     async def jumbo(self, ctx, emoji: converters.FormattedCustomEmoji):
