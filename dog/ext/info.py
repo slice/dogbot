@@ -85,6 +85,19 @@ class Info(Cog):
             # not in server, make sure to note that
             embed.description = "**NOTE:** This user is not in this server."
 
+        # show some mod-related stuff for mods
+        if checks.member_is_moderator(ctx.author):
+            try:
+                # is this person banned?
+                entry = discord.utils.find(lambda ban_entry: ban_entry.user == who, await ctx.guild.bans())
+                if entry:
+                    embed.color = discord.Color.red()
+                    reason = f'Reason: {entry.reason}' if entry.reason else 'No reason was provided.'
+                    embed.add_field(name='Banned', value=f'**This user has been banned.** {reason}')
+            except (discord.HTTPException, discord.Forbidden):
+                # ignore permission/http errors
+                pass
+
         await ctx.send(embed=embed)
 
     @profile.command(name='describe')
