@@ -78,7 +78,9 @@ class Info(Cog):
         # if this is a member, show extended information
         if isinstance(who, discord.Member):
             add_joined_field(attr='joined_at', name='Joined this Server', inline=False)
-            embed.add_field(name='Roles', value=' '.join(r.mention for r in who.roles if r != ctx.guild.default_role))
+            roles = ', '.join(r.name for r in sorted(who.roles, key=lambda r: r.position, reverse=True)
+                              if r != ctx.guild.default_role)
+            embed.add_field(name='Roles', value=roles)
         else:
             # not in server, make sure to note that
             embed.description = "**NOTE:** This user is not in this server."
