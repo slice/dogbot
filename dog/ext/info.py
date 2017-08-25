@@ -55,7 +55,7 @@ class Info(Cog):
         who = who or ctx.author
 
         embed = discord.Embed(title=f'{who} \N{EM DASH} {who.id}' + (' <:bot:349717107124207617>' if who.bot else ''))
-        embed.set_thumbnail(url=who.avatar_url_as(format='png'))
+        embed.set_thumbnail(url=who.avatar_url)
 
         # shared servers
         shared_servers = sum(1 for g in ctx.bot.guilds if who in g.members)
