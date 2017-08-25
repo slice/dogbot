@@ -15,12 +15,12 @@ def cm(v):
 
 
 SERVER_INFO_MEMBERS = '''{} total member(s)
-{} online, {} offline
-{}% online'''
+{} online, {} offline, {}% online
+{} human(s), {} bot(s), ratio: {}
+'''
 
-SERVER_INFO_COUNT = '''{} role(s)
-{} text channel(s), {} voice channel(s)
-{} channel(s)'''
+SERVER_INFO_COUNT = '''{0} role(s)
+{3} channel(s), {1} text, {2} voice'''
 
 logger = logging.getLogger(__name__)
 
@@ -105,12 +105,20 @@ class Info(Cog):
             embed.set_thumbnail(url=g.icon_url)
 
         # members
+        humans, bots = 0, 0
+
+        for member in g.members:
+            if member.bot:
+                bots += 1
+            else:
+                humans += 1
         total_members = len(g.members)
         num_online = len(list(filter(lambda m: m.status is discord.Status.online, g.members)))
         num_offline = len(list(filter(lambda m: m.status is discord.Status.offline, g.members)))
         embed.add_field(name='Members', value=SERVER_INFO_MEMBERS.format(
             cm(total_members), cm(num_online), cm(num_offline),
-            round((num_online / total_members) * 100, 2)
+            round((num_online / total_members) * 100, 2),
+            humans, bots, round(humans / bots, 2)
         ))
 
         embed.add_field(name='Count', value=SERVER_INFO_COUNT.format(
