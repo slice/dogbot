@@ -91,7 +91,15 @@ class Gatekeeper(Cog):
 
     @commands.group(aliases=['gk'])
     async def gatekeeper(self, ctx: commands.Context):
-        """ Manages Gatekeeper. """
+        """
+        Manages Gatekeeper.
+
+        Gatekeeper is an advanced mechanism of Dogbot that allows you to screen member joins in realtime,
+        and automatically kick those who don't fit a certain criteria. Only Dogbot Moderators can manage
+        Gatekeeper.
+
+        This is very useful when your server is undergoing raids, unwanted attention, unwanted members, etc.
+        """
         if ctx.invoked_subcommand is None:
             return await ctx.send(f'You need to specify a valid subcommand to run. For help, run `{ctx.prefix}help gk`.')
 
@@ -122,7 +130,11 @@ class Gatekeeper(Cog):
 
     @gatekeeper.command()
     async def set(self, ctx: context.DogbotContext, key, *, value: commands.clean_content = 'true'):
-        """ Sets a Gatekeeper criteria. """
+        """
+        Sets a Gatekeeper criteria.
+
+        With this command, you can set a criteria for Dogbot to check on newly added members.
+        """
 
         # check for valid customization keys
         if key not in self.CUSTOMIZATION_KEYS:
