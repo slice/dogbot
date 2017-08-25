@@ -186,7 +186,7 @@ class DogBot(BotBase, discord.AutoShardedClient):
         """
         return (await self.redis.get(f'{guild.id}:{name}')).decode()
 
-    async def config_is_set(self, guild: discord.Guild, name: str):
+    async def config_is_set(self, guild: discord.Guild, name: str) -> bool:
         """
         Returns whether a configuration key for a guild is set or not.
 
