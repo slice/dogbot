@@ -121,7 +121,10 @@ def describe(thing, *, mention=False, before='', created=False, joined=False):
     Returns a string representing an project. Usually consists of the object in string form,
     then the object's ID in parentheses after.
     """
-    message = f'{thing if not mention else thing.mention} (`{thing.id}`)'
+    name = thing if not mention else mention
+    if isinstance(thing, discord.Emoji):
+        name = f'`{":" + thing.name + ":" if thing.require_colons else thing.name}`'
+    message = f'{name} (`{thing.id}`)'
     if before:
         message += ' ' + before
     if created:

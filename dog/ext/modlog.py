@@ -6,7 +6,7 @@ import logging
 import discord
 from discord.ext import commands
 
-from dog import Cog
+from dog import Cog, DogBot
 from dog.core import utils
 from dog.core.utils import describe, filesize
 from dog.ext.censorship import CensorshipFilter
@@ -14,11 +14,17 @@ from dog.ext.censorship import CensorshipFilter
 logger = logging.getLogger(__name__)
 
 
-async def is_publicly_visible(bot, channel: discord.TextChannel) -> bool:
+async def is_publicly_visible(bot: DogBot, channel: discord.TextChannel) -> bool:
     """
-    Returns whether a channel is publicly visible with the default role.
+    Returns whether a text channel should be considered as "publicly visible".
+    If the guild has been configured to log all message events, this will always return True.
 
-    This will always return ``True`` if the guild has been configured to log all message events.
+    Args:
+        bot: The bot instance.
+        channel: The channel to check for.
+
+    Returns:
+        Whether the text channel is considered "publicly visible".
     """
     # guild is configured to log all message events
     if await bot.config_is_set(channel.guild, 'log_all_message_events'):
@@ -27,6 +33,39 @@ async def is_publicly_visible(bot, channel: discord.TextChannel) -> bool:
     # find the @everyone overwrite for the channel
     everyone_overwrite = discord.utils.find(lambda t: t[0].name == '@everyone', channel.overwrites)
     return everyone_overwrite is None or everyone_overwrite[1].read_messages is not False
+
+
+def diff(before: list, after: list) -> (list, list):
+    """
+    Naively diffs two lists.
+
+    Args:
+        before: The list before.
+        after: The list after.
+
+    Returns:
+        A tuple of two lists. The first list contains additions, the second contains removals.
+    """
+    additions = [item for item in after if item not in before]
+    removals = [item for item in before if item not in after]
+    return additions, removals
+
+
+def describe_differences(added: list, removed: list) -> str:
+    """
+    Formats two lists representing added and removed items into a string. Items are described
+    with the describe function.
+
+    Args:
+        added: Added items.
+        removed: Removed items.
+
+    Returns:
+        A nicely formatted string describing the changes.
+    """
+    diffs = ([f'<:ya:318595000311087105> {describe(item)}' for item in added] +
+             [f'<:na:318595010385674240> {describe(item)}' for item in removed])
+    return ', '.join(diffs)
 
 
 class Modlog(Cog):
@@ -65,6 +104,16 @@ class Modlog(Cog):
         :return: The sent message.
         """
         return await self.bot.send_modlog(guild, text if do_not_format else self.modlog_msg(text))
+
+    async def on_guild_emojis_update(self, guild: discord.Guild, before: 'List[discord.Emoji]',
+                                     after: 'List[discord.Emoji]'):
+
+        added, removed = diff(before, after)
+        if not added and not removed:
+            # TODO: Handle renames
+            return
+        differences = describe_differences(added, removed)
+        await self.log(guild, f'\N{FRAME WITH PICTURE} Emoji updated: {differences}')
 
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState,
                                     after: discord.VoiceState):
@@ -140,12 +189,7 @@ class Modlog(Cog):
             # wait for possible debounce
             await asyncio.sleep(0.5)
 
-            added_roles = [role for role in after.roles if role not in before.roles]
-            removed_roles = [role for role in before.roles if role not in after.roles]
-
-            differences = []
-            differences += [f'<:ya:318595000311087105> {describe(role)} ' for role in added_roles]
-            differences += [f'<:na:318595010385674240> {describe(role)}' for role in removed_roles]
+            added_roles, removed_roles = diff(before.roles, after.roles)
 
             # if we're in the autorole debounce dict, and all of out added roles are in the dict, and we have no
             # removed roles, bounce!
@@ -156,7 +200,7 @@ class Modlog(Cog):
                 return
 
             fmt_before = f'\N{KEY} Roles for {describe(before)} were updated'
-            fmt_diffs = ", ".join(differences)
+            fmt_diffs = describe_differences(added_roles, removed_roles)
 
             msg = await self.log(before.guild, f'{fmt_before}: {fmt_diffs}')
 
