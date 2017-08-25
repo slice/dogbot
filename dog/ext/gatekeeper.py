@@ -104,6 +104,9 @@ class Gatekeeper(Cog):
     @gatekeeper.command(aliases=['engage', 'on'])
     async def enable(self, ctx: context.DogbotContext):
         """ Turns on Gatekeeper. """
+        if not ctx.guild.me.guild_permissions.kick_members:
+            return await ctx.send("I can't kick members, so Gatekeeper won't be useful.")
+
         await ctx.bot.redis.set(f'gatekeeper:{ctx.guild.id}:enabled', 'true')
         await ctx.bot.redis.set(f'gatekeeper:{ctx.guild.id}:broadcast_channel', ctx.channel.id)
         await ctx.send("\U0001f6a8 Gatekeeper was **enabled**. I'll be broadcasting join messages to this channel.")
