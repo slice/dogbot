@@ -222,16 +222,6 @@ class Censorship(Cog):
         Before using this, ensure that Dogbot can ban members and kick members. Excepted users are immune
         to being punished (and being censored in the first place). Only members with "Manage Server" can manage
         punishments.
-
-        Examples:
-            d?censorship punish add invites ban
-                Makes Dogbot anybody who posts an invite.
-            d?cs p add videosites kick
-                Makes Dogbot kick anybody who violates the videosites censorship type.
-            d?cs p delete invites
-                Deletes the punishment for the invites censorship filter.
-            d?cs p status
-                Views all punishments assigned to censorship filters.
         """
         if ctx.invoked_subcommand.qualified_name == 'censorship punish':
             await ctx.send('You need to specify a valid subcommand to run. For help, run `d?help cs p`.')
@@ -261,14 +251,6 @@ class Censorship(Cog):
 
         This command will show all censorship filters that have a punishment assigned to them. It will show
         the censorship filter's name, and its punishment.
-
-        For example, if the bot says:
-
-            invites    = kick
-            videosites = ban
-
-        It means that Dogbot will kick upon someone violating the invites filter, and will ban upon someone violating
-        the videosites filter.
         """
         async with ctx.acquire() as conn:
             punishments = await conn.fetch('SELECT * FROM censorship_punishments WHERE guild_id = $1', ctx.guild.id)

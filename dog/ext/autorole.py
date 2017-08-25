@@ -29,19 +29,7 @@ class Autorole(Cog):
         All autoroles are logged in the mod log (if configured) when they happen. If assigning autoroles fails, ensure
         that the bot can add those roles, and that Dogbot's role is above them in the role hierarchy.
 
-        Examples:
-        d?autorole add user human
-            Makes Dogbot give a role named "human" to every user who joins the server.
-        d?ar add user human everyone
-            Makes Dogbot give a role named "human" and "everyone" to every user who joins the server.
-        d?ar add bot robot
-            Makes Dogbot give a role named "robot" to every bot who gets added to the server.
-        d?ar list
-            Lists all autoroles in this server.
-        d?ar delete bot
-            Deletes the autoroles for bots.
-        d?ar delete user
-            Deletes the autoroles for users.
+        Learn more about autorole here: https://github.com/slice/dogbot/wiki/Autorole
         """
         if ctx.invoked_subcommand is None:
             await ctx.send('You must specify a valid subcommand to run. For help, run `d?help ar`.')
