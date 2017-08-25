@@ -32,7 +32,8 @@ class Config(Cog):
             'modlog_notrack_edits',
             'modlog_channel_id',
             'pollr_mod_log',
-            'log_all_message_events'
+            'log_all_message_events',
+            'shortlinks_enabled'
         )
 
     @commands.group(aliases=['cfg'])
