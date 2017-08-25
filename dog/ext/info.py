@@ -61,6 +61,7 @@ class Info(Cog):
         shared_servers = sum(1 for g in ctx.bot.guilds if who in g.members)
         embed.add_field(name='Shared Servers', value=shared_servers)
 
+        # supporter stuff <3
         if checks.is_supporter(ctx.bot, who):
             async with ctx.acquire() as conn:
                 desc = await conn.fetchrow('SELECT * FROM profile_descriptions WHERE id = $1', who.id)
@@ -68,15 +69,18 @@ class Info(Cog):
                     embed.color = discord.Color(desc['color'])
                     embed.add_field(name='Profile Description', value=desc['description'])
 
+        # shortcut for adding a field with ago and absolute datetime info
         def add_joined_field(*, attr, name, **kwargs):
             dt = getattr(who, attr)
             embed.add_field(name=name, value=f'{utils.ago(dt)}\n{utils.standard_datetime(dt)} UTC', **kwargs)
-        add_joined_field(attr='created_at', name='Joined Discord', inline=False)
+        add_joined_field(attr='created_at', name='Created' if who.bot else 'Joined Discord', inline=False)
 
+        # if this is a member, show extended information
         if isinstance(who, discord.Member):
             add_joined_field(attr='joined_at', name='Joined this Server', inline=False)
             embed.add_field(name='Roles', value=' '.join(r.mention for r in who.roles if r != ctx.guild.default_role))
         else:
+            # not in server, make sure to note that
             embed.description = "**NOTE:** This user is not in this server."
 
         await ctx.send(embed=embed)
@@ -112,6 +116,7 @@ class Info(Cog):
                 bots += 1
             else:
                 humans += 1
+
         total_members = len(g.members)
         num_online = len(list(filter(lambda m: m.status is discord.Status.online, g.members)))
         num_offline = len(list(filter(lambda m: m.status is discord.Status.offline, g.members)))
