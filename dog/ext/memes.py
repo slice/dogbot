@@ -1,7 +1,9 @@
 import logging
 
 import asyncio
+from random import randrange
 
+import aiohttp
 import discord
 import functools
 from PIL import Image, ImageEnhance, ImageDraw, ImageFont
@@ -10,7 +12,7 @@ from io import BytesIO
 
 from dog import Cog
 from dog.core import converters, utils
-from dog.core.utils import get_bytesio
+from dog.core.utils import get_bytesio, urlescape
 from wand import image as wndimg
 
 logger = logging.getLogger(__name__)
@@ -118,6 +120,26 @@ class Memes(Cog):
             m.paste(image_source, (239, 241))
             await m.render('mistake.png')
             m.cleanup()
+
+    @commands.command()
+    @commands.cooldown(1, 2, commands.BucketType.user)
+    async def orly(self, ctx, title, guide, author, *, top_text=''):
+        """ Generates O'Reilly book covers. """
+
+        api_base = 'https://orly-appstore.herokuapp.com/generate?'
+
+        url = (api_base +
+               f'title={urlescape(title)}&top_text={urlescape(top_text)}&image_code={randrange(0,41)}' +
+               f'&theme={randrange(0,17)}&author={urlescape(author)}&guide_text={urlescape(guide)}' +
+               f'&guide_text_placement=bottom_right')
+
+        try:
+            async with ctx.typing():
+                async with ctx.bot.session.get(url) as resp:
+                    with BytesIO(await resp.read()) as bio:
+                        await ctx.send(file=discord.File(filename='orly.png', fp=bio))
+        except aiohttp.ClientError:
+            await ctx.send("Couldn't contact the API.")
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
