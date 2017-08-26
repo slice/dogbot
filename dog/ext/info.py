@@ -8,6 +8,7 @@ from discord.ext import commands
 
 from dog import Cog
 from dog.core import utils, checks, converters
+from dog.core.utils import describe
 
 
 def cm(v):
@@ -236,6 +237,15 @@ class Info(Cog):
                         value=f'{joined_dif}\n{utils.standard_datetime(target.joined_at)} UTC',
                         inline=False)
 
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    async def invite_info(self, ctx, invite: discord.Invite):
+        """ Shows information about an invite. """
+        embed = discord.Embed(title=f'Invite for {invite.guild.name}')
+        embed.description = f'Server ID: {invite.guild.id}'
+        embed.add_field(name='Channel', value=invite.channel.name, inline=False)
+        embed.add_field(name='Inviter', value=describe(invite.inviter, mention=True), inline=False)
         await ctx.send(embed=embed)
 
     @commands.command()
