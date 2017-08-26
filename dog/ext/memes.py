@@ -129,8 +129,8 @@ class Memes(Cog):
         api_base = 'https://orly-appstore.herokuapp.com/generate?'
 
         url = (api_base +
-               f'title={urlescape(title)}&top_text={urlescape(top_text)}&image_code={randrange(0,41)}' +
-               f'&theme={randrange(0,17)}&author={urlescape(author)}&guide_text={urlescape(guide)}' +
+               f'title={urlescape(title)}&top_text={urlescape(top_text)}&image_code={randrange(0, 41)}' +
+               f'&theme={randrange(0, 17)}&author={urlescape(author)}&guide_text={urlescape(guide)}' +
                f'&guide_text_placement=bottom_right')
 
         try:
