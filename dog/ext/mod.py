@@ -395,11 +395,36 @@ class Mod(Cog):
         await ctx.guild.unban(member, reason=f'(Unbanned by {ctx.author}) {reason or "No reason provided."}')
         await ctx.send(f'\N{OK HAND SIGN} Unbanned {describe(member)}.')
 
+    @commands.command(aliases=['mban'])
+    @commands.guild_only()
+    @commands.has_permissions(ban_members=True)
+    @checks.bot_perms(ban_members=True)
+    async def multiban(self, ctx, reason, delete_days: DeleteDays=2, *members: converters.RawMember):
+        """
+        Bans multiple users.
+
+        Functions similarly to d?ban.
+        """
+        reason = reason or 'No reason provided.'
+        log = []
+        for member in members:
+            try:
+                await ctx.guild.ban(member, delete_message_days=delete_days,
+                                    reason=f'(Multi-banned by {ctx.author}) {reason}')
+                log.append(f'<:ya:318595000311087105> Banned {describe(member)}.')
+            except discord.NotFound:
+                # XXX: This code path might be unreachable, research further
+                log.append("<:na:318595010385674240> {member} wasn't found.")
+            except (discord.Forbidden, discord.HTTPException):
+                log.append(f'<:na:318595010385674240> Failed to ban {describe(member)}.')
+        await ctx.send('\n'.join(log))
+
+
     @commands.command()
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @checks.bot_perms(ban_members=True)
-    async def ban(self, ctx, member: converters.RawMember, delete_days: DeleteDays=2, *, reason: str=None):
+    async def ban(self, ctx, member: converters.RawMember, delete_days: DeleteDays=2, *, reason=None):
         """
         Bans someone.
 
