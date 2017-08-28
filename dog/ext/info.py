@@ -244,7 +244,8 @@ class Info(Cog):
         """ Shows information about an invite. """
         embed = discord.Embed(title=f'Invite for {invite.guild.name} (`{invite.guild.id}`)')
         embed.add_field(name='Channel', value=f'{invite.channel.name} (`{invite.channel.id}`)', inline=False)
-        embed.add_field(name='Inviter', value=describe(invite.inviter, mention=True), inline=False)
+        if invite.inviter:
+            embed.add_field(name='Inviter', value=describe(invite.inviter, mention=True), inline=False)
         await ctx.send(embed=embed)
 
     @commands.command()
