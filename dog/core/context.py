@@ -43,15 +43,13 @@ class DogbotContext(commands.Context):
         val = self.bot.lang(key, await self.preferred_lang())
         return val if (not args and not kwargs) else val.format(*args, **kwargs)
 
-    async def confirm(self, *, title: str, description: str):
-        """
-        Confirms something.
-        """
+    async def confirm(self, *, title: str, description: str, confirm_cancellation=False):
+        """ Confirms something. """
         embed = discord.Embed(color=discord.Color.red(), title=title, description=description)
         confirmation = await self.send(embed=embed)
 
-        await confirmation.add_reaction('ya:318595000311087105')
-        await confirmation.add_reaction('na:318595010385674240')
+        for tick in (self.bot.tick(tick_type, raw=True) for tick_type in ('green', 'red')):
+            await confirmation.add_reaction(tick)
 
         while True:
             def check(reaction: discord.Reaction, adder: discord.User) -> bool:
