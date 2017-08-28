@@ -119,7 +119,7 @@ class Internal(Cog):
                 ban_row = await conn.fetchrow('SELECT * FROM globalbans WHERE user_id = $1', user.id)
 
             if ban_row is None:
-                results.append(f'\N{WHITE HEAVY CHECK MARK} Removed ban for {describe(user)}')
+                results.append(f'{ctx.bot.green_tick} Removed ban for {describe(user)}')
                 await ctx.bot.redis.delete(key.decode())
                 logger.debug('Removing ban for %s (%s) as part of flush operation.', key.decode(), user)
             else:
