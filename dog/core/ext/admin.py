@@ -3,7 +3,7 @@ Commands that are used to administrate the bot itself.
 It also contains some utility commands that are used to check the health of the
 bot, like d?ping.
 """
-
+import asyncio
 import logging
 import os
 import sys
@@ -23,6 +23,15 @@ def _restart():
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
+async def shell(cmd: str):
+    process = await asyncio.create_subprocess_shell(
+        cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    await process.communicate()
+
+
 class Admin(Cog):
     @commands.command()
     async def ping(self, ctx):
@@ -30,6 +39,26 @@ class Admin(Cog):
         begin = monotonic()
         msg = await ctx.send(await ctx._('cmd.ping.pre'))
         await msg.edit(content=await ctx._('cmd.ping.post', rtt=(monotonic() - begin) * 1000))
+
+    @commands.command(aliases=['update'])
+    @commands.is_owner()
+    async def hotpatch(self, ctx):
+        """ Hotpatches Dogbot from GitHub. """
+        msg = await ctx.send('\U000023f3 Pulling...')
+
+        # update from github
+        await shell('git fetch --all')
+        await shell('git reset --hard origin/master')
+
+        await msg.edit(content='\U000023f3 Reloading extensions...')
+        try:
+            ctx.bot.reload_all_extensions()
+        except Exception:
+            await msg.edit(content=f'{ctx.bot.red_tick} An error has occurred.')
+            logger.exception('Hotpatch error')
+        else:
+            await msg.edit(content=f'{ctx.bot.green_tick} Hotpatch successful.')
+
 
     @commands.command()
     @commands.is_owner()
