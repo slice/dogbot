@@ -67,6 +67,8 @@ class DogbotContext(commands.Context):
                 return True
             elif reaction.emoji.id == 318595010385674240:
                 await confirmation.delete()
+                if confirm_cancellation:
+                    await self.send('Operation cancelled.')
                 return False
 
     async def wait_for_response(self):

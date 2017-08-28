@@ -123,7 +123,7 @@ class Gatekeeper(Cog):
     async def disable(self, ctx: context.DogbotContext):
         """ Turns off Gatekeeper. """
         if await ctx.confirm(title='Are you sure you want to disable Gatekeeper?',
-                             description='I will stop screening member joins.') is True:
+                             description='I will stop screening member joins.', confirm_cancellation=True):
             await ctx.bot.redis.delete(f'gatekeeper:{ctx.guild.id}:enabled')
             await ctx.bot.redis.delete(f'gatekeeper:{ctx.guild.id}:broadcast_channel')
             await ctx.send('\U0001f6a8 Gatekeeper was **disabled**.')
