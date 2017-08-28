@@ -9,6 +9,7 @@ from discord.ext import commands
 from dog import Cog, DogBot
 from dog.core import utils
 from dog.core.utils import describe, filesize
+from dog.core.context import DogbotContext
 from dog.ext.censorship import CensorshipFilter
 
 logger = logging.getLogger(__name__)
@@ -115,6 +116,12 @@ class Modlog(Cog):
             return
         differences = describe_differences(self.bot, added, removed)
         await self.log(guild, f'\N{FRAME WITH PICTURE} Emoji updated: {differences}')
+
+    async def on_command_completion(self, ctx: DogbotContext):
+        cmd = utils.prevent_codeblock_breakout(ctx.message.content)
+        await self.log(ctx.guild,
+                       (f'\N{WRENCH} Command invoked by {describe(ctx.author)} in '
+                        f'{describe(ctx.message.channel, mention=True)}:\n```{cmd}```'))
 
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState,
                                     after: discord.VoiceState):
