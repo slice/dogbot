@@ -51,20 +51,21 @@ def diff(before: list, after: list) -> (list, list):
     return additions, removals
 
 
-def describe_differences(added: list, removed: list) -> str:
+def describe_differences(bot: DogBot, added: list, removed: list) -> str:
     """
     Formats two lists representing added and removed items into a string. Items are described
     with the describe function.
 
     Args:
+        bot: The bot instance. Used for ticks.
         added: Added items.
         removed: Removed items.
 
     Returns:
         A nicely formatted string describing the changes.
     """
-    diffs = ([f'<:ya:318595000311087105> {describe(item)}' for item in added] +
-             [f'<:na:318595010385674240> {describe(item)}' for item in removed])
+    diffs = ([f'{bot.green_tick} {describe(item)}' for item in added] +
+             [f'{bot.red_tick} {describe(item)}' for item in removed])
     return ', '.join(diffs)
 
 
@@ -112,7 +113,7 @@ class Modlog(Cog):
         if not added and not removed:
             # TODO: Handle renames
             return
-        differences = describe_differences(added, removed)
+        differences = describe_differences(self.bot, added, removed)
         await self.log(guild, f'\N{FRAME WITH PICTURE} Emoji updated: {differences}')
 
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState,
@@ -200,7 +201,7 @@ class Modlog(Cog):
                 return
 
             fmt_before = f'\N{KEY} Roles for {describe(before)} were updated'
-            fmt_diffs = describe_differences(added_roles, removed_roles)
+            fmt_diffs = describe_differences(self.bot, added_roles, removed_roles)
 
             msg = await self.log(before.guild, f'{fmt_before}: {fmt_diffs}')
 

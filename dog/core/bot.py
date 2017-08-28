@@ -37,6 +37,21 @@ class DogBot(BotBase, discord.AutoShardedClient):
     def is_private(self):
         return 'private' in self.cfg['bot'] and self.cfg['bot']['private']
 
+    def tick(self, tick_type: str, *, raw=False) -> str:
+        try:
+            tick_raw = self.cfg['bot']['emoji'][tick_type + '_tick']
+            return tick_raw if raw else f'<:{tick_raw}>'
+        except KeyError:
+            return '\U00002705' if type == 'green' else '\U0000274c'
+
+    @property
+    def green_tick(self):
+        return self.tick('green')
+
+    @property
+    def red_tick(self):
+        return self.tick('red')
+
     async def is_global_banned(self, user: discord.User):
         key = f'cache:globalbans:{user.id}'
 
