@@ -117,9 +117,9 @@ class Admin(Cog):
             # perform_full_reload() handles exceptions for us
             if ext:
                 logger.exception('Failed reloading extension: %s', ext)
-            await ctx.message.add_reaction('\N{CROSS MARK}')
+            await ctx.message.add_reaction(ctx.bot.tick('red', raw=True))
         else:
-            await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
+            await ctx.message.add_reaction(ctx.bot.tick('green', raw=True))
 
 
 def setup(bot):
