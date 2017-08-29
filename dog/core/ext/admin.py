@@ -8,11 +8,11 @@ import os
 import sys
 from time import monotonic
 
-import discord
 from discord.ext import commands
 
 from dog import Cog
 from dog.core import converters
+from dog.core.utils import codeblock
 from dog.core.utils.system import shell
 
 logger = logging.getLogger(__name__)
@@ -30,6 +30,12 @@ class Admin(Cog):
         begin = monotonic()
         msg = await ctx.send(await ctx._('cmd.ping.pre'))
         await msg.edit(content=await ctx._('cmd.ping.post', rtt=(monotonic() - begin) * 1000))
+
+    @commands.command(aliases=['sh', 'bash'])
+    @commands.is_owner()
+    async def shell(self, ctx, *, cmd):
+        """ Executes a system command. """
+        await ctx.send(codeblock(await shell(cmd)))
 
     @commands.command(aliases=['update'])
     @commands.is_owner()
