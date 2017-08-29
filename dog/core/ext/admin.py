@@ -54,10 +54,10 @@ class Admin(Cog):
         try:
             ctx.bot.reload_all_extensions()
         except Exception:
-            await msg.edit(content=f'{ctx.bot.red_tick} An error has occurred.')
+            await msg.edit(content=f'{ctx.red_tick} An error has occurred.')
             logger.exception('Hotpatch error')
         else:
-            await msg.edit(content=f'{ctx.bot.green_tick} Hotpatch successful.')
+            await msg.edit(content=f'{ctx.green_tick} Hotpatch successful.')
 
 
     @commands.command()
@@ -117,9 +117,9 @@ class Admin(Cog):
             # perform_full_reload() handles exceptions for us
             if ext:
                 logger.exception('Failed reloading extension: %s', ext)
-            await ctx.message.add_reaction(ctx.bot.tick('red', raw=True))
+            await ctx.message.add_reaction(ctx.tick('red', raw=True))
         else:
-            await ctx.message.add_reaction(ctx.bot.tick('green', raw=True))
+            await ctx.message.add_reaction(ctx.tick('green', raw=True))
 
 
 def setup(bot):

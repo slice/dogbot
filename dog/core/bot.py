@@ -34,25 +34,54 @@ class DogBot(BotBase, discord.AutoShardedClient):
         self.prefix_cache = {}
 
     @property
-    def is_private(self):
+    def is_private(self) -> bool:
+        """
+
+        Returns: Whether this bot is considered "public".
+
+        """
         return 'private' in self.cfg['bot'] and self.cfg['bot']['private']
 
-    def tick(self, tick_type: str, *, raw=False) -> str:
+    def tick(self, tick_type: str, *, raw: bool = False, guild: discord.Guild = None) -> str:
+        """
+        Returns a custom tick emoji.
+
+        Args:
+            tick_type: The tick type to return. Either "green" or "red".
+            raw: Specifies whether the returned tick shouldn't be in emoji message formatting form.
+            guild: Specifies the guild that this reaction will be used in. Used in checking if we can actually use the
+                   ticks. If not, we return the unicode alternatives instead.
+
+        Returns: The tick.
+        """
+        raw_tick = '\U00002705' if type == 'green' else '\U0000274c'
+
+        # use raw ticks if we can't use external emoji, or we want to
+        if guild and not guild.me.guild_permissions.external_emojis:
+            return raw_tick
+
         try:
-            tick_raw = self.cfg['bot']['emoji'][tick_type + '_tick']
-            return tick_raw if raw else f'<:{tick_raw}>'
+            # fetch tick from config
+            custom_tick = self.cfg['bot']['emoji'][tick_type + '_tick']
+            return custom_tick if raw else f'<:{custom_tick}>'
         except KeyError:
-            return '\U00002705' if type == 'green' else '\U0000274c'
+            return raw_tick
 
     @property
     def green_tick(self):
+        """
+        Returns: The green tick emoji.
+        """
         return self.tick('green')
 
     @property
     def red_tick(self):
+        """
+        Returns: The red tick emoji.
+        """
         return self.tick('red')
 
-    async def is_global_banned(self, user: discord.User):
+    async def is_global_banned(self, user: discord.User) -> bool:
         key = f'cache:globalbans:{user.id}'
 
         if await self.redis.exists(key):

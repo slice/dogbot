@@ -411,12 +411,12 @@ class Mod(Cog):
             try:
                 await ctx.guild.ban(member, delete_message_days=delete_days,
                                     reason=f'(Multi-banned by {ctx.author}) {reason}')
-                log.append(f'{ctx.bot.green_tick} Banned {describe(member)}.')
+                log.append(f'{ctx.green_tick} Banned {describe(member)}.')
             except discord.NotFound:
                 # XXX: This code path might be unreachable, research further
-                log.append("{ctx.bot.red_tick} {member} wasn't found.")
+                log.append("{ctx.red_tick} {member} wasn't found.")
             except (discord.Forbidden, discord.HTTPException):
-                log.append(f'{ctx.bot.red_tick} Failed to ban {describe(member)}.')
+                log.append(f'{ctx.red_tick} Failed to ban {describe(member)}.')
         await ctx.send('\n'.join(log))
 
 

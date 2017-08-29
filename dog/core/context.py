@@ -24,7 +24,34 @@ class DogbotContext(commands.Context):
     def acquire(self):
         return self.bot.pgpool.acquire()
 
-    async def preferred_lang(self):
+    @property
+    def red_tick(self):
+        """
+        The same as DogBot.red_tick, but it automatically returns the Unicode equivalent if we can't use external
+        emoji.
+        """
+        return self.bot.red_tick if self.guild.me.guild_permissions.external_emojis else '\N{CROSS MARK}'
+
+    @property
+    def green_tick(self):
+        """
+        The same as DogBot.green_tick, but it automatically returns the Unicode equivalent if we can't use external
+        emoji.
+        """
+        return self.bot.green_tick if self.guild.me.guild_permissions.external_emojis else \
+            '\N{WHITE HEAVY CHECK MARK}'
+
+    def tick(self, *args, **kwargs) -> str:
+        """
+        The same as DogBot.tick, but the ``guild`` kwarg is automatically supplied.
+        """
+        return self.bot.tick(*args, **kwargs, guild=self.guild)
+
+    async def preferred_lang(self) -> str:
+        """
+        Returns the preferred language for this command context.
+        """
+
         # user-preferred lang takes precedence
         user_lang = await self.bot.redis.get(f'i18n:user:{self.author.id}:lang')
         if user_lang:
@@ -48,7 +75,7 @@ class DogbotContext(commands.Context):
         embed = discord.Embed(color=discord.Color.red(), title=title, description=description)
         confirmation = await self.send(embed=embed)
 
-        for tick in (self.bot.tick(tick_type, raw=True) for tick_type in ('green', 'red')):
+        for tick in (self.bot.tick(tick_type, raw=True, guild=self.guild) for tick_type in ('green', 'red')):
             await confirmation.add_reaction(tick)
 
         while True:
@@ -80,11 +107,13 @@ class DogbotContext(commands.Context):
         the original command invoker, and it was sent in the same channel as
         the command message.
         """
+
         def check(m):
             if isinstance(m.channel, discord.DMChannel):
                 # accept any message, because we are in a dm
                 return True
             return m.channel.id == self.channel.id and m.author == self.author
+
         return await self.bot.wait_for('message', check=check)
 
     async def gatekeeper_enabled(self) -> bool:
@@ -124,16 +153,16 @@ class DogbotContext(commands.Context):
             except ValueError:
                 # they didn't enter a valid number
                 await self.send('That wasn\'t a number! Send a message that '
-                               'solely contains the number of the item that '
-                               'you want.')
+                                'solely contains the number of the item that '
+                                'you want.')
                 remaining_tries -= 1
                 continue
 
             if chosen_index < 0 or chosen_index > len(choices) - 1:
                 # out of range
                 await self.send('Invalid choice! Send a message that solely '
-                               'contains the number of the item that you '
-                               'want.')
+                                'contains the number of the item that you '
+                                'want.')
                 remaining_tries -= 1
             else:
                 # they chose correctly
@@ -144,4 +173,3 @@ class DogbotContext(commands.Context):
                 break
 
         return picked
-
