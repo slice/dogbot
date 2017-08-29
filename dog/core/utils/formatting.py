@@ -47,6 +47,19 @@ def make_profile_embed(member):
     return embed
 
 
+def codeblock(text: str, *, lang: str = '') -> str:
+    """
+    Formats a codeblock.
+
+    Args:
+        text: The text to be inside of the codeblock.
+        lang: The language to use.
+
+    Returns: The formatted message.
+    """
+    return f'```{lang}\n{text}\n```'
+
+
 def strip_tags(text: str):
     """ Strips HTML tags from text. """
     s = MLStripper()
@@ -116,7 +129,7 @@ def filesize(bytes: int) -> str:
         return f'{round(bytes / 1000, 2)} KB'
 
 
-def describe(thing, *, mention=False, before='', created=False, joined=False):
+def describe(thing, *, mention=False, before='', created=False, joined=False, quote=False):
     """
     Returns a string representing an project. Usually consists of the object in string form,
     then the object's ID in parentheses after.
@@ -127,6 +140,9 @@ def describe(thing, *, mention=False, before='', created=False, joined=False):
     # handle emoji specially
     if isinstance(thing, discord.Emoji):
         name = f'`{":" + thing.name + ":" if thing.require_colons else thing.name}`'
+
+    if quote:
+        name = '"' + name + '"'
 
     # name + id
     message = f'{name} (`{thing.id}`)'
