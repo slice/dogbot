@@ -24,12 +24,6 @@ def _restart():
 
 
 class Admin(Cog):
-    @commands.command()
-    async def ping(self, ctx):
-        """ You know what this does. """
-        begin = monotonic()
-        msg = await ctx.send(await ctx._('cmd.ping.pre'))
-        await msg.edit(content=await ctx._('cmd.ping.post', rtt=(monotonic() - begin) * 1000))
 
     @commands.command(aliases=['sh', 'bash'])
     @commands.is_owner()
