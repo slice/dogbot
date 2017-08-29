@@ -28,22 +28,43 @@ import discord
 from discord.ext import commands
 
 from dog import Cog
+from dog.core.context import DogbotContext
+from dog.core.utils import codeblock
 from dog.haste import haste
 
 log = logging.getLogger(__name__)
 
 
-def strip_code_markup(content: str) -> str:
-    """ Strips code markup from a string. """
-    # ```py
-    # code
-    # ```
-    if content.startswith('```') and content.endswith('```'):
-        # grab the lines in the middle
-        return '\n'.join(content.split('\n')[1:-1])
+class Code(commands.Converter):
+    def __init__(self, *, wrap_code=False, strip_ticks=True, indent_width=4):
+        """
+        Formats code.
 
-    # `code`
-    return content.strip('` \n')
+        Args:
+            wrap_code: Specifies whether to wrap the resulting code in a function.
+            strip_ticks: Specifies whether to strip the code of formatting-related backticks.
+            indent_width: Specifies the indent width, if wrapping.
+        """
+        self.wrap_code = wrap_code
+        self.strip_ticks = strip_ticks
+        self.indent_width = indent_width
+
+    async def convert(self, ctx: DogbotContext, arg: str) -> str:
+        result = arg
+
+        if self.strip_ticks:
+            # remove codeblock ticks
+            if result.startswith('```') and result.endswith('```'):
+                result = '\n'.join(result.split('\n')[1:-1])
+
+            # remove inline code ticks
+            result = result.strip('` \n')
+
+        if self.wrap_code:
+            # wrap in a coroutine and indent
+            result = 'async def func():\n' + textwrap.indent(result, ' ' * self.indent_width)
+
+        return result
 
 
 def format_syntax_error(e: SyntaxError) -> str:
@@ -64,12 +85,12 @@ class Exec(Cog):
     async def execute(self, ctx, code):
         log.info('Eval: %s', code)
 
-        async def upload(file_name: str):
+        async def upload(file_name: str) -> discord.Message:
             with open(file_name, 'rb') as fp:
-                await ctx.send(file=discord.File(fp))
+                return await ctx.send(file=discord.File(fp))
 
-        async def send(*args, **kwargs):
-            await ctx.send(*args, **kwargs)
+        async def send(*args, **kwargs) -> discord.Message:
+            return await ctx.send(*args, **kwargs)
 
         env = {
             'bot': ctx.bot,
@@ -99,51 +120,63 @@ class Exec(Cog):
         # simulated stdout
         stdout = io.StringIO()
 
-        # wrap the code in a function, so that we can use await
-        wrapped_code = 'async def func():\n' + textwrap.indent(code, '    ')
-
         # define the wrapped function
         try:
-            exec(compile(wrapped_code, '<exec>', 'exec'), env)
+            exec(compile(code, '<exec>', 'exec'), env)
         except SyntaxError as e:
+            # send pretty syntax errors
             return await ctx.send(format_syntax_error(e))
 
+        # grab the defined function
         func = env['func']
+
         try:
             # execute the code
             with redirect_stdout(stdout):
                 ret = await func()
-        except Exception as e:
-            # something went wrong
+        except Exception:
+            # something went wrong :(
             try:
-                await ctx.message.add_reaction('\N{EXCLAMATION QUESTION MARK}')
-            except:
+                await ctx.message.add_reaction(ctx.tick('red', raw=True))
+            except (discord.HTTPException, discord.Forbidden):
+                # failed to add failure tick, hmm.
                 pass
-            stream = stdout.getvalue()
-            await ctx.send('```py\n{}{}\n```'.format(stream, traceback.format_exc()))
+
+            # send stream and what we have
+            return await ctx.send(codeblock(traceback.format_exc(limit=7), lang='py'))
+
+        # code was good, grab stdout
+        stream = stdout.getvalue()
+
+        try:
+            await ctx.message.add_reaction(ctx.tick('green', raw=True))
+        except (discord.HTTPException, discord.Forbidden):
+            # couldn't add the reaction, ignore
+            pass
+
+        # set the last result, but only if it's not none
+        if ret is not None:
+            self.last_result = ret
+
+        # form simulated stdout and repr of return value
+        meat = stream + repr(ret)
+        message = codeblock(meat, lang='py')
+
+        if len(message) > 2000:
+            # too long
+            try:
+                # send meat to hastebin
+                url = await haste(ctx.bot.session, meat)
+                await ctx.send(await ctx._('cmd.eval.long', url))
+            except KeyError:
+                # failed to upload, probably too big.
+                await ctx.send(await ctx._('cmd.eval.huge'))
+            except aiohttp.ClientError:
+                # pastebin is probably down.
+                await ctx.send(await ctx._('cmd.eval.pastebin_down'))
         else:
-            # successful
-            stream = stdout.getvalue()
-
-            try:
-                await ctx.message.add_reaction('\N{HUNDRED POINTS SYMBOL}')
-            except:
-                # couldn't add the reaction, ignore
-                log.warning('Failed to add reaction to eval message, ignoring.')
-
-            try:
-                self.last_result = self.last_result if ret is None else ret
-                await ctx.send('```py\n{}{}\n```'.format(stream, repr(ret)))
-            except discord.HTTPException:
-                # too long
-                try:
-                    url = await haste(ctx.bot.session, stream + repr(ret))
-                    await ctx.send(await ctx._('cmd.eval.long', url))
-                except KeyError:
-                    # even hastebin couldn't handle it
-                    await ctx.send(await ctx._('cmd.eval.huge'))
-                except aiohttp.ClientError:
-                    await ctx.send(await ctx._('cmd.eval.pastebin_down'))
+            # message was under 2k chars, just send!
+            await ctx.send(message)
 
     @commands.command(name='retry', hidden=True)
     @commands.is_owner()
@@ -156,17 +189,14 @@ class Exec(Cog):
 
     @commands.command(name='eval', aliases=['exec', 'debug'])
     @commands.is_owner()
-    async def _eval(self, ctx, *, code: str):
+    async def _eval(self, ctx, *, code: Code(wrap_code=True)):
         """ Executes Python code. """
-
-        # remove any markup that might be in the message
-        # TODO: converter
-        code = strip_code_markup(code)
 
         # store previous code
         self.previous_code = code
 
         await self.execute(ctx, code)
+
 
 def setup(bot):
     bot.add_cog(Exec(bot))
