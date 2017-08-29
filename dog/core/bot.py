@@ -54,7 +54,7 @@ class DogBot(BotBase, discord.AutoShardedClient):
 
         Returns: The tick.
         """
-        raw_tick = '\U00002705' if type == 'green' else '\U0000274c'
+        raw_tick = '\U00002705' if tick_type == 'green' else '\U0000274c'
 
         # use raw ticks if we can't use external emoji, or we want to
         if guild and not guild.me.guild_permissions.external_emojis:
