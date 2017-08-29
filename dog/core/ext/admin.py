@@ -18,28 +18,37 @@ from dog.core.utils.system import shell
 logger = logging.getLogger(__name__)
 
 
-def _restart():
+def restart_inplace():
+    """ Restarts the bot inplace. """
     logger.info('reboot: executable=%s argv=%s', sys.executable, sys.argv)
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
-class Admin(Cog):
+async def sync_source_code():
+    """ Syncs my source code from remote. """
 
+    # fetch bits from github
+    await shell('git fetch --all')
+
+    # forcibly reset our position to latest
+    await shell('git reset --hard origin/master')
+
+
+class Admin(Cog):
     @commands.command(aliases=['sh', 'bash'])
     @commands.is_owner()
     async def shell(self, ctx, *, cmd):
         """ Executes a system command. """
         await ctx.send(codeblock(await shell(cmd)))
 
-    @commands.command(aliases=['update'])
+    @commands.command()
     @commands.is_owner()
     async def hotpatch(self, ctx):
-        """ Hotpatches Dogbot from GitHub. """
+        """ Hotpatches Dogbot from Git. """
         msg = await ctx.send('\U000023f3 Pulling...')
 
         # update from github
-        await shell('git fetch --all')
-        await shell('git reset --hard origin/master')
+        await sync_source_code()
 
         await msg.edit(content='\U000023f3 Reloading extensions...')
         try:
@@ -50,6 +59,18 @@ class Admin(Cog):
         else:
             await msg.edit(content=f'{ctx.green_tick} Hotpatch successful.')
 
+    @commands.command()
+    @commands.is_owner()
+    async def update(self, ctx):
+        """ Updates Dogbot from Git, then restarts. """
+        msg = await ctx.send('\U000023f3 Pulling...')
+
+        # update from github
+        await sync_source_code()
+
+        # restart
+        await msg.edit(content='\N{WAVING HAND SIGN} Restarting, bye!')
+        restart_inplace()
 
     @commands.command()
     @commands.is_owner()
@@ -64,17 +85,18 @@ class Admin(Cog):
     @commands.is_owner()
     async def restart(self, ctx):
         """ Reboots the bot. """
-        logger.info('COMMENCING REBOOT')
-        await ctx.message.add_reaction('\N{WAVING HAND SIGN}')
-        _restart()
+        logger.info('Commencing reboot!')
+        await ctx.send('\N{WAVING HAND SIGN} Restarting, bye!')
+        restart_inplace()
 
     @commands.command(aliases=['poweroff', 'halt'])
     @commands.is_owner()
     async def shutdown(self, ctx):
         """ Turns off the bot. """
-        logger.info('COMMENCING SHUTDOWN')
-        await ctx.message.add_reaction('\N{WAVING HAND SIGN}')
-        sys.exit(0)
+        if await ctx.confirm(title='Are you sure?', description="Are you sure you want to me down?"):
+            logger.info('Commencing shutdown!')
+            await ctx.send('\N{WAVING HAND SIGN} Bye!')
+            sys.exit(0)
 
     @commands.command()
     async def prefixes(self, ctx):
@@ -85,18 +107,17 @@ class Admin(Cog):
 
         msg = await ctx._('cmd.prefix.prefixes', prefixes=prefixes)
 
-        # if this guild is in the prefix cache, tack on the guild's additional prefixes too
-        if ctx.guild.id in ctx.bot.prefix_cache:
-            suppl_prefixes = ctx.bot.prefix_cache[ctx.guild.id]
-            if suppl_prefixes:
-                suppl_prefix_list = ', '.join(f'`{p}`' for p in suppl_prefixes)
-                msg += '\n' + await ctx._('cmd.prefix.prefixes_guild', prefixes=suppl_prefix_list)
+        # if we have supplemental prefixes, add them to the message
+        suppl_prefixes = ctx.bot.prefix_cache.get(ctx.guild.id)
+        if suppl_prefixes:
+            suppl_prefix_list = ', '.join(f'`{p}`' for p in suppl_prefixes)
+            msg += '\n' + await ctx._('cmd.prefix.prefixes_guild', prefixes=suppl_prefix_list)
 
         await ctx.send(msg)
 
     @commands.command()
     @commands.is_owner()
-    async def reload(self, ctx, ext: str = None):
+    async def reload(self, ctx, ext=None):
         """ Reloads the bot/extensions of the bot. """
         try:
             if ext is None:
