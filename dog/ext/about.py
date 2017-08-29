@@ -11,6 +11,7 @@ import discord
 from discord.ext import commands
 
 from dog import Cog
+from dog.core import converters
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +32,11 @@ class About(Cog):
         await ctx.send(f'<{link}>')
 
     @commands.command(hidden=True, aliases=['ginvite', 'ginv'])
-    async def generate_invite(self, ctx, *client_ids: int):
+    async def generate_invite(self, ctx, *client_ids: converters.RawMember):
         """ Generates Discord invite URL(s) from a client ID. """
         if len(client_ids) > 25:
             return await ctx.send("That's too many for me. No more than 25, please!")
-        urls = ['<' + discord.utils.oauth_url(client_id) + '>' for client_id in client_ids]
+        urls = ['<' + discord.utils.oauth_url(bot.id) + '>' for bot in client_ids]
         await ctx.send('\n'.join(urls))
 
     @commands.command(aliases=['helpme', 'support'])
