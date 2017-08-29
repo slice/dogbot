@@ -8,3 +8,4 @@ from .gfx import *
 from .net import *
 from .queue import *
 from .zalgo import *
+from .system import *

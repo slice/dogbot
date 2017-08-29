@@ -5,13 +5,13 @@ and who made me.
 
 import logging
 import platform
-from subprocess import check_output
 
 import discord
 from discord.ext import commands
 
 from dog import Cog
 from dog.core import converters
+from dog.core.utils import shell
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +49,7 @@ class About(Cog):
     @commands.command(aliases=['info'])
     async def about(self, ctx):
         """ Shows information about the bot. """
-        git_revision = check_output(['git', 'rev-parse', '--short', 'HEAD'])\
-            .strip().decode('utf-8')
+        git_revision = (await shell('git rev-parse --short HEAD')).strip()
 
         if self.maker is None:
             self.maker = discord.utils.get(self.bot.get_all_members(), id=ctx.bot.cfg["bot"]["owner_id"])

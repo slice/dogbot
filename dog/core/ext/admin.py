@@ -3,7 +3,6 @@ Commands that are used to administrate the bot itself.
 It also contains some utility commands that are used to check the health of the
 bot, like d?ping.
 """
-import asyncio
 import logging
 import os
 import sys
@@ -14,6 +13,7 @@ from discord.ext import commands
 
 from dog import Cog
 from dog.core import converters
+from dog.core.utils.system import shell
 
 logger = logging.getLogger(__name__)
 
@@ -21,15 +21,6 @@ logger = logging.getLogger(__name__)
 def _restart():
     logger.info('reboot: executable=%s argv=%s', sys.executable, sys.argv)
     os.execv(sys.executable, [sys.executable] + sys.argv)
-
-
-async def shell(cmd: str):
-    process = await asyncio.create_subprocess_shell(
-        cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE
-    )
-    await process.communicate()
 
 
 class Admin(Cog):
