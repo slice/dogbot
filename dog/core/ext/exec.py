@@ -1,12 +1,12 @@
 """
-Handy exec (eval, debug) cog. Allows you to run code on the bot during runtime. This cog
-is a combination of the exec commands of other bot authors:
+Handy exec (eval, debug) cog. Allows you to run code on the bot during runtime. This cog is a combination of the
+exec commands of other bot authors, allowing for maximum efficiency:
 
 Credit:
     - Rapptz (Danny)
         - https://github.com/Rapptz/RoboDanny/blob/master/cogs/repl.py#L31-L75
-    - b1naryth1ef (B1nzy, Andrei)
-        - https://github.com/b1naryth1ef/b1nb0t/blob/master/plugins/util.py#L220-L257
+    - b1naryth1ef (Andrei)
+        - https://github.com/b1naryth1ef/b1nb0t/blob/master/b1nb0t/plugins/util.py#L229-L266
 
 Features:
     - Strips code markup (code blocks, inline code markup)
@@ -15,6 +15,7 @@ Features:
     - Redirects stdout so you can print()
     - Sane syntax error reporting
     - Quickly retry evaluations
+    - Implicit return
 """
 
 import io
@@ -36,18 +37,20 @@ log = logging.getLogger(__name__)
 
 
 class Code(commands.Converter):
-    def __init__(self, *, wrap_code=False, strip_ticks=True, indent_width=4):
+    def __init__(self, *, wrap_code=False, strip_ticks=True, indent_width=4, implicit_return=False):
         """
-        Formats code.
+        Code converter.
 
         Args:
             wrap_code: Specifies whether to wrap the resulting code in a function.
             strip_ticks: Specifies whether to strip the code of formatting-related backticks.
             indent_width: Specifies the indent width, if wrapping.
+            implicit_return: Automatically adds a return statement, when wrapping code.
         """
         self.wrap_code = wrap_code
         self.strip_ticks = strip_ticks
         self.indent_width = indent_width
+        self.implicit_return = implicit_return
 
     async def convert(self, ctx: DogbotContext, arg: str) -> str:
         result = arg
@@ -63,6 +66,15 @@ class Code(commands.Converter):
         if self.wrap_code:
             # wrap in a coroutine and indent
             result = 'async def func():\n' + textwrap.indent(result, ' ' * self.indent_width)
+
+        if self.wrap_code and self.implicit_return:
+            last_line = result.splitlines()[-1]
+
+            # if the last line isn't indented and not returning, add it
+            if not last_line[4:].startswith(' ') and 'return' not in last_line:
+                last_line = (' ' * self.indent_width) + 'return ' + last_line[4:]
+
+            result = '\n'.join(result.splitlines()[:-1] + [last_line])
 
         return result
 
@@ -189,7 +201,7 @@ class Exec(Cog):
 
     @commands.command(name='eval', aliases=['exec', 'debug'])
     @commands.is_owner()
-    async def _eval(self, ctx, *, code: Code(wrap_code=True)):
+    async def _eval(self, ctx, *, code: Code(wrap_code=True, implicit_return=True)):
         """ Executes Python code. """
 
         # store previous code
