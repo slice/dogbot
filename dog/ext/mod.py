@@ -450,14 +450,21 @@ class Mod(Cog):
     @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     @checks.bot_perms(manage_roles=True)
-    async def vanity(self, ctx, *, name: str):
+    async def vanity(self, ctx, name: str, assign_to: discord.Member = None, color: discord.Color = None):
         """
         Creates a vanity role.
 
         A vanity role is defined as a role with no permissions.
         """
-        await ctx.guild.create_role(name=name, permissions=discord.Permissions.none())
-        await ctx.ok()
+        role = await ctx.guild.create_role(name=name, permissions=discord.Permissions.none(),
+                                           color=color or discord.Color.default())
+        if assign_to:
+            try:
+                await assign_to.add_roles(role)
+            except (discord.Forbidden, discord.HTTPException):
+                return await ctx.send(f"{ctx.red_tick} Couldn't give {role.name} to that person.")
+
+        await ctx.send(f'{ctx.green_tick} Created vanity role {describe(role, quote=True)}.')
 
     @commands.command()
     @commands.guild_only()
