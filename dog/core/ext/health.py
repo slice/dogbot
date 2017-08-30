@@ -21,7 +21,7 @@ class Health(Cog):
 
         pong_ws = round(ctx.bot.latency * 1000, 2)
         pong_rest = round((after - before) * 1000, 2)
-        pong_gateway_lag = round((msg.created_at - datetime.datetime.utcnow()).total_seconds() * 1000, 2)
+        pong_gateway_lag = round((datetime.datetime.utcnow() - msg.created_at).total_seconds() * 1000, 2)
 
         pong = f'Pong! WS: {pong_ws}ms, REST: {pong_rest}ms, GW lag: {pong_gateway_lag}ms'
         await msg.edit(content=pong)
