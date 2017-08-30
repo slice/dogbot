@@ -126,7 +126,7 @@ class Config(Cog):
             async with ctx.acquire() as conn:
                 await conn.execute('INSERT INTO prefixes VALUES ($1, $2)', ctx.guild.id, prefix)
         except asyncpg.UniqueViolationError:
-            await ctx.send('This server already has that prefix.')
+            return await ctx.send('This server already has that prefix.')
 
         ctx.bot.prefix_cache[ctx.guild.id] = cache + [prefix]
         log.debug('Added "%s" to cache for %d', prefix, ctx.guild.id)
