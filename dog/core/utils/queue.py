@@ -1,11 +1,13 @@
 import logging
 import asyncio
 
+from abc import ABC, abstractmethod
+
 logger = logging.getLogger(__name__)
 
 
-class AsyncQueue:
     def __init__(self, bot, name):
+class AsyncQueue(ABC):
         self.name = name
         self.bot = bot
 
@@ -23,9 +25,11 @@ class AsyncQueue:
         # ugh
         logger.log(getattr(logging, level.upper(), logging.INFO), f'[Queue] {self.name}: {msg}', *args)
 
+    @abstractmethod
     async def get_latest_item(self):
         raise NotImplementedError
 
+    @abstractmethod
     async def fulfill_item(self, item):
         raise NotImplementedError
 
