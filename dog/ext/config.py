@@ -21,20 +21,21 @@ class Prefix(commands.Converter):
 
 
 class Config(Cog):
+    #: A list of permitted configuration keys.
+    PERMITTED_KEYS = (
+        'invisible_nag',
+        'modlog_filter_allow_bot',
+        'welcome_message',
+        'modlog_notrack_deletes',
+        'modlog_notrack_edits',
+        'modlog_channel_id',
+        'pollr_mod_log',
+        'log_all_message_events',
+        'shortlinks_enabled'
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.permitted_keys = (
-            'invisible_nag',
-            'modlog_filter_allow_bot',
-            'welcome_message',
-            'modlog_notrack_deletes',
-            'modlog_notrack_edits',
-            'modlog_channel_id',
-            'pollr_mod_log',
-            'log_all_message_events',
-            'shortlinks_enabled'
-        )
 
     @commands.group(aliases=['cfg'])
     @commands.guild_only()
@@ -52,7 +53,7 @@ class Config(Cog):
             await ctx.send('That value is too long! 1000 characters max.')
             return
 
-        if name not in self.permitted_keys:
+        if name not in self.PERMITTED_KEYS:
             return await ctx.send(await ctx._('cmd.config.set.invalid', wikipage=CONFIGKEYS_HELP))
 
         await self.bot.redis.set(f'{ctx.guild.id}:{name}', value)
@@ -62,7 +63,7 @@ class Config(Cog):
     async def config_permitted(self, ctx):
         """ Views permitted configuration keys. """
         header = f'Need descriptions? Check here: {CONFIGKEYS_HELP}\n\n'
-        await ctx.send(header + ', '.join(self.permitted_keys))
+        await ctx.send(header + ', '.join(self.PERMITTED_KEYS))
 
     @config.command(name='is_set')
     async def config_is_set(self, ctx, name: str):
