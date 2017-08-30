@@ -8,6 +8,7 @@ import os
 import sys
 from time import monotonic
 
+import discord
 from discord.ext import commands
 
 from dog import Cog
@@ -80,6 +81,17 @@ class Admin(Cog):
             avatar_data = await resp.read()
             await self.bot.user.edit(avatar=avatar_data)
             await ctx.ok()
+
+    @commands.command()
+    @commands.is_owner()
+    async def set_username(self, ctx, *, username):
+        """ Sets the bot's username. """
+        try:
+            await self.bot.user.edit(username=username)
+        except discord.HTTPException as ex:
+            await ctx.send(f'Failed! {ex}')
+        else:
+            await ctx.send('\N{OK HAND SIGN} Done.')
 
     @commands.command(aliases=['reboot'])
     @commands.is_owner()
