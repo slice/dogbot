@@ -3,8 +3,6 @@ import asyncio
 
 from abc import ABC, abstractmethod
 
-from dog import DogBot
-
 logger = logging.getLogger(__name__)
 
 
@@ -12,7 +10,7 @@ class AsyncQueue(ABC):
     """
     An arbitrary queue that consumes items asynchronously. All items are processed in a background task.
     """
-    def __init__(self, bot: DogBot, name: str):
+    def __init__(self, bot, name: str):
         #: The name of this :class:`AsyncQueue`.
         self.name = name
 
