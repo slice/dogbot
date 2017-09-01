@@ -1,4 +1,6 @@
 import datetime
+import re
+
 import discord
 from discord.ext import commands
 
@@ -13,6 +15,7 @@ class Gatekeeper(Cog):
         'minimum_creation_time',  # minimum discord registration time in seconds
         'bounce_message',         # message to send to users right before getting bounced
         'block_all',              # blocks all users
+        'username_regex',         # username regex
     )
 
     async def __local_check(self, ctx):
@@ -66,6 +69,14 @@ class Gatekeeper(Cog):
 
         if 'block_all' in settings:
             return await block('blocking all users')
+
+        if 'username_regex' in settings:
+            try:
+                regex = re.compile(settings['username_regex'])
+                if regex.search(member.name):
+                    return await block('matched username regex')
+            except re.error as err:
+                await report(f"\N{CROSS MARK} `username_regex` was invalid: `{err}`, ignoring this check.")
 
         if 'minimum_creation_time' in settings:
             try:
