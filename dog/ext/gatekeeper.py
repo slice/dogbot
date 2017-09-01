@@ -9,6 +9,64 @@ from dog.core import checks, context, utils
 from dog.core.utils import describe
 
 
+class Block(Exception):
+    pass
+
+
+class Report(Exception):
+    pass
+
+
+class GatekeeperCheck:
+    key = None
+
+    async def check(self, config_value, member: discord.Member) -> bool:
+        raise NotImplementedError
+
+
+class BlockDefaultAvatarCheck(GatekeeperCheck):
+    key = 'block_default_avatar'
+
+    async def check(self, _, member: discord.Member) -> bool:
+        if member.default_avatar_url == member.avatar_url:
+            raise Block('Has default avatar')
+
+
+class MinimumCreationTimeCheck(GatekeeperCheck):
+    key = 'minimum_creation_time'
+
+    async def check(self, time: int, member: discord.Member) -> bool:
+        try:
+            minimum_required = int(time)
+            seconds_on_discord = (datetime.datetime.utcnow() - member.created_at).total_seconds()
+            ago = utils.ago(member.created_at)
+
+            if seconds_on_discord < minimum_required:
+                raise Block(f'Failed minimum creation time check ({seconds_on_discord} < {minimum_required}'
+                            f', created {ago})')
+        except ValueError:
+            raise Report('Invalid minimum creation time, must be a valid number.')
+
+
+class BlockAllCheck(GatekeeperCheck):
+    key = 'block_all'
+
+    async def check(self, _, member: discord.Member) -> bool:
+        raise Block('Blocking all users')
+
+
+class UsernameRegexCheck(GatekeeperCheck):
+    key = 'username_regex'
+
+    async def check(self, regex: str, member: discord.Member) -> bool:
+        try:
+            regex = re.compile(regex)
+            if regex.search(member.name):
+                raise Block('Matched username regex')
+        except re.error as err:
+            raise Report(f"\N{CROSS MARK} `username_regex` was invalid: `{err}`, ignoring this check.")
+
+
 class Gatekeeper(Cog):
     CUSTOMIZATION_KEYS = (
         'block_default_avatar',   # blocks users with default avatars
@@ -67,34 +125,29 @@ class Gatekeeper(Cog):
                 embed.set_thumbnail(url=member.avatar_url)
                 await report(embed=embed)
 
-        if 'block_all' in settings:
-            return await block('blocking all users')
+        # list of checks to process
+        checks = (
+            BlockDefaultAvatarCheck,
+            MinimumCreationTimeCheck,
+            BlockAllCheck,
+            UsernameRegexCheck
+        )
 
-        if 'username_regex' in settings:
+        for check in checks:
+            # if the check's config key hasn't been set, skip it
+            if check.key not in settings:
+                continue
+
             try:
-                regex = re.compile(settings['username_regex'])
-                if regex.search(member.name):
-                    return await block('matched username regex')
-            except re.error as err:
-                await report(f"\N{CROSS MARK} `username_regex` was invalid: `{err}`, ignoring this check.")
+                # run the check
+                await check().check(settings[check.key], member)
+            except Block as block_exc:
+                # we have bounced this user, no point in checking anymore
+                return await block(str(block_exc))
+            except Report as report_exc:
+                await report(str(report_exc))
 
-        if 'minimum_creation_time' in settings:
-            try:
-                minimum_required = int(settings['minimum_creation_time'])
-                seconds_on_discord = (datetime.datetime.utcnow() - member.created_at).total_seconds()
-                ago = utils.ago(member.created_at)
-
-                if seconds_on_discord < minimum_required:
-                    return await block(f'failed minimum creation time check ({seconds_on_discord} < {minimum_required}'
-                                       f', created {ago})')
-            except ValueError:
-                pass
-
-        if 'block_default_avatar' in settings:
-            if member.default_avatar_url == member.avatar_url:
-                return await block('has default avatar')
-
-        # joined!
+        # this person has passed all checks
         embed = discord.Embed(color=discord.Color.green(), title=f'{describe(member)} joined',
                               description='This user has passed all Gatekeeper checks and has joined the server.')
         embed.set_thumbnail(url=member.avatar_url)
