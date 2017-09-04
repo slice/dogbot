@@ -43,6 +43,34 @@ class Meme:
         self.draw = ImageDraw.Draw(self.source)
         self.font = ImageFont.truetype(font_file or 'resources/font/SourceSansPro-Regular.ttf', text_size)
 
+    @classmethod
+    async def recipe(cls, ctx, recipe):
+        # type
+        async with ctx.typing():
+            # construct Meme class with some additional options if needed
+            meme = cls(recipe['image'], ctx, **recipe.get('additional', {}))
+
+            # cache images
+            for image, size in recipe.get('cache', []):
+                await meme.cache(image, size)
+
+            # execute steps
+            for step in recipe['steps']:
+                if 'place' in step:
+                    meme.paste(step['place'][0], step['place'][1])
+                elif 'text' in step:
+                    logger.info(step.get('max_width', 10e9))
+                    meme.text(
+                        step['text'], step['x'], step['y'],
+                        step.get('max_width', 10e9), step.get('fill', (0, 0, 0))
+                    )
+
+            # render up
+            await meme.render(recipe['render_as'])
+
+            # clean
+            meme.cleanup()
+
     async def cache(self, url, size=None):
         # already in cache?
         if url in self.image_cache:
@@ -53,7 +81,7 @@ class Meme:
 
         # fit if a size was provided
         if size:
-            self.image_cache[url] = ImageOps.fit(image, size)
+            self.image_cache[url] = ImageOps.fit(image, size, Image.BICUBIC)
 
         return self
 
@@ -125,12 +153,14 @@ class Memes(Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def mistake(self, ctx, image_source: converters.Image):
         """ For really big mistakes. """
-        async with ctx.typing():
-            m = Meme('resources/memes/mistake.png', ctx)
-            await m.cache(image_source, (250, 250))
-            m.paste(image_source, (239, 241))
-            await m.render('mistake.png')
-            m.cleanup()
+        await Meme.recipe(ctx, {
+            'image': 'resources/memes/mistake.png',
+            'render_as': 'mistake.png',
+            'cache': [ (image_source, (250, 250)) ],
+            'steps': [
+                { 'place': (image_source, (239, 241)) }
+            ]
+        })
 
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
@@ -173,78 +203,87 @@ class Memes(Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def youvs(self, ctx, a: converters.Image, b: converters.Image):
         """ You vs. the guy she tells you not to worry about """
-        async with ctx.typing():
-            m = Meme('resources/memes/you_vs.png', ctx)
-            await m.cache(a, (330, 375))
-            await m.cache(b, (327, 377))
-            m.paste(a, (22, 162))
-            m.paste(b, (365, 161))
-            await m.render('youvs.png')
-            m.cleanup()
+        await Meme.recipe(ctx, {
+            'image': 'resources/memes/you_vs.png',
+            'render_as': 'youvs.png',
+            'cache': [ (a, (330, 375)), (b, (327, 377)) ],
+            'steps': [
+                { 'place': (a, (22, 162)) },
+                { 'place': (b, (365, 161)) }
+            ]
+        })
 
     @commands.command(hidden=True, aliases=['ph'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def pornhub(self, ctx, image: converters.Image, *, title):
         """ lewd """
-        async with ctx.typing():
-            m = Meme('resources/memes/ph.png', ctx, text_size=45, font_file='resources/font/SourceSansPro-Bold.ttf')
-            await m.cache(image, (1781, 1000))
-            m.paste(image, (47, 245))
-            m.text(title, 70, 1270, 10e9, (255, 255, 255)) # disable wrapping
-            await m.render('ph.png')
-            m.cleanup()
+        await Meme.recipe(ctx, {
+            'image': 'resources/memes/ph.png',
+            'render_as': 'ph.png',
+            'additional': {
+                'font_file': 'resources/font/SourceSansPro-Bold.ttf'
+            },
+            'cache': [ (image, (1781, 1000)) ],
+            'steps': [
+                { 'place': (image, (47, 245)) },
+                { 'text': title, 'x': 70, 'y': 1270, 'fill': (255, 255, 255) }
+            ]
+        })
 
     @commands.command(hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def drake(self, ctx, yay: converters.Image, nay: converters.Image):
         """ yay, nay """
-        async with ctx.typing():
-            m = Meme('resources/memes/drake.png', ctx)
-            await m.cache(yay, (256, 250))
-            await m.cache(nay, (261, 254))
-            m.paste(yay, (242, 257))
-            m.paste(nay, (241, 0))
-            await m.render('drake.png')
-            m.cleanup()
+        await Meme.recipe(ctx, {
+            'image': 'resources/memes/drake.png',
+            'render_as': 'drake.png',
+            'cache': [ (yay, (256, 250)), (nay, (261, 254)) ],
+            'steps': [
+                { 'place': (yay, (242, 257)) },
+                { 'place': (nay, (241, 0)) }
+            ]
+        })
 
     @commands.command(hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def youcantjust(self, ctx, *, text: commands.clean_content):
         """ You can't just... """
-        async with ctx.typing():
-            m = Meme('resources/memes/you_cant_just.png', ctx, text_size=16)
-            m.text(f'"you can\'t just {text}"', 23, 12, 499)
-            await m.render('youcantjust.png')
-            m.cleanup()
+        await Meme.recipe(ctx, {
+            'image': 'resources/memes/you_cant_just.png',
+            'render_as': 'you_cant_just.png',
+            'steps': [
+                { 'text': f'"you can\'t just {text}"', 'x': 23, 'y': 12, 'max_width': 499 }
+            ]
+        })
 
     @commands.command(hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def whodidthis(self, ctx, *, image: converters.Image):
         """ Who did this? """
-        async with ctx.typing():
-            m = Meme('resources/memes/whodidthis.png', ctx)
-            await m.cache(image, (717, 406))
-            m.paste(image, (0, 158))
-            await m.render('whodidthis.png')
-            m.cleanup()
+        await Meme.recipe(ctx, {
+            'image': 'resources/memes/whodidthis.png',
+            'render_as': 'whodidthis.png',
+            'cache': [ (image, (717, 406)) ],
+            'steps': [
+                { 'place': (image, (0, 158)) }
+            ]
+        })
 
     @commands.command(aliases=['handicap'], hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def handicapped(self, ctx, image_source: converters.Image, *, text: commands.clean_content):
         """ Sir, this spot is for the handicapped only!... """
-        async with ctx.typing():
-            m = Meme('resources/memes/handicap.png', ctx, text_size=24)
-
-            await m.cache(image_source, (80, 80))
-
-            m.text(text, 270, 310, 270)
-            m.paste(image_source, (373, 151))
-            m.paste(image_source, (302, 408))
-            m.paste(image_source, (357, 690))
-
-            await m.render('handicapped.png')
-
-            m.cleanup()
+        await Meme.recipe(ctx, {
+            'image': 'resources/memes/handicap.png',
+            'render_as': 'handicapped.png',
+            'cache': [ (image_source, (80, 80)) ],
+            'steps': [
+                { 'text': text, 'x': 270, 'y': 310, 'max_width': 270 },
+                { 'place': (image_source, (373, 151)) },
+                { 'place': (image_source, (302, 408)) },
+                { 'place': (image_source, (357, 690)) }
+            ]
+        })
 
     @commands.command(hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -255,17 +294,16 @@ class Memes(Cog):
         Generates a "the floor is" type meme. The image source is composited
         on top of the jumper's face. The remaining text is used to render a caption.
         """
-
-        async with ctx.typing():
-            m = Meme('resources/memes/floor.png', ctx, text_size=48)
-
-            await m.cache(image_source, (100, 100))
-
-            m.text(text, 25, 25, 1100)
-            m.paste(image_source, (783, 229))
-            m.paste(image_source, (211, 199))
-
-            await m.render('floor.png')
+        await Meme.recipe(ctx, {
+            'image': 'resources/memes/floor.png',
+            'render_as': 'floor.png',
+            'cache': [ (image_source, (100, 100)) ],
+            'steps': [
+                { 'text': text, 'x': 25, 'y': 25, 'max_width': 1100 },
+                { 'place': (image_source, (783, 229)) },
+                { 'place': (image_source, (211, 199)) }
+            ]
+        })
 
     @commands.command(hidden=True)
     @commands.cooldown(1, 2, commands.BucketType.user)
