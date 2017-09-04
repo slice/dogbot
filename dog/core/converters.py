@@ -105,6 +105,12 @@ class Image(commands.Converter):
     Could be passed an image URL to use it, however, only certain image hosts will work.
     """
     async def convert(self, ctx, argument):
+        # scan attached images
+        if argument == 'attached':
+            for attachment in ctx.message.attachments:
+                if attachment.height:
+                    return attachment.proxy_url
+
         # scan channel
         if argument == 'recent':
             result = await _get_recent_image(ctx.channel)
