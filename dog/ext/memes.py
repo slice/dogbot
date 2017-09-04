@@ -36,12 +36,12 @@ async def export_image(ctx, image, filename):
 
 
 class Meme:
-    def __init__(self, source, ctx, *, text_size=32):
+    def __init__(self, source, ctx, *, text_size=32, font_file=None):
         self.ctx = ctx
         self.image_cache = {}
         self.source = Image.open(source).convert('RGBA')
         self.draw = ImageDraw.Draw(self.source)
-        self.font = ImageFont.truetype('resources/font/SourceSansPro-Regular.ttf', text_size)
+        self.font = ImageFont.truetype(font_file or 'resources/font/SourceSansPro-Regular.ttf', text_size)
 
     async def cache(self, url, size=None):
         # already in cache?
