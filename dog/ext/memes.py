@@ -265,12 +265,17 @@ class Memes(Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def youcantjust(self, ctx, *, text: commands.clean_content):
+    async def youcantjust(self, ctx, coolio: converters.Image, *, text: commands.clean_content):
         """ You can't just... """
         await Meme.recipe(ctx, {
             'image': 'resources/memes/you_cant_just.png',
             'render_as': 'you_cant_just.png',
+            'additional': {
+                'text_size': 20
+            },
+            'cache': [ (coolio, (210, 209)) ],
             'steps': [
+                { 'place': (coolio, (27, 111)) },
                 { 'text': f'"you can\'t just {text}"', 'x': 23, 'y': 12, 'max_width': 499 }
             ]
         })
