@@ -60,10 +60,10 @@ class Meme:
     def paste(self, src, coords):
         # paste from cache
         if isinstance(src, str):
-            self.source.paste(self.image_cache[src], coords)
+            self.source.paste(self.image_cache[src], coords, self.image_cache[src])
         else:
             # paste some image
-            self.source.paste(src, coords)
+            self.source.paste(src, coords, src)
         return self
 
     def text(self, text, x, y, width, fill=(0, 0, 0)):
