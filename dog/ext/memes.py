@@ -66,9 +66,9 @@ class Meme:
             self.source.paste(src, coords)
         return self
 
-    def text(self, text, x, y, width):
+    def text(self, text, x, y, width, fill=(0, 0, 0)):
         # draw some text
-        utils.draw_word_wrap(self.draw, self.font, text, x, y, width)
+        utils.draw_word_wrap(self.draw, self.font, text, x, y, width, fill)
         return self
 
     async def render(self, filename='image.png'):
