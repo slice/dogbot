@@ -13,7 +13,6 @@ from io import BytesIO
 from dog import Cog
 from dog.core import converters, utils
 from dog.core.utils import get_bytesio, urlescape
-from wand import image as wndimg
 
 logger = logging.getLogger(__name__)
 
@@ -255,43 +254,6 @@ class Memes(Cog):
             m.paste(image_source, (211, 199))
 
             await m.render('floor.png')
-
-    @commands.command(hidden=True)
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    async def forbidden(self, ctx, *, image_source: converters.Image = None):
-        """ At last! I am free to think the forbidden thoughts. """
-        image_source = image_source or ctx.author.avatar_url_as(format='png')
-
-        await ctx.channel.trigger_typing()
-        avatar_data = await get_bytesio(self.bot.session, image_source)
-        forbid = wndimg.Image(filename='resources/memes/forbidden_thoughts.png')
-        avatar = wndimg.Image(file=avatar_data)
-        canvas = wndimg.Image(width=forbid.width, height=forbid.height)
-
-        # canvas should be png
-        canvas.format = 'png'
-
-        # resize the avatar to an appropriate size
-        avatar = ImageOps.fit(avatar, (580, 580), Image.BICUBIC)
-
-        # composite the avatar on the bottom, then the forbidden image on top
-        canvas.composite(avatar, 980, 480)
-        canvas.composite(forbid, 0, 0)
-
-        # create a bytesio to save it to
-        with BytesIO() as bio:
-            # save
-            await ctx.bot.loop.run_in_executor(None, functools.partial(canvas.save, file=bio))
-            bio.seek(0)
-
-            # send it
-            await ctx.send(file=discord.File(bio, f'forbidden.png'))
-
-        # close everything
-        avatar_data.close()
-        forbid.close()
-        avatar.close()
-        canvas.close()
 
     @commands.command(hidden=True)
     @commands.cooldown(1, 2, commands.BucketType.user)
