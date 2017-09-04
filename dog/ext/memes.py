@@ -1,6 +1,7 @@
 import logging
 
 import asyncio
+import math
 from random import randrange
 
 import aiohttp
@@ -81,7 +82,21 @@ class Meme:
 
         # fit if a size was provided
         if size:
-            self.image_cache[url] = ImageOps.fit(image, size, Image.BICUBIC)
+            # height_perc = size[1] / float(image.height)
+            # width = int(float(image.width) * float(height_perc))
+            # self.image_cache[url] = image.resize((size[0], size[1]), Image.BICUBIC)
+            ratio = min(size[0] / image.width, size[1] / image.height)
+            self.image_cache[url] = image.resize((int(image.width * ratio), int(image.height * ratio)), Image.BICUBIC)
+            if image.width < size[0] or image.height < size[1]:
+                self.image_cache[url] = ImageOps.fit(image, size, Image.BICUBIC, 0.0, (0.5, 0.5))
+            # self.image_cache[url] = ImageOps.fit(image, size, Image.BICUBIC, 0.0, (-1, -1))
+            # self.image_cache[url].thumbnail(size, Image.BICUBIC)
+            # self.image_cache[url] = resize_cover(image, size)
+            # if size[0] > image.width:
+            #     self.image_cache[url] = resize_width(image, size[0])
+            # elif size[1] > image.height:
+            #     self.image_cache[url] = resize_height(image, size[1])
+            # self.image_cache[url] = image.resize((int(size[0] / image.width), int(size[1] / image.height)), Image.BICUBIC)
 
         return self
 
