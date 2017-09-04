@@ -182,6 +182,18 @@ class Memes(Cog):
             await m.render('youvs.png')
             m.cleanup()
 
+    @commands.command(hidden=True, aliases=['ph'])
+    @commands.cooldown(1, 3, commands.BucketType.user)
+    async def pornhub(self, ctx, image: converters.Image, *, title):
+        """ lewd """
+        async with ctx.typing():
+            m = Meme('resources/memes/ph.png', ctx, text_size=45, font_file='resources/font/SourceSansPro-Bold.ttf')
+            await m.cache(image, (1781, 1000))
+            m.paste(image, (47, 245))
+            m.text(title, 70, 1270, 10e9, (255, 255, 255)) # disable wrapping
+            await m.render('ph.png')
+            m.cleanup()
+
     @commands.command(hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def drake(self, ctx, yay: converters.Image, nay: converters.Image):
