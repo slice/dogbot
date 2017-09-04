@@ -143,7 +143,7 @@ class Memes(Cog):
         im.close()
         im_data.close()
 
-    @commands.command(hidden=True)
+    @commands.command()
     async def b(self, ctx, *, text: commands.clean_content):
         """ 🅱🅱🅱🅱🅱🅱🅱 """
         text = ' '.join('\U0001f171' + w[1:] for w in text.split(' '))
@@ -199,7 +199,7 @@ class Memes(Cog):
             await m.render('trust_nobody.png')
             m.cleanup()
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def youvs(self, ctx, a: converters.Image, b: converters.Image):
         """ You vs. the guy she tells you not to worry about """
@@ -213,10 +213,10 @@ class Memes(Cog):
             ]
         })
 
-    @commands.command(hidden=True, aliases=['ph'])
+    @commands.command(aliases=['ph'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def pornhub(self, ctx, image: converters.Image, *, title):
-        """ lewd """
+        """ Lewd. """
         await Meme.recipe(ctx, {
             'image': 'resources/memes/ph.png',
             'render_as': 'ph.png',
@@ -230,10 +230,10 @@ class Memes(Cog):
             ]
         })
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def drake(self, ctx, yay: converters.Image, nay: converters.Image):
-        """ yay, nay """
+        """ Yay or nay? """
         await Meme.recipe(ctx, {
             'image': 'resources/memes/drake.png',
             'render_as': 'drake.png',
@@ -247,6 +247,7 @@ class Memes(Cog):
     @commands.command(aliases=['www'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def whowouldwin(self, ctx, left: converters.Image, left_text, right: converters.Image, right_text):
+        """ Who would win? """
         await Meme.recipe(ctx, {
             'image': 'resources/memes/whowouldwin.png',
             'render_as': 'whowouldwin.png',
@@ -262,7 +263,7 @@ class Memes(Cog):
             ]
         })
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def youcantjust(self, ctx, *, text: commands.clean_content):
         """ You can't just... """
@@ -274,7 +275,7 @@ class Memes(Cog):
             ]
         })
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def whodidthis(self, ctx, *, image: converters.Image):
         """ Who did this? """
@@ -287,7 +288,7 @@ class Memes(Cog):
             ]
         })
 
-    @commands.command(aliases=['handicap'], hidden=True)
+    @commands.command(aliases=['handicap'], )
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def handicapped(self, ctx, image_source: converters.Image, *, text: commands.clean_content):
         """ Sir, this spot is for the handicapped only!... """
@@ -303,7 +304,7 @@ class Memes(Cog):
             ]
         })
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def floor(self, ctx, image_source: converters.Image, *, text: commands.clean_content):
         """
@@ -323,7 +324,7 @@ class Memes(Cog):
             ]
         })
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
     async def pixelate(self, ctx, image_source: converters.Image, size: int=15):
         """ Pixelates something. """
@@ -338,7 +339,7 @@ class Memes(Cog):
             await export_image(ctx, im, 'pixelated.png')
             im.close()
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def wacky(self, ctx, image_source: converters.Image = None):
         """ Applies wacky effects to your avatar. """
