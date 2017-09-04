@@ -6,7 +6,7 @@ from random import randrange
 import aiohttp
 import discord
 import functools
-from PIL import Image, ImageEnhance, ImageDraw, ImageFont
+from PIL import Image, ImageEnhance, ImageDraw, ImageFont, ImageOps
 from discord.ext import commands
 from io import BytesIO
 
@@ -40,29 +40,41 @@ class Meme:
     def __init__(self, source, ctx, *, text_size=32):
         self.ctx = ctx
         self.image_cache = {}
-        self.source = Image.open(source)
+        self.source = Image.open(source).convert('RGBA')
         self.draw = ImageDraw.Draw(self.source)
         self.font = ImageFont.truetype('resources/font/SourceSansPro-Regular.ttf', text_size)
 
     async def cache(self, url, size=None):
+        # already in cache?
         if url in self.image_cache:
-            return
+            return self
 
-        self.image_cache[url] = await download_image(self.ctx.bot.session, url)
+        # download image
+        image = self.image_cache[url] = await download_image(self.ctx.bot.session, url)
+
+        # fit if a size was provided
         if size:
-            self.image_cache[url] = self.image_cache[url].resize(size, Image.BICUBIC)
+            self.image_cache[url] = ImageOps.fit(image, size)
+
+        return self
 
     def paste(self, src, coords):
+        # paste from cache
         if isinstance(src, str):
             self.source.paste(self.image_cache[src], coords)
         else:
+            # paste some image
             self.source.paste(src, coords)
+        return self
 
     def text(self, text, x, y, width):
+        # draw some text
         utils.draw_word_wrap(self.draw, self.font, text, x, y, width)
+        return self
 
     async def render(self, filename='image.png'):
         await export_image(self.ctx, self.source, filename)
+        return self
 
     def cleanup(self):
         for url, im in self.image_cache.items():
@@ -148,7 +160,8 @@ class Memes(Cog):
         async with ctx.typing():
             m = Meme('resources/memes/trust_nobody.png', ctx)
 
-            im = (await download_image(ctx.bot.session, image_source)).resize((100, 100), Image.BICUBIC)
+            im = (await download_image(ctx.bot.session, image_source))
+            im = ImageOps.fit(im, (100, 100), Image.BICUBIC)
             m.paste(im, (82, 230))
             im = im.crop((0, 0, 62, 100))
             m.paste(im, (420, 250))
@@ -207,7 +220,7 @@ class Memes(Cog):
     @commands.command(aliases=['handicap'], hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def handicapped(self, ctx, image_source: converters.Image, *, text: commands.clean_content):
-        """ Sir, this spot is for the handicapped only!.. """
+        """ Sir, this spot is for the handicapped only!... """
         async with ctx.typing():
             m = Meme('resources/memes/handicap.png', ctx, text_size=24)
 
@@ -259,7 +272,7 @@ class Memes(Cog):
         canvas.format = 'png'
 
         # resize the avatar to an appropriate size
-        avatar.resize(580, 580)
+        avatar = ImageOps.fit(avatar, (580, 580), Image.BICUBIC)
 
         # composite the avatar on the bottom, then the forbidden image on top
         canvas.composite(avatar, 980, 480)
