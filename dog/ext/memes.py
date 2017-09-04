@@ -193,6 +193,17 @@ class Memes(Cog):
             await m.render('youcantjust.png')
             m.cleanup()
 
+    @commands.command(hidden=True)
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def whodidthis(self, ctx, *, image: converters.Image):
+        """ Who did this? """
+        async with ctx.typing():
+            m = Meme('resources/memes/whodidthis.png', ctx)
+            await m.cache(image, (717, 406))
+            m.paste(image, (0, 158))
+            await m.render('whodidthis.png')
+            m.cleanup()
+
     @commands.command(aliases=['handicap'], hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def handicapped(self, ctx, image_source: converters.Image, *, text: commands.clean_content):
