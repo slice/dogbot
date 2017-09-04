@@ -244,6 +244,24 @@ class Memes(Cog):
             ]
         })
 
+    @commands.command(aliases=['www'])
+    @commands.cooldown(1, 3, commands.BucketType.user)
+    async def whowouldwin(self, ctx, left: converters.Image, left_text, right: converters.Image, right_text):
+        await Meme.recipe(ctx, {
+            'image': 'resources/memes/whowouldwin.png',
+            'render_as': 'whowouldwin.png',
+            'cache': [
+                (left, (312, 277)),
+                (right, (350, 250))
+            ],
+            'steps': [
+                { 'place': (left, (24, 200)) },
+                { 'place': (right, (434, 210)) },
+                { 'text': left_text, 'x': 17, 'y': 100, 'max_width': 380 },
+                { 'text': right_text, 'x': 440, 'y': 112, 'max_width': 340 }
+            ]
+        })
+
     @commands.command(hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def youcantjust(self, ctx, *, text: commands.clean_content):
