@@ -1,8 +1,8 @@
 """
 Contains commands that relate to server moderation and management.
 """
-
 import logging
+import re
 
 import discord
 import emoji
@@ -14,6 +14,8 @@ from dog.core.converters import DeleteDays
 from dog.core.utils.formatting import describe
 
 logger = logging.getLogger(__name__)
+
+CUSTOM_EMOJI_REGEX = re.compile(r'<:([a-zA-Z_0-9-]+):(\d+)>')
 
 
 class Mod(Cog):
@@ -109,11 +111,11 @@ class Mod(Cog):
     @commands.guild_only()
     @checks.bot_perms(manage_messages=True, read_message_history=True)
     @checks.is_moderator()
-    async def purge_emoji(self, ctx, amount: int = 5, minimum_emoji: int = 3):
-        """ Purges <n> messages with at least 3 emoji (by default). """
+    async def purge_emoji(self, ctx, amount: int = 5, minimum_emoji: int = 1):
+        """ Purges any message in the last <n> messages with emoji. """
         def message_check(msg):
             emoji_count = sum(1 for c in msg.content if c in emoji.UNICODE_EMOJI)
-            return emoji_count >= minimum_emoji
+            return emoji_count >= minimum_emoji or CUSTOM_EMOJI_REGEX.search(msg.content) is not None
         await self.base_purge(ctx, amount, message_check)
 
     @commands.command()
