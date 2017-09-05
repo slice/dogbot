@@ -17,10 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 class Mod(Cog):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.mute_tasks = {}
-
     async def __global_check(self, ctx: commands.Context):
         # do not handle guild-specific command disables in dms
         if not isinstance(ctx.channel, discord.abc.GuildChannel):
