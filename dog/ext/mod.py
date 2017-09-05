@@ -107,6 +107,30 @@ class Mod(Cog):
         """ Purges any message in the last <n> messages by bots. """
         await self.base_purge(ctx, amount, lambda m: m.author.bot)
 
+    @purge.command(name='reactions')
+    @commands.guild_only()
+    @checks.bot_perms(manage_messages=True, read_message_history=True)
+    @checks.is_moderator()
+    async def purge_reactions(self, ctx: commands.Context, amount: int = 5):
+        """ Purges reactions in the last <n> messages. """
+        count = 0
+        total_reactions_removed = 0
+
+        async for message in ctx.history(limit=amount):
+            # no reactions, skip
+            if not message.reactions:
+                continue
+
+            # calculate total reaction count
+            total_reactions_removed += sum(reaction.count for reaction in message.reactions)
+
+            # remove all reactions
+            await message.clear_reactions()
+            count += 1
+
+        await ctx.send(f'Purge complete. Removed {total_reactions_removed} reaction(s) from {count} message(s).',
+                       delete_after=2.5)
+
     @purge.command(name='emoji', aliases=['emojis'])
     @commands.guild_only()
     @checks.bot_perms(manage_messages=True, read_message_history=True)
