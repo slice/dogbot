@@ -5,25 +5,15 @@ Contains commands that relate to server moderation and management.
 import logging
 
 import discord
+import emoji
 from discord.ext import commands
 
-import emoji
 from dog import Cog
 from dog.core import checks, converters
+from dog.core.converters import DeleteDays
 from dog.core.utils.formatting import describe
 
 logger = logging.getLogger(__name__)
-
-
-class DeleteDays(commands.Converter):
-    async def convert(self, ctx, arg):
-        try:
-            days = int(arg)
-            if days < 0 or days > 7:
-                raise commands.BadArgument('Invalid delete_days: cannot be lower than 0, or higher than 7.')
-        except ValueError:
-            raise commands.BadArgument('Invalid delete_days: not a valid number.')
-        return days
 
 
 class Mod(Cog):
@@ -36,9 +26,9 @@ class Mod(Cog):
         if not isinstance(ctx.channel, discord.abc.GuildChannel):
             return True
 
+        # role names that cannot use dog
         banned_names = (
-            'Can\'t Use Dog', 'can\'t use dog', 'Dog Plonk', 'dog plonk',
-            'Banned from Dog', 'banned from dog'
+            'Can\'t Use Dog', 'can\'t use dog', 'Dog Plonk', 'dog plonk', 'Banned from Dog', 'banned from dog'
         )
 
         if any(discord.utils.get(ctx.author.roles, name=name) for name in banned_names):

@@ -149,3 +149,14 @@ class Guild(commands.Converter):
             return guild
         except ValueError:
             raise commands.BadArgument('Invalid guild ID.')
+
+
+class DeleteDays(commands.Converter):
+    async def convert(self, ctx, arg):
+        try:
+            days = int(arg)
+            if days < 0 or days > 7:
+                raise commands.BadArgument('Invalid delete_days: cannot be lower than 0, or higher than 7.')
+        except ValueError:
+            raise commands.BadArgument('Invalid delete_days: not a valid number.')
+        return days
