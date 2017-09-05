@@ -80,7 +80,7 @@ class Mod(Cog):
     @checks.bot_perms(manage_messages=True, read_message_history=True)
     @checks.is_moderator()
     async def purge_by(self, ctx, target: discord.Member, amount: int = 5):
-        """ Purges <n> messages from someone. """
+        """ Purges any message in the last <n> messages sent by someone. """
         await self.base_purge(ctx, amount, lambda m: m.author == target)
 
     @purge.command(name='embeds', aliases=['e'])
@@ -88,7 +88,7 @@ class Mod(Cog):
     @checks.bot_perms(manage_messages=True, read_message_history=True)
     @checks.is_moderator()
     async def purge_embeds(self, ctx, amount: int = 5):
-        """ Purges <n> messages containing embeds. """
+        """ Purges any message in the last <n> messages containing embeds. """
         await self.base_purge(ctx, amount, lambda m: len(m.embeds) != 0)
 
     @purge.command(name='attachments', aliases=['images', 'uploads', 'i'])
@@ -96,7 +96,7 @@ class Mod(Cog):
     @checks.bot_perms(manage_messages=True, read_message_history=True)
     @checks.is_moderator()
     async def purge_attachments(self, ctx, amount: int = 5):
-        """ Purges <n> messages containing attachments. """
+        """ Purges any message in the last <n> messages containing attachments. """
         await self.base_purge(ctx, amount, lambda m: len(m.attachments) != 0)
 
     @purge.command(name='bot')
@@ -104,7 +104,7 @@ class Mod(Cog):
     @checks.bot_perms(manage_messages=True, read_message_history=True)
     @checks.is_moderator()
     async def purge_bot(self, ctx, amount: int = 5):
-        """ Purges <n> messages by bots. """
+        """ Purges any message in the last <n> messages by bots. """
         await self.base_purge(ctx, amount, lambda m: m.author.bot)
 
     @purge.command(name='emoji', aliases=['emojis'])
