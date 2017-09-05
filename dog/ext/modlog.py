@@ -262,6 +262,16 @@ class Modlog(Cog):
                f'({attachments}, {len(msg.embeds)} embed(s)')
         await self.log(msg.guild, fmt)
 
+    async def on_guild_role_create(self, role: discord.Role):
+        base = f'\N{KEY} {self.bot.tick("green", guild=role.guild)} Role created: {describe(role)}'
+        msg = await self.log(role.guild, base)
+        await self.autoformat_responsible_nontarget(msg, action='role_create', base=base)
+
+    async def on_guild_role_delete(self, role: discord.Role):
+        base = f'\N{KEY} {self.bot.tick("red", guild=role.guild)} Role deleted: {describe(role)}'
+        msg = await self.log(role.guild, base)
+        await self.autoformat_responsible_nontarget(msg, action='role_delete', base=base)
+
     async def on_member_join(self, member: discord.Member):
         new = '\N{SQUARED NEW} ' if (datetime.datetime.utcnow() - member.created_at).total_seconds() <= 604800 else ''
         await self.log(member.guild, f'\N{INBOX TRAY} {new}{describe(member, created=True)}')
@@ -289,13 +299,13 @@ class Modlog(Cog):
         bounce = '\U0001f3c0 ' if (datetime.datetime.utcnow() - member.joined_at).total_seconds() <= 1500 else ''
         return f'{emoji} {bounce}{describe(member, before=verb, created=True, joined=True)}'
 
-    async def get_responsible(self, guild: discord.Guild, target: discord.Member, action: str) -> discord.AuditLogEntry:
+    async def get_responsible(self, guild: discord.Guild, action: str, *, target: discord.Member=None) -> discord.AuditLogEntry:
         """
         Checks the audit log for recent action performed on some user.
 
-        :param guild: The ``discord.Guild`` to look at.
+        :param guild: The :class:`discord.Guild` to look at.
+        :param action: The name of the :class:`discord.AuditLogAction` attribute to check for.
         :param target: The targeted user to check for.
-        :param action: The name of the `discord.AuditLogAction` attribute to check for.
         :returns: The audit log entry.
         """
         try:
@@ -304,7 +314,8 @@ class Modlog(Cog):
 
             # only check for entries performed on target, and happened in the last 2 seconds
             def check(entry):
-                return entry.target == target and (datetime.datetime.utcnow() - entry.created_at).total_seconds() <= 2
+                created_ago = (datetime.datetime.utcnow() - entry.created_at).total_seconds()
+                return (entry.target == target if target else True) and created_ago <= 2
 
             return discord.utils.find(check, entries)
         except discord.Forbidden:
@@ -319,6 +330,19 @@ class Modlog(Cog):
         """
         return f'with reason `{entry.reason}`' if entry.reason else 'with no attached reason'
 
+    async def autoformat_responsible_nontarget(self, log_message: discord.Message, *, action: str, base: str):
+        """
+        Automatically edits a message sent in the audit log to include responsible information.
+
+        :param log_message: The :class:`discord.Message` that was sent in the log channel.
+        :param action: The name of the :class:`discord.AuditLogAction` attr to check for.
+        :param base: The text to prepend.
+        """
+        action = await self.get_responsible(log_message.guild, action=action)
+
+        if action:
+            await log_message.edit(content=self.modlog_msg(f'{base} by {describe(action.user)}'))
+
     async def autoformat_responsible(self,
                                      log_message: discord.Message,
                                      targeted: discord.Member,
@@ -328,7 +352,8 @@ class Modlog(Cog):
                                      departure_extra: str = None,
                                      departure_emoji: str = None):
         """
-        Automatically edits a message sent in the audit log to include responsible information.
+        Automatically edits a message sent in the audit log to include responsible information for a moderator action
+        that includes a "targeted" user.
 
         :param log_message: The `discord.Message` that was sent in the log channel.
         :param targeted: The `discord.Member` that was targeted.
@@ -343,7 +368,7 @@ class Modlog(Cog):
             # no log message to edit...
             return
 
-        audit_log_entry = await self.get_responsible(log_message.guild, targeted, action)
+        audit_log_entry = await self.get_responsible(log_message.guild, action, target=targeted)
 
         if not audit_log_entry:
             # couldn't find audit log entry...
