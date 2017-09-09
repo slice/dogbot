@@ -502,6 +502,29 @@ class Mod(Cog):
         except discord.Forbidden:
             await ctx.send('I can\'t do that.')
 
+    @commands.command(aliases=['roleping'], brief='Pings a role with a message.')
+    @commands.guild_only()
+    @commands.has_permissions(mention_everyone=True)
+    @checks.bot_perms(manage_roles=True)
+    async def pingrole(self, ctx, role: discord.Role, *, message):
+        """
+        Temporarily edits a role to be pingable, sends a message mentioning said role, then edits it to be
+        unpingable.
+
+        The role must be below my highest role.
+        """
+        if role.position >= ctx.guild.me.top_role.position:
+            return await ctx.send("I can't edit that role because it's above my highest role.")
+
+        try:
+            await role.edit(mentionable=True, reason=f'Pingrole by {describe(ctx.author)}')
+            await ctx.send(f'{role.mention}: {message}')
+        finally:
+            try:
+                await role.edit(mentionable=False, reason=f'Pingrole by {describe(ctx.author)}')
+            except (discord.Forbidden, discord.HTTPException):
+                pass
+
     @commands.command()
     @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
