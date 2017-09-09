@@ -504,7 +504,7 @@ class Mod(Cog):
 
     @commands.command(aliases=['roleping'], brief='Pings a role with a message.')
     @commands.guild_only()
-    @commands.has_permissions(mention_everyone=True)
+    @commands.has_permissions(mention_everyone=True, manage_roles=True)
     @checks.bot_perms(manage_roles=True)
     async def pingrole(self, ctx, role: discord.Role, *, message):
         """
