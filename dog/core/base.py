@@ -41,6 +41,7 @@ class BotBase(commands.bot.BotBase):
         self.pgpool = self.loop.run_until_complete(asyncpg.create_pool(**pg))
 
         # load core extensions
+        self._exts_to_load = []
         self.load_exts_recursively('dog/core/ext', 'Core recursive load')
 
     def load_exts_recursively(self, directory: str, prefix: str = 'Recursive load'):
