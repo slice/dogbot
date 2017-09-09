@@ -417,20 +417,25 @@ class Mod(Cog):
 
         Functions similarly to d?ban.
         """
+        progress = await ctx.send(f'Banning {len(members)} member(s)...')
+
         reason = reason or 'No reason provided.'
-        log = []
+        paginator = commands.Paginator(prefix='', suffix='')
         for member in members:
             try:
                 await ctx.guild.ban(member, delete_message_days=delete_days,
                                     reason=f'(Multi-banned by {ctx.author}) {reason}')
-                log.append(f'{ctx.green_tick} Banned {describe(member)}.')
+                paginator.add_line(f'{ctx.green_tick} Banned {describe(member)}.')
             except discord.NotFound:
                 # XXX: This code path might be unreachable, research further
-                log.append("{ctx.red_tick} {member} wasn't found.")
+                paginator.add_line(f"{ctx.red_tick} {describe(member)} wasn't found.")
             except (discord.Forbidden, discord.HTTPException):
-                log.append(f'{ctx.red_tick} Failed to ban {describe(member)}.')
-        await ctx.send('\n'.join(log))
+                paginator.add_line(f'{ctx.red_tick} Failed to ban {describe(member)}. No permissions?')
 
+        await progress.delete()
+
+        for page in paginator.pages:
+            await ctx.send(page)
 
     @commands.command()
     @commands.guild_only()
