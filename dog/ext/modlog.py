@@ -118,6 +118,9 @@ class Modlog(Cog):
         await self.log(guild, f'\N{FRAME WITH PICTURE} Emoji updated: {differences}')
 
     async def on_command_completion(self, ctx: DogbotContext):
+        if not ctx.guild:
+            return
+
         cmd = utils.prevent_codeblock_breakout(ctx.message.content)
         await self.log(ctx.guild,
                        (f'\N{WRENCH} Command invoked by {describe(ctx.author)} in '
