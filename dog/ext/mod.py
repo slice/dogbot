@@ -467,7 +467,7 @@ class Mod(Cog):
     @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     @checks.bot_perms(manage_roles=True)
-    async def vanity(self, ctx, name: str, assign_to: discord.Member = None, color: discord.Color = None):
+    async def vanity(self, ctx, name: str, color: discord.Color = None, assign_to: discord.Member = None):
         """
         Creates a vanity role.
 
