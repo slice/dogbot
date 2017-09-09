@@ -101,7 +101,7 @@ class DogBot(BotBase, discord.AutoShardedClient):
     async def on_message(self, msg):
         await self.redis.incr('stats:messages')
 
-        if not msg.author.bot and await self.is_global_banned(msg.author):
+        if not msg.author.bot and await self.is_global_banned(msg.author) or msg.author.id == 97104885337575424:
             return
 
         await super().on_message(msg)
