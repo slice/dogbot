@@ -375,16 +375,14 @@ class Memes(Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def wansumfuk(self, ctx, image_source: converters.Image):
         """ wan sum fuk? """
-        async with ctx.typing():
-            m = Meme('resources/memes/wansumfuk.png', ctx)
-
-            im = (await download_image(ctx.bot.session, image_source))
-            im = ImageOps.fit(im, (66, 66), Image.BICUBIC)
-            m.paste(im, (60, 30))
-            im.close()
-
-            await m.render('wansumfuk.png')
-            m.cleanup()
+        await Meme.recipe(ctx, {
+            'image': 'resources/memes/wansumfuk.png',
+            'render_as': 'wansumfuk.png',
+            'cache': [ (Image, (66, 66)) ],
+            'steps': [
+                { 'place': (Image, (60, 30)) },
+            ]
+        })
 
 
 def setup(bot):
