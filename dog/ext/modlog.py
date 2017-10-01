@@ -61,7 +61,7 @@ class DebounceProcessor:
     async def check(self, *_args, wait_period=1.0, **info):
         await asyncio.sleep(wait_period)
 
-        if discord.utils.find(lambda debounce: debounce == info, self.debounces):
+        if info in self.debounces:
             self.log.debug('caught debounce (%s)', info)
             self.debounces.remove(info)
             return True
