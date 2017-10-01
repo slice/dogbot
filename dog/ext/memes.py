@@ -371,6 +371,19 @@ class Memes(Cog):
         avatar_bio.close()
         avatar_im.close()
 
+    @commands.command(hidden=True)
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def wansumfuk(self, ctx, image_source: converters.Image):
+        """ wan sum fuk? """
+        await Meme.recipe(ctx, {
+            'image': 'resources/memes/wansumfuk.png',
+            'render_as': 'wansumfuk.png',
+            'cache': [ (image_source, (66, 66)) ],
+            'steps': [
+                { 'place': (image_source, (60, 30)) },
+            ]
+        })
+
 
 def setup(bot):
     bot.add_cog(Memes(bot))
