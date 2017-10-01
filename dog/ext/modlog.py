@@ -245,10 +245,6 @@ class Modlog(Cog):
         if not isinstance(msg.channel, discord.TextChannel):
             return
 
-        # race conditions, yay!
-        # we do this because this message could possibly maybe be censored or bulk deleted
-        await asyncio.sleep(0.5)
-
         # do not process bulk message deletes, or message censors (the censor cog does that already)
         # TODO: do this but cleanly, maybe paste website?
         if await self.bulk_deletes.check_batch(msg.id) or await self.censored_messages.check(message_id=msg.id):
