@@ -37,54 +37,63 @@ async def is_publicly_visible(bot: DogBot, channel: discord.TextChannel) -> bool
 
 
 def diff(before: list, after: list) -> (list, list):
-    """
-    Naively diffs two lists.
-
-    Args:
-        before: The list before.
-        after: The list after.
-
-    Returns:
-        A tuple of two lists. The first list contains additions, the second contains removals.
-    """
     additions = [item for item in after if item not in before]
     removals = [item for item in before if item not in after]
     return additions, removals
 
 
 def describe_differences(bot: DogBot, added: list, removed: list) -> str:
-    """
-    Formats two lists representing added and removed items into a string. Items are described
-    with the describe function.
-
-    Args:
-        bot: The bot instance. Used for ticks.
-        added: Added items.
-        removed: Removed items.
-
-    Returns:
-        A nicely formatted string describing the changes.
-    """
     diffs = ([f'{bot.green_tick} {describe(item)}' for item in added] +
              [f'{bot.red_tick} {describe(item)}' for item in removed])
     return ', '.join(diffs)
+
+
+class DebounceProcessor:
+    def __init__(self, name):
+        self.name = name
+        self.debounces = []
+        self.log = logging.getLogger('dog.debounce.' + name.replace(' ', '_'))
+        self.log.info('created')
+
+    def add(self, **info):
+        self.debounces.append(info)
+
+    async def check(self, *_args, wait_period=1.0, **info):
+        await asyncio.sleep(wait_period)
+
+        if discord.utils.find(lambda debounce: debounce == info, self.debounces):
+            self.log.debug('caught debounce (%s)', info)
+            self.debounces.remove(info)
+            return True
+
+        self.log.debug('no debounce (%s)', info)
+        return False
+
+    async def check_batch(self, item, *_args, wait_period=1.0):
+        await asyncio.sleep(wait_period)
+
+        for debounce in self.debounces.copy():
+            for _key, item_list in debounce.items():
+                if item in item_list:
+                    self.log.debug('batch: caught debounce (%s)', item)
+                    self.debounces.remove(debounce)
+                    return True
+
+        self.log.debug('batch: no debounce (%s)', item)
+        return False
+
+    def __repr__(self):
+        return f'<Debounce name={self.name} debounces={self.debounces}>'
 
 
 class Modlog(Cog):
     def __init__(self, bot):
         super().__init__(bot)
 
-        #: A list of user IDs to not process due to being banned.
-        self.ban_debounces = []
-
-        #: A list of message IDs to not process due to them being bulk deleted.
-        self.bulk_deletes = []
-
-        #: A list of message IDs to not process.
-        self.censored_messages = []
-
-        #: A dict of role additions to not process.
-        self.autorole_debounces = {}
+        self.ban_debounces = DebounceProcessor('ban')
+        self.bulk_deletes = DebounceProcessor('bulk deletes')
+        self.censored_messages = DebounceProcessor('censorship')
+        self.autorole_debounces = DebounceProcessor('autorole')
 
     def modlog_msg(self, msg: str) -> str:
         """
@@ -147,7 +156,7 @@ class Modlog(Cog):
 
     async def on_message_censor(self, filter: CensorshipFilter, msg: discord.Message):
         # we don't want to log message deletes for this message
-        self.censored_messages.append(msg.id)
+        self.censored_messages.add(message_id=msg.id)
 
         content = f': {msg.content}' if getattr(filter, 'show_content', True) else ''
         fmt = (f'\u002a\u20e3 Message by {describe(msg.author)} in {describe(msg.channel, mention=True)} censored: '
@@ -164,7 +173,10 @@ class Modlog(Cog):
             msg += ', added roles: ' + ', '.join(describe(role) for role in roles_added)
 
             # make sure to add to debounce so we don't spew out "roles updated" messages
-            self.autorole_debounces[member.id] = [role.id for role in roles_added]
+            self.autorole_debounces.add(
+                role_ids=[role.id for role in roles_added],
+                member_id=member.id
+            )
 
         await self.log(member.guild, msg)
 
@@ -202,12 +214,10 @@ class Modlog(Cog):
 
             added_roles, removed_roles = diff(before.roles, after.roles)
 
-            # if we're in the autorole debounce dict, and all of out added roles are in the dict, and we have no
-            # removed roles, bounce!
-            if (before.id in self.autorole_debounces and
-                    all(role.id in self.autorole_debounces[before.id] for role in added_roles) and
-                    not removed_roles):
-                del self.autorole_debounces[before.id]
+            if await self.autorole_debounces.check(
+                member_id=before.id,
+                role_ids=[role.id for role in added_roles]
+            ) and not removed_roles:
                 return
 
             fmt_before = f'\N{KEY} Roles for {describe(before)} were updated'
@@ -219,9 +229,9 @@ class Modlog(Cog):
                 return f'{fmt_before} by {describe(entry.user)}: {fmt_diffs}'
             await self.autoformat_responsible(msg, before, 'member_role_update', formatter)
 
-    async def on_raw_bulk_message_delete(self, message_ids: 'List[int]', channel_id: int):
+    async def on_raw_bulk_message_delete(self, message_ids, channel_id: int):
         # add to list of bulk deletes so we don't process message delete events for these messages
-        self.bulk_deletes += message_ids
+        self.bulk_deletes.add(message_ids=message_ids)
 
         # resolve the channel that the message was deleted in
         channel = self.bot.get_channel(channel_id)
@@ -244,7 +254,7 @@ class Modlog(Cog):
 
         # do not process bulk message deletes, or message censors (the censor cog does that already)
         # TODO: do this but cleanly, maybe paste website?
-        if msg.id in self.bulk_deletes or msg.id in self.censored_messages:
+        if await self.bulk_deletes.check_batch(msg.id) or await self.censored_messages.check(message_id=msg.id):
             return
 
         # if this channel isn't publicly visible or deletes shouldn't be tracked, bail
@@ -389,7 +399,7 @@ class Modlog(Cog):
 
     async def on_member_ban(self, guild: discord.Guild, user: discord.Guild):
         # don't make on_member_remove process this user's departure
-        self.ban_debounces.append(user.id)
+        self.ban_debounces.add(user_id=user.id, guild_id=guild.id)
 
         verb = 'was banned'
 
@@ -407,9 +417,8 @@ class Modlog(Cog):
 
     async def on_member_remove(self, member: discord.Member):
         # this is called also when someone gets banned, but we don't want duplicate messages, so bail if this person
-        # got banned as we already send a message
-        if member.id in self.ban_debounces:
-            self.ban_debounces.remove(member.id)
+        # got banned as we already sent a message earlier.
+        if await self.ban_debounces.check(user_id=member.id, guild_id=member.guild.id):
             return
 
         msg = await self.log(member.guild, self.format_member_departure(member))
