@@ -209,9 +209,6 @@ class Modlog(Cog):
             await self.log(before.guild,
                            f'\N{NAME BADGE} Username for {describe(before)} updated: `{before.name}` → `{after.name}`')
         elif before.roles != after.roles:
-            # wait for possible debounce
-            await asyncio.sleep(0.5)
-
             added_roles, removed_roles = diff(before.roles, after.roles)
 
             if await self.autorole_debounces.check(
