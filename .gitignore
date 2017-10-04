@@ -1,3 +1,6 @@
+# wiki
+/wiki
+
 # bot
 *.log
 config*.yml
