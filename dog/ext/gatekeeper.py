@@ -143,7 +143,7 @@ class Gatekeeper(Cog):
             """ Bounces a user from this guild."""
 
             params = {
-                'member.username': member.username,
+                'member.username': member.name,
                 'member.mention': member.mention,
                 'member.tag': member,
                 'member.id': member.id,
