@@ -126,12 +126,12 @@ class Gatekeeper(Cog):
                 await report(embed=embed)
 
         # list of checks to process
-        checks = (
+        checks = {
             BlockDefaultAvatarCheck,
             MinimumCreationTimeCheck,
             BlockAllCheck,
             UsernameRegexCheck
-        )
+        }
 
         for check in checks:
             # if the check's config key hasn't been set, skip it
