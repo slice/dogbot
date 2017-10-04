@@ -1,10 +1,13 @@
 import typing
+import logging
 import datetime
 import urllib.parse
 from html.parser import HTMLParser
 
 import discord
 import timeago
+
+log = logging.getLogger(__name__)
 
 
 class MLStripper(HTMLParser):
@@ -20,6 +23,13 @@ class MLStripper(HTMLParser):
 
     def get_data(self):
         return ''.join(self.fed)
+
+
+def user_format(format_string: str, parameters) -> str:
+    result = format_string
+    for key, value in parameters.items():
+        result = result.replace('{' + key + '}', str(value))
+    return result
 
 
 def format_dict(d: typing.Dict[typing.Any, typing.Any], *, style='equals') -> str:
