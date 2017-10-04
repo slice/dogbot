@@ -455,6 +455,7 @@ class Mod(Cog):
         try:
             reason = reason or 'No reason provided.'
             await ctx.guild.ban(member, delete_message_days=delete_days, reason=f'(Banned by {ctx.author}) {reason}')
+            ctx.bot.dispatch('member_dog_ban', member, ctx.author, reason)
         except discord.Forbidden:
             await ctx.send("I can't do that.")
         except discord.NotFound:

@@ -58,13 +58,19 @@ class DebounceProcessor:
     def add(self, **info):
         self.debounces.append(info)
 
-    async def check(self, *_args, wait_period=1.0, **info):
+    async def check(self, *_args, return_information=False, partial=False, wait_period=1.0, **info):
         await asyncio.sleep(wait_period)
 
-        if info in self.debounces:
-            self.log.debug('caught debounce (%s)', info)
-            self.debounces.remove(info)
-            return True
+        if partial:
+            for debounce in self.debounces:
+                if any(debounce[k] == info[k] for k in info):
+                    self.log.debug('caught (any) debounce (%s)', info)
+                    return debounce if return_information else True
+        else:
+            if info in self.debounces:
+                self.log.debug('caught debounce (%s)', info)
+                self.debounces.remove(info)
+                return info if return_information else True
 
         self.log.debug('no debounce (%s)', info)
         return False
