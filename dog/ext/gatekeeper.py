@@ -46,6 +46,7 @@ class GatekeeperCheck:
 class BlockDefaultAvatarCheck(GatekeeperCheck):
     """A gatekeeper check that bounces users with a default avatar."""
     key = 'block_default_avatar'
+    description = 'Blocks all users with a default avatar.'
 
     async def check(self, _, member: Member):
         if member.default_avatar_url == member.avatar_url:
@@ -55,6 +56,8 @@ class BlockDefaultAvatarCheck(GatekeeperCheck):
 class MinimumCreationTimeCheck(GatekeeperCheck):
     """A gatekeeper check that checks the minimum creation time of a user."""
     key = 'minimum_creation_time'
+    description = ("Blocks users that don't meet a \"minimum creation time\" check. Specify the amount of seconds "
+                   "that an account has to exist for to be allowed to pass through.")
 
     async def check(self, time, member: Member):
         try:
@@ -72,6 +75,7 @@ class MinimumCreationTimeCheck(GatekeeperCheck):
 class BlockAllCheck(GatekeeperCheck):
     """A gatekeeper check that bounces all users that attempt to join."""
     key = 'block_all'
+    description = 'Blocks all users that try to join.'
 
     async def check(self, _, member: Member) -> bool:
         raise Block('Blocking all users')
@@ -79,6 +83,7 @@ class BlockAllCheck(GatekeeperCheck):
 
 class UsernameRegexCheck(GatekeeperCheck):
     key = 'username_regex'
+    description = 'Blocks all usernames that match a regex. Specify a regex.'
 
     async def check(self, regex: str, member: Member):
         try:
@@ -202,6 +207,21 @@ class Gatekeeper(Cog):
         """
         if ctx.invoked_subcommand is None:
             return await ctx.send(f'You need to specify a valid subcommand to run. For help, run `{ctx.prefix}help gk`.')
+
+    @gatekeeper.command()
+    async def settings(self, ctx: DogbotContext):
+        """
+        Lists all possible settings that you can configure.
+        """
+        message = ''
+
+        for check in GATEKEEPER_CHECKS:
+            message += f'`{check.key}`: {check.description}\n'
+
+        # synthetic
+        message += """`bounce_message`: A message that will be sent to users right before being kicked."""
+
+        await ctx.send(message)
 
     @gatekeeper.command()
     async def unset(self, ctx: DogbotContext, key):
