@@ -2,8 +2,8 @@ import datetime
 import importlib
 import os
 import logging
-
 import sys
+from pathlib import Path
 
 import aiohttp
 import aioredis
@@ -22,7 +22,7 @@ class BotBase(commands.bot.BotBase):
         super().__init__(*args, **kwargs, formatter=DogbotHelpFormatter())
 
         # configuration dict
-        self.cfg = kwargs.get('cfg', [])
+        self.cfg = kwargs.get('cfg', {})
 
         # aiohttp session used for fetching data
         self.session = aiohttp.ClientSession(loop=self.loop)
@@ -42,33 +42,27 @@ class BotBase(commands.bot.BotBase):
 
         # load core extensions
         self._exts_to_load = []
-        self.load_exts_recursively('dog/core/ext', 'Core recursive load')
+        self.load_extensions('dog/core/ext', 'Core recursive load')
 
-    def load_exts_recursively(self, directory: str, prefix: str = 'Recursive load'):
+    def load_extensions(self, directory: str, prefix: str = 'Recursive load'):
         """ Loads extensions from a directory recursively. """
 
-        # filter out files that we don't need
-        def ext_filter(f):
-            return f not in ('__init__.py', '__pycache__', '.DS_Store') and not f.endswith('.pyc')
+        IGNORE = {'__init__.py', '__pycache__', '.DS_Store'}
 
-        exts = []
+        base = directory.replace('/', '.')
 
-        # walk the ext directory to find extensions
-        for path, _, files in os.walk(directory):
-            # replace the base path/like/this to path.like.this, and add the filename at the end, but without the .py
-            exts += [path.replace('/', '.').replace('\\', '.') + '.' + file.replace('.py', '')
-                     for file in filter(ext_filter, files)]
+        # build list of extension stems
+        extension_stems = [
+            path.stem for path in Path(directory).resolve().iterdir() \
+            if path.name not in IGNORE and path.suffix != 'pyc'
+        ]
 
-        logger.debug('Extensions to load: %s', exts)
+        logger.debug('Extensions to load: %s', extension_stems)
 
-        for ext in exts:
-            # check if it has setup, to avoid loading non-extensions
-            module = importlib.import_module(ext)
-            if hasattr(module, 'setup'):
-                logger.info('%s: %s', prefix, ext)
-                self.load_extension(ext)
-            else:
-                logger.debug('Skipping %s, doesn\'t seem to be an extension.', ext)
+        for ext in extension_stems:
+            load_path = base + '.' + ext
+            logger.info('%s: %s', prefix, load_path)
+            self.load_extension(load_path)
 
         # keep track of a list of extensions to load
         self._exts_to_load = list(self.extensions.keys()).copy()
@@ -109,7 +103,7 @@ class BotBase(commands.bot.BotBase):
             importlib.reload(module)
         logger.info('Finished reloading bot modules!')
 
-    async def post_to_webhook(self, content=None, *, embed: discord.Embed=None):
+    async def post_to_webhook(self, content=None, *, embed: discord.Embed = None):
         """ Posts to the configured health webhook.
 
         If a health webhook is not configured, then Dogbot does nothing.

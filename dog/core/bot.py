@@ -36,9 +36,7 @@ class DogBot(BotBase, discord.AutoShardedClient):
     @property
     def is_private(self) -> bool:
         """
-
         Returns: Whether this bot is considered "public".
-
         """
         return 'private' in self.cfg['bot'] and self.cfg['bot']['private']
 

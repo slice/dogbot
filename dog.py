@@ -83,7 +83,7 @@ print('[dog] creating instance')
 d = DogBot(cfg=cfg, **additional_options)
 
 print('[dog] loading extensions')
-d.load_exts_recursively('dog/ext', 'Initial recursive load')
+d.load_extensions('dog/ext', 'Initial recursive load')
 
 print('[dog] running')
 d.run(cfg['tokens']['bot'])

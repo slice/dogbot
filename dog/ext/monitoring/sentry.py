@@ -17,11 +17,3 @@ class SentryErrorReporting(Cog):
     async def on_uncaught_command_invoke_error(self, exception, info):
         logger.info('Capturing message for Sentry.')
         self.sentry.captureMessage(info[0])
-
-
-def setup(bot):
-    if 'raven_client_url' not in bot.cfg['monitoring']:
-        logger.warning('Not going to report exceptions to sentry, not configured!')
-        return
-
-    bot.add_cog(SentryErrorReporting(bot))

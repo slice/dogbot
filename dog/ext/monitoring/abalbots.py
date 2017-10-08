@@ -40,10 +40,3 @@ class Abalbots(Cog):
 
             await asyncio.sleep(self.reporting_interval)
 
-
-def setup(bot):
-    if 'discordpw_token' not in bot.cfg['monitoring']:
-        logger.warning('Not going to submit guild count to Abal\'s website, not configured.')
-        return
-
-    bot.add_cog(Abalbots(bot))

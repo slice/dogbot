@@ -59,11 +59,3 @@ class Datadog(Cog):
 
             await self.bot.loop.run_in_executor(None, report)
             await asyncio.sleep(5)
-
-
-def setup(bot):
-    if 'datadog' not in bot.cfg['monitoring']:
-        logger.warning('No Datadog configuration detected, not going to report statistics to Datadog.')
-        return
-
-    bot.add_cog(Datadog(bot))
