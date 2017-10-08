@@ -134,6 +134,7 @@ class Memes(Cog):
 
         def open():
             return Image.open(im_data).convert('RGB')
+
         im = await ctx.bot.loop.run_in_executor(None, open)
 
         with BytesIO() as output:
@@ -157,9 +158,9 @@ class Memes(Cog):
         await Meme.recipe(ctx, {
             'image': 'resources/memes/mistake.png',
             'render_as': 'mistake.png',
-            'cache': [ (image_source, (250, 250)) ],
+            'cache': [(image_source, (250, 250))],
             'steps': [
-                { 'place': (image_source, (239, 241)) }
+                {'place': (image_source, (239, 241))}
             ]
         })
 
@@ -207,10 +208,10 @@ class Memes(Cog):
         await Meme.recipe(ctx, {
             'image': 'resources/memes/you_vs.png',
             'render_as': 'youvs.png',
-            'cache': [ (a, (330, 375)), (b, (327, 377)) ],
+            'cache': [(a, (330, 375)), (b, (327, 377))],
             'steps': [
-                { 'place': (a, (22, 162)) },
-                { 'place': (b, (365, 161)) }
+                {'place': (a, (22, 162))},
+                {'place': (b, (365, 161))}
             ]
         })
 
@@ -224,10 +225,10 @@ class Memes(Cog):
             'additional': {
                 'font_file': 'resources/font/SourceSansPro-Bold.ttf'
             },
-            'cache': [ (image, (1781, 1000)) ],
+            'cache': [(image, (1781, 1000))],
             'steps': [
-                { 'place': (image, (47, 245)) },
-                { 'text': title, 'x': 70, 'y': 1270, 'fill': (255, 255, 255) }
+                {'place': (image, (47, 245))},
+                {'text': title, 'x': 70, 'y': 1270, 'fill': (255, 255, 255)}
             ]
         })
 
@@ -238,10 +239,10 @@ class Memes(Cog):
         await Meme.recipe(ctx, {
             'image': 'resources/memes/drake.png',
             'render_as': 'drake.png',
-            'cache': [ (yay, (256, 250)), (nay, (261, 254)) ],
+            'cache': [(yay, (256, 250)), (nay, (261, 254))],
             'steps': [
-                { 'place': (yay, (242, 257)) },
-                { 'place': (nay, (241, 0)) }
+                {'place': (yay, (242, 257))},
+                {'place': (nay, (241, 0))}
             ]
         })
 
@@ -257,10 +258,10 @@ class Memes(Cog):
                 (right, (350, 250))
             ],
             'steps': [
-                { 'place': (left, (24, 200)) },
-                { 'place': (right, (434, 210)) },
-                { 'text': left_text, 'x': 17, 'y': 100, 'max_width': 380 },
-                { 'text': right_text, 'x': 440, 'y': 112, 'max_width': 340 }
+                {'place': (left, (24, 200))},
+                {'place': (right, (434, 210))},
+                {'text': left_text, 'x': 17, 'y': 100, 'max_width': 380},
+                {'text': right_text, 'x': 440, 'y': 112, 'max_width': 340}
             ]
         })
 
@@ -274,10 +275,10 @@ class Memes(Cog):
             'additional': {
                 'text_size': 20
             },
-            'cache': [ (coolio, (210, 209)) ],
+            'cache': [(coolio, (210, 209))],
             'steps': [
-                { 'place': (coolio, (27, 111)) },
-                { 'text': f'"you can\'t just {text}"', 'x': 23, 'y': 12, 'max_width': 499 }
+                {'place': (coolio, (27, 111))},
+                {'text': f'"you can\'t just {text}"', 'x': 23, 'y': 12, 'max_width': 499}
             ]
         })
 
@@ -288,9 +289,9 @@ class Memes(Cog):
         await Meme.recipe(ctx, {
             'image': 'resources/memes/whodidthis.png',
             'render_as': 'whodidthis.png',
-            'cache': [ (image, (717, 406)) ],
+            'cache': [(image, (717, 406))],
             'steps': [
-                { 'place': (image, (0, 158)) }
+                {'place': (image, (0, 158))}
             ]
         })
 
@@ -301,12 +302,12 @@ class Memes(Cog):
         await Meme.recipe(ctx, {
             'image': 'resources/memes/handicap.png',
             'render_as': 'handicapped.png',
-            'cache': [ (image_source, (80, 80)) ],
+            'cache': [(image_source, (80, 80))],
             'steps': [
-                { 'text': text, 'x': 270, 'y': 310, 'max_width': 270 },
-                { 'place': (image_source, (373, 151)) },
-                { 'place': (image_source, (302, 408)) },
-                { 'place': (image_source, (357, 690)) }
+                {'text': text, 'x': 270, 'y': 310, 'max_width': 270},
+                {'place': (image_source, (373, 151))},
+                {'place': (image_source, (302, 408))},
+                {'place': (image_source, (357, 690))}
             ]
         })
 
@@ -322,17 +323,17 @@ class Memes(Cog):
         await Meme.recipe(ctx, {
             'image': 'resources/memes/floor.png',
             'render_as': 'floor.png',
-            'cache': [ (image_source, (100, 100)) ],
+            'cache': [(image_source, (100, 100))],
             'steps': [
-                { 'text': text, 'x': 25, 'y': 25, 'max_width': 1100 },
-                { 'place': (image_source, (783, 229)) },
-                { 'place': (image_source, (211, 199)) }
+                {'text': text, 'x': 25, 'y': 25, 'max_width': 1100},
+                {'place': (image_source, (783, 229))},
+                {'place': (image_source, (211, 199))}
             ]
         })
 
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
-    async def pixelate(self, ctx, image_source: converters.Image, size: int=15):
+    async def pixelate(self, ctx, image_source: converters.Image, size: int = 15):
         """ Pixelates something. """
         if size < 5:
             await ctx.send('The minimum size is 5.')
@@ -378,9 +379,9 @@ class Memes(Cog):
         await Meme.recipe(ctx, {
             'image': 'resources/memes/wansumfuk.png',
             'render_as': 'wansumfuk.png',
-            'cache': [ (image_source, (66, 66)) ],
+            'cache': [(image_source, (66, 66))],
             'steps': [
-                { 'place': (image_source, (60, 30)) },
+                {'place': (image_source, (60, 30))},
             ]
         })
 
