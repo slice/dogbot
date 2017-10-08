@@ -17,9 +17,9 @@ from . import errors
 logger = logging.getLogger(__name__)
 
 
-class DogBot(BotBase, discord.AutoShardedClient):
+class Dogbot(BotBase, discord.AutoShardedClient):
     """
-    The main DogBot bot. It is automatically sharded. All parameters are passed
+    The main bot. It is automatically sharded. All parameters are passed
     to the constructor of :class:`discord.commands.AutoShardedBot`.
     """
     def __init__(self, *args, **kwargs):

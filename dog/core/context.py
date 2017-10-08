@@ -27,7 +27,7 @@ class DogbotContext(commands.Context):
     @property
     def red_tick(self):
         """
-        The same as DogBot.red_tick, but it automatically returns the Unicode equivalent if we can't use external
+        The same as Dogbot.red_tick, but it automatically returns the Unicode equivalent if we can't use external
         emoji.
         """
         return self.bot.red_tick if self.guild.me.guild_permissions.external_emojis else '\N{CROSS MARK}'
@@ -35,7 +35,7 @@ class DogbotContext(commands.Context):
     @property
     def green_tick(self):
         """
-        The same as DogBot.green_tick, but it automatically returns the Unicode equivalent if we can't use external
+        The same as Dogbot.green_tick, but it automatically returns the Unicode equivalent if we can't use external
         emoji.
         """
         return self.bot.green_tick if self.guild.me.guild_permissions.external_emojis else \
@@ -43,7 +43,7 @@ class DogbotContext(commands.Context):
 
     def tick(self, *args, **kwargs) -> str:
         """
-        The same as DogBot.tick, but the ``guild`` kwarg is automatically supplied.
+        The same as Dogbot.tick, but the ``guild`` kwarg is automatically supplied.
         """
         return self.bot.tick(*args, **kwargs, guild=self.guild)
 

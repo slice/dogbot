@@ -6,7 +6,7 @@ import logging
 import discord
 from discord.ext import commands
 
-from dog import Cog, DogBot
+from dog import Cog, Dogbot
 from dog.core import utils
 from dog.core.utils import describe, filesize
 from dog.core.context import DogbotContext
@@ -15,7 +15,7 @@ from dog.ext.censorship import CensorshipFilter
 logger = logging.getLogger(__name__)
 
 
-async def is_publicly_visible(bot: DogBot, channel: discord.TextChannel) -> bool:
+async def is_publicly_visible(bot: Dogbot, channel: discord.TextChannel) -> bool:
     """
     Returns whether a text channel should be considered as "publicly visible".
     If the guild has been configured to log all message events, this will always return True.
@@ -42,7 +42,7 @@ def diff(before: list, after: list) -> (list, list):
     return additions, removals
 
 
-def describe_differences(bot: DogBot, added: list, removed: list) -> str:
+def describe_differences(bot: Dogbot, added: list, removed: list) -> str:
     diffs = ([f'{bot.green_tick} {describe(item)}' for item in added] +
              [f'{bot.red_tick} {describe(item)}' for item in removed])
     return ', '.join(diffs)

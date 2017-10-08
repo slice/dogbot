@@ -6,7 +6,7 @@ import logging
 
 from ruamel.yaml import YAML
 
-from dog import DogBot
+from dog import Dogbot
 
 parser = argparse.ArgumentParser(description='Dogbot.')
 parser.add_argument('--docker', action='store_true', help='Enables Docker mode.', default=False)
@@ -80,7 +80,7 @@ logger.info('Bot options: %s', additional_options)
 
 # create and run the bot
 print('[dog] creating instance')
-d = DogBot(cfg=cfg, **additional_options)
+d = Dogbot(cfg=cfg, **additional_options)
 
 print('[dog] loading extensions')
 d.load_extensions('dog/ext', 'Initial recursive load')
