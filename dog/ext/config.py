@@ -4,7 +4,6 @@ Contains commands that have to do with configuring the bot for your server.
 
 import logging
 
-import asyncpg
 from discord.ext import commands
 from discord.ext.commands import clean_content
 
@@ -12,6 +11,7 @@ from dog import Cog
 
 log = logging.getLogger(__name__)
 CONFIGKEYS_HELP = '<https://github.com/slice/dogbot/wiki/Configuration>'
+PREFIX_KEY = 'dog:prefixes:{0.id}'
 
 
 class Prefix(commands.Converter):
@@ -122,37 +122,13 @@ class Config(Cog):
             d?prefix add "pls "
             d?prefix add ?
         """
-        cache = ctx.bot.prefix_cache.get(ctx.guild.id, [])
-
-        try:
-            async with ctx.acquire() as conn:
-                await conn.execute('INSERT INTO prefixes VALUES ($1, $2)', ctx.guild.id, prefix)
-        except asyncpg.UniqueViolationError:
-            return await ctx.send('This server already has that prefix.')
-
-        ctx.bot.prefix_cache[ctx.guild.id] = cache + [prefix]
-        log.debug('Added "%s" to cache for %d', prefix, ctx.guild.id)
-
+        await ctx.bot.redis.sadd(PREFIX_KEY.format(ctx.guild), prefix)
         await ctx.ok()
 
     @prefix.command(name='remove')
     async def prefix_remove(self, ctx, prefix: Prefix):
         """ Removes a prefix. """
-        if ctx.guild.id not in ctx.bot.prefix_cache or prefix not in ctx.bot.prefix_cache[ctx.guild.id]:
-            await ctx.send(await ctx._('cmd.prefix.prefix_not_found'))
-            return
-
-        async with ctx.acquire() as conn:
-            await conn.execute('DELETE FROM prefixes WHERE guild_id = $1 AND prefix = $2', ctx.guild.id,
-                               prefix)
-        try:
-            cache = ctx.bot.prefix_cache.get(ctx.guild.id)
-            cache.remove(prefix)
-            ctx.bot.prefix_cache[ctx.guild.id] = cache
-        except ValueError:
-            pass
-        log.debug('Removed "%s" from cache for %d', prefix, ctx.guild.id)
-
+        await ctx.bot.redis.sremove(PREFIX_KEY.format(ctx.guild), prefix)
         await ctx.ok()
 
     @prefix.command(name='list')

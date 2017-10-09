@@ -98,6 +98,15 @@ class DogbotContext(commands.Context):
                     await self.send('Operation cancelled.')
                 return False
 
+    async def send(self, content=None, *, tts=False, embed=None, file=None, files=None, delete_after=None, nonce=None):
+        # do not mention everyone
+        content = content.replace('@everyone', '@\u200beveryone')
+        content = content.replace('@here', '@\u200bhere')
+
+        return await super().send(
+            content, tts=tts, embed=embed, file=file, files=files, delete_after=delete_after, nonce=nonce
+        )
+
     async def wait_for_response(self):
         """
         Waits for a message response from the message author, then returns the

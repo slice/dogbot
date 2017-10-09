@@ -120,7 +120,7 @@ class Admin(Cog):
         msg = await ctx._('cmd.prefix.prefixes', prefixes=prefixes)
 
         # if we have supplemental prefixes, add them to the message
-        suppl_prefixes = ctx.bot.prefix_cache.get(ctx.guild.id)
+        suppl_prefixes = await ctx.bot.get_prefixes(ctx.guild)
         if suppl_prefixes:
             suppl_prefix_list = ', '.join(f'"{p}"' for p in suppl_prefixes)
             msg += '\n' + await ctx._('cmd.prefix.prefixes_guild', prefixes=suppl_prefix_list)

@@ -13,7 +13,6 @@ from discord.ext import commands
 from ruamel.yaml import YAML
 
 from dog.core.base import BotBase
-
 from . import errors
 
 logger = logging.getLogger(__name__)
@@ -38,9 +37,6 @@ class Dogbot(BotBase, AutoShardedClient):
         # this is here so we can d?reload even if an syntax error occurs and it won't be present
         # in self.extensions
         self._exts_to_load = list(self.extensions.keys()).copy()
-
-        # custom prefix cache
-        self.prefix_cache = {}
 
     @property
     def is_private(self) -> bool:
@@ -119,20 +115,8 @@ class Dogbot(BotBase, AutoShardedClient):
         if not guild:
             return []
 
-        # grab from cache
-        if self.prefix_cache.get(guild.id):
-            return self.prefix_cache[guild.id]
-
-        async with self.pgpool.acquire() as conn:
-            # fetch prefixes for that guild
-            prefixes = await conn.fetch('SELECT prefix FROM prefixes WHERE guild_id = $1', guild.id)
-
-            prefix_strings = list(map(lambda r: r['prefix'], prefixes))
-
-            if prefixes and not self.prefix_cache.get(guild.id):
-                self.prefix_cache[guild.id] = prefix_strings
-
-            return [] if not prefixes else prefix_strings
+        prefixes = await self.redis.smembers(f'dog:prefixes:{guild.id}')
+        return [prefix.decode() for prefix in prefixes]
 
     def _get_lang_data(self, lang):
         with open(f'./resources/lang/{lang}.yml') as f:
