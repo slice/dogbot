@@ -5,8 +5,10 @@ The core Dogbot bot.
 import asyncio
 import logging
 import traceback
+from typing import List
 
 import discord
+from discord import AutoShardedClient, Guild, Message, DMChannel
 from discord.ext import commands
 from ruamel.yaml import YAML
 
@@ -17,7 +19,14 @@ from . import errors
 logger = logging.getLogger(__name__)
 
 
-class Dogbot(BotBase, discord.AutoShardedClient):
+def _access_dot(dct, dot: str):
+    cur = dct
+    for part in dot.split('.'):
+        cur = cur[part]
+    return cur
+
+
+class Dogbot(BotBase, AutoShardedClient):
     """
     The main bot. It is automatically sharded. All parameters are passed
     to the constructor of :class:`discord.commands.AutoShardedBot`.
@@ -40,7 +49,7 @@ class Dogbot(BotBase, discord.AutoShardedClient):
         """
         return 'private' in self.cfg['bot'] and self.cfg['bot']['private']
 
-    def tick(self, tick_type: str, *, raw: bool = False, guild: discord.Guild = None) -> str:
+    def tick(self, tick_type: str, *, raw: bool = False, guild: Guild = None) -> str:
         """
         Returns a custom tick emoji.
 
@@ -96,62 +105,70 @@ class Dogbot(BotBase, discord.AutoShardedClient):
             # return whether banned or not
             return banned
 
-    async def on_message(self, msg):
+    async def on_message(self, msg: Message):
         await self.redis.incr('stats:messages')
 
+        # do not process if this user has been global banned.
         if not msg.author.bot and await self.is_global_banned(msg.author):
             return
 
         await super().on_message(msg)
 
-    async def get_prefixes(self, guild: discord.Guild) -> 'List[str]':
+    async def get_prefixes(self, guild: Guild) -> List[str]:
         """ Returns the supplementary prefixes for a guild. """
         if not guild:
             return []
 
+        # grab from cache
         if self.prefix_cache.get(guild.id):
             return self.prefix_cache[guild.id]
 
         async with self.pgpool.acquire() as conn:
+            # fetch prefixes for that guild
             prefixes = await conn.fetch('SELECT prefix FROM prefixes WHERE guild_id = $1', guild.id)
+
             prefix_strings = list(map(lambda r: r['prefix'], prefixes))
+
             if prefixes and not self.prefix_cache.get(guild.id):
                 self.prefix_cache[guild.id] = prefix_strings
+
             return [] if not prefixes else prefix_strings
 
     def _get_lang_data(self, lang):
         with open(f'./resources/lang/{lang}.yml') as f:
             return YAML(typ='safe').load(f)
 
-    def _access_dot(self, dct, dot):
-        cur = dct
-        for part in dot.split('.'):
-            cur = cur[part]
-        return cur
-
     def lang(self, key: str, lang: str='en-US'):
         fallback_data = self._get_lang_data('en-US')
         lang_data = self._get_lang_data(lang)
 
         try:
-            return self._access_dot(lang_data, key)
+            return _access_dot(lang_data, key)
         except KeyError:
             # default to en-US
             try:
-                return self._access_dot(fallback_data, key)
+                return _access_dot(fallback_data, key)
             except KeyError:
-                # uhhh
+                # no language data for that key at all, just return the key
                 return key
 
-    async def prefix(self, bot, message: discord.Message):
+    async def prefix(self, _bot, message: discord.Message):
         """ Returns prefixes for a message. """
         mention = [self.user.mention + ' ', f'<@!{self.user.id}> ']
         additional_prefixes = await self.get_prefixes(message.guild)
         return self.cfg['bot']['prefixes'] + mention + additional_prefixes
 
     async def close(self):
-        # close stuff
         logger.info('close() called, cleaning up...')
+
+        # remove all handlers
+        root_logger = logging.getLogger()
+        handlers = logging.getLogger().handlers[:]
+        for handler in handlers:
+            handler.close()
+            root_logger.removeHandler(handler)
+
+        # close redis, postgres, and our session
         self.redis.close()
         await self.pgpool.close()
         await self.session.close()
@@ -190,9 +207,9 @@ class Dogbot(BotBase, discord.AutoShardedClient):
         If there is no #mod-log channel, no message is sent. All parameters are
         passed to `send()`.
         """
+
         try:
-            key = 'modlog_channel_id'
-            manual_id = int(await self.config_get(guild, key))
+            manual_id = int(await self.config_get(guild, 'modlog_channel_id'))
             manual_mod_log = discord.utils.get(guild.text_channels, id=manual_id)
         except:
             manual_mod_log = None
@@ -214,7 +231,7 @@ class Dogbot(BotBase, discord.AutoShardedClient):
     async def set_playing_statuses(self):
         short_prefix = min(self.cfg['bot']['prefixes'], key=len)
         for shard in self.shards.values():
-            game = discord.Game(name=f'{short_prefix}help | shard {shard.id}')
+            game = discord.Game(name=f'{short_prefix}help [s{shard.id}]')
             await shard.ws.change_presence(game=game)
 
     async def on_ready(self):
@@ -222,10 +239,8 @@ class Dogbot(BotBase, discord.AutoShardedClient):
 
         await self.set_playing_statuses()
 
-    async def config_get(self, guild: discord.Guild, name: str):
-        """
-        Returns configuration data for a guild.
-        """
+    async def config_get(self, guild: Guild, name: str):
+        """Returns a configuration key's value for a guild."""
         return (await self.redis.get(f'{guild.id}:{name}')).decode()
 
     async def config_is_set(self, guild: discord.Guild, name: str) -> bool:
@@ -248,19 +263,24 @@ class Dogbot(BotBase, discord.AutoShardedClient):
             await ctx.message.author.send(await ctx._('misc.cant_respond'))
 
     async def on_command(self, ctx):
+        # some metadata
         author = ctx.message.author
         checks = [c.__qualname__.split('.')[0] for c in ctx.command.checks]
-        location = '[DM] ' if isinstance(ctx.channel, discord.DMChannel) else '[Guild] '
-        logger.info('%sCommand invocation by %s (%d) "%s" checks=%s', location, author, author.id, ctx.message.content,
-                    ','.join(checks) or '(none)')
+        location = '[DM]' if isinstance(ctx.channel, DMChannel) else '[Guild]'
+
+        # log command invocation
+        logger.info(
+            '%s Command invocation by %s (%d) "%s" checks=%s',
+            location, author, author.id, ctx.message.content, ','.join(checks) or '(none)'
+        )
 
     async def on_command_error(self, ctx, ex):
         if getattr(ex, 'should_suppress', False):
             logger.debug('Suppressing exception: %s', ex)
             return
 
-        if ctx.command:
-            see_help = await ctx._('err.see_help', prefix=ctx.prefix, cmd=ctx.command.qualified_name)
+        see_help = await ctx._('err.see_help', prefix=ctx.prefix, cmd=ctx.command.qualified_name) if ctx.command else\
+            'See my help for more information.'
 
         if isinstance(ex, commands.errors.BadArgument):
             message = str(ex)

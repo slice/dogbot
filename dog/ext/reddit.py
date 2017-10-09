@@ -1,6 +1,4 @@
-"""
-Reddit commands.
-"""
+"""Reddit commands."""
 
 import asyncio
 import logging
@@ -318,4 +316,5 @@ def setup(bot):
     if 'reddit' not in bot.cfg['credentials']:
         logger.warning('Not adding Reddit cog, not present in configuration!')
         return
+
     bot.add_cog(Reddit(bot))

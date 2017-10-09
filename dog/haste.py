@@ -1,5 +1,4 @@
 """ Facilities for pasting things to Hastebin. """
-
 import aiohttp
 
 HASTEBIN_ENDPOINT = 'https://hastebin.com/documents'
