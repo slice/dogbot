@@ -1,4 +1,5 @@
 import logging
+import sys
 
 
 def setup_logging():
@@ -19,7 +20,7 @@ def setup_logging():
     file_handler.setFormatter(nice_fmt)
 
     # stream handler (stdout)
-    stream = logging.StreamHandler()
+    stream = logging.StreamHandler(stream=sys.stdout)
     stream.setFormatter(console_fmt)
 
     # handle from all logs
