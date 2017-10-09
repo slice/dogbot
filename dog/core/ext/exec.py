@@ -12,6 +12,7 @@ import logging
 import textwrap
 import traceback
 from contextlib import redirect_stdout
+from typing import List
 
 import aiohttp
 import discord
@@ -28,7 +29,7 @@ log = logging.getLogger(__name__)
 
 IMPLICIT_RETURN_STOP_WORDS = {
     'continue', 'break', 'raise', 'yield', 'with',
-    'assert', 'del', 'import', 'pass', 'return'
+    'assert', 'del', 'import', 'pass', 'return', 'from'
 }
 
 
@@ -107,6 +108,9 @@ class Exec(Cog):
         async def send(*args, **kwargs) -> discord.Message:
             return await ctx.send(*args, **kwargs)
 
+        def better_dir(*args, **kwargs) -> List[str]:
+            return [n for n in dir(*args, **kwargs) if not n.endswith('__') and not n.startswith('__')]
+
         env = {
             'bot': ctx.bot,
             'ctx': ctx,
@@ -127,7 +131,9 @@ class Exec(Cog):
 
             # last result
             '_': self.last_result,
-            '_p': self.previous_code
+            '_p': self.previous_code,
+
+            'dir': better_dir,
         }
 
         env.update(globals())
