@@ -46,8 +46,7 @@ def bot_perms(**permissions):
         if not all(does_match.values()):
             # which permissions we don't have (which we need)
             failing = [beautify_permission_name(p) for p in does_match.keys() if not does_match[p]]
-            raise InsufficientPermissions('I need these permissions to do that: ' +
-                                          ', '.join(failing))
+            raise InsufficientPermissions('I need these permissions to do that: ' + ', '.join(failing))
         return True
     return commands.check(predicate)
 

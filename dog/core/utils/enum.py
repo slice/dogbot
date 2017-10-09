@@ -9,7 +9,7 @@ class EnumConverter:
     enum values' names when passed as arguments.
     """
     @classmethod
-    async def convert(cls: Enum, ctx, arg: str):
+    async def convert(cls: Enum, ctx: 'DogbotContext', arg: str):
         try:
             if arg not in [e.name for e in cls]:
                 return cls[arg.upper()]
