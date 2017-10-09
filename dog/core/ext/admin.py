@@ -115,14 +115,14 @@ class Admin(Cog):
         """ Lists the bot's prefixes. """
 
         # global prefixes
-        prefixes = ', '.join(f'`{p}`' for p in ctx.bot.cfg['bot']['prefixes'])
+        prefixes = ', '.join(f'"{p}"' for p in ctx.bot.cfg['bot']['prefixes'])
 
         msg = await ctx._('cmd.prefix.prefixes', prefixes=prefixes)
 
         # if we have supplemental prefixes, add them to the message
         suppl_prefixes = ctx.bot.prefix_cache.get(ctx.guild.id)
         if suppl_prefixes:
-            suppl_prefix_list = ', '.join(f'`{p}`' for p in suppl_prefixes)
+            suppl_prefix_list = ', '.join(f'"{p}"' for p in suppl_prefixes)
             msg += '\n' + await ctx._('cmd.prefix.prefixes_guild', prefixes=suppl_prefix_list)
 
         await ctx.send(msg)

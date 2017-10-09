@@ -6,6 +6,7 @@ import logging
 
 import asyncpg
 from discord.ext import commands
+from discord.ext.commands import clean_content
 
 from dog import Cog
 
@@ -17,7 +18,7 @@ class Prefix(commands.Converter):
     async def convert(self, ctx: commands.Context, arg: str):
         if len(arg) > 140:
             raise commands.BadArgument('Prefixes cannot be greater than 140 characters.')
-        return arg
+        return await clean_content().convert(ctx, arg)
 
 
 class Config(Cog):
