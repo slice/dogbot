@@ -1,23 +1,27 @@
+from typing import List, Any
+
 import discord
+from discord import Forbidden, NotFound
 from discord.ext import commands
 
 from dog.core import utils
 
 
 class DogbotContext(commands.Context):
-    async def ok(self, emoji: str = '\N{SQUARED OK}'):
+    async def ok(self, emoji: str = '\N{OK HAND SIGN}'):
         """
         Adds a reaction to the command message, or sends it to the channel if
         we can't add reactions. This should be used as feedback to commands,
         just like how most bots send out `:ok_hand:` when a command completes
         successfully.
         """
+
         try:
             await self.message.add_reaction(emoji)
-        except discord.Forbidden:
+        except Forbidden:
             # can't add reactions
             await self.send(emoji)
-        except discord.NotFound:
+        except NotFound:
             # the command message got deleted somehow
             pass
 
@@ -100,8 +104,9 @@ class DogbotContext(commands.Context):
 
     async def send(self, content=None, *, tts=False, embed=None, file=None, files=None, delete_after=None, nonce=None):
         # do not mention everyone
-        content = content.replace('@everyone', '@\u200beveryone')
-        content = content.replace('@here', '@\u200bhere')
+        if content:
+            content = content.replace('@everyone', '@\u200beveryone')
+            content = content.replace('@here', '@\u200bhere')
 
         return await super().send(
             content, tts=tts, embed=embed, file=file, files=files, delete_after=delete_after, nonce=nonce
@@ -130,11 +135,11 @@ class DogbotContext(commands.Context):
 
         # not in a guild
         if not self.guild:
-            return
+            return False
 
         return await self.bot.redis.exists(f'gatekeeper:{self.guild.id}:enabled')
 
-    async def pick_from_list(self, choices: 'List[Any]', *, delete_after_choice=False) -> 'Any':
+    async def pick_from_list(self, choices: List[Any], *, delete_after_choice=False) -> Any:
         """ Shows the user a list of items to pick from. Returns the picked item. """
         # format list of stuff
         choices_list = utils.format_list(choices)
