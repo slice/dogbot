@@ -3,19 +3,8 @@ Handy exec (eval, debug) cog. Allows you to run code on the bot during runtime. 
 exec commands of other bot authors, allowing for maximum efficiency:
 
 Credit:
-    - Rapptz (Danny)
-        - https://github.com/Rapptz/RoboDanny/blob/master/cogs/repl.py#L31-L75
-    - b1naryth1ef (Andrei)
-        - https://github.com/b1naryth1ef/b1nb0t/blob/master/b1nb0t/plugins/util.py#L229-L266
-
-Features:
-    - Strips code markup (code blocks, inline code markup)
-    - Access to last result with _
-    - _get and _find instantly available without having to import discord
-    - Redirects stdout so you can print()
-    - Sane syntax error reporting
-    - Quickly retry evaluations
-    - Implicit return
+    - Rapptz: https://github.com/Rapptz/RoboDanny/blob/master/cogs/repl.py#L31-L75
+    - b1naryth1ef: https://github.com/b1naryth1ef/b1nb0t/blob/master/b1nb0t/plugins/util.py#L229-L266
 """
 
 import io
@@ -27,25 +16,37 @@ from contextlib import redirect_stdout
 import aiohttp
 import discord
 from discord.ext import commands
+from discord.ext.commands import command, Converter
 
 from dog import Cog
+from dog.core.checks import is_bot_admin
 from dog.core.context import DogbotContext
 from dog.core.utils import codeblock
 from dog.haste import haste
 
 log = logging.getLogger(__name__)
 
+IMPLICIT_RETURN_STOP_WORDS = {
+    'continue', 'break', 'raise', 'yield', 'with',
+    'assert', 'del', 'import', 'pass', 'return'
+}
 
-class Code(commands.Converter):
+
+class Code(Converter):
     def __init__(self, *, wrap_code=False, strip_ticks=True, indent_width=4, implicit_return=False):
         """
-        Code converter.
+        A converter that extracts code out of code blocks and inline code formatting.
 
-        Args:
-            wrap_code: Specifies whether to wrap the resulting code in a function.
-            strip_ticks: Specifies whether to strip the code of formatting-related backticks.
-            indent_width: Specifies the indent width, if wrapping.
-            implicit_return: Automatically adds a return statement, when wrapping code.
+        Parameters
+        ----------
+        wrap_code
+            Specifies whether to wrap the resulting code in a function.
+        strip_ticks
+            Specifies whether to strip the code of formatting-related backticks.
+        indent_width
+            Specifies the indent width, if wrapping.
+        implicit_return
+            Automatically adds a return statement, when wrapping code.
         """
         self.wrap_code = wrap_code
         self.strip_ticks = strip_ticks
@@ -71,7 +72,9 @@ class Code(commands.Converter):
             last_line = result.splitlines()[-1]
 
             # if the last line isn't indented and not returning, add it
-            if not last_line[4:].startswith(' ') and 'return' not in last_line:
+            first_word = last_line.strip().split(' ')[0]
+            no_stop = all(first_word != word for word in IMPLICIT_RETURN_STOP_WORDS)
+            if not last_line[4:].startswith(' ') and no_stop:
                 last_line = (' ' * self.indent_width) + 'return ' + last_line[4:]
 
             result = '\n'.join(result.splitlines()[:-1] + [last_line])
