@@ -1,5 +1,12 @@
 import discord
 
+from dog import Dogbot
+
+WHITELISTED_GUILDS = {
+   228317351672545290  # bot testing zone
+}
+UTBR_MAXIMUM = 8
+
 
 def user_to_bot_ratio(guild: discord.Guild):
     bots, users = 0, 0
@@ -12,14 +19,13 @@ def user_to_bot_ratio(guild: discord.Guild):
     return bots / users
 
 
-async def is_blacklisted(bot, guild_id: int) -> bool:
+async def is_blacklisted(bot: Dogbot, guild_id: int) -> bool:
     """ Returns a bool indicating whether a guild has been blacklisted. """
-    async with bot.pgpool.acquire() as conn:
-        blacklisted_record = await conn.fetchrow('SELECT * FROM blacklisted_guilds WHERE guild_id = $1', guild_id)
-        return blacklisted_record is not None
+    blacklisted_record = await bot.pgpool.fetchrow('SELECT * FROM blacklisted_guilds WHERE guild_id = $1', guild_id)
+    return blacklisted_record is not None
 
 
-async def is_bot_collection(bot, guild: discord.Guild):
+async def is_bot_collection(bot: Dogbot, guild: discord.Guild) -> bool:
     """ Returns a bool indicating whether a guild is a collection. """
     if await is_blacklisted(bot, guild.id):
         return True
@@ -29,11 +35,11 @@ async def is_bot_collection(bot, guild: discord.Guild):
         return True
 
     # special guilds that shouldn't be classified as a bot collection
-    if guild.id in (110373943822540800, 228317351672545290):
+    if guild.id in WHITELISTED_GUILDS:
         return False
 
     # ratio too big!
-    if user_to_bot_ratio(guild) >= 8:
+    if user_to_bot_ratio(guild) >= UTBR_MAXIMUM:
         return True
 
     return False
