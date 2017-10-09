@@ -34,7 +34,7 @@ class AsyncQueue(ABC):
 
     def _log(self, level, msg, *args):
         # ugh
-        logger.log(getattr(logging, level.upper(), logging.INFO), f'[Queue] {self.name}: {msg}', *args)
+        logger.log(getattr(logging, level.upper(), logging.INFO), f'queue {self.name}: {msg}', *args)
 
     @abstractmethod
     async def get_latest_item(self):

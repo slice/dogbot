@@ -7,10 +7,13 @@ import datetime
 import logging
 
 import discord
+from discord import Embed
 from discord.ext import commands
+from discord.ext.commands import clean_content
 
 from dog import Cog
-from dog.core import converters, utils
+from dog.core import utils
+from dog.core.converters import HumanTime
 from dog.core.utils import AsyncQueue
 
 logger = logging.getLogger(__name__)
@@ -18,15 +21,21 @@ logger = logging.getLogger(__name__)
 
 class ReminderQueue(AsyncQueue):
     async def get_latest_item(self):
-        async with self.bot.pgpool.acquire() as conn:
-            latest_reminder = await conn.fetchrow('SELECT * FROM reminders ORDER BY due ASC LIMIT 1')
-            if latest_reminder:
-                logger.debug('Got latest reminder -- rid=%d', latest_reminder['id'])
-            return latest_reminder
+        latest_reminder = await self.bot.pgpool.fetchrow("""
+            SELECT * FROM reminders
+            ORDER BY due
+            ASC LIMIT 1
+        """)
+
+        if latest_reminder:
+            logger.debug('Got latest reminder -- rid=%d', latest_reminder['id'])
+
+        return latest_reminder
 
     async def fulfill_item(self, reminder):
         # wait
         remaining_duration = (reminder['due'] - datetime.datetime.utcnow()).total_seconds() + 1
+
         logger.debug('Remaining duration: %ds', remaining_duration)
         if remaining_duration > 0:
             await asyncio.sleep(remaining_duration)
@@ -46,8 +55,7 @@ class ReminderQueue(AsyncQueue):
 
         # remove it from the database
         logger.debug('Removing reminder %d', reminder['id'])
-        async with self.bot.pgpool.acquire() as conn:
-            await conn.execute('DELETE FROM reminders WHERE id = $1', reminder['id'])
+        await self.bot.pgpool.execute('DELETE FROM reminders WHERE id = $1', reminder['id'])
 
 
 class Reminders(Cog):
@@ -60,10 +68,17 @@ class Reminders(Cog):
         self.queue.handler.cancel()
 
     async def create_reminder(self, ctx, due, note):
-        async with self.bot.pgpool.acquire() as conn:
-            cid = ctx.channel.id if isinstance(ctx.channel, discord.TextChannel) else ctx.author.id
-            await conn.execute('INSERT INTO reminders (author_id, channel_id, note, due) VALUES ($1, $2, $3, $4)',
-                               ctx.author.id, cid, note, due)
+        cid = ctx.channel.id if isinstance(ctx.channel, discord.TextChannel) else ctx.author.id
+
+        await self.bot.pgpool.execute(
+            """
+            INSERT INTO reminders
+            (author_id, channel_id, note, due)
+            VALUES ($1, $2, $3, $4)
+            """,
+            ctx.author.id, cid, note, due
+        )
+
         logger.debug('Creating reminder -- due=%s note=%s cid=%d aid=%d', due, note, cid, ctx.author.id)
 
         # we just created a reminder, we definitely have one now!
@@ -75,7 +90,7 @@ class Reminders(Cog):
             self.queue.reboot()
 
     @commands.group(invoke_without_command=True)
-    async def remind(self, ctx, due_in: converters.HumanTime, *, note: commands.clean_content):
+    async def remind(self, ctx, due_in: HumanTime, *, note: clean_content):
         """ Creates a reminder. """
         if due_in > (24 * 60 * 60) * 40:
             return await ctx.send('The maximum time allowed is 40 days.')
@@ -86,22 +101,39 @@ class Reminders(Cog):
     @remind.command()
     async def list(self, ctx):
         """ Lists your reminders. """
-        async with ctx.acquire() as conn:
-            reminders = await conn.fetch('SELECT * FROM reminders WHERE author_id = $1', ctx.author.id)
-            top = f'You currently have {len(reminders)} reminder(s).\n\n'
-            lst = [f'#{r["id"]} `{r["note"]}` \N{EM DASH} due {utils.ago(r["due"])}' for r in reminders]
-            await ctx.send(top + '\n'.join(lst))
+        reminders = await ctx.bot.pgpool.fetch('SELECT * FROM reminders WHERE author_id = $1', ctx.author.id)
+
+        em = Embed(title=f'{len(reminders)} reminder(s)')
+        em.description = '\n'.join(f'{r["id"]}: {r["note"]} ({utils.ago(r["due"])})' for r in reminders)
+
+        if len(em.description) > 2048:
+            return await ctx.send('You have too many reminders to show.')
+        
+        await ctx.send(embed=em)
 
     @remind.command()
     async def cancel(self, ctx, rid: int):
         """ Cancels a reminder. """
         async with ctx.acquire() as conn:
-            reminder = await conn.fetchrow('SELECT * FROM reminders WHERE id = $1 AND author_id = $2',
-                                           rid, ctx.author.id)
+
+            # grab the reminder
+            reminder = await conn.fetchrow(
+                """
+                SELECT * FROM reminders
+                WHERE id = $1 AND author_id = $2
+                """,
+                rid, ctx.author.id
+            )
+
             if not reminder:
-                return await ctx.send('I couldn\'t find that reminder, or you didn\'t create that one.')
+                return await ctx.send("I couldn't find that reminder, or you didn't create that one.")
+
+            # delete it
             await conn.execute('DELETE FROM reminders WHERE id = $1', rid)
-            await ctx.send('Alright, I went ahead and cancelled that one for you.')
+
+            await ctx.ok()
+
+            # reboot queue
             self.queue.has_item.clear()
             self.queue.reboot()
 
