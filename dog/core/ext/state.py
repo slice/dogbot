@@ -1,11 +1,12 @@
-from discord.ext import commands
+from discord.ext.commands import command
 
 from dog import Cog
+from dog.core.checks import is_bot_admin
 
 
 class State(Cog):
-    @commands.command()
-    @commands.is_owner()
+    @command(hidden=True)
+    @is_bot_admin()
     async def sync(self, ctx):
         """ Syncs the bot's state. """
         async with ctx.acquire() as conn:

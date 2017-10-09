@@ -12,6 +12,7 @@ import pyowm
 from discord.ext import commands
 from dog import Cog
 from dog.core import utils, converters
+from dog.core.checks import is_bot_admin
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ class Utility(Cog):
             self.owm = None
 
     @commands.command()
-    @commands.is_owner()
+    @is_bot_admin()
     async def exception(self, ctx, message: str = 'Test exception'):
         """ Creates an exception. """
         raise RuntimeError(message)

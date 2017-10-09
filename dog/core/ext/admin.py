@@ -1,32 +1,30 @@
 """
-Commands that are used to administrate the bot itself.
-It also contains some utility commands that are used to check the health of the
-bot, like d?ping.
+Commands that are used to administrate and manage the bot itself.
 """
 import logging
 import os
 import sys
-from time import monotonic
 
 import discord
-from discord.ext import commands
+from discord.ext.commands import command
 
 from dog import Cog
-from dog.core import converters
-from dog.core.utils import codeblock
-from dog.core.utils.system import shell
+from dog.core.checks import is_bot_admin
+from dog.core.context import DogbotContext
+from dog.core.converters import Image
+from dog.core.utils import codeblock, shell
 
 logger = logging.getLogger(__name__)
 
 
 def restart_inplace():
-    """ Restarts the bot inplace. """
+    """Restarts the bot inplace."""
     logger.info('reboot: executable=%s argv=%s', sys.executable, sys.argv)
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
 async def sync_source_code():
-    """ Syncs my source code from remote. """
+    """Syncs my source code from remote."""
 
     # fetch bits from github
     await shell('git fetch --all')
@@ -36,16 +34,16 @@ async def sync_source_code():
 
 
 class Admin(Cog):
-    @commands.command(aliases=['sh', 'bash'])
-    @commands.is_owner()
-    async def shell(self, ctx, *, cmd):
-        """ Executes a system command. """
+    @command(aliases=['sh', 'bash'])
+    @is_bot_admin()
+    async def shell(self, ctx: DogbotContext, *, cmd):
+        """Executes a system command."""
         await ctx.send(codeblock(await shell(cmd)))
 
-    @commands.command()
-    @commands.is_owner()
-    async def hotpatch(self, ctx):
-        """ Hotpatches Dogbot from Git. """
+    @command()
+    @is_bot_admin()
+    async def hotpatch(self, ctx: DogbotContext):
+        """Hotpatches Dogbot from Git."""
         msg = await ctx.send('\U000023f3 Pulling...')
 
         # update from github
@@ -60,10 +58,10 @@ class Admin(Cog):
         else:
             await msg.edit(content=f'{ctx.green_tick} Hotpatch successful.')
 
-    @commands.command()
-    @commands.is_owner()
-    async def update(self, ctx):
-        """ Updates Dogbot from Git, then restarts. """
+    @command()
+    @is_bot_admin()
+    async def update(self, ctx: DogbotContext):
+        """Updates Dogbot from Git, then restarts."""
         msg = await ctx.send('\U000023f3 Pulling...')
 
         # update from github
@@ -73,19 +71,23 @@ class Admin(Cog):
         await msg.edit(content='\N{WAVING HAND SIGN} Restarting, bye!')
         restart_inplace()
 
-    @commands.command()
-    @commands.is_owner()
-    async def set_avatar(self, ctx, *, image_source: converters.Image):
-        """ Sets the bot's avatar. """
+    @command()
+    @is_bot_admin()
+    async def set_avatar(self, ctx: DogbotContext, *, image_source: Image):
+        """
+        Sets the bot's avatar.
+
+        If the bot is ratelimited, then it will wait.
+        """
         async with self.bot.session.get(image_source) as resp:
             avatar_data = await resp.read()
             await self.bot.user.edit(avatar=avatar_data)
             await ctx.ok()
 
-    @commands.command()
-    @commands.is_owner()
-    async def set_username(self, ctx, *, username):
-        """ Sets the bot's username. """
+    @command()
+    @is_bot_admin()
+    async def set_username(self, ctx: DogbotContext, *, username):
+        """Sets the bot's username."""
         try:
             await self.bot.user.edit(username=username)
         except discord.HTTPException as ex:
@@ -93,26 +95,26 @@ class Admin(Cog):
         else:
             await ctx.send('\N{OK HAND SIGN} Done.')
 
-    @commands.command(aliases=['reboot'])
-    @commands.is_owner()
-    async def restart(self, ctx):
-        """ Reboots the bot. """
+    @command(aliases=['reboot'])
+    @is_bot_admin()
+    async def restart(self, ctx: DogbotContext):
+        """Reboots the bot."""
         logger.info('Commencing reboot!')
         await ctx.send('\N{WAVING HAND SIGN} Restarting, bye!')
         restart_inplace()
 
-    @commands.command(aliases=['poweroff', 'halt'])
-    @commands.is_owner()
-    async def shutdown(self, ctx):
-        """ Turns off the bot. """
-        if await ctx.confirm(title='Are you sure?', description="Are you sure you want to me down?"):
+    @command(aliases=['poweroff', 'halt'])
+    @is_bot_admin()
+    async def shutdown(self, ctx: DogbotContext):
+        """Turns off the bot."""
+        if await ctx.confirm(title='Are you sure?', description="Are you sure you want to shut me down?"):
             logger.info('Commencing shutdown!')
             await ctx.send('\N{WAVING HAND SIGN} Bye!')
             sys.exit(0)
 
-    @commands.command()
-    async def prefixes(self, ctx):
-        """ Lists the bot's prefixes. """
+    @command()
+    async def prefixes(self, ctx: DogbotContext):
+        """Lists the bot's prefixes."""
 
         # global prefixes
         prefixes = ', '.join(f'"{p}"' for p in ctx.bot.cfg['bot']['prefixes'])
@@ -127,9 +129,9 @@ class Admin(Cog):
 
         await ctx.send(msg)
 
-    @commands.command()
-    @commands.is_owner()
-    async def reload(self, ctx, ext=None):
+    @command()
+    @is_bot_admin()
+    async def reload(self, ctx: DogbotContext, ext=None):
         """ Reloads the bot/extensions of the bot. """
         try:
             if ext is None:

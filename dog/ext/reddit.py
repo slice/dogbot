@@ -10,6 +10,7 @@ import prawcore
 from discord.ext import commands
 from dog import Cog
 from dog.core import checks, utils
+from dog.core.checks import is_bot_admin
 
 logger = logging.getLogger(__name__)
 UPDATE_INTERVAL = 60 * 30  # 30 minutes
@@ -160,16 +161,17 @@ class Reddit(Cog):
 
     async def is_exhausted(self, guild_id: int, post_id: str) -> bool:
         """ Returns whether a post IDs is exhausted. """
-        async with self.bot.pgpool.acquire() as conn:
-            record = await conn.fetchrow('SELECT * FROM exhausted_reddit_posts WHERE guild_id = $1 AND '
-                                         'post_id = $2', guild_id, post_id)
-            return record is not None
+        record = await self.bot.pgpool.fetchrow(
+            'SELECT * FROM exhausted_reddit_posts WHERE guild_id = $1 AND post_id = $2',
+            guild_id, post_id
+        )
+
+        return record is not None
 
     async def add_exhausted(self, guild_id: int, post_id: str):
         """ Adds an exhausted post ID to the database. """
-        async with self.bot.pgpool.acquire() as conn:
-            logger.debug('Exhausting post %s (guild = %d)', post_id, guild_id)
-            await conn.execute("INSERT INTO exhausted_reddit_posts VALUES ($1, $2)", guild_id, post_id)
+        logger.debug('Exhausting post %s (guild = %d)', post_id, guild_id)
+        await self.bot.pgpool.execute("INSERT INTO exhausted_reddit_posts VALUES ($1, $2)", guild_id, post_id)
 
     async def post_to_feeds(self):
         # guilds aren't available until the bot is ready, and this task begins before the bot
@@ -186,19 +188,18 @@ class Reddit(Cog):
             logger.debug('Going to update all feeds...')
 
             # fetch all feeds, and update them all
-            async with self.bot.pgpool.acquire() as conn:
-                feeds = await conn.fetch('SELECT * FROM reddit_feeds')
+            feeds = await self.bot.pgpool.fetch('SELECT * FROM reddit_feeds')
 
-                # enumerate through all feeds
-                for idx, feed in enumerate(feeds):
-                    logger.debug('Updating feed {}/{}!'.format(idx + 1, len(feeds)))
-                    # wait a minute or two to prevent rate limiting (doesn't really help but w/e)
-                    await asyncio.sleep(random.random() + self.fuzz_interval)
+            # enumerate through all feeds
+            for idx, feed in enumerate(feeds):
+                logger.debug('Updating feed {}/{}!'.format(idx + 1, len(feeds)))
+                # wait a minute or two to prevent rate limiting (doesn't really help but w/e)
+                await asyncio.sleep(random.random() + self.fuzz_interval)
 
-                    # update the feed
-                    await self.update_feed(feed)
+                # update the feed
+                await self.update_feed(feed)
 
-                logger.debug('Updated.')
+            logger.debug('Updated.')
 
     @commands.command()
     async def hot(self, ctx, sub: str):
@@ -209,7 +210,7 @@ class Reddit(Cog):
                 if not post:
                     return await ctx.send('No suitable posts were found.')
                 await ctx.send(embed=create_post_embed(post))
-        except Exception as e:
+        except Exception:
             await ctx.send('Failed to grab a post, sorry!')
             logger.exception('Failed to grab a post:')
 
@@ -233,16 +234,19 @@ class Reddit(Cog):
 
         Only Dogbot Moderators may run this command.
         """
-        async with self.bot.pgpool.acquire() as conn:
-            feeds = await conn.fetch('SELECT * FROM reddit_feeds WHERE guild_id = $1', ctx.guild.id)
-            if not feeds:
-                return await ctx.send('No feeds found! Set one up with `d?reddit watch <channel> <subreddit>`. See `d?help '
-                                      'reddit watch` for more information.')
-            text = '\n'.join('\N{BULLET} <#{}> (/r/{})'.format(r['channel_id'], r['subreddit']) for r in feeds)
-            await ctx.send('**Feeds in {}:**\n\n{}'.format(ctx.guild.name, text))
+        feeds = await self.bot.pgpool.fetch('SELECT * FROM reddit_feeds WHERE guild_id = $1', ctx.guild.id)
+
+        if not feeds:
+            return await ctx.send(
+                f'No feeds found! Set one up with `{ctx.prefix}reddit watch <channel> <subreddit>`. See '
+                f'`{ctx.prefix}help reddit watch` for more information.'
+            )
+
+        text = '\n'.join('\N{BULLET} <#{}> (/r/{})'.format(r['channel_id'], r['subreddit']) for r in feeds)
+        await ctx.send('**Feeds in {}:**\n\n{}'.format(ctx.guild.name, text))
 
     @reddit.command()
-    @commands.is_owner()
+    @is_bot_admin()
     async def debug(self, ctx):
         """ Drastically lowers feed timers. Applied globally. """
         self.update_interval = 3
@@ -251,7 +255,7 @@ class Reddit(Cog):
         await ctx.ok()
 
     @reddit.command()
-    @commands.is_owner()
+    @is_bot_admin()
     async def debug_revert(self, ctx):
         """ Reverts lowered feed timers. """
         self.update_interval = UPDATE_INTERVAL
@@ -260,23 +264,22 @@ class Reddit(Cog):
         await ctx.ok()
 
     @reddit.command()
-    @commands.is_owner()
+    @is_bot_admin()
     async def update_all_now(self, ctx):
         """ Forces a feed update now. """
         logger.debug('[FORCED] Updating all feeds NOW...')
 
         # fetch all feeds, and update them all
-        async with self.bot.pgpool.acquire() as conn:
-            feeds = await conn.fetch('SELECT * FROM reddit_feeds')
+        feeds = await self.bot.pgpool.fetch('SELECT * FROM reddit_feeds')
 
-            # enumerate through all feeds
-            for idx, feed in enumerate(feeds):
-                logger.debug('[FORCED] Updating feed {}/{}!'.format(idx + 1, len(feeds)))
+        # enumerate through all feeds
+        for idx, feed in enumerate(feeds):
+            logger.debug('[FORCED] Updating feed {}/{}!'.format(idx + 1, len(feeds)))
 
-                # update the feed
-                await self.update_feed(feed)
+            # update the feed
+            await self.update_feed(feed)
 
-            logger.debug('[FORCED] Updated all feeds.')
+        logger.debug('[FORCED] Updated all feeds.')
 
     @reddit.command(aliases=['unwatch'])
     @checks.is_moderator()
@@ -287,9 +290,8 @@ class Reddit(Cog):
         If there are multiple feeds with the subreddit you have provided, all of them will
         be deleted. Only Dogbot Moderators may run this command.
         """
-        async with self.bot.pgpool.acquire() as conn:
-            await conn.execute('DELETE FROM reddit_feeds WHERE guild_id = $1 AND subreddit = $2', ctx.guild.id,
-                               subreddit)
+        await self.bot.pgpool.execute('DELETE FROM reddit_feeds WHERE guild_id = $1 AND subreddit = $2', ctx.guild.id,
+                                      subreddit)
         await ctx.ok()
 
     @reddit.command()

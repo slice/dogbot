@@ -3,7 +3,8 @@ import discord
 from dog import Dogbot
 
 WHITELISTED_GUILDS = {
-   228317351672545290  # bot testing zone
+    228317351672545290,  # bot testing zone
+    110373943822540800   # discord bots
 }
 UTBR_MAXIMUM = 8
 

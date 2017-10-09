@@ -1,7 +1,3 @@
-"""
-Dogbot owner only music extension.
-"""
-
 import audioop
 import asyncio
 import logging
@@ -14,6 +10,7 @@ from discord.ext import commands
 
 from dog import Cog
 from dog.core import checks
+from dog.core.checks import is_bot_admin, user_is_bot_admin
 from dog.core.errors import MustBeInVoice
 
 TIMEOUT = 60 * 4  # 4 minutes
@@ -102,13 +99,13 @@ async def must_be_in_voice(ctx: commands.Context):
 
 
 async def is_whitelisted(bot, guild: discord.Guild):
-    async with bot.pgpool.acquire() as conn:
-        record = await conn.fetchrow('SELECT * FROM music_guilds WHERE guild_id = $1', guild.id)
-        return record is not None
+    record = await bot.pgpool.fetchrow('SELECT * FROM music_guilds WHERE guild_id = $1', guild.id)
+    return record is not None
 
 
 async def can_use_music(ctx: commands.Context):
-    return await ctx.bot.is_owner(ctx.author) or (False if not ctx.guild else await is_whitelisted(ctx.bot, ctx.guild))
+    return await user_is_bot_admin(ctx, ctx.author) or \
+           (False if not ctx.guild else await is_whitelisted(ctx.bot, ctx.guild))
 
 
 def required_votes(number_of_people: int) -> int:
@@ -258,7 +255,7 @@ class Music(Cog):
         pass
 
     @music.command()
-    @commands.is_owner()
+    @is_bot_admin()
     async def status(self, ctx):
         """ Views the status of voice clients. """
         embed = discord.Embed(title='Voice status', color=discord.Color.blurple())

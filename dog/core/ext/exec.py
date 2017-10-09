@@ -193,8 +193,8 @@ class Exec(Cog):
             # message was under 2k chars, just send!
             await ctx.send(message)
 
-    @commands.command(name='retry', hidden=True)
-    @commands.is_owner()
+    @command(name='retry', hidden=True)
+    @is_bot_admin()
     async def retry(self, ctx):
         """ Retries the previously executed Python code. """
         if not self.previous_code:
@@ -202,8 +202,8 @@ class Exec(Cog):
 
         await self.execute(ctx, self.previous_code)
 
-    @commands.command(name='eval', aliases=['exec', 'debug'])
-    @commands.is_owner()
+    @command(name='eval', aliases=['exec', 'debug'], hidden=True)
+    @is_bot_admin()
     async def _eval(self, ctx, *, code: Code(wrap_code=True, implicit_return=True)):
         """ Executes Python code. """
 

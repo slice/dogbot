@@ -8,9 +8,11 @@ import os
 import asyncpg
 import discord
 import psutil
-from discord.ext import commands
+from discord.ext.commands import command, group
+
 from dog import Cog
 from dog.core import utils, converters
+from dog.core.checks import user_is_bot_admin
 from dog.core.utils.formatting import describe
 
 logger = logging.getLogger(__name__)
@@ -22,12 +24,12 @@ class Internal(Cog):
         self.socket_events = 0
 
     async def __local_check(self, ctx):
-        return await self.bot.is_owner(ctx.message.author)
+        return await user_is_bot_admin(ctx, ctx.author)
 
     async def on_socket_raw_receive(self, _):
         self.socket_events += 1
 
-    @commands.command()
+    @command()
     async def dstats(self, ctx):
         """ Shows detailed stats. """
         desc = """{0} (`{1}`, <@{1}>)\nCreated: {2}""".format(ctx.bot.user, ctx.bot.user.id, ctx.bot.user.created_at)
@@ -61,7 +63,7 @@ class Internal(Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=['bl'])
+    @command(aliases=['bl'])
     async def blacklist(self, ctx, guild: int):
         """
         Blacklists a guild.
@@ -75,14 +77,14 @@ class Internal(Cog):
                 return await ctx.send('That guild is already blacklisted.')
         await ctx.ok()
 
-    @commands.command(aliases=['ubl'])
+    @command(aliases=['ubl'])
     async def unblacklist(self, ctx, guild: int):
         """ Unblacklists a guild. """
         async with ctx.acquire() as conn:
             await conn.execute('DELETE FROM blacklisted_guilds WHERE guild_id = $1', guild)
         await ctx.ok()
 
-    @commands.group(aliases=['gb'])
+    @group(aliases=['gb'])
     async def globalbans(self, ctx):
         """ Manages global bot bans. """
 

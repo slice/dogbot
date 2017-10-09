@@ -1,24 +1,42 @@
 import discord
+from discord import Guild
 from discord.ext import commands
 
+from dog.core.context import DogbotContext
 from .errors import InsufficientPermissions
 
-mod_names = [
+mod_names = {
     'Moderator', 'Mod',  # classic mod role names
     'moderator', 'mod',  # lowercase mod role names
 
     # dog specific
     'Dog Moderator', 'Woofer', 'woofer', 'dog moderator',
     'dog mod',
-]
+}
 
 
 def config_is_set(name: str):
-    """ Check: Checks if a guild-specific configuration key is set. """
-    async def _predicate(ctx: commands.Context):
+    """Check: Checks if a guild-specific configuration key is set."""
+    async def predicate(ctx: DogbotContext):
         return await ctx.bot.config_is_set(ctx.guild, name)
 
-    return commands.check(_predicate)
+    return commands.check(predicate)
+
+
+async def user_is_bot_admin(ctx, user):
+    """Returns whether a user is a bot admin or not."""
+    is_owner = await ctx.bot.is_owner(user)
+    is_designated_admin = ctx.bot.cfg['bot'].get('admins', [])
+
+    return is_owner or (user.id in is_designated_admin)
+
+
+def is_bot_admin():
+    """Check: Checks if a user is a bot admin."""
+    async def predicate(ctx: DogbotContext):
+        return await user_is_bot_admin(ctx, ctx.author)
+
+    return commands.check(predicate)
 
 
 def beautify_permission_name(p):
@@ -37,22 +55,26 @@ def bot_perms(**permissions):
     thrown: `dog.core.errors.InsufficientPermissions`. This is so that
     it can be caught in `on_command_error`, and display a nice error message.
     """
-    async def predicate(ctx):
+    async def predicate(ctx: DogbotContext):
         my_perms = ctx.guild.me.permissions_in(ctx.channel)
+
         # use a dict comprehension so if we are missing a permission we can
         # trace it back to which permission we don't have
         does_match = {perm: getattr(my_perms, perm, False) for perm in permissions}
+
         # if we don't have all of the permissions we need, raise an error
         if not all(does_match.values()):
             # which permissions we don't have (which we need)
             failing = [beautify_permission_name(p) for p in does_match.keys() if not does_match[p]]
             raise InsufficientPermissions('I need these permissions to do that: ' + ', '.join(failing))
+
         return True
+
     return commands.check(predicate)
 
 
 def member_is_moderator(member: discord.Member) -> bool:
-    """ Returns whether a discord.Member is a "Dogbot Moderator". """
+    """Returns whether a :class:`discord.Member` is a "Dogbot Moderator"."""
     if isinstance(member, discord.User) or not member.guild:
         return False
 
@@ -64,14 +86,15 @@ def member_is_moderator(member: discord.Member) -> bool:
 
 
 def is_moderator():
-    """ Check: Checks if a person is a "Dogbot Moderator". """
+    """Check: Checks if a person is a "Dogbot Moderator"."""
     return commands.check(lambda ctx: member_is_moderator(ctx.author))
 
 
 def is_supporter(bot, user):
-    """ Returns whether a user has the supporter role in the woof server. """
+    """Returns whether a user has the supporter role in the bot's server."""
+
     # get the server
-    woof_guild: discord.Guild = bot.get_guild(bot.cfg['bot']['woof']['guild_id'])
+    woof_guild: Guild = bot.get_guild(bot.cfg['bot']['woof']['guild_id'])
 
     # guild doesn't exist, or user is not in the server
     if not woof_guild or user not in woof_guild.members:
@@ -95,5 +118,5 @@ def is_supporter(bot, user):
 
 
 def is_supporter_check():
-    """ Check: is_supporter, but a check. """
+    """Check: is_supporter, but a check."""
     return commands.check(lambda ctx: is_supporter(ctx.bot, ctx.author))
