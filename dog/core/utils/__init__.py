@@ -8,3 +8,4 @@ from .queue import *
 from .zalgo import *
 from .system import *
 from .logging import *
+from .timing import *

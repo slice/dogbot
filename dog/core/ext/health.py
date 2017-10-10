@@ -2,28 +2,27 @@
 Commands used to check the health of the bot.
 """
 import datetime
-from time import monotonic
-
-from dog import Cog
 
 from discord.ext import commands
+
+from dog import Cog
+from dog.core.utils import Timer
 
 
 class Health(Cog):
     @commands.command()
     async def ping(self, ctx):
-        """ Pong! """
+        """Pong!"""
 
-        # measure gateway delay
-        before = monotonic()
-        msg = await ctx.send('\u200b')
-        after = monotonic()
+        # measure rest delay
+        with Timer() as timer:
+            msg = await ctx.send('Po\N{EM DASH}')
 
         pong_ws = round(ctx.bot.latency * 1000, 2)
-        pong_rest = round((after - before) * 1000, 2)
+        pong_rest = round(timer.interval * 1000, 2)
         pong_gateway_lag = round((datetime.datetime.utcnow() - msg.created_at).total_seconds() * 1000, 2)
 
-        pong = f'Pong! WS: {pong_ws}ms, REST: {pong_rest}ms, GW lag: {pong_gateway_lag}ms'
+        pong = f'Pong! W: `{pong_ws}ms`, R: `{pong_rest}ms`, G: `{pong_gateway_lag}ms`'
         await msg.edit(content=pong)
 
 
