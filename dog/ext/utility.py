@@ -258,7 +258,9 @@ class Utility(Cog):
             word = j['word'] if 'word' in j else query
             only_word = str(word) + '\n'
             embed.description += f'{word}: {j["reading"]}\n' if 'reading' in j else only_word
+
         embed.description += '\n'
+
         for sense in result['senses']:
             restr = ', '.join(sense['restrictions'])
             if 'english_definitions' in sense:

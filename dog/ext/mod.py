@@ -10,12 +10,35 @@ from discord.ext import commands
 
 from dog import Cog
 from dog.core import checks, converters
+from dog.core.checks import create_stack
+from dog.core.context import DogbotContext
 from dog.core.converters import DeleteDays
 from dog.core.utils.formatting import describe
 
 logger = logging.getLogger(__name__)
-
 CUSTOM_EMOJI_REGEX = re.compile(r'<:([a-zA-Z_0-9-]+):(\d+)>')
+purge_command = create_stack(
+    checks.is_moderator(),
+    checks.bot_perms(manage_messages=True, read_message_history=True),
+    commands.guild_only()
+)
+
+
+def _create_purge_command(name, base_purge_handler, *, parent, aliases=None, help_text=''):
+    """A function used to dynamically construct purge command subcommands."""
+
+    @parent.command(name=name, aliases=aliases or [])
+    @purge_command
+    async def _purge_generated(self, ctx, amount: int=5):
+        """..."""
+        await self.base_purge(ctx, amount, base_purge_handler)
+
+    # hijack help text and function name
+    # _purge_generated.__doc__ = help_text
+    _purge_generated.__name__ = 'purge_' + name
+    _purge_generated.help = help_text
+
+    return _purge_generated
 
 
 class Mod(Cog):
@@ -44,7 +67,7 @@ class Mod(Cog):
                 reply = 'Hey {0.mention}! You\'re invisible. Stop being invisible, please. Thanks.'
                 await message.channel.send(reply.format(message.author))
 
-    async def base_purge(self, ctx: commands.Context, limit: int, check=None, **kwargs):
+    async def base_purge(self, ctx: DogbotContext, limit: int, check=None, **kwargs):
         # check if it's too much
         if limit > 5000:
             await ctx.send('Too many messages to purge. 5,000 is the maximum.')
@@ -60,9 +83,7 @@ class Mod(Cog):
             pass  # ignore not found errors
 
     @commands.group(invoke_without_command=True)
-    @commands.guild_only()
-    @checks.bot_perms(manage_messages=True, read_message_history=True)
-    @checks.is_moderator()
+    @purge_command
     async def purge(self, ctx, amount: int):
         """
         Purges messages the last <n> messages.
@@ -76,42 +97,29 @@ class Mod(Cog):
         await self.base_purge(ctx, amount)
 
     @purge.command(name='by', aliases=['from'])
-    @commands.guild_only()
-    @checks.bot_perms(manage_messages=True, read_message_history=True)
-    @checks.is_moderator()
+    @purge_command
     async def purge_by(self, ctx, target: discord.Member, amount: int = 5):
         """ Purges any message in the last <n> messages sent by someone. """
         await self.base_purge(ctx, amount, lambda m: m.author == target)
 
-    @purge.command(name='embeds', aliases=['e'])
-    @commands.guild_only()
-    @checks.bot_perms(manage_messages=True, read_message_history=True)
-    @checks.is_moderator()
-    async def purge_embeds(self, ctx, amount: int = 5):
-        """ Purges any message in the last <n> messages containing embeds. """
-        await self.base_purge(ctx, amount, lambda m: len(m.embeds) != 0)
-
-    @purge.command(name='attachments', aliases=['images', 'uploads', 'i'])
-    @commands.guild_only()
-    @checks.bot_perms(manage_messages=True, read_message_history=True)
-    @checks.is_moderator()
-    async def purge_attachments(self, ctx, amount: int = 5):
-        """ Purges any message in the last <n> messages containing attachments. """
-        await self.base_purge(ctx, amount, lambda m: len(m.attachments) != 0)
-
-    @purge.command(name='bot')
-    @commands.guild_only()
-    @checks.bot_perms(manage_messages=True, read_message_history=True)
-    @checks.is_moderator()
-    async def purge_bot(self, ctx, amount: int = 5):
-        """ Purges any message in the last <n> messages by bots. """
-        await self.base_purge(ctx, amount, lambda m: m.author.bot)
+    purge_embeds = _create_purge_command(
+        'embeds', lambda m: len(m.embeds) != 0, parent=purge,
+        aliases=['e'],
+        help_text='Purges any message in the last <n> messages containing embeds.',
+    )
+    purge_bot = _create_purge_command(
+        'bot', lambda m: m.author.bot, parent=purge,
+        help_text='Purges any message in the last <n> messages sent by bots.',
+    )
+    purge_attachments = _create_purge_command(
+        'attachments', lambda m: len(m.attachments) != 0, parent=purge,
+        aliases=['images', 'uploads', 'i'],
+        help_text='Purges any message in the last <n> messages containing attachments.',
+    )
 
     @purge.command(name='reactions')
-    @commands.guild_only()
-    @checks.bot_perms(manage_messages=True, read_message_history=True)
-    @checks.is_moderator()
-    async def purge_reactions(self, ctx: commands.Context, amount: int = 5):
+    @purge_command
+    async def purge_reactions(self, ctx: commands.Context, amount: int=5):
         """ Purges reactions in the last <n> messages. """
         count = 0
         total_reactions_removed = 0
@@ -132,11 +140,9 @@ class Mod(Cog):
                        delete_after=2.5)
 
     @purge.command(name='emoji', aliases=['emojis'])
-    @commands.guild_only()
-    @checks.bot_perms(manage_messages=True, read_message_history=True)
-    @checks.is_moderator()
-    async def purge_emoji(self, ctx, amount: int = 5, minimum_emoji: int = 1):
-        """ Purges any message in the last <n> messages with emoji. """
+    @purge_command
+    async def purge_emoji(self, ctx, amount: int=5, minimum_emoji: int=1):
+        """Purges any message in the last <n> messages with emoji."""
         def message_check(msg):
             emoji_count = sum(1 for c in msg.content if c in emoji.UNICODE_EMOJI)
             return emoji_count >= minimum_emoji or CUSTOM_EMOJI_REGEX.search(msg.content) is not None
