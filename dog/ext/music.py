@@ -1,11 +1,12 @@
 import audioop
 import asyncio
+import functools
 import logging
 import random
 
 import discord
-import functools
 import youtube_dl
+from discord import PCMVolumeTransformer
 from discord.ext import commands
 
 from dog import Cog
@@ -42,7 +43,7 @@ class YouTubeError(commands.CommandError):
     pass
 
 
-class VolumeTransformer(discord.PCMVolumeTransformer):
+class VolumeTransformer(PCMVolumeTransformer):
     def read(self):
         ret = self.original.read()
         return audioop.mul(ret, 2, self._volume)
