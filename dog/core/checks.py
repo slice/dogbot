@@ -43,6 +43,20 @@ def beautify_permission_name(p):
     return p.replace('_', ' ').replace('guild', 'server').title()
 
 
+def create_stack(*checks):
+    """
+    Creates a check stack.
+
+    A check stack is a decorator that encompasses the behavior of multiple
+    other checks.
+    """
+    def stack(func):
+        for check in checks:
+            func = check(func)
+        return func
+    return stack
+
+
 def bot_perms(**permissions):
     """
     Check: Checks if we have all permissions listed.
