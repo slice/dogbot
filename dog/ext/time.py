@@ -1,15 +1,15 @@
 import arrow
-import discord
-from discord.ext import commands
+from discord.ext.commands import group
+
 from dog import Cog
 
 
 class Time(Cog):
-    @commands.group()
+    @group()
     async def time(self, ctx):
         """ Time-related commands. """
         if ctx.invoked_subcommand is None:
-            await ctx.send('You must specify a valid subcommand to run. For help, run `d?help time`.')
+            await ctx.send(f'You must specify a valid subcommand to run. For help, run `{ctx.prefix}?help time`.')
 
     @time.command(name='in')
     async def time_in(self, ctx, *, timezone):
