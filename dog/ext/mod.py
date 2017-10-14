@@ -535,7 +535,7 @@ class Mod(Cog):
     @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     @checks.bot_perms(manage_nicknames=True)
-    async def attentionseek(self, ctx, replace_with: str = '💩'):
+    async def attentionseek(self, ctx: DogbotContext, replace_with='💩'):
         """
         Changes attention-seeking nicknames.
 

@@ -7,6 +7,7 @@ import discord
 import youtube_dl
 from discord import PCMVolumeTransformer, ClientException
 from discord.ext import commands
+from discord.ext.commands import guild_only
 
 from dog import Cog
 from dog.core import checks
@@ -14,7 +15,7 @@ from dog.core.checks import is_bot_admin
 from dog.core.context import DogbotContext
 from dog.core.errors import MustBeInVoice
 
-from .checks import must_be_in_voice
+from .checks import must_be_in_voice, can_use_music_check
 from .constants import TIMEOUT, YTDL_OPTS, SEARCHING_TEXT
 from .errors import YouTubeError
 from .state import State
@@ -101,8 +102,8 @@ class Music(Cog):
                 log.debug('Cancelling leave task for guild %d.', member.guild.id)
 
     @commands.group(aliases=['m'])
-    @checks.is_supporter_check()
-    @commands.guild_only()
+    @can_use_music_check()
+    @guild_only()
     async def music(self, ctx: DogbotContext):
         """Music. Beep boop!"""
         pass
