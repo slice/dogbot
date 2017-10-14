@@ -33,9 +33,7 @@ def _create_purge_command(name, base_purge_handler, *, parent, aliases=None, hel
         """..."""
         await self.base_purge(ctx, amount, base_purge_handler)
 
-    # hijack help text and function name
-    # _purge_generated.__doc__ = help_text
-    _purge_generated.__name__ = 'purge_' + name
+    # hijack help text
     _purge_generated.help = help_text
 
     return _purge_generated
@@ -119,7 +117,7 @@ class Mod(Cog):
 
     @purge.command(name='reactions')
     @purge_command
-    async def purge_reactions(self, ctx: commands.Context, amount: int=5):
+    async def purge_reactions(self, ctx: DogbotContext, amount: int=5):
         """ Purges reactions in the last <n> messages. """
         count = 0
         total_reactions_removed = 0
@@ -141,16 +139,17 @@ class Mod(Cog):
 
     @purge.command(name='emoji', aliases=['emojis'])
     @purge_command
-    async def purge_emoji(self, ctx, amount: int=5, minimum_emoji: int=1):
+    async def purge_emoji(self, ctx: DogbotContext, amount: int=5, minimum_emoji: int=1):
         """Purges any message in the last <n> messages with emoji."""
         def message_check(msg):
             emoji_count = sum(1 for c in msg.content if c in emoji.UNICODE_EMOJI)
             return emoji_count >= minimum_emoji or CUSTOM_EMOJI_REGEX.search(msg.content) is not None
+
         await self.base_purge(ctx, amount, message_check)
 
     @commands.command()
     @commands.guild_only()
-    async def clean(self, ctx):
+    async def clean(self, ctx: DogbotContext):
         """ Removes recent messages posted by the bot. """
         try:
             await ctx.channel.purge(limit=50, check=lambda m: m.author == ctx.bot.user)
