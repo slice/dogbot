@@ -159,7 +159,7 @@ class Exec(Cog):
             # something went wrong :(
             try:
                 await ctx.message.add_reaction(ctx.tick('red', raw=True))
-            except (discord.HTTPException, discord.Forbidden):
+            except discord.HTTPException:
                 # failed to add failure tick, hmm.
                 pass
 
@@ -171,7 +171,7 @@ class Exec(Cog):
 
         try:
             await ctx.message.add_reaction(ctx.tick('green', raw=True))
-        except (discord.HTTPException, discord.Forbidden):
+        except discord.HTTPException:
             # couldn't add the reaction, ignore
             pass
 

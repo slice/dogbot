@@ -340,7 +340,7 @@ class Music(Cog):
 
     @music.command(aliases=['p'])
     @commands.check(must_be_in_voice)
-    async def play(self, ctx: DogbotContext, *, query: str):
+    async def play(self, ctx: DogbotContext, *, query):
         """
         Plays music.
 

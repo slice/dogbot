@@ -73,7 +73,7 @@ class RawUser(commands.Converter):
 
         try:
             return await ctx.bot.get_user_info(argument)
-        except (discord.NotFound, discord.HTTPException):
+        except discord.HTTPException:
             raise commands.BadArgument("That user wasn't found.")
 
 

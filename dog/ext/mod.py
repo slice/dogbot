@@ -434,7 +434,7 @@ class Mod(Cog):
             except discord.NotFound:
                 # XXX: This code path might be unreachable, research further
                 paginator.add_line(f"{ctx.red_tick} {describe(member)} wasn't found.")
-            except (discord.Forbidden, discord.HTTPException):
+            except discord.HTTPException:
                 paginator.add_line(f'{ctx.red_tick} Failed to ban {describe(member)}. No permissions?')
 
         await progress.delete()
@@ -484,7 +484,7 @@ class Mod(Cog):
         if assign_to:
             try:
                 await assign_to.add_roles(role)
-            except (discord.Forbidden, discord.HTTPException):
+            except discord.HTTPException:
                 return await ctx.send(f"{ctx.red_tick} Couldn't give {role.name} to that person.")
 
         await ctx.send(f'{ctx.green_tick} Created vanity role {describe(role, quote=True)}.')
@@ -528,7 +528,7 @@ class Mod(Cog):
         finally:
             try:
                 await role.edit(mentionable=False, reason=f'Pingrole by {describe(ctx.author)}')
-            except (discord.Forbidden, discord.HTTPException):
+            except discord.HTTPException:
                 pass
 
     @commands.command()
@@ -550,7 +550,7 @@ class Mod(Cog):
         for seeker in attention_seekers:
             try:
                 await seeker.edit(nick=replace_with)
-            except (discord.HTTPException, discord.Forbidden):
+            except discord.HTTPException:
                 succeeded -= 1
         failed_count = len(attention_seekers) - succeeded
         await ctx.send(f'Renamed {succeeded} attention seeker(s). Failed to rename {failed_count}.')
