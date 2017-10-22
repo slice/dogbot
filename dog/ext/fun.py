@@ -66,7 +66,7 @@ class Fun(Cog):
     @command(hidden=True)
     @cooldown(1, 1, BucketType.channel)
     async def clap(self, ctx, *, text: commands.clean_content):
-        """ 👏MAKES👏TEXT👏LOOK👏LIKE👏THIS👏 """
+        """👏MAKES👏TEXT👏LOOK👏LIKE👏THIS👏"""
         clap = '\N{CLAPPING HANDS SIGN}'
         await ctx.send(clap + text.replace(' ', clap) + clap)
 
@@ -79,18 +79,18 @@ class Fun(Cog):
         await ctx.send(spongemock + ' ' + ''.join(result) + ' ' + spongemock)
 
     @command(hidden=True)
-    async def spaced(self, ctx, *, text: clean_content):
-        """ S P A C E D """
+    async def spaced(self, ctx: DogbotContext, *, text: clean_content):
+        """S P A C E D"""
         await ctx.send(text.replace('', ' ').strip())
 
     @command(hidden=True, aliases=['fw'])
-    async def fullwidth(self, ctx, *, text: clean_content):
-        """ ＡＥＳＴＨＥＴＩＣ """
+    async def fullwidth(self, ctx: DogbotContext, *, text: clean_content):
+        """ＡＥＳＴＨＥＴＩＣ"""
         await ctx.send(text.upper().translate(FW_TRANSLATE))
 
     @command()
     @is_moderator()
-    async def say(self, ctx, channel: TextChannel, *, text: clean_content):
+    async def say(self, ctx: DogbotContext, channel: TextChannel, *, text: clean_content):
         """
         Makes the bot say something in a certain channel.
 
@@ -108,8 +108,8 @@ class Fun(Cog):
 
     @command()
     @cooldown(1, 2, BucketType.user)
-    async def urban(self, ctx, *, word: str):
-        """ Finds UrbanDictionary definitions. """
+    async def urban(self, ctx: DogbotContext, *, word):
+        """Finds UrbanDictionary definitions."""
         async with ctx.channel.typing():
             try:
                 result = await UrbanDefinition.query(self.bot.session, word)
@@ -123,8 +123,8 @@ class Fun(Cog):
 
     @command(aliases=['shiba', 'dog'])
     @cooldown(1, 2, BucketType.user)
-    async def shibe(self, ctx):
-        """ Posts a random Shiba Inu picture. """
+    async def shibe(self, ctx: DogbotContext):
+        """Posts a random Shiba Inu picture."""
         async with ctx.typing():
             try:
                 resp = await utils.get_json(ctx.bot.session, SHIBE_ENDPOINT)
@@ -134,8 +134,8 @@ class Fun(Cog):
 
     @command()
     @cooldown(1, 2, BucketType.user)
-    async def dogfact(self, ctx):
-        """ Returns a random dog-related fact. """
+    async def dogfact(self, ctx: DogbotContext):
+        """Returns a random dog-related fact."""
         await ctx.send(random.choice(self.dogfacts))
 
 
