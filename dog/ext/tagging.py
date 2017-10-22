@@ -5,30 +5,38 @@ Extension that implements tags, a way to store pieces of useful text for later.
 import datetime
 import re
 from collections import namedtuple
+from typing import Union
 
 import discord
 from discord.ext import commands
+from discord.ext.commands import clean_content, guild_only
+
 from dog import Cog
 from dog.core import checks, utils
+from dog.core.context import DogbotContext
 
 Tag = namedtuple('Tag', 'name value creator created_at uses')
 
 
 class Tagging(Cog):
-    async def create_tag(self, ctx: commands.Context, name: str, value: str):
-        insert = 'INSERT INTO tags VALUES ($1, $2, $3, $4, 0, $5)'
-        async with self.bot.pgpool.acquire() as conn:
-            await conn.execute(insert, name, ctx.guild.id, ctx.author.id, value, datetime.datetime.utcnow())
+    async def create_tag(self, ctx: DogbotContext, name: str, value: str):
+        insert = """
+            INSERT INTO tags
+            (name, guild_id, creator_id, value, uses, created_at)
+            VALUES ($1, $2, $3, $4, 0, $5)
+        """
+        await self.bot.pgpool.execute(insert, name, ctx.guild.id, ctx.author.id, value, datetime.datetime.utcnow())
 
     async def edit_tag(self, name: str, value: str):
-        async with self.bot.pgpool.acquire() as conn:
-            await conn.execute('UPDATE tags SET value = $1 WHERE name = $2', value, name)
+        await self.bot.pgpool.execute('UPDATE tags SET value = $1 WHERE name = $2', value, name)
 
-    async def get_tag(self, ctx: commands.Context, name: str) -> 'Union[None, Tag]':
-        """ Finds a tag, and returns it as a ``Tag`` object. """
-        select = 'SELECT * FROM tags WHERE guild_id = $1 AND name = $2'
-        async with self.bot.pgpool.acquire() as conn:
-            record = await conn.fetchrow(select, ctx.guild.id, name)
+    async def get_tag(self, ctx: DogbotContext, name: str) -> Union[None, Tag]:
+        """Finds a tag, and returns it as a :class:``Tag`` object."""
+        query = """
+            SELECT * FROM tags
+            WHERE guild_id = $1 AND name = $2
+        """
+        record = await self.bot.pgpool.fetchrow(query, ctx.guild.id, name)
 
         if not record:
             return None
@@ -37,13 +45,12 @@ class Tagging(Cog):
         return Tag(value=record['value'], creator=creator, uses=record['uses'], name=name,
                    created_at=record['created_at'])
 
-    async def delete_tag(self, ctx: commands.Context, name: str):
-        """ Deletes a tag. """
-        async with self.bot.pgpool.acquire() as conn:
-            await conn.execute('DELETE FROM tags WHERE guild_id = $1 AND name = $2', ctx.guild.id, name)
+    async def delete_tag(self, ctx: DogbotContext, name: str):
+        """Deletes a tag."""
+        await self.bot.pgpool.execute('DELETE FROM tags WHERE guild_id = $1 AND name = $2', ctx.guild.id, name)
 
-    def can_touch_tag(self, ctx: commands.Context, tag: Tag) -> bool:
-        """ Returns whether someone can touch a tag (modify, delete, or edit it). """
+    def can_touch_tag(self, ctx: DogbotContext, tag: Tag) -> bool:
+        """Returns whether someone can touch a tag (modify, delete, or edit it)."""
         perms = ctx.author.guild_permissions
 
         # they can manage the server
@@ -66,7 +73,7 @@ class Tagging(Cog):
 
     @commands.group(invoke_without_command=True)
     @commands.guild_only()
-    async def tag(self, ctx, name: commands.clean_content, *, value: commands.clean_content=None):
+    async def tag(self, ctx, name: clean_content, *, value: clean_content=None):
         """
         Tag related operations.
 
@@ -77,54 +84,67 @@ class Tagging(Cog):
         If you don't provide a value, the tag's contents are sent.
 
         You may only touch a tag if any of the following conditions are met:
-            1) You have the "Manage Server" permission.
-            2) You are the owner of the server.
-            3) You have created that tag.
-            4) You are a Dogbot Moderator.
+            You have the "Manage Server" permission,
+            you are the owner of the server.
+            you have created that tag.
+            you are a Dogbot Moderator.
         """
+
+        # a value was provided, create or overwrite a tag
         if value:
-            # a value was provided, create or overwrite
             tag = await self.get_tag(ctx, name)
 
             # tag already exists, check if we can touch it
             if tag and not self.can_touch_tag(ctx, tag):
                 # cannot overwrite
-                await ctx.send('\N{NO PEDESTRIANS} You can\'t overwrite'
-                               ' that tag\'s contents.')
-                return
+                return await ctx.send("\N{NO PEDESTRIANS} You can't overwrite that tag's contents.")
 
             # set a tag
             if tag:
                 await self.edit_tag(name, value)
             else:
                 await self.create_tag(ctx, name, value)
+
+            # we good
             await ctx.ok('\N{MEMO}' if tag else '\N{DELIVERY TRUCK}')
+
+            return
+
+        # see the value of a tag
+        tag = await self.get_tag(ctx, name)
+
+        if tag:
+            # send the tag's value
+            await ctx.send(tag.value)
+
+            # increment usage count
+            update = """
+                UPDATE tags
+                SET uses = uses + 1
+                WHERE name = $1 AND guild_id = $2
+            """
+            await self.bot.pgpool.execute(update, name, ctx.guild.id)
         else:
-            # get a tag
-            tag = await self.get_tag(ctx, name)
-            if tag:
-                await ctx.send(tag.value)
-                async with self.bot.pgpool.acquire() as conn:
-                    await conn.execute('UPDATE tags SET uses = uses + 1 WHERE name = $1 AND'
-                                       ' guild_id = $2', name, ctx.guild.id)
-            else:
-                await ctx.send('\N{CONFUSED FACE} Not found.')
+            await ctx.send('Tag not found.')
 
     @tag.command(name='list', aliases=['ls'])
-    @commands.guild_only()
+    @guild_only()
     async def tag_list(self, ctx):
-        """ Lists tags in this server. """
-        async with self.bot.pgpool.acquire() as conn:
-            tags = [record['name'] for record in
-                    await conn.fetch('SELECT * FROM tags WHERE guild_id = $1', ctx.guild.id)]
+        """Lists tags in this server."""
+        tags = await self.bot.pgpool.fetch('SELECT * FROM tags WHERE guild_id = $1', ctx.guild.id)
+        tag_names = [record['name'] for record in tags]
+
+        if not tags:
+            return await ctx.send('There are no tags in this server.')
+
         try:
-            await ctx.send(f'**{len(tags)} tag(s):** ' + ', '.join(tags))
+            await ctx.send(f'**{len(tag_names)} tag(s):** ' + ', '.join(tag_names))
         except discord.HTTPException:
-            await ctx.send('\N{PENSIVE FACE} Too many tags to display!')
+            await ctx.send('There are too many tags to display.')
 
     @tag.command(name='delete', aliases=['rm', 'remove', 'del'])
-    @commands.guild_only()
-    async def tag_delete(self, ctx, name: str):
+    @guild_only()
+    async def tag_delete(self, ctx: DogbotContext, name):
         """
         Deletes a tag.
 
@@ -134,26 +154,22 @@ class Tagging(Cog):
         tag = await self.get_tag(ctx, name)
 
         if not tag:
-            await ctx.send('\N{CONFUSED FACE} Not found.')
-            return
+            return await ctx.send('Tag not found.')
 
         if not self.can_touch_tag(ctx, tag):
-            await ctx.send('\N{NO PEDESTRIANS} You can\'t do that.')
-            return
+            return await ctx.send('\N{NO PEDESTRIANS} You can\'t do that.')
 
         await self.delete_tag(ctx, name)
         await ctx.ok('\N{PUT LITTER IN ITS PLACE SYMBOL}')
 
     @tag.command(name='markdown', aliases=['raw'])
-    @commands.guild_only()
-    async def tag_markdown(self, ctx, name: str):
-        """
-        Views the markdown of a tag.
-        """
+    @guild_only()
+    async def tag_markdown(self, ctx: DogbotContext, name):
+        """Views the markdown of a tag."""
         tag = await self.get_tag(ctx, name)
 
         if not tag:
-            return await ctx.send('\N{CONFUSED FACE} Not found.')
+            return await ctx.send('Tag not found.')
 
         content = tag.value
         escape_regex = r'(`|\*|~|_|<|\\)'
@@ -163,9 +179,9 @@ class Tagging(Cog):
         await ctx.send(content)
 
     @tag.command(name='info', aliases=['about'])
-    @commands.guild_only()
-    async def tag_info(self, ctx, name: str):
-        """ Shows you information about a certain tag. """
+    @guild_only()
+    async def tag_info(self, ctx: DogbotContext, name):
+        """Shows you information about a certain tag."""
         tag = await self.get_tag(ctx, name)
 
         if tag:
@@ -175,7 +191,7 @@ class Tagging(Cog):
             embed.add_field(name='Uses', value=tag.uses)
             await ctx.send(embed=embed)
         else:
-            await ctx.send('\N{CONFUSED FACE} Not found.')
+            await ctx.send('Tag not found.')
 
 
 def setup(bot):
