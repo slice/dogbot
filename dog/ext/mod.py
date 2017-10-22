@@ -12,11 +12,10 @@ from dog import Cog
 from dog.core import checks, converters
 from dog.core.checks import create_stack
 from dog.core.context import DogbotContext
-from dog.core.converters import DeleteDays
+from dog.core.converters import DeleteDays, EMOJI_REGEX
 from dog.core.utils.formatting import describe
 
 logger = logging.getLogger(__name__)
-CUSTOM_EMOJI_REGEX = re.compile(r'<:([a-zA-Z_0-9-]+):(\d+)>')
 purge_command = create_stack(
     checks.is_moderator(),
     checks.bot_perms(manage_messages=True, read_message_history=True),
@@ -143,7 +142,7 @@ class Mod(Cog):
         """Purges any message in the last <n> messages with emoji."""
         def message_check(msg):
             emoji_count = sum(1 for c in msg.content if c in emoji.UNICODE_EMOJI)
-            return emoji_count >= minimum_emoji or CUSTOM_EMOJI_REGEX.search(msg.content) is not None
+            return emoji_count >= minimum_emoji or EMOJI_REGEX.search(msg.content) is not None
 
         await self.base_purge(ctx, amount, message_check)
 
