@@ -17,6 +17,7 @@ from discord.ext.commands import command, cooldown, clean_content, BucketType
 from dog import Cog
 from dog.core import utils
 from dog.core.checks import is_moderator
+from dog.core.context import DogbotContext
 
 FW_TRANSLATE = str.maketrans(
     'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890\',.:;!?" ',
@@ -70,11 +71,12 @@ class Fun(Cog):
         await ctx.send(clap + text.replace(' ', clap) + clap)
 
     @command(hidden=True)
-    async def mock(self, ctx, *, text: clean_content):
-        """ Mocks. """
+    async def mock(self, ctx: DogbotContext, *, text: clean_content):
+        """mAkEs tExt Look LIkE thIs!"""
+        spongemock = '<:spongemock:371555602964676610>'
         ev = random.randint(2, 4)
         result = [character.upper() if not text.index(character) % ev == 0 else character.lower() for character in text]
-        await ctx.send(''.join(result))
+        await ctx.send(spongemock + ' ' + ''.join(result) + ' ' + spongemock)
 
     @command(hidden=True)
     async def spaced(self, ctx, *, text: clean_content):
