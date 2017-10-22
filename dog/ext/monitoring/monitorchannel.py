@@ -3,11 +3,18 @@ Simple, embed+channel-based monitoring of Dogbot.
 """
 import logging
 import discord
+from discord import Guild
 
 from dog import Cog
 from dog.core import botcollection, utils
 
 logger = logging.getLogger(__name__)
+
+
+class Colors:
+    NEON_GREEN = 0x71ff5e
+    ORANGE = 0xff945b
+    LIGHT_RED = 0xff655b
 
 
 class MonitorChannel(Cog):
@@ -25,14 +32,14 @@ class MonitorChannel(Cog):
 
         All parameters are passed to `send()`.
         """
-        logger.info('Monitor sending.')
+        logger.info('Monitor sending args=%s, kwargs=%s', args, kwargs)
         monitor_channels = self.bot.cfg['monitoring'].get('monitor_channels', [])
 
         # no specified channel
         if not monitor_channels:
             return
 
-        channels = list(map(self.bot.get_channel, monitor_channels))
+        channels = [self.bot.get_channel(c) for c in monitor_channels]
 
         # no resolved monitoring channels
         if not any(channels):
@@ -49,8 +56,8 @@ class MonitorChannel(Cog):
         except discord.Forbidden:
             logger.warning('Forbidden to send to monitoring channel -- ignoring.')
 
-    def guild_fields(self, g):
-        """ Returns a list of fields to be passed into ``monitor_send`` from a guild. """
+    def guild_fields(self, g: Guild):
+        """Returns a list of fields to be passed into :method:``monitor_send`` from a guild."""
         ratio = botcollection.user_to_bot_ratio(g)
         humans = utils.commas(sum(1 for u in g.members if not u.bot))
         bots = utils.commas(sum(1 for u in g.members if u.bot))
@@ -62,7 +69,7 @@ class MonitorChannel(Cog):
             ('Members', f'Members: {len(g.members)} (UTBR: {ratio})\n{humans} human(s), {bots} bot(s)')
         ]
 
-    async def on_guild_join(self, g):
+    async def on_guild_join(self, g: Guild):
         logger.info('New guild: %s (%d)', g.name, g.id)
         fields = self.guild_fields(g)
 
@@ -76,13 +83,13 @@ class MonitorChannel(Cog):
 
             # monitor
             title = '\N{RADIOACTIVE SIGN} Left toxic guild'
-            return await self.monitor_send(title=title, fields=fields, color=0xff655b)
+            return await self.monitor_send(title=title, fields=fields, color=Colors.LIGHT_RED)
 
         # monitor
-        await self.monitor_send(title='\N{INBOX TRAY} Added to new guild', fields=fields, color=0x71ff5e)
+        await self.monitor_send(title='\N{INBOX TRAY} Added to new guild', fields=fields, color=Colors.NEON_GREEN)
         await self.bot.redis.incr('stats:guilds:adds')
 
-    async def on_guild_remove(self, g):
+    async def on_guild_remove(self, g: Guild):
         if g.id in self.refuse_notify_left:
             # refuse to notify that we got removed from the guild, because the "left bot collection"/"left blacklisted"
             # monitor message already does that
@@ -90,7 +97,7 @@ class MonitorChannel(Cog):
             return
 
         fields = self.guild_fields(g)
-        await self.monitor_send(title='\N{OUTBOX TRAY} Removed from guild', fields=fields, color=0xff945b)
+        await self.monitor_send(title='\N{OUTBOX TRAY} Removed from guild', fields=fields, color=Colors.ORANGE)
         await self.bot.redis.incr('stats:guilds:removes')
 
 
