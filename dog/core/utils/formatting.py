@@ -2,10 +2,11 @@ import logging
 import datetime
 import urllib.parse
 from html.parser import HTMLParser
-from typing import Dict, Any, List, Union
+from typing import Dict, Any, List, Union, Callable, Set
 
 import discord
 import timeago
+from discord import Message
 from discord.utils import maybe_coroutine
 
 log = logging.getLogger(__name__)
@@ -33,20 +34,28 @@ def user_format(format_string: str, parameters) -> str:
     return result
 
 
-async def history_reducer(ctx, reducer: callable, *, ignore_duplicates=False, result_type=list, **kwargs) -> List[Any]:
+ReducerReturnType = Union[None, Any]
+ReducerResultType = Union[List, Set]
 
+async def history_reducer(ctx, reducer: Callable[[Message], ReducerReturnType], *,
+                          ignore_duplicates=False, result_type=list, **kwargs) -> List[Any]:
     if 'limit' not in kwargs:
         raise TypeError('limit required')
 
-    history = await ctx.history(limit=kwargs['limit']).flatten()
-    results = result_type()
+    history: List[Message] = await ctx.history(limit=kwargs['limit']).flatten()
+    results: ReducerResultType = result_type()
 
     for message in history:
         result = await maybe_coroutine(reducer, message)
+
         if result:
             if ignore_duplicates and result in results:
                 continue
-            results.append(result)
+
+            if isinstance(results, list):
+                results.append(result)
+            elif isinstance(results, set):
+                results.add(results)
 
     return results
 
@@ -254,7 +263,7 @@ def commas(number: Union[int, float]) -> str:
     return '{:,d}'.format(number)
 
 
-def filesize(bytes: int) -> str:
+def filesize(byte_size: int) -> str:
     """
     Converts an byte size to a human-readable filesize.
 
@@ -262,7 +271,7 @@ def filesize(bytes: int) -> str:
 
     Parameters
     ----------
-    bytes
+    byte_size
         The amount of bytes.
 
     Returns
@@ -271,9 +280,9 @@ def filesize(bytes: int) -> str:
         The human-readable filesize.
     """
     if bytes > 10 ** 5 * 5:  # 0.5 MB
-        return f'{round(bytes / 10 ** 6, 2)} MB'
+        return f'{round(byte_size / 10 ** 6, 2)} MB'
     else:
-        return f'{round(bytes / 1000, 2)} KB'
+        return f'{round(byte_size / 1000, 2)} KB'
 
 
 def describe(thing: Any, *, mention=False, before='', created=False, joined=False, quote=False):
