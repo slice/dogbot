@@ -10,9 +10,13 @@ import aiohttp
 import discord
 import pyowm
 from discord.ext import commands
+from discord.ext.commands import command, guild_only, has_permissions
+
 from dog import Cog
 from dog.core import utils, converters
-from dog.core.checks import is_bot_admin
+from dog.core.checks import is_bot_admin, bot_perms
+from dog.core.context import DogbotContext
+from dog.core.converters import EmojiStealer
 
 logger = logging.getLogger(__name__)
 
@@ -34,10 +38,55 @@ async def jisho(session: aiohttp.ClientSession, query: str):
 class Utility(Cog):
     def __init__(self, bot):
         super().__init__(bot)
+
+        # create owm
         if 'owm' in bot.cfg['credentials']:
             self.owm = pyowm.OWM(bot.cfg['credentials']['owm'])
         else:
             self.owm = None
+
+    @command(aliases=['emoji_steal'])
+    @bot_perms(manage_emojis=True, read_message_history=True)
+    @has_permissions(manage_emojis=True)
+    @guild_only()
+    async def steal_emoji(self, ctx: DogbotContext, emoji: EmojiStealer, name=None):
+        """
+        Imports an external emoji into this server.
+
+        You can specify an emoji ID, the custom emoji itself, or "recent" to make the bot scan for recent messages
+        with a custom emoji that isn't already in this server. If you provide a name, the bot will use that when
+        uploading the emoji, instead of the name it finds. The name parameter is mandatory if you specify an emoji ID.
+        """
+        emoji_url = f'https://cdn.discordapp.com/emojis/{emoji[0]}.png'
+
+        if not emoji.name and not name:
+            return await ctx.send('You must provide the name for the stolen emoji.')
+
+        # strip colons from name if they are there
+        name = None if not name else name.strip(':')
+
+        msg = await ctx.send('Downloading...')
+
+        try:
+            async with ctx.bot.session.get(emoji_url) as emoji_resp:
+                emoji_bytes = await emoji_resp.read()
+
+                if emoji_resp.status != 200 or not emoji_bytes:
+                    return await ctx.send('Failed to download the emoji.')
+
+                # steal
+                emoji = await ctx.guild.create_custom_emoji(name=name or emoji.name, image=emoji_bytes)
+
+                # as confirmation, attempt to add react to the comamnd message with it, and fall back to ok
+                try:
+                    await msg.edit(content=str(emoji))
+                    await msg.add_reaction(f'{emoji.name}:{emoji.id}')
+                except discord.HTTPException:
+                    await ctx.ok()
+        except aiohttp.ClientError:
+            await msg.edit(content='Failed to download the emoji.')
+        except discord.HTTPException:
+            await msg.edit(content='Failed to upload the emoji.')
 
     @commands.command()
     @is_bot_admin()

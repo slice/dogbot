@@ -1,11 +1,12 @@
-import typing
 import logging
 import datetime
 import urllib.parse
 from html.parser import HTMLParser
+from typing import Dict, Any, List, Union
 
 import discord
 import timeago
+from discord.utils import maybe_coroutine
 
 log = logging.getLogger(__name__)
 
@@ -32,7 +33,25 @@ def user_format(format_string: str, parameters) -> str:
     return result
 
 
-def format_dict(d: typing.Dict[typing.Any, typing.Any], *, style='equals') -> str:
+async def history_reducer(ctx, reducer: callable, *, ignore_duplicates=False, result_type=list, **kwargs) -> List[Any]:
+
+    if 'limit' not in kwargs:
+        raise TypeError('limit required')
+
+    history = await ctx.history(limit=kwargs['limit']).flatten()
+    results = result_type()
+
+    for message in history:
+        result = await maybe_coroutine(reducer, message)
+        if result:
+            if ignore_duplicates and result in results:
+                continue
+            results.append(result)
+
+    return results
+
+
+def format_dict(d: Dict[Any, Any], *, style='equals') -> str:
     """
     Formats a ``dict`` to appear in key-value style.
 
@@ -228,7 +247,7 @@ def truncate(text: str, desired_length: int):
     return text
 
 
-def commas(number: typing.Union[int, float]):
+def commas(number: Union[int, float]) -> str:
     """
     Adds American-style commas to an number, then returns it as a str.
     """
@@ -257,7 +276,7 @@ def filesize(bytes: int) -> str:
         return f'{round(bytes / 1000, 2)} KB'
 
 
-def describe(thing: typing.Any, *, mention=False, before='', created=False, joined=False, quote=False):
+def describe(thing: Any, *, mention=False, before='', created=False, joined=False, quote=False):
     """
     Returns a string representing an project. Usually consists of the object in string form,
     then the object's ID in parentheses after.

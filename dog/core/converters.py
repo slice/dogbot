@@ -1,15 +1,21 @@
 import datetime
 import re
 from collections import namedtuple
+from typing import Tuple, Union
 
 import discord
 import parsedatetime
+from discord import Message
 from discord.ext import commands
-from discord.ext.commands import MemberConverter, UserConverter
+from discord.ext.commands import MemberConverter, UserConverter, Converter, BadArgument
 
-BareCustomEmoji = namedtuple('BareCustomEmoji', 'id name')
+from dog.core.context import DogbotContext
+from dog.core.utils import history_reducer
 
 
+class BareCustomEmoji(namedtuple('BareCustomEmoji', 'id name')):
+    def __str__(self):
+        return f'`:{self.name}:` (`{self.id}`)'
 
 
 EMOJI_REGEX = re.compile(r'<:([a-z0-9A-Z_-]+):(\d+)>')
@@ -171,3 +177,49 @@ class DeleteDays(commands.Converter):
         except ValueError:
             raise commands.BadArgument('Invalid delete_days: not a valid number.')
         return days
+
+
+class EmojiStealer(Converter):
+    async def convert(self, ctx: DogbotContext, argument: str) -> Tuple[int, Union[None, str]]:
+        # emoji id?
+        if argument.isdigit():
+            return BareCustomEmoji(id=int(argument), name=None)
+
+        # emoji?
+        match = EMOJI_REGEX.match(argument)
+        if match:
+            return BareCustomEmoji(id=match.group(2), name=match.group(1))
+
+        def _reducer(msg: Message) -> Union[BareCustomEmoji, None]:
+            # search the message for custom emoji
+            match = EMOJI_REGEX.search(msg.content)
+
+            if not match:
+                return None
+
+            emoji_id = int(match.group(2))
+
+            # check if the emoji is in the guild itself
+            if emoji_id in {emoji.id for emoji in ctx.guild.emojis}:
+                return None
+
+            return BareCustomEmoji(id=int(match.group(2)), name=match.group(1))
+
+        # recently used custom emoji?
+        if argument == 'recent':
+            custom_emoji = await history_reducer(ctx, _reducer, ignore_duplicates=True, limit=50)
+
+            if not custom_emoji:
+                raise BadArgument("No recently used custom emoji (that aren't already in this server) were found.")
+
+            if len(custom_emoji) > 1:
+                # more than one custom emoji, pick from list
+                to_steal = await ctx.pick_from_list(custom_emoji)
+            else:
+                # just one emoji, unwrap
+                to_steal = custom_emoji[0]
+
+            return to_steal
+
+        raise BadArgument('No emoji provided. Provide an emoji ID, emoji, or "recent" to scan the channel for '
+                          'recently used custom emoji.')
