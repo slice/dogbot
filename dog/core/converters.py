@@ -10,11 +10,14 @@ from discord.ext.commands import MemberConverter, UserConverter
 BareCustomEmoji = namedtuple('BareCustomEmoji', 'id name')
 
 
-class FormattedCustomEmoji(commands.Converter):
-    regex = re.compile(r'<:([a-z0-9A-Z_-]+):(\d+)>')
 
+
+EMOJI_REGEX = re.compile(r'<:([a-z0-9A-Z_-]+):(\d+)>')
+
+
+class FormattedCustomEmoji(commands.Converter):
     async def convert(self, ctx, argument):
-        match = self.regex.match(argument)
+        match = EMOJI_REGEX.match(argument)
         if not match:
             raise commands.BadArgument('Invalid custom emoji.')
         return BareCustomEmoji(id=int(match.group(2)), name=match.group(1))
