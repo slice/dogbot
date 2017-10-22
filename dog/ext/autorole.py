@@ -3,9 +3,13 @@ from enum import Enum, auto
 
 import asyncpg
 import discord
+from discord import Member
 from discord.ext import commands
+from discord.ext.commands import group
+
 from dog import Cog
 from dog.core import utils
+from dog.core.context import DogbotContext
 
 log = logging.getLogger(__name__)
 
@@ -16,10 +20,10 @@ class AutoroleType(utils.EnumConverter, Enum):
 
 
 class Autorole(Cog):
-    @commands.group(aliases=['ar'])
+    @group(aliases=['ar'])
     @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
-    async def autorole(self, ctx):
+    async def autorole(self, ctx: DogbotContext):
         """
         Manages autorole functionality.
 
@@ -34,7 +38,7 @@ class Autorole(Cog):
         if ctx.invoked_subcommand is None:
             await ctx.send('You must specify a valid subcommand to run. For help, run `d?help ar`.')
 
-    async def assign_roles(self, autorole_type: str, member: discord.Member):
+    async def assign_roles(self, autorole_type: str, member: Member):
         async with self.bot.pgpool.acquire() as pg:
             # fetch autoroles for that user
             record = await pg.fetchrow('SELECT * FROM autoroles WHERE guild_id = $1 AND type = $2', member.guild.id,
@@ -67,7 +71,7 @@ class Autorole(Cog):
             else:
                 return roles_to_add
 
-    async def on_member_join(self, member: discord.Member):
+    async def on_member_join(self, member: Member):
         type = 'bot' if member.bot else 'user'
 
         # assign the roles
@@ -80,8 +84,8 @@ class Autorole(Cog):
         self.bot.dispatch('member_autorole', member, roles_added)
 
     @autorole.command()
-    async def add(self, ctx, type: AutoroleType, *roles: discord.Role):
-        """ Adds autoroles. """
+    async def add(self, ctx: DogbotContext, type: AutoroleType, *roles: discord.Role):
+        """Adds autoroles."""
         for role in roles:
             if role.position > ctx.guild.me.top_role.position:
                 await ctx.send('I can\'t autorole the role \"{0.name}\". It\'s too high on the role list. Move my '
@@ -98,14 +102,14 @@ class Autorole(Cog):
         await ctx.ok()
 
     @autorole.command()
-    async def delete(self, ctx, type: AutoroleType):
+    async def delete(self, ctx: DogbotContext, type: AutoroleType):
         """ Deletes an autorole. """
         async with ctx.acquire() as conn:
             await conn.execute('DELETE FROM autoroles WHERE guild_id = $1 AND type = $2', ctx.guild.id, type.name)
         await ctx.ok()
 
     @autorole.command()
-    async def list(self, ctx):
+    async def list(self, ctx: DogbotContext):
         """ Lists autoroles on this server. """
         def format_role(role_id):
             role = discord.utils.get(ctx.guild.roles, id=role_id)

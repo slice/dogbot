@@ -79,14 +79,18 @@ class MessageLogging(Cog):
     async def on_message(self, msg):
         async with self.bot.pgpool.acquire() as conn:
             insertion_sql = """
-                INSERT INTO messages (message_id, guild_id, channel_id, author_id, original_content, new_content,
-                    attachments, deleted, edited, deleted_at, edited_at, created_at)
+                INSERT INTO messages
+                (message_id, guild_id, channel_id, author_id, original_content, new_content, attachments, deleted,
+                 edited, deleted_at, edited_at, created_at)
                 VALUES ($1, $2, $3, $4, $5, '', $6, FALSE, FALSE, NULL, NULL, $7);
             """
             encoded_attachments = json.dumps([attachment_to_dict(tch) for tch in msg.attachments])
             content = postprocess_message_content(msg.content)
-            await conn.execute(insertion_sql, msg.id, msg.guild.id, msg.channel.id, msg.author.id, content,
-                               encoded_attachments, msg.created_at)
+
+            await conn.execute(
+                insertion_sql,
+                msg.id, msg.guild.id, msg.channel.id, msg.author.id, content, encoded_attachments, msg.created_at
+            )
 
     @require_logging_enabled
     async def on_message_edit(self, before, after):
