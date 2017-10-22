@@ -2,11 +2,11 @@ import logging
 import datetime
 import urllib.parse
 from html.parser import HTMLParser
-from typing import Dict, Any, List, Union, Callable, Set
+from typing import Dict, Any, List, Union, Callable, Set, TypeVar, Type
 
 import discord
 import timeago
-from discord import Message
+from discord import Message, Member, Embed
 from discord.utils import maybe_coroutine
 
 log = logging.getLogger(__name__)
@@ -27,23 +27,47 @@ class MLStripper(HTMLParser):
         return ''.join(self.fed)
 
 
-def user_format(format_string: str, parameters) -> str:
+def user_format(format_string: str, parameters: Dict[Any, Any]) -> str:
+    """Like .format, but for user input."""
     result = format_string
+
     for key, value in parameters.items():
         result = result.replace('{' + key + '}', str(value))
+
     return result
 
 
-ReducerReturnType = Union[None, Any]
-ReducerResultType = Union[List, Set]
+R = TypeVar('T')
+ResultContainerType = Union[List, Set]
 
-async def history_reducer(ctx, reducer: Callable[[Message], ReducerReturnType], *,
-                          ignore_duplicates=False, result_type=list, **kwargs) -> List[Any]:
+async def history_reducer(ctx, reducer: Callable[[Message], R], *,
+                          ignore_duplicates=False, result_container_type: Type=list, **kwargs) -> ResultContainerType[R]:
+    """
+    Iterates through message history, and outputs a list of items populated by a function that receives each
+    message.
+
+    Parameters
+    ----------
+    ctx
+        The command context.
+    reducer
+        The callable reducer. Results that aren't falsy are added to the result container.
+    ignore_duplicates
+        Specifies whether duplicates should be ignored.
+    result_container_type
+        Specifies the type of result container. Should be either ``list`` or ``set``.
+    kwargs
+        The kwargs to pass to the ``ctx.history`` class.
+
+    Returns
+    -------
+        The list of items.
+    """
     if 'limit' not in kwargs:
         raise TypeError('limit required')
 
     history: List[Message] = await ctx.history(limit=kwargs['limit']).flatten()
-    results: ReducerResultType = result_type()
+    results: Union[List, Set] = result_container_type()
 
     for message in history:
         result = await maybe_coroutine(reducer, message)
@@ -107,7 +131,7 @@ def prevent_codeblock_breakout(text: str) -> str:
     return text.replace('`', '\u200b`\u200b')
 
 
-def make_profile_embed(member: discord.Member) -> discord.Embed:
+def make_profile_embed(member: Member) -> Embed:
     """
     Creates an embed with the author containing the :class:`discord.Member`'s username and discriminator, along
     with their icon.
@@ -122,11 +146,10 @@ def make_profile_embed(member: discord.Member) -> discord.Embed:
     :class:`discord.Embed`
         The resulting embed.
     """
-    return discord.Embed()\
-        .set_author(name=str(member), icon_url=member.avatar_url)
+    return Embed().set_author(name=str(member), icon_url=member.avatar_url)
 
 
-def codeblock(text: str, *, lang: str = '') -> str:
+def codeblock(text: str, *, lang: str='') -> str:
     """
     Formats a codeblock.
 
@@ -195,7 +218,7 @@ def standard_datetime(dt: datetime.datetime):
     return dt.strftime('%Y-%m-%d %H:%M:%S')
 
 
-def format_list(lst) -> str:
+def format_list(lst: List[Any]) -> str:
     """
     Returns a string representing a list as an ordered list. List numerals are padded to ensure that there are at
     least 3 digits.
@@ -213,7 +236,7 @@ def format_list(lst) -> str:
     return '\n'.join('`{:03d}`: {}'.format(index + 1, value) for index, value in enumerate(lst))
 
 
-def now():
+def now() -> str:
     """
     Returns a string representing the current time, formatted with :func:`standard_datetime`.
     """
