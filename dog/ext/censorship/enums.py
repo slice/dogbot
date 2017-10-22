@@ -1,10 +1,10 @@
 from enum import Enum
 
-from dog.core import utils
+from dog.core.utils import EnumConverter
 
 
-class CensorType(utils.EnumConverter, Enum):
-    """ Signifies types of censorship. """
+class CensorType(EnumConverter, Enum):
+    """Signifies types of censorship."""
     INVITES = 1
     VIDEOSITES = 2
     ZALGO = 3
@@ -14,7 +14,7 @@ class CensorType(utils.EnumConverter, Enum):
     CRASH_TEXT = 7
 
 
-class PunishmentType(utils.EnumConverter, Enum):
-    """ Signifies types of punishments. """
+class PunishmentType(EnumConverter, Enum):
+    """Signifies types of punishments."""
     BAN = 1
     KICK = 2
