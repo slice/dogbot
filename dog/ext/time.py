@@ -17,20 +17,17 @@ time it is for you with `{prefix}t <user>`.
 
 Common timezones:
 
-`REGION                 NAME (TYPE)     UTC OFFSET             ATTRIB`
-`Eastern United States  US/Eastern    | (-05:00, -04:00 DST) | smart |`
-`Central United States  US/Central    | (-06:00, -05:00 DST) | smart |`
-`Western United States  US/Pacific    | (-08:00, -07:00 DST) | smart |`
-`London                 Europe/London | (+00:00, +01:00 DST) | smart |`
-`Western European       WET           | (+00:00, +01:00 DST) |       |`
-`Central European       MET           | (+01:00, +02:00 DST) |       |`
-`GMT-8                  Etc/GMT-8     | (+08:00, +08:00 DST) |       |`
+`REGION                 NAME (TYPE)     UTC OFFSET          `
+`Eastern United States  US/Eastern    | (-05:00, -04:00 DST)`
+`Central United States  US/Central    | (-06:00, -05:00 DST)`
+`Western United States  US/Pacific    | (-08:00, -07:00 DST)`
+`London                 Europe/London | (+00:00, +01:00 DST)`
+`Western European       WET           | (+00:00, +01:00 DST)`
+`Central European       MET           | (+01:00, +02:00 DST)`
+`GMT-8                  Etc/GMT-8     | (+08:00, +08:00 DST)`
 
 You want to type what's in the `NAME` column. A full list of timezones is here:
 <https://goo.gl/yQNfZU>. Type what's under `TZ*`.
-
-Setting a manual utc offset (such as `-07:00`, `+08:00`) will prevent automatic daylight saving time
-detection, and will force 24-hour mode.
 """
 
 
