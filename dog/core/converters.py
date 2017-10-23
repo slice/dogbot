@@ -42,9 +42,7 @@ class Flags(commands.Converter):
 
 
 class BannedUser(commands.Converter):
-    """
-    A converter that attempts to a resolve a banned user by ID, username, or username#discriminator.
-    """
+    """A converter that attempts to a resolve a banned user by ID, username, or username#discriminator."""
     async def convert(self, ctx: commands.Context, argument):
         def finder(entry):
             try:
@@ -70,9 +68,7 @@ class BannedUser(commands.Converter):
 
 
 class RawUser(commands.Converter):
-    """
-    A MemberConverter that falls back to UserConverter, then get_user_info.
-    """
+    """A MemberConverter that falls back to UserConverter, then get_user_info."""
     async def convert(self, ctx, argument):
         for converter in (MemberConverter, UserConverter):
             try:
@@ -87,9 +83,7 @@ class RawUser(commands.Converter):
 
 
 class RawMember(commands.Converter):
-    """
-    A converter that attempts to convert to user, then falls back to a discord.Object with an ID.
-    """
+    """A converter that attempts to convert to user, then falls back to a discord.Object with an ID."""
     async def convert(self, ctx, argument):
         # garbo
         try:
@@ -162,7 +156,7 @@ class Guild(commands.Converter):
             guild_id = int(argument)
             guild = ctx.bot.get_guild(guild_id)
             if not guild:
-                raise commands.BadArgument(f'A guild by the ID of {guild_id} was not found.')
+                raise commands.BadArgument(f'A guild with an ID of `{guild_id}` was not found.')
             return guild
         except ValueError:
             raise commands.BadArgument('Invalid guild ID.')
@@ -173,9 +167,9 @@ class DeleteDays(commands.Converter):
         try:
             days = int(arg)
             if days < 0 or days > 7:
-                raise commands.BadArgument('Invalid delete_days: cannot be lower than 0, or higher than 7.')
+                raise commands.BadArgument('Invalid `delete_days`: cannot be lower than 0, or higher than 7.')
         except ValueError:
-            raise commands.BadArgument('Invalid delete_days: not a valid number.')
+            raise commands.BadArgument('Invalid `delete_days`: not a valid number.')
         return days
 
 
