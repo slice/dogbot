@@ -12,10 +12,11 @@ import logging
 import textwrap
 import traceback
 from contextlib import redirect_stdout
-from typing import List
+from typing import List, TypeVar, Callable, Dict, Any
 
 import aiohttp
 import discord
+from discord import Message, HTTPException
 from discord.ext import commands
 from discord.ext.commands import command, Converter
 
@@ -67,7 +68,7 @@ class Code(Converter):
 
         if self.wrap_code:
             # wrap in a coroutine and indent
-            result = 'async def func():\n' + textwrap.indent(result, ' ' * self.indent_width)
+            result = 'async def _func():\n' + textwrap.indent(result, ' ' * self.indent_width)
 
         if self.wrap_code and self.implicit_return:
             last_line = result.splitlines()[-1]
@@ -91,6 +92,68 @@ def format_syntax_error(e: SyntaxError) -> str:
     return '```py\n{0.text}{1:>{0.offset}}\n{2}: {0}```'.format(e, '^', type(e).__name__)
 
 
+def create_environment(cog: 'Exec', ctx: DogbotContext) -> Dict[Any, Any]:
+
+    async def upload(file_name: str) -> Message:
+        """Shortcut to upload a file."""
+        with open(file_name, 'rb') as fp:
+            return await ctx.send(file=discord.File(fp))
+
+    async def send(*args, **kwargs) -> Message:
+        """Shortcut to send()."""
+        return await ctx.send(*args, **kwargs)
+
+    def better_dir(*args, **kwargs) -> List[str]:
+        """dir(), but without magic methods."""
+        return [n for n in dir(*args, **kwargs) if not n.endswith('__') and not n.startswith('__')]
+
+    T = TypeVar('T')
+
+    def grabber(lst: List[T]) -> Callable[[int], T]:
+        """Returns a function that, when called, grabs an item by ID from a list of objects with an ID."""
+        def _grabber_function(thing_id: int) -> T:
+            return discord.utils.get(lst, id=thing_id)
+        return _grabber_function
+
+    env = {
+        'bot': ctx.bot,
+        'ctx': ctx,
+        'msg': ctx.message,
+        'guild': ctx.guild,
+        'channel': ctx.channel,
+        'me': ctx.message.author,
+        'cog': cog,
+
+        # modules
+        'discord': discord,
+        'commands': commands,
+        'command': commands.command,
+        'group': commands.group,
+
+        # utilities
+        '_get': discord.utils.get,
+        '_find': discord.utils.find,
+        '_upload': upload,
+        '_send': send,
+
+        # grabbers
+        '_g': grabber(ctx.bot.guilds),
+        '_u': grabber(ctx.bot.users),
+        '_c': grabber(list(ctx.bot.get_all_channels())),
+
+        # last result
+        '_': cog.last_result,
+        '_p': cog.previous_code,
+
+        'dir': better_dir,
+    }
+
+    # add globals to environment
+    env.update(globals())
+
+    return env
+
+
 class Exec(Cog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -98,45 +161,11 @@ class Exec(Cog):
         self.last_result = None
         self.previous_code = None
 
-    async def execute(self, ctx, code):
+    async def execute(self, ctx: DogbotContext, code: str):
         log.info('Eval: %s', code)
 
-        async def upload(file_name: str) -> discord.Message:
-            with open(file_name, 'rb') as fp:
-                return await ctx.send(file=discord.File(fp))
-
-        async def send(*args, **kwargs) -> discord.Message:
-            return await ctx.send(*args, **kwargs)
-
-        def better_dir(*args, **kwargs) -> List[str]:
-            return [n for n in dir(*args, **kwargs) if not n.endswith('__') and not n.startswith('__')]
-
-        env = {
-            'bot': ctx.bot,
-            'ctx': ctx,
-            'msg': ctx.message,
-            'guild': ctx.guild,
-            'channel': ctx.channel,
-            'me': ctx.message.author,
-
-            # modules
-            'discord': discord,
-            'commands': commands,
-
-            # utilities
-            '_get': discord.utils.get,
-            '_find': discord.utils.find,
-            '_upload': upload,
-            '_send': send,
-
-            # last result
-            '_': self.last_result,
-            '_p': self.previous_code,
-
-            'dir': better_dir,
-        }
-
-        env.update(globals())
+        # create eval environment
+        env = create_environment(self, ctx)
 
         # simulated stdout
         stdout = io.StringIO()
@@ -149,18 +178,16 @@ class Exec(Cog):
             return await ctx.send(format_syntax_error(e))
 
         # grab the defined function
-        func = env['func']
+        func = env['_func']
 
         try:
             # execute the code
             with redirect_stdout(stdout):
                 ret = await func()
         except Exception:
-            # something went wrong :(
             try:
-                await ctx.message.add_reaction(ctx.tick('red', raw=True))
-            except discord.HTTPException:
-                # failed to add failure tick, hmm.
+                await ctx.message.add_reaction('\N{CACTUS}')
+            except HTTPException:
                 pass
 
             # send stream and what we have
@@ -170,16 +197,15 @@ class Exec(Cog):
         stream = stdout.getvalue()
 
         try:
-            await ctx.message.add_reaction(ctx.tick('green', raw=True))
-        except discord.HTTPException:
-            # couldn't add the reaction, ignore
+            await ctx.message.add_reaction('\N{HIBISCUS}')
+        except HTTPException:
             pass
 
         # set the last result, but only if it's not none
         if ret is not None:
             self.last_result = ret
 
-        # form simulated stdout and repr of return value
+        # combine simulated stdout and repr of return value
         meat = stream + repr(ret)
         message = codeblock(meat, lang='py')
 
@@ -201,8 +227,8 @@ class Exec(Cog):
 
     @command(name='retry', hidden=True)
     @is_bot_admin()
-    async def retry(self, ctx):
-        """ Retries the previously executed Python code. """
+    async def retry(self, ctx: DogbotContext):
+        """Retries the previously executed Python code."""
         if not self.previous_code:
             return await ctx.send('No previous code.')
 
@@ -210,8 +236,8 @@ class Exec(Cog):
 
     @command(name='eval', aliases=['exec', 'debug'], hidden=True)
     @is_bot_admin()
-    async def _eval(self, ctx, *, code: Code(wrap_code=True, implicit_return=True)):
-        """ Executes Python code. """
+    async def _eval(self, ctx: DogbotContext, *, code: Code(wrap_code=True, implicit_return=True)):
+        """Executes Python code."""
 
         # store previous code
         self.previous_code = code
