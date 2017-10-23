@@ -1,5 +1,9 @@
 import logging
 
+from aioredis import Redis
+from asyncpg.pool import Pool
+from aiohttp import ClientSession
+
 
 def _mirror(name):
     @property
@@ -14,6 +18,6 @@ class Cog:
         self.bot = bot
         self.logger = logging.getLogger('cog.' + type(self).__name__.lower())
 
-    pgpool = _mirror('pgpool')
-    redis = _mirror('redis')
-    session = _mirror('session')
+    pgpool: Pool = _mirror('pgpool')
+    redis: Redis = _mirror('redis')
+    session: ClientSession = _mirror('session')
