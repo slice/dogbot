@@ -45,7 +45,8 @@ class Timezone(Converter):
             pass
 
         # hippo checking
-        if '`' in argument or '\\' in argument or len(argument) > 30:
+        blacklisted = list('`\\<>@')
+        if any(character in argument for character in blacklisted) or len(argument) > 30:
             raise BadArgument("That doesn't look like a timezone.")
 
         # actually check if it's a valid timezone with arrow's parser
