@@ -37,11 +37,8 @@ def user_format(format_string: str, parameters: Dict[Any, Any]) -> str:
     return result
 
 
-R = TypeVar('T')
-ResultContainerType = Union[List, Set]
-
-async def history_reducer(ctx, reducer: Callable[[Message], R], *,
-                          ignore_duplicates=False, result_container_type: Type=list, **kwargs) -> ResultContainerType[R]:
+async def history_reducer(ctx, reducer: Callable[[Message], Any], *,
+                          ignore_duplicates=False, result_container_type: Type=list, **kwargs) -> Union[List, Set]:
     """
     Iterates through message history, and outputs a list of items populated by a function that receives each
     message.
