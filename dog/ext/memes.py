@@ -59,10 +59,14 @@ class Meme:
                 if 'place' in step:
                     meme.paste(step['place'][0], step['place'][1])
                 elif 'text' in step:
-                    logger.info(step.get('max_width', 10e9))
                     meme.text(
                         step['text'], step['x'], step['y'],
                         step.get('max_width', 10e9), step.get('fill', (0, 0, 0))
+                    )
+                elif 'text_center' in step:
+                    meme.text(
+                        step['text_center'], step['x'], step['y'],
+                        step.get('fill', (0, 0, 0)), justify_center=True
                     )
 
             # render up
@@ -94,7 +98,15 @@ class Meme:
             self.source.paste(src, coords, src)
         return self
 
-    def text(self, text, x, y, width, fill=(0, 0, 0)):
+    def text(self, text, x, y, width=0, fill=(0, 0, 0), *, justify_center=False):
+        # draw text from center
+        if justify_center:
+            tw, th = self.draw.textsize(text, font=self.font)
+            self.draw.text(
+                (x - (tw / 2), y - (th / 2)), text, fill=fill, font=self.font
+            )
+            return self
+
         # draw some text
         utils.draw_word_wrap(self.draw, self.font, text, x, y, width, fill)
         return self
@@ -143,6 +155,21 @@ class Memes(Cog):
 
         im.close()
         im_data.close()
+
+    @commands.command()
+    @commands.cooldown(1, 2, commands.BucketType.user)
+    async def iphonex(self, ctx, image: converters.Image, text, cost):
+        """ iPhone X: $999 """
+        await Meme.recipe(ctx, {
+            'image': 'resources/memes/iphonex.png',
+            'render_as': 'iphonex.png',
+            'cache': [(image, (295, 388))],
+            'steps': [
+                {'place': (image, (362, 18))},
+                {'text_center': text, 'x': 510, 'y': 464},
+                {'text_center': f'Cost: {cost}', 'x': 519, 'y': 560}
+            ]
+        })
 
     @commands.command()
     async def b(self, ctx, *, text: commands.clean_content):
