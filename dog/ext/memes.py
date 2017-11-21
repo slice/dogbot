@@ -1,7 +1,6 @@
 import logging
 
 import asyncio
-import math
 from random import randrange
 
 import aiohttp

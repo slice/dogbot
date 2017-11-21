@@ -1,5 +1,5 @@
 from io import BytesIO
-from typing import Any, Dict
+from typing import Any
 
 from aiohttp import ClientSession
 
@@ -19,7 +19,7 @@ async def get_bytesio(session: ClientSession, url: str) -> BytesIO:
         return BytesIO(await resp.read())
 
 
-async def get_json(session: ClientSession, url: str) -> Dict[Any, Any]:
+async def get_json(session: ClientSession, url: str) -> Any:
     """
     Downloads JSON from a URL, and returns it parsed.
 

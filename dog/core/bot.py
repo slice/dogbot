@@ -158,29 +158,18 @@ class Dogbot(BotBase, AutoShardedClient):
 
         await super().close()
 
-    async def command_is_disabled(self, guild: discord.Guild, command_name: str):
-        """ Returns whether a command is disabled in a guild. """
+    async def command_is_disabled(self, guild: discord.Guild, command_name: str) -> bool:
         return await self.redis.exists(f'disabled:{guild.id}:{command_name}')
 
     async def disable_command(self, guild: discord.Guild, command_name: str):
-        """ Disables a command in a guild. """
         logger.debug('Disabling %s in %d.', command_name, guild.id)
         await self.redis.set(f'disabled:{guild.id}:{command_name}', 'on')
 
     async def enable_command(self, guild: discord.Guild, command_name: str):
-        """ Enables a command in a guild. """
         logger.debug('Enabling %s in %d.', command_name, guild.id)
         await self.redis.delete(f'disabled:{guild.id}:{command_name}')
 
     def has_prefix(self, text: str):
-        """
-        Checks if text starts with a bot prefix.
-
-        .. NOTE::
-
-            This does not rely on `discord.commands.ext.Bot.command_prefix`,
-            but rather the list of prefixes present in `dog_config`.
-        """
         return any(text.startswith(p) for p in self.cfg['bot']['prefixes'])
 
     async def send_modlog(self, guild: discord.Guild, *args, **kwargs):

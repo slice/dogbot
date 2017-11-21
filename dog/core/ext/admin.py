@@ -139,7 +139,7 @@ class Admin(Cog):
             else:
                 logger.info('Individual reload: %s', ext)
                 self.bot.reload_extension(f'dog.ext.{ext}')
-        except:
+        except Exception:
             # perform_full_reload() handles exceptions for us
             if ext:
                 logger.exception('Failed reloading extension: %s', ext)
