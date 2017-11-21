@@ -31,18 +31,24 @@ class BotBase(commands.bot.BotBase):
         self.boot_time = datetime.datetime.utcnow()
 
         # aioredis connection
-        redis_coroutine = aioredis.create_redis(
-            (self.cfg['db']['redis'], 6379), loop=self.loop)
-        self.redis = self.loop.run_until_complete(redis_coroutine)
+        self.redis = None
 
         # asyncpg
-        pg = self.cfg['db']['postgres']
-        self.database = pg['database']
-        self.pgpool = self.loop.run_until_complete(asyncpg.create_pool(**pg))
+        self.database = self.cfg['db']['postgres']['database']
+        self.pgpool = None
 
         # load core extensions
         self._exts_to_load = []
         self.load_extensions('dog/core/ext', 'Core recursive load')
+
+    async def connect_databases(self):
+        # connect to postgres
+        self.pgpool = await asyncpg.create_pool(**self.cfg['db']['postgres'])
+
+        # connect to redis
+        self.redis = await aioredis.create_redis(
+            (self.cfg['db']['redis'], 6379), loop=self.loop
+        )
 
     def load_extensions(self, directory: str, prefix: str = 'Recursive load'):
         """ Loads extensions from a directory recursively. """

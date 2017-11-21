@@ -58,15 +58,24 @@ additional_options.update({
 
 logger.info('Bot options: %s', additional_options)
 
-# create and run the bot
-print('[dog] creating instance')
-d = Dogbot(cfg=cfg, **additional_options)
 
-print('[dog] loading extensions')
-d.load_extensions('dog/ext', 'Initial recursive load')
+async def launcher():
+    # create and run the bot
+    print('[dog] creating instance')
+    d = Dogbot(cfg=cfg, **additional_options)
 
-print('[dog] running')
-d.run(cfg['tokens']['bot'])
-print('[dog] run() exit')
+    # connect to postgres and redis
+    await d.connect_databases()
 
-print('[dog] exit')
+    # load non-core extensions
+    print('[dog] loading extensions')
+    d.load_extensions('dog/ext', 'Initial recursive load')
+
+    # run the bot
+    print('[dog] running')
+    await d.start(cfg['tokens']['bot'])
+    print('[dog] exit')
+
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(launcher())
