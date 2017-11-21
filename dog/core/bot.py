@@ -89,7 +89,7 @@ class Dogbot(BotBase, AutoShardedClient):
 
         if await self.redis.exists(key):
             # use the cached value instead
-            return (await self.redis.get(key)).decode() == 'banned'
+            return await self.redis.get(key, encoding='utf-8') == 'banned'
 
         async with self.pgpool.acquire() as conn:
             # grab the record from postgres, if any
@@ -111,12 +111,11 @@ class Dogbot(BotBase, AutoShardedClient):
         await super().on_message(msg)
 
     async def get_prefixes(self, guild: Guild) -> List[str]:
-        """ Returns the supplementary prefixes for a guild. """
+        """Returns the supplementary prefixes for a guild."""
         if not guild:
             return []
 
-        prefixes = await self.redis.smembers(f'dog:prefixes:{guild.id}')
-        return [prefix.decode() for prefix in prefixes]
+        return await self.redis.smembers(f'dog:prefixes:{guild.id}', encoding='utf-8')
 
     def _get_lang_data(self, lang):
         with open(f'./resources/lang/{lang}.yml') as f:
@@ -225,7 +224,7 @@ class Dogbot(BotBase, AutoShardedClient):
 
     async def config_get(self, guild: Guild, name: str):
         """Returns a configuration key's value for a guild."""
-        return (await self.redis.get(f'{guild.id}:{name}')).decode()
+        return await self.redis.get(f'{guild.id}:{name}', encoding='utf-8')
 
     async def config_is_set(self, guild: discord.Guild, name: str) -> bool:
         """
