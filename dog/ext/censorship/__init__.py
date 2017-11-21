@@ -105,7 +105,9 @@ class Censorship(Cog):
         You must have the "Manage Server" permission in order to manage server censorship.
         """
         if ctx.invoked_subcommand is None:
-            await ctx.send('You need to specify a valid subcommand to run. For help, run `d?help cs`.')
+            await ctx.send(
+                f'You need to specify a valid subcommand to run. For help, run `{ctx.prefix}help cs`.'
+            )
 
     @censorship.command(name='except')
     async def _except(self, ctx, role_id: int):
@@ -218,7 +220,9 @@ class Censorship(Cog):
         punishments.
         """
         if ctx.invoked_subcommand.qualified_name == 'censorship punish':
-            await ctx.send('You need to specify a valid subcommand to run. For help, run `d?help cs p`.')
+            await ctx.send(
+                f'You need to specify a valid subcommand to run. For help, run `{ctx.prefix}help cs p`.'
+            )
 
     @censor_punish.command(name='add')
     async def censor_punish_add(self, ctx, censor_type: CensorType, punishment: PunishmentType):

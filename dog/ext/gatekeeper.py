@@ -206,7 +206,9 @@ class Gatekeeper(Cog):
         This is very useful when your server is undergoing raids, unwanted attention, unwanted members, etc.
         """
         if ctx.invoked_subcommand is None:
-            return await ctx.send(f'You need to specify a valid subcommand to run. For help, run `{ctx.prefix}help gk`.')
+            return await ctx.send(
+                f'You need to specify a valid subcommand to run. For help, run `{ctx.prefix}help gk`.'
+            )
 
     @gatekeeper.command()
     async def settings(self, ctx: DogbotContext):

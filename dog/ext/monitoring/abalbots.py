@@ -39,4 +39,3 @@ class Abalbots(Cog):
                     logger.info('Posted guild count successfully! (%d guilds)', guilds)
 
             await asyncio.sleep(self.reporting_interval)
-

@@ -25,10 +25,16 @@ class Tagging(Cog):
             (name, guild_id, creator_id, value, uses, created_at)
             VALUES ($1, $2, $3, $4, 0, $5)
         """
-        await self.bot.pgpool.execute(insert, name, ctx.guild.id, ctx.author.id, value, datetime.datetime.utcnow())
+        await self.bot.pgpool.execute(
+            insert, name, ctx.guild.id, ctx.author.id, value,
+            datetime.datetime.utcnow()
+        )
 
     async def edit_tag(self, name: str, value: str):
-        await self.bot.pgpool.execute('UPDATE tags SET value = $1 WHERE name = $2', value, name)
+        await self.bot.pgpool.execute(
+            'UPDATE tags SET value = $1 WHERE name = $2',
+            value, name
+        )
 
     async def get_tag(self, ctx: DogbotContext, name: str) -> Union[None, Tag]:
         """Finds a tag, and returns it as a :class:``Tag`` object."""
@@ -42,34 +48,37 @@ class Tagging(Cog):
             return None
 
         creator = ctx.guild.get_member(record['creator_id']) or record['creator_id']
-        return Tag(value=record['value'], creator=creator, uses=record['uses'], name=name,
-                   created_at=record['created_at'])
+        return Tag(
+            value=record['value'], creator=creator, uses=record['uses'], name=name,
+            created_at=record['created_at']
+        )
 
     async def delete_tag(self, ctx: DogbotContext, name: str):
         """Deletes a tag."""
-        await self.bot.pgpool.execute('DELETE FROM tags WHERE guild_id = $1 AND name = $2', ctx.guild.id, name)
+        await self.bot.pgpool.execute(
+            'DELETE FROM tags WHERE guild_id = $1 AND name = $2',
+            ctx.guild.id, name
+        )
 
     def can_touch_tag(self, ctx: DogbotContext, tag: Tag) -> bool:
         """Returns whether someone can touch a tag (modify, delete, or edit it)."""
         perms = ctx.author.guild_permissions
 
-        # they can manage the server
-        if perms.manage_guild:
-            return True
+        predicates = [
+            # they can manage the server
+            perms.manage_guild,
 
-        # they own the server
-        if ctx.author.guild.owner == ctx.author:
-            return True
+            # they own the server
+            ctx.author.guild.owner == ctx.author,
 
-        # they created the tag
-        if tag.creator == ctx.author:
-            return True
+            # they created the tag
+            tag.creator == ctx.author,
 
-        # is dogbot moderator
-        if checks.member_is_moderator(ctx.author):
-            return True
+            # is dogbot moderator
+            checks.member_is_moderator(ctx.author)
+        ]
 
-        return False
+        return any(predicates)
 
     @commands.group(invoke_without_command=True)
     @commands.guild_only()
@@ -97,7 +106,9 @@ class Tagging(Cog):
             # tag already exists, check if we can touch it
             if tag and not self.can_touch_tag(ctx, tag):
                 # cannot overwrite
-                return await ctx.send("\N{NO PEDESTRIANS} You can't overwrite that tag's contents.")
+                return await ctx.send(
+                    "\N{NO PEDESTRIANS} You can't overwrite that tag's contents."
+                )
 
             # set a tag
             if tag:
