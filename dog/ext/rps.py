@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 class RPS(Cog):
     async def rps_is_being_excluded(self, who: discord.Member) -> bool:
-        """ Returns whether a person is being excluded from RPS. """
+        """Returns whether a person is being excluded from RPS."""
         async with self.bot.pgpool.acquire() as conn:
             return await conn.fetchrow('SELECT * FROM rps_exclusions WHERE user_id = $1', who.id) is not None
 
@@ -20,14 +20,14 @@ class RPS(Cog):
     @commands.guild_only()
     @commands.cooldown(1, 2, commands.BucketType.user)
     async def rps(self, ctx, opponent: discord.Member):
-        """ Fights someone in rock, paper, scissors! """
+        """Fights someone in rock, paper, scissors!"""
         if await self.rps_is_being_excluded(opponent):
             return await ctx.send('That person chose to be excluded from RPS.')
 
         progress_message = await ctx.send('Waiting for {} to choose...'.format(ctx.author))
 
         def rps_check(who: discord.Member):
-            """ Returns a check that checks for a DM from a person. """
+            """Returns a check that checks for a DM from a person."""
 
             def rps_predicate(reaction, adder):
                 is_original_person = adder == who
@@ -37,7 +37,7 @@ class RPS(Cog):
             return rps_predicate
 
         async def rps_get_choice(who: discord.Member) -> str:
-            """ Sends someone the instructional message, then waits for a choice. """
+            """Sends someone the instructional message, then waits for a choice."""
             desc = ('React with what you want to play. If you don\'t wish to be challenged to RPS, '
                     'type `d?rps exclude` to exclude yourself from being challenged.')
             desc_prefix = ('You have been challenged by {}!\n\n'.format(ctx.author.mention)
@@ -82,7 +82,7 @@ class RPS(Cog):
                                              beats_left.title(), beats_right))
 
         def beats(weapon: str, target: str) -> bool:
-            """ Rock, paper, scissors defeat checker. """
+            """Rock, paper, scissors defeat checker."""
             if weapon == 'paper':
                 return target == 'rock'
             elif weapon == 'rock':
@@ -103,7 +103,7 @@ class RPS(Cog):
 
     @rps.command(name='exclude')
     async def rps_exclude(self, ctx):
-        """ Excludes yourself from being challenged. """
+        """Excludes yourself from being challenged."""
         if await self.rps_is_being_excluded(ctx.author):
             return await ctx.send('You are already excluded from RPS.')
 
@@ -113,7 +113,7 @@ class RPS(Cog):
 
     @rps.command(name='include')
     async def rps_include(self, ctx):
-        """ Includes yourself in being challenged. """
+        """Includes yourself in being challenged."""
         if not await self.rps_is_being_excluded(ctx.author):
             return await ctx.send('You are not being excluded from RPS.')
 

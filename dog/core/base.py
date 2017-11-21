@@ -51,7 +51,7 @@ class BotBase(commands.bot.BotBase):
         )
 
     def load_extensions(self, directory: str, prefix: str = 'Recursive load'):
-        """ Loads extensions from a directory recursively. """
+        """Loads extensions from a directory recursively."""
 
         IGNORE = {'__init__.py', '__pycache__', '.DS_Store'}
 
@@ -74,7 +74,7 @@ class BotBase(commands.bot.BotBase):
         self._exts_to_load = list(self.extensions.keys()).copy()
 
     def reload_extension(self, name: str):
-        """ Reloads an extension. """
+        """Reloads an extension."""
         self.unload_extension(name)
         self.load_extension(name)
 
@@ -89,7 +89,7 @@ class BotBase(commands.bot.BotBase):
         self.reload_modules()
 
     def reload_all_extensions(self):
-        """ Reloads all extensions. """
+        """Reloads all extensions."""
         logger.info('Reloading all %d extensions', len(self._exts_to_load))
         for name in self._exts_to_load:
             try:
@@ -100,7 +100,7 @@ class BotBase(commands.bot.BotBase):
                 raise
 
     def reload_modules(self):
-        """ Reloads all Dogbot related modules. """
+        """Reloads all Dogbot related modules."""
         # get applicable modules to reload
         modules = {k: m for k, m in sys.modules.items() if ('dog' in k and 'datadog' not in k) and 'ext' not in k and
                    k != 'dog'}

@@ -26,4 +26,3 @@ def setup_logging():
     # handle from all logs
     root_logger.addHandler(stream)
     root_logger.addHandler(file_handler)
-

@@ -67,7 +67,7 @@ class Stats(Cog):
 
     @commands.command()
     async def stats(self, ctx):
-        """ Shows participation info about the bot. """
+        """Shows participation info about the bot."""
         # TODO: Make this function neater. It's currently trash.
 
         # member stats
@@ -118,7 +118,7 @@ class Stats(Cog):
 
     @commands.command(aliases=['cstats'])
     async def command_stats(self, ctx, *, command: str=None):
-        """ Shows commands statistics. """
+        """Shows commands statistics."""
 
         if command:
             async with self.bot.pgpool.acquire() as conn:

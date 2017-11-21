@@ -60,7 +60,7 @@ class Reddit(Cog):
             pass
 
     async def get_hot(self, channel: discord.TextChannel, sub: str):
-        """ Returns a hot Post from a sub. """
+        """Returns a hot Post from a sub."""
 
         # appropriate post filter
         def post_filter(post):
@@ -160,7 +160,7 @@ class Reddit(Cog):
             logger.debug('Not allowed to post to feed channel in %d, cid=%d', feed['guild_id'], feed['channel_id'])
 
     async def is_exhausted(self, guild_id: int, post_id: str) -> bool:
-        """ Returns whether a post IDs is exhausted. """
+        """Returns whether a post IDs is exhausted."""
         record = await self.bot.pgpool.fetchrow(
             'SELECT * FROM exhausted_reddit_posts WHERE guild_id = $1 AND post_id = $2',
             guild_id, post_id
@@ -169,7 +169,7 @@ class Reddit(Cog):
         return record is not None
 
     async def add_exhausted(self, guild_id: int, post_id: str):
-        """ Adds an exhausted post ID to the database. """
+        """Adds an exhausted post ID to the database."""
         logger.debug('Exhausting post %s (guild = %d)', post_id, guild_id)
         await self.bot.pgpool.execute("INSERT INTO exhausted_reddit_posts VALUES ($1, $2)", guild_id, post_id)
 
@@ -203,7 +203,7 @@ class Reddit(Cog):
 
     @commands.command()
     async def hot(self, ctx, sub: str):
-        """ Fetches hot posts from a subreddit. """
+        """Fetches hot posts from a subreddit."""
         try:
             async with ctx.typing():
                 post = await self.get_hot(ctx.channel, sub)
@@ -248,7 +248,7 @@ class Reddit(Cog):
     @reddit.command()
     @is_bot_admin()
     async def debug(self, ctx):
-        """ Drastically lowers feed timers. Applied globally. """
+        """Drastically lowers feed timers. Applied globally."""
         self.update_interval = 3
         self.fuzz_interval = 1
         self.reboot_feed_task()
@@ -257,7 +257,7 @@ class Reddit(Cog):
     @reddit.command()
     @is_bot_admin()
     async def debug_revert(self, ctx):
-        """ Reverts lowered feed timers. """
+        """Reverts lowered feed timers."""
         self.update_interval = UPDATE_INTERVAL
         self.fuzz_interval = FUZZ_INTERVAL
         self.reboot_feed_task()
@@ -266,7 +266,7 @@ class Reddit(Cog):
     @reddit.command()
     @is_bot_admin()
     async def update_all_now(self, ctx):
-        """ Forces a feed update now. """
+        """Forces a feed update now."""
         logger.debug('[FORCED] Updating all feeds NOW...')
 
         # fetch all feeds, and update them all

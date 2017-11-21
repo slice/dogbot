@@ -21,13 +21,13 @@ def user_to_bot_ratio(guild: discord.Guild):
 
 
 async def is_blacklisted(bot: Dogbot, guild_id: int) -> bool:
-    """ Returns a bool indicating whether a guild has been blacklisted. """
+    """Returns a bool indicating whether a guild has been blacklisted."""
     blacklisted_record = await bot.pgpool.fetchrow('SELECT * FROM blacklisted_guilds WHERE guild_id = $1', guild_id)
     return blacklisted_record is not None
 
 
 async def is_bot_collection(bot: Dogbot, guild: discord.Guild) -> bool:
-    """ Returns a bool indicating whether a guild is a collection. """
+    """Returns a bool indicating whether a guild is a collection."""
     if await is_blacklisted(bot, guild.id):
         return True
 

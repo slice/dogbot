@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 async def jisho(session: aiohttp.ClientSession, query: str):
-    """ Searches Jisho, and returns definition data as a `dict`. """
+    """Searches Jisho, and returns definition data as a `dict`."""
     query_url = utils.urlescape(query)
     jisho_endpoint = 'http://jisho.org/api/v1/search/words?keyword={}'
     async with session.get(jisho_endpoint.format(query_url)) as resp:
@@ -91,12 +91,12 @@ class Utility(Cog):
     @commands.command()
     @is_bot_admin()
     async def exception(self, ctx, message: str = 'Test exception'):
-        """ Creates an exception. """
+        """Creates an exception."""
         raise RuntimeError(message)
 
     @commands.command()
     async def define(self, ctx, *, word: str):
-        """ Defines a word. """
+        """Defines a word."""
         api_base = 'https://od-api.oxforddictionaries.com/api/v1'
 
         # request headers
@@ -173,7 +173,7 @@ class Utility(Cog):
 
     @commands.command()
     async def weather(self, ctx, *, place: str):
-        """ Checks the weather for some place. """
+        """Checks the weather for some place."""
         if not self.owm:
             return
 
@@ -295,7 +295,7 @@ class Utility(Cog):
 
     @commands.command()
     async def jisho(self, ctx, *, query: str):
-        """ Looks up Jisho definitions. """
+        """Looks up Jisho definitions."""
         result = await jisho(self.bot.session, query)
         if not result:
             await ctx.send('No results found.')

@@ -75,7 +75,7 @@ class DogbotContext(commands.Context):
         return val if (not args and not kwargs) else val.format(*args, **kwargs)
 
     async def confirm(self, *, title: str, description: str, confirm_cancellation=False):
-        """ Confirms something. """
+        """Confirms something."""
         embed = discord.Embed(color=discord.Color.red(), title=title, description=description)
         confirmation = await self.send(embed=embed)
 
@@ -131,7 +131,7 @@ class DogbotContext(commands.Context):
         return await self.bot.wait_for('message', check=check)
 
     async def gatekeeper_enabled(self) -> bool:
-        """ Returns whether Gatekeeper is enabled in this context. """
+        """Returns whether Gatekeeper is enabled in this context."""
 
         # not in a guild
         if not self.guild:
@@ -140,7 +140,7 @@ class DogbotContext(commands.Context):
         return await self.bot.redis.exists(f'gatekeeper:{self.guild.id}:enabled')
 
     async def pick_from_list(self, choices: List[Any], *, delete_after_choice=False) -> Any:
-        """ Shows the user a list of items to pick from. Returns the picked item. """
+        """Shows the user a list of items to pick from. Returns the picked item."""
         # format list of stuff
         choices_list = utils.format_list(choices)
 

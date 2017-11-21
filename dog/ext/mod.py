@@ -96,7 +96,7 @@ class Mod(Cog):
     @purge.command(name='by', aliases=['from'])
     @purge_command
     async def purge_by(self, ctx, target: discord.Member, amount: int = 5):
-        """ Purges any message in the last <n> messages sent by someone. """
+        """Purges any message in the last <n> messages sent by someone."""
         await self.base_purge(ctx, amount, lambda m: m.author == target)
 
     purge_embeds = _create_purge_command(
@@ -117,7 +117,7 @@ class Mod(Cog):
     @purge.command(name='reactions')
     @purge_command
     async def purge_reactions(self, ctx: DogbotContext, amount: int=5):
-        """ Purges reactions in the last <n> messages. """
+        """Purges reactions in the last <n> messages."""
         count = 0
         total_reactions_removed = 0
 
@@ -149,7 +149,7 @@ class Mod(Cog):
     @commands.command()
     @commands.guild_only()
     async def clean(self, ctx: DogbotContext):
-        """ Removes recent messages posted by the bot. """
+        """Removes recent messages posted by the bot."""
         try:
             await ctx.channel.purge(limit=50, check=lambda m: m.author == ctx.bot.user)
         except discord.NotFound:
@@ -325,7 +325,7 @@ class Mod(Cog):
     @commands.guild_only()
     @checks.is_moderator()
     async def enable(self, ctx, command: str):
-        """ Enables a command in this server. """
+        """Enables a command in this server."""
         if self.bot.has_prefix(command):
             await ctx.send('You must leave off the prefix.')
             return
@@ -339,7 +339,7 @@ class Mod(Cog):
     @commands.guild_only()
     @checks.is_moderator()
     async def disabled(self, ctx):
-        """ Shows disabled commands in this server. """
+        """Shows disabled commands in this server."""
         keys = await self.bot.redis.keys(f'disabled:{ctx.guild.id}:*')
         disabled = ['d?' + k.decode().split(':')[2] for k in keys]
 
@@ -375,7 +375,7 @@ class Mod(Cog):
     @commands.has_permissions(kick_members=True)
     @checks.bot_perms(kick_members=True)
     async def kick(self, ctx, member: discord.Member, *, reason: str = None):
-        """ Kicks someone. """
+        """Kicks someone."""
         try:
             await ctx.guild.kick(member, reason=f'(By {ctx.author}) {reason or "No reason provided."}')
         except discord.Forbidden:
@@ -407,7 +407,7 @@ class Mod(Cog):
     @commands.has_permissions(ban_members=True)
     @checks.bot_perms(ban_members=True)
     async def unban(self, ctx, member: converters.BannedUser, *, reason=''):
-        """ Unbans someone. """
+        """Unbans someone."""
         await ctx.guild.unban(member, reason=f'(Unbanned by {ctx.author}) {reason or "No reason provided."}')
         await ctx.send(f'\N{OK HAND SIGN} Unbanned {describe(member)}.')
 

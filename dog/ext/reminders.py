@@ -91,7 +91,7 @@ class Reminders(Cog):
 
     @commands.group(invoke_without_command=True)
     async def remind(self, ctx, due_in: HumanTime, *, note: clean_content):
-        """ Creates a reminder. """
+        """Creates a reminder."""
         if due_in > (24 * 60 * 60) * 40:
             return await ctx.send('The maximum time allowed is 40 days.')
         due = datetime.datetime.utcnow() + datetime.timedelta(seconds=due_in)
@@ -100,7 +100,7 @@ class Reminders(Cog):
 
     @remind.command()
     async def list(self, ctx):
-        """ Lists your reminders. """
+        """Lists your reminders."""
         reminders = await ctx.bot.pgpool.fetch('SELECT * FROM reminders WHERE author_id = $1', ctx.author.id)
 
         em = Embed(title=f'{len(reminders)} reminder(s)')
@@ -108,12 +108,12 @@ class Reminders(Cog):
 
         if len(em.description) > 2048:
             return await ctx.send('You have too many reminders to show.')
-        
+
         await ctx.send(embed=em)
 
     @remind.command()
     async def cancel(self, ctx, rid: int):
-        """ Cancels a reminder. """
+        """Cancels a reminder."""
         async with ctx.acquire() as conn:
 
             # grab the reminder

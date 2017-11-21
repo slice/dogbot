@@ -8,7 +8,7 @@ class State(Cog):
     @command(hidden=True)
     @is_bot_admin()
     async def sync(self, ctx):
-        """ Syncs the bot's state. """
+        """Syncs the bot's state."""
         async with ctx.acquire() as conn:
             msg = await ctx.send('Syncing...')
 

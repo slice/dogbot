@@ -85,7 +85,7 @@ class Code(Converter):
 
 
 def format_syntax_error(e: SyntaxError) -> str:
-    """ Formats a SyntaxError. """
+    """Formats a SyntaxError."""
     if e.text is None:
         return '```py\n{0.__class__.__name__}: {0}\n```'.format(e)
     # display a nice arrow

@@ -122,7 +122,7 @@ class Admin(Cog):
     @command()
     @is_bot_admin()
     async def reload(self, ctx: DogbotContext, ext=None):
-        """ Reloads the bot/extensions of the bot. """
+        """Reloads the bot/extensions of the bot."""
         try:
             if ext is None:
                 self.bot.perform_full_reload()

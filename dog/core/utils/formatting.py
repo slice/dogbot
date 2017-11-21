@@ -237,7 +237,7 @@ def now() -> str:
     """
     Returns a string representing the current time, formatted with :func:`standard_datetime`.
     """
-    """ Returns an Semistandard-formatted datetime with a "UTC" suffix. """
+    """Returns an Semistandard-formatted datetime with a "UTC" suffix."""
     return standard_datetime(datetime.datetime.utcnow()) + ' UTC'
 
 

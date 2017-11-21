@@ -19,7 +19,7 @@ class DogbotHelpFormatter(HelpFormatter):
         return '\n\n'.join(para.replace('\n', ' ') for para in description.split('\n\n'))
 
     async def format(self):
-        """ A modified copy of Discord.py rewrite's vanilla HelpFormatter.format(). """
+        """A modified copy of Discord.py rewrite's vanilla HelpFormatter.format()."""
         self._paginator = Paginator()
 
         # we need a padding of ~80 or so

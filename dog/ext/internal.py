@@ -31,7 +31,7 @@ class Internal(Cog):
 
     @command()
     async def dstats(self, ctx):
-        """ Shows detailed stats. """
+        """Shows detailed stats."""
         desc = """{0} (`{1}`, <@{1}>)\nCreated: {2}""".format(ctx.bot.user, ctx.bot.user.id, ctx.bot.user.created_at)
         embed = discord.Embed(title='Detailed stats', description=desc, color=discord.Color.blurple())
 
@@ -79,14 +79,14 @@ class Internal(Cog):
 
     @command(aliases=['ubl'])
     async def unblacklist(self, ctx, guild: int):
-        """ Unblacklists a guild. """
+        """Unblacklists a guild."""
         async with ctx.acquire() as conn:
             await conn.execute('DELETE FROM blacklisted_guilds WHERE guild_id = $1', guild)
         await ctx.ok()
 
     @group(aliases=['gb'])
     async def globalbans(self, ctx):
-        """ Manages global bot bans. """
+        """Manages global bot bans."""
 
     @globalbans.command(name='flush')
     async def gb_flush(self, ctx):
@@ -131,7 +131,7 @@ class Internal(Cog):
 
     @globalbans.command(name='add')
     async def gb_add(self, ctx, who: converters.RawMember, *, reason):
-        """ Adds a global ban. """
+        """Adds a global ban."""
         async with ctx.acquire() as conn:
             try:
                 sql = 'INSERT INTO globalbans (user_id, reason, created_at) VALUES ($1, $2, $3)'
@@ -145,7 +145,7 @@ class Internal(Cog):
 
     @globalbans.command(name='status')
     async def gb_status(self, ctx, who: converters.RawMember):
-        """ Checks on global ban status. """
+        """Checks on global ban status."""
         is_banned = await ctx.bot.is_global_banned(who)
         is_banned_cached = (await ctx.bot.redis.get(f'cache:globalbans:{who.id}')).decode() == 'banned'
 
@@ -165,7 +165,7 @@ class Internal(Cog):
 
     @globalbans.command(name='remove')
     async def gb_remove(self, ctx, who: converters.RawMember):
-        """ Removes a global ban. """
+        """Removes a global ban."""
         async with ctx.acquire() as conn:
             await conn.execute('DELETE FROM globalbans WHERE user_id = $1', who.id)
         await ctx.ok()

@@ -103,14 +103,14 @@ class Autorole(Cog):
 
     @autorole.command()
     async def delete(self, ctx: DogbotContext, type: AutoroleType):
-        """ Deletes an autorole. """
+        """Deletes an autorole."""
         async with ctx.acquire() as conn:
             await conn.execute('DELETE FROM autoroles WHERE guild_id = $1 AND type = $2', ctx.guild.id, type.name)
         await ctx.ok()
 
     @autorole.command()
     async def list(self, ctx: DogbotContext):
-        """ Lists autoroles on this server. """
+        """Lists autoroles on this server."""
         def format_role(role_id):
             role = discord.utils.get(ctx.guild.roles, id=role_id)
             return role.name if role else '`<dead role>`'

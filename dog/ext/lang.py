@@ -31,7 +31,7 @@ class Lang(Cog):
 
     @commands.command()
     async def langs(self, ctx):
-        """ Lists supported languages. """
+        """Lists supported languages."""
         langs = [p.stem for p in pathlib.Path('./resources/lang/').glob('*.yml')]
         await ctx.send(', '.join(langs))
 
@@ -39,7 +39,7 @@ class Lang(Cog):
     @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     async def set_server_lang(self, ctx, lang: LangConverter):
-        """ Sets the preferred language for this server. """
+        """Sets the preferred language for this server."""
         await ctx.bot.redis.set(f'i18n:guild:{ctx.guild.id}:lang', lang)
         await ctx.ok()
 

@@ -136,7 +136,7 @@ class Dogbot(BotBase, AutoShardedClient):
                 return key
 
     async def prefix(self, _bot, message: discord.Message):
-        """ Returns prefixes for a message. """
+        """Returns prefixes for a message."""
         mention = [self.user.mention + ' ', f'<@!{self.user.id}> ']
         additional_prefixes = await self.get_prefixes(message.guild)
         return self.cfg['bot']['prefixes'] + mention + additional_prefixes

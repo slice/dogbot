@@ -34,7 +34,7 @@ class About(Cog):
 
     @command(hidden=True, aliases=['ginvite', 'ginv'])
     async def generate_invite(self, ctx, *client_ids: RawMember):
-        """ Generates Discord invite URL(s) from a client ID. """
+        """Generates Discord invite URL(s) from a client ID."""
 
         if not client_ids:
             return await ctx.send("Provide some client IDs or bot mentions for me to process.")
@@ -48,7 +48,7 @@ class About(Cog):
 
     @command(aliases=['helpme', 'support'])
     async def wiki(self, ctx):
-        """ Need help using Dogbot? """
+        """Need help using Dogbot?"""
 
         wiki = f'https://github.com/{ctx.bot.cfg["bot"]["github"]}/wiki'
         invite = ctx.bot.cfg['bot']['woof']['invite']
@@ -59,7 +59,7 @@ class About(Cog):
 
     @command(aliases=['info'])
     async def about(self, ctx):
-        """ Shows information about the bot. """
+        """Shows information about the bot."""
 
         git_revision = (await shell('git rev-parse --short HEAD')).strip()
 

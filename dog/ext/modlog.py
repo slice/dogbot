@@ -1,4 +1,4 @@
-""" Contains the moderator log. """
+"""Contains the moderator log."""
 import asyncio
 import datetime
 import logging

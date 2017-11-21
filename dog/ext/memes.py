@@ -159,7 +159,7 @@ class Memes(Cog):
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
     async def iphonex(self, ctx, image: converters.Image, text, cost):
-        """ iPhone X: $999 """
+        """iPhone X: $999"""
         await Meme.recipe(ctx, {
             'image': 'resources/memes/iphonex.png',
             'render_as': 'iphonex.png',
@@ -173,14 +173,14 @@ class Memes(Cog):
 
     @commands.command()
     async def b(self, ctx, *, text: commands.clean_content):
-        """ 🅱🅱🅱🅱🅱🅱🅱 """
+        """🅱🅱🅱🅱🅱🅱🅱"""
         text = ' '.join('\U0001f171' + w[1:] for w in text.split(' '))
         await ctx.send(text.replace('b', '\U0001f171'))
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def mistake(self, ctx, image_source: converters.Image):
-        """ For really big mistakes. """
+        """For really big mistakes."""
         await Meme.recipe(ctx, {
             'image': 'resources/memes/mistake.png',
             'render_as': 'mistake.png',
@@ -193,7 +193,7 @@ class Memes(Cog):
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
     async def orly(self, ctx, title, guide, author, *, top_text=''):
-        """ Generates O'Reilly book covers. """
+        """Generates O'Reilly book covers."""
 
         api_base = 'https://orly-appstore.herokuapp.com/generate?'
 
@@ -213,7 +213,7 @@ class Memes(Cog):
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def trustnobody(self, ctx, image_source: converters.Image):
-        """ Trust nobody, not even yourself. """
+        """Trust nobody, not even yourself."""
         async with ctx.typing():
             m = Meme('resources/memes/trust_nobody.png', ctx)
 
@@ -230,7 +230,7 @@ class Memes(Cog):
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def youvs(self, ctx, a: converters.Image, b: converters.Image):
-        """ You vs. the guy she tells you not to worry about """
+        """You vs. the guy she tells you not to worry about"""
         await Meme.recipe(ctx, {
             'image': 'resources/memes/you_vs.png',
             'render_as': 'youvs.png',
@@ -244,7 +244,7 @@ class Memes(Cog):
     @commands.command(aliases=['ph'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def pornhub(self, ctx, image: converters.Image, *, title):
-        """ Lewd. """
+        """Lewd."""
         await Meme.recipe(ctx, {
             'image': 'resources/memes/ph.png',
             'render_as': 'ph.png',
@@ -261,7 +261,7 @@ class Memes(Cog):
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def drake(self, ctx, yay: converters.Image, nay: converters.Image):
-        """ Yay or nay? """
+        """Yay or nay?"""
         await Meme.recipe(ctx, {
             'image': 'resources/memes/drake.png',
             'render_as': 'drake.png',
@@ -275,7 +275,7 @@ class Memes(Cog):
     @commands.command(aliases=['www'])
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def whowouldwin(self, ctx, left: converters.Image, left_text, right: converters.Image, right_text):
-        """ Who would win? """
+        """Who would win?"""
         await Meme.recipe(ctx, {
             'image': 'resources/memes/whowouldwin.png',
             'render_as': 'whowouldwin.png',
@@ -294,7 +294,7 @@ class Memes(Cog):
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def youcantjust(self, ctx, coolio: converters.Image, *, text: commands.clean_content):
-        """ You can't just... """
+        """You can't just..."""
         await Meme.recipe(ctx, {
             'image': 'resources/memes/you_cant_just.png',
             'render_as': 'you_cant_just.png',
@@ -311,7 +311,7 @@ class Memes(Cog):
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def whodidthis(self, ctx, *, image: converters.Image):
-        """ Who did this? """
+        """Who did this?"""
         await Meme.recipe(ctx, {
             'image': 'resources/memes/whodidthis.png',
             'render_as': 'whodidthis.png',
@@ -324,7 +324,7 @@ class Memes(Cog):
     @commands.command(aliases=['handicap'], )
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def handicapped(self, ctx, image_source: converters.Image, *, text: commands.clean_content):
-        """ Sir, this spot is for the handicapped only!... """
+        """Sir, this spot is for the handicapped only!..."""
         await Meme.recipe(ctx, {
             'image': 'resources/memes/handicap.png',
             'render_as': 'handicapped.png',
@@ -360,7 +360,7 @@ class Memes(Cog):
     @commands.command()
     @commands.cooldown(1, 2, commands.BucketType.user)
     async def pixelate(self, ctx, image_source: converters.Image, size: int = 15):
-        """ Pixelates something. """
+        """Pixelates something."""
         if size < 5:
             await ctx.send('The minimum size is 5.')
         size = min(size, 25)
@@ -375,7 +375,7 @@ class Memes(Cog):
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def wacky(self, ctx, image_source: converters.Image = None):
-        """ Applies wacky effects to your avatar. """
+        """Applies wacky effects to your avatar."""
         image_source = image_source or ctx.message.author.avatar_url_as(format='png')
 
         await ctx.channel.trigger_typing()
@@ -401,7 +401,7 @@ class Memes(Cog):
     @commands.command(hidden=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def wansumfuk(self, ctx, image_source: converters.Image):
-        """ wan sum fuk? """
+        """wan sum fuk?"""
         await Meme.recipe(ctx, {
             'image': 'resources/memes/wansumfuk.png',
             'render_as': 'wansumfuk.png',

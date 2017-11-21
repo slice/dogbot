@@ -52,7 +52,7 @@ class Info(Cog):
     @commands.group(aliases=['user'], invoke_without_command=True)
     @commands.guild_only()
     async def profile(self, ctx, *, who: converters.RawUser = None):
-        """ Shows information about a user. """
+        """Shows information about a user."""
         who = who or ctx.author
 
         embed = discord.Embed(title=f'{who} \N{EM DASH} {who.id}' + (' <:bot:349717107124207617>' if who.bot else ''))
@@ -104,7 +104,7 @@ class Info(Cog):
     @profile.command(name='describe')
     @checks.is_supporter_check()
     async def profile_describe(self, ctx, color: discord.Color, *, description):
-        """ Sets your profile description and color. Supporter only. """
+        """Sets your profile description and color. Supporter only."""
         if len(description) > 1024:
             return await ctx.send('That description is too long. There is a maximum of 1024 characters.')
         async with ctx.acquire() as conn:
@@ -116,7 +116,7 @@ class Info(Cog):
     @commands.command(aliases=['guild'])
     @commands.guild_only()
     async def server(self, ctx):
-        """ Shows information about the server. """
+        """Shows information about the server."""
         g = ctx.guild
         embed = discord.Embed(title=f'{g.name} \N{EM DASH} {g.id}')
 
@@ -241,7 +241,7 @@ class Info(Cog):
 
     @commands.command()
     async def invite_info(self, ctx, invite: discord.Invite):
-        """ Shows information about an invite. """
+        """Shows information about an invite."""
         embed = discord.Embed(title=f'Invite for {invite.guild.name} (`{invite.guild.id}`)')
         embed.add_field(name='Channel', value=f'{invite.channel.name} (`{invite.channel.id}`)', inline=False)
         if invite.inviter:
@@ -251,7 +251,7 @@ class Info(Cog):
     @commands.command()
     @commands.guild_only()
     async def earliest(self, ctx):
-        """ Shows who in this server had the earliest Discord join time. """
+        """Shows who in this server had the earliest Discord join time."""
         members = {m: m.created_at for m in ctx.guild.members if not m.bot}
         earliest_time = min(members.values())
         for member, time in members.items():

@@ -122,7 +122,7 @@ class Gatekeeper(Cog):
         settings = {key.decode(): value.decode() for key, value in settings.items()}  # decode keys and values
 
         async def report(*args, **kwargs):
-            """ Sends a message to the broadcast channel for this guild. """
+            """Sends a message to the broadcast channel for this guild."""
             try:
                 broadcast_key = KEY_BROADCAST_CHANNEL.format(member.guild)
                 channel_id = int((await self.bot.redis.get(broadcast_key)).decode())
@@ -225,13 +225,13 @@ class Gatekeeper(Cog):
 
     @gatekeeper.command()
     async def unset(self, ctx: DogbotContext, key):
-        """ Unsets a Gatekeeper criteria. """
+        """Unsets a Gatekeeper criteria."""
         await ctx.bot.redis.hdel(KEY_SETTINGS.format(ctx.guild), key)
         await ctx.send(f'\N{OK HAND SIGN} Deleted `{key}`.')
 
     @gatekeeper.command(aliases=['engage', 'on'])
     async def enable(self, ctx: DogbotContext):
-        """ Turns on Gatekeeper. """
+        """Turns on Gatekeeper."""
         if not ctx.guild.me.guild_permissions.kick_members:
             return await ctx.send("I can't kick members, so Gatekeeper won't be useful.")
 
@@ -241,7 +241,7 @@ class Gatekeeper(Cog):
 
     @gatekeeper.command(aliases=['disengage', 'off'])
     async def disable(self, ctx: DogbotContext):
-        """ Turns off Gatekeeper. """
+        """Turns off Gatekeeper."""
         if await ctx.confirm(title='Are you sure you want to disable Gatekeeper?',
                              description='I will stop screening member joins.', confirm_cancellation=True):
             await ctx.bot.redis.delete(KEY_ENABLED.format(ctx.guild))
@@ -266,7 +266,7 @@ class Gatekeeper(Cog):
 
     @gatekeeper.command()
     async def status(self, ctx: DogbotContext):
-        """ Views the current status of Gatekeeper. """
+        """Views the current status of Gatekeeper."""
         enabled = await ctx.gatekeeper_enabled()
 
         description = "I'm not screening member joins at the moment." if not enabled else "I'm screening member joins."

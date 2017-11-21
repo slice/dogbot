@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class Censorship(Cog):
     async def is_censoring(self, guild: discord.Guild, what: CensorType) -> bool:
-        """ Returns whether something is being censored for a guild. """
+        """Returns whether something is being censored for a guild."""
         if not await self.has_censorship_record(guild):
             return False
         sql = 'SELECT enabled FROM censorship WHERE guild_id = $1'
@@ -22,13 +22,13 @@ class Censorship(Cog):
         return what.name in enabled
 
     async def has_censorship_record(self, guild: discord.Guild) -> bool:
-        """ Returns whether a censorship record is present for a guild. """
+        """Returns whether a censorship record is present for a guild."""
         sql = 'SELECT * FROM censorship WHERE guild_id = $1'
         async with self.bot.pgpool.acquire() as conn:
             return await conn.fetchrow(sql, guild.id) is not None
 
     async def censor(self, guild: discord.Guild, what: CensorType):
-        """ Censors something for a guild. """
+        """Censors something for a guild."""
         logger.info('Censoring %s for %s (%d)', what, guild.name, guild.id)
         async with self.bot.pgpool.acquire() as conn:
             if not await self.has_censorship_record(guild):
@@ -38,21 +38,21 @@ class Censorship(Cog):
                                'WHERE guild_id = $2', what.name, guild.id)
 
     async def delete_punishment(self, guild: discord.Guild, type: CensorType):
-        """ Deletes a punishment. """
+        """Deletes a punishment."""
         logger.debug('Removing punishment. gid=%d, censor=%s', guild.id, type)
         async with self.bot.pgpool.acquire() as conn:
             await conn.execute('DELETE FROM censorship_punishments WHERE guild_id = $1 AND censorship_type = $2',
                                guild.id, type.name)
 
     async def add_punishment(self, guild: discord.Guild, type: CensorType, punishment: PunishmentType):
-        """ Adds a punishment. """
+        """Adds a punishment."""
         logger.debug('Adding punishment. gid=%d, censor=%s, punishment=%s', guild.id, type, punishment)
         async with self.bot.pgpool.acquire() as conn:
             await conn.execute('INSERT INTO censorship_punishments VALUES ($1, $2, $3)', guild.id, type.name,
                                punishment.name)
 
     async def get_punishment(self, guild: discord.Guild, type: CensorType) -> 'Union[PunishmentType, None]':
-        """ Returns a punishment for a censorship type. """
+        """Returns a punishment for a censorship type."""
         logger.debug('Fetching punishment. gid=%d, censor=%s', guild.id, type)
         sql = 'SELECT punishment FROM censorship_punishments WHERE guild_id = $1 AND censorship_type = $2'
         async with self.bot.pgpool.acquire() as conn:
@@ -60,7 +60,7 @@ class Censorship(Cog):
             return getattr(PunishmentType, row['punishment'], None) if row else None
 
     async def uncensor(self, guild: discord.Guild, what: CensorType):
-        """ Uncensors something for a guild. """
+        """Uncensors something for a guild."""
         if not await self.has_censorship_record(guild):
             return
         logging.info('Uncensoring %s for %s (%d)', what, guild.name, guild.id)
@@ -69,7 +69,7 @@ class Censorship(Cog):
                                'WHERE guild_id = $2', what.name, guild.id)
 
     async def carry_out_punishment(self, censor_type: CensorType, msg: discord.Message):
-        """ Carries out a punishment. """
+        """Carries out a punishment."""
         punishment = await self.get_punishment(msg.guild, censor_type)
         if not punishment:
             logger.debug('Not carrying out punishment for %d, no punishment assigned to censor type %s.', msg.id,
@@ -142,7 +142,7 @@ class Censorship(Cog):
 
     @censorship.command(name='exceptions', aliases=['excepted'])
     async def _exceptions(self, ctx):
-        """ Lists the excepted roles, and their IDs. """
+        """Lists the excepted roles, and their IDs."""
         roles = [(i, discord.utils.get(ctx.guild.roles, id=i)) for i in await self.get_guild_exceptions(ctx.guild)]
 
         if not roles:
@@ -167,7 +167,7 @@ class Censorship(Cog):
 
     @censorship.command(name='list')
     async def _list(self, ctx):
-        """ Lists the censorship types. """
+        """Lists the censorship types."""
         types = ', '.join(f'`{t.name.lower()}`' for t in CensorType)
         wiki = 'https://github.com/slice/dogbot/wiki/Censorship'
         await ctx.send(f'Censorship types: {types}\n\nTo see what these do, click here: <{wiki}>')
@@ -222,7 +222,7 @@ class Censorship(Cog):
 
     @censor_punish.command(name='add')
     async def censor_punish_add(self, ctx, censor_type: CensorType, punishment: PunishmentType):
-        """ Adds a punishment. """
+        """Adds a punishment."""
         if not await self.is_censoring(ctx.guild, censor_type):
             return await ctx.send(f'You aren\'t censoring `{censor_type.name.lower()}`, you should censor it first '
                                   f'with `d?cs censor {censor_type.name.lower()}`.')
@@ -234,7 +234,7 @@ class Censorship(Cog):
 
     @censor_punish.command(name='delete', aliases=['del', 'rm', 'remove'])
     async def censor_punish_delete(self, ctx, censor_type: CensorType):
-        """ Deletes a punishment. """
+        """Deletes a punishment."""
         await self.delete_punishment(ctx.guild, censor_type)
         await ctx.ok()
 
@@ -252,11 +252,11 @@ class Censorship(Cog):
             await ctx.send(utils.format_dict(status))
 
     async def should_censor(self, msg: discord.Message, filter: CensorshipFilter) -> bool:
-        """ Returns whether a message should be censored based on a censorship filter and censor type. """
+        """Returns whether a message should be censored based on a censorship filter and censor type."""
         return await self.is_censoring(msg.guild, filter.censor_type) and await filter().does_violate(msg)
 
     async def censor_message(self, msg: discord.Message, filter):
-        """ Censors a message, and posts to the modlog. """
+        """Censors a message, and posts to the modlog."""
         self.bot.dispatch('message_censor', filter, msg)
         try:
             await msg.delete()
@@ -265,7 +265,7 @@ class Censorship(Cog):
             await self.bot.send_modlog(msg.guild, msg)
 
     async def get_guild_exceptions(self, guild: discord.Guild):
-        """ Returns the list of exception role IDs that a guild has. """
+        """Returns the list of exception role IDs that a guild has."""
         sql = 'SELECT exceptions FROM censorship WHERE guild_id = $1'
         async with self.bot.pgpool.acquire() as conn:
             record = await conn.fetchrow(sql, guild.id)

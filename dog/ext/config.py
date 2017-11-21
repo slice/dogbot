@@ -86,7 +86,7 @@ class Config(Cog):
     @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     async def config(self, ctx: DogbotContext):
-        """ Manages server-specific configuration for the bot. """
+        """Manages server-specific configuration for the bot."""
         if ctx.invoked_subcommand is None:
             await ctx.send('You need to specify a valid subcommand to run. For help, run `d?help cfg`.')
 

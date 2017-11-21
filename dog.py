@@ -34,7 +34,6 @@ try:
     logger.info('Using uvloop\'s event loop policy.')
 except ModuleNotFoundError:
     print('[dog] uvloop not found')
-    pass
 
 if args.docker:
     logger.info('Running in Docker mode.')
