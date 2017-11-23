@@ -308,8 +308,10 @@ class Reddit(Cog):
             logger.debug('Guild %s (%d) has %d feeds', ctx.guild.name, ctx.guild.id, count)
             if count >= 2:
                 # they have 2 feeds, which is the max
-                return await ctx.send('You have too many feeds! You can only have two at a time. Use `d?reddit feeds` '
-                                      'check the feeds in this server.')
+                return await ctx.send(
+                    f'You have too many feeds! You can only have two at a time. Use `{ctx.prefix}reddit feeds` '
+                    'check the feeds in this server.'
+                )
             await conn.execute('INSERT INTO reddit_feeds VALUES ($1, $2, $3)', ctx.guild.id, channel.id, subreddit)
         await ctx.ok()
 

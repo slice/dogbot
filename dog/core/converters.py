@@ -1,7 +1,8 @@
 import datetime
 import re
+import typing
 from collections import namedtuple
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
 
 import discord
 import parsedatetime
@@ -59,7 +60,7 @@ class BannedUser(commands.Converter):
 
             if entry is None:
                 raise commands.BadArgument(
-                    'Banned user not found. You can specify by ID, username, or username + discriminator.'
+                    'Banned user not found. You can specify by ID, username, or username#discriminator.'
                 )
 
             return entry.user
@@ -85,7 +86,6 @@ class RawUser(commands.Converter):
 class RawMember(commands.Converter):
     """A converter that attempts to convert to user, then falls back to a discord.Object with an ID."""
     async def convert(self, ctx, argument):
-        # garbo
         try:
             return await MemberConverter().convert(ctx, argument)
         except commands.BadArgument:
@@ -99,48 +99,57 @@ SAFE_IMAGE_HOSTS = ('https://i.imgur.com', 'https://cdn.discordapp.com', 'https:
                     'https://i.redd.it', 'https://media.discordapp.net')
 
 
-async def _get_recent_image(channel):
-    async for msg in channel.history(limit=25):
+async def _get_recent_image(channel: discord.TextChannel) -> typing.Optional[discord.Message]:
+    async for msg in channel.history(limit=100):
+        # Scan any attached images.
         for attachment in msg.attachments:
-            # return url for image
             if attachment.height:
                 return attachment.proxy_url
+
+        # Scan any embeds in the message.
+        for embed in msg.embeds:
+            if embed.image is discord.Embed.Empty:
+                continue
+            return embed.image.proxy_url
 
 
 class Image(commands.Converter):
     """
     Resolves an image, returns the URL to the image.
 
-    Could be passed "recent" in order to scan the channel for recent images.
-    Could be passed a member in order to use their avatar.
-    Could be passed an image URL to use it, however, only certain image hosts will work.
+    Could be passed "attached" to use an attached image.
+    Could be passed "recent" to scan the channel for recent images.
+    Could be passed a member to use their avatar.
+    Could be passed an image URL to use it, however, only whitelisted image hosts will work.
     """
     async def convert(self, ctx, argument):
-        # scan attached images
+        # Scan attached images.
         if argument == 'attached':
             for attachment in ctx.message.attachments:
                 if attachment.height:
                     return attachment.proxy_url
 
-        # scan channel
+        # Scan channel for any recent images.
         if argument == 'recent':
             result = await _get_recent_image(ctx.channel)
             if not result:
-                raise commands.BadArgument('No recent image attachment was found in this channel.')
+                raise commands.BadArgument('No recent image was found in this channel.')
             return result
 
         try:
-            # resolve avatar
-            memb = await MemberConverter().convert(ctx, argument)
-            return memb.avatar_url_as(format='png')
+            # Resolve avatar.
+            user = await UserConverter().convert(ctx, argument)
+            return user.avatar_url_as(format='png')
         except commands.BadArgument:
-            # ok image
-            if any(argument.startswith(safe_url) for safe_url in SAFE_IMAGE_HOSTS):
-                return argument
+            pass
 
-            # lol wtf
-            err = 'Invalid image URL or user. Valid image hosts: ' + ','.join(f'`{url}`' for url in SAFE_IMAGE_HOSTS)
-            raise commands.BadArgument(err)
+        # ok image
+        if any(argument.startswith(safe_url) for safe_url in SAFE_IMAGE_HOSTS):
+            return argument
+
+        error = ("Invalid image URL or user. To use a recent image from this channel, specify `recent`. You can also "
+                 "attach any image and specify `attached` to use that image.")
+        raise commands.BadArgument(error)
 
 
 class HumanTime(commands.Converter):
@@ -175,16 +184,16 @@ class DeleteDays(commands.Converter):
 
 class EmojiStealer(Converter):
     async def convert(self, ctx: DogbotContext, argument: str) -> Tuple[int, Union[None, str]]:
-        # emoji id?
+        # Emoji ID?
         if argument.isdigit():
             return BareCustomEmoji(id=int(argument), name=None)
 
-        # emoji?
+        # Emoji?
         match = EMOJI_REGEX.match(argument)
         if match:
             return BareCustomEmoji(id=match.group(2), name=match.group(1))
 
-        def _reducer(msg: Message) -> Union[BareCustomEmoji, None]:
+        def _reducer(msg: Message) -> Optional[BareCustomEmoji]:
             # search the message for custom emoji
             match = EMOJI_REGEX.search(msg.content)
 
@@ -199,7 +208,7 @@ class EmojiStealer(Converter):
 
             return BareCustomEmoji(id=int(match.group(2)), name=match.group(1))
 
-        # recently used custom emoji?
+        # Recently used custom emoji?
         if argument == 'recent':
             custom_emoji = await history_reducer(ctx, _reducer, ignore_duplicates=True, limit=50)
 
@@ -207,10 +216,10 @@ class EmojiStealer(Converter):
                 raise BadArgument("No recently used custom emoji (that aren't already in this server) were found.")
 
             if len(custom_emoji) > 1:
-                # more than one custom emoji, pick from list
+                # More than one custom emoji, pick from list.
                 to_steal = await ctx.pick_from_list(custom_emoji)
             else:
-                # just one emoji, unwrap
+                # Just one emoji, unwrap the list.
                 to_steal = custom_emoji[0]
 
             return to_steal

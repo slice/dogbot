@@ -12,25 +12,26 @@ from io import BytesIO
 
 from dog import Cog
 from dog.core import converters, utils
+from dog.core.context import DogbotContext
 from dog.core.utils import get_bytesio, urlescape
 
 logger = logging.getLogger(__name__)
 
 
-async def download_image(session, url):
+async def download_image(session: aiohttp.ClientSession, url: str) -> Image:
     bio = await get_bytesio(session, url)
     im = Image.open(bio).convert('RGBA')
     bio.close()
     return im
 
 
-async def export_image(ctx, image, filename):
+async def export_image(ctx: DogbotContext, image: Image, filename: str):
     with BytesIO() as bio:
-        # export the image
+        # Export the image.
         coro = ctx.bot.loop.run_in_executor(None, functools.partial(image.save, bio, format='png'))
         await asyncio.wait([coro], loop=ctx.bot.loop, timeout=5)
 
-        # upload
+        # Upload to the channel.
         bio.seek(0)
         await ctx.send(file=discord.File(bio, filename))
 
@@ -126,11 +127,11 @@ class Meme:
 class Memes(Cog):
     async def __error(self, ctx, error):
         if isinstance(error, commands.CommandInvokeError):
-            logger.exception('Memes image processing error!')
+            logger.exception('Image processing error:')
             await ctx.send('Something went wrong processing your image. Sorry about that!')
             error.should_suppress = True
         elif isinstance(error, asyncio.TimeoutError):
-            await ctx.send('Your image took too long to process, so I dropped it.')
+            await ctx.send('Your image took too long to process...')
             error.should_suppress = True
 
     @commands.command()
@@ -142,14 +143,13 @@ class Memes(Cog):
         This command takes an image, and saves it as a JPEG with the quality of 1.
         """
         im_data = await get_bytesio(self.bot.session, image_source)
-
-        def open():
-            return Image.open(im_data).convert('RGB')
-
-        im = await ctx.bot.loop.run_in_executor(None, open)
+        im = Image.open(im_data).convert('RGB')
 
         with BytesIO() as output:
-            await ctx.bot.loop.run_in_executor(None, functools.partial(im.save, output, format='jpeg', quality=1))
+            await ctx.bot.loop.run_in_executor(
+                None,
+                functools.partial(im.save, output, format='jpeg', quality=1)
+            )
             output.seek(0)
             await ctx.send(file=discord.File(output, filename='jpeg.jpg'))
 
@@ -381,12 +381,12 @@ class Memes(Cog):
         await ctx.channel.trigger_typing()
         avatar_bio = await get_bytesio(self.bot.session, image_source)
 
-        # attempt to load the avatar
+        # Attempt to load the avatar.
         try:
             avatar_im = Image.open(avatar_bio)
         except:
             await ctx.send('I couldn\'t load that person\'s avatar.')
-            logger.exception('Wacky avatar processing error.')
+            logger.exception('Wacky avatar processing error:')
             avatar_bio.close()
             return
 
