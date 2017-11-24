@@ -6,17 +6,23 @@ from dog.core.context import DogbotContext
 from .errors import InsufficientPermissions
 
 mod_names = {
-    'Moderator', 'Mod',  # classic mod role names
-    'moderator', 'mod',  # lowercase mod role names
+    'Moderator',
+    'Mod',  # classic mod role names
+    'moderator',
+    'mod',  # lowercase mod role names
 
     # dog specific
-    'Dog Moderator', 'Woofer', 'woofer', 'dog moderator',
+    'Dog Moderator',
+    'Woofer',
+    'woofer',
+    'dog moderator',
     'dog mod',
 }
 
 
 def config_is_set(name: str):
     """Check: Checks if a guild-specific configuration key is set."""
+
     async def predicate(ctx: DogbotContext):
         return await ctx.bot.config_is_set(ctx.guild, name)
 
@@ -33,6 +39,7 @@ async def user_is_bot_admin(ctx, user):
 
 def is_bot_admin():
     """Check: Checks if a user is a bot admin."""
+
     async def predicate(ctx: DogbotContext):
         return await user_is_bot_admin(ctx, ctx.author)
 
@@ -50,10 +57,12 @@ def create_stack(*checks):
     A check stack is a decorator that encompasses the behavior of multiple
     other checks.
     """
+
     def stack(func):
         for check in checks:
             func = check(func)
         return func
+
     return stack
 
 
@@ -69,18 +78,26 @@ def bot_perms(**permissions):
     thrown: `dog.core.errors.InsufficientPermissions`. This is so that
     it can be caught in `on_command_error`, and display a nice error message.
     """
+
     async def predicate(ctx: DogbotContext):
         my_perms = ctx.guild.me.permissions_in(ctx.channel)
 
         # use a dict comprehension so if we are missing a permission we can
         # trace it back to which permission we don't have
-        does_match = {perm: getattr(my_perms, perm, False) for perm in permissions}
+        does_match = {
+            perm: getattr(my_perms, perm, False)
+            for perm in permissions
+        }
 
         # if we don't have all of the permissions we need, raise an error
         if not all(does_match.values()):
             # which permissions we don't have (which we need)
-            failing = [beautify_permission_name(p) for p in does_match.keys() if not does_match[p]]
-            raise InsufficientPermissions('I need these permissions to do that: ' + ', '.join(failing))
+            failing = [
+                beautify_permission_name(p) for p in does_match.keys()
+                if not does_match[p]
+            ]
+            raise InsufficientPermissions(
+                'I need these permissions to do that: ' + ', '.join(failing))
 
         return True
 

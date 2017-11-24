@@ -8,6 +8,7 @@ class EnumConverter:
     A class that when subclassed, turns an :class:`enum.Enum` into a converter that functions by looking up
     enum values' names when passed as arguments.
     """
+
     @classmethod
     async def convert(cls: Enum, ctx: 'DogbotContext', arg: str):
         try:
@@ -18,5 +19,7 @@ class EnumConverter:
         except KeyError:
             # value in enum not found
 
-            valid_keys = ', '.join('`{}`'.format(num.name.lower()) for num in list(cls))
-            raise commands.BadArgument('Invalid type. Valid types: {}'.format(valid_keys))
+            valid_keys = ', '.join(
+                '`{}`'.format(num.name.lower()) for num in list(cls))
+            raise commands.BadArgument(
+                'Invalid type. Valid types: {}'.format(valid_keys))

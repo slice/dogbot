@@ -28,13 +28,15 @@ class ReminderQueue(AsyncQueue):
         """)
 
         if latest_reminder:
-            logger.debug('Got latest reminder -- rid=%d', latest_reminder['id'])
+            logger.debug('Got latest reminder -- rid=%d',
+                         latest_reminder['id'])
 
         return latest_reminder
 
     async def fulfill_item(self, reminder):
         # wait
-        remaining_duration = (reminder['due'] - datetime.datetime.utcnow()).total_seconds() + 1
+        remaining_duration = (
+            reminder['due'] - datetime.datetime.utcnow()).total_seconds() + 1
 
         logger.debug('Remaining duration: %ds', remaining_duration)
         if remaining_duration > 0:
@@ -44,7 +46,9 @@ class ReminderQueue(AsyncQueue):
         author = self.bot.get_user(reminder['author_id'])
         logger.debug('Notifying author of reminder %d', reminder['id'])
         if not author:
-            logger.debug('Not totally fulfilling reminder -- couldn\'t find author. rid=%d', reminder['id'])
+            logger.debug(
+                'Not totally fulfilling reminder -- couldn\'t find author. rid=%d',
+                reminder['id'])
             return
         else:
             try:
@@ -55,7 +59,8 @@ class ReminderQueue(AsyncQueue):
 
         # remove it from the database
         logger.debug('Removing reminder %d', reminder['id'])
-        await self.bot.pgpool.execute('DELETE FROM reminders WHERE id = $1', reminder['id'])
+        await self.bot.pgpool.execute('DELETE FROM reminders WHERE id = $1',
+                                      reminder['id'])
 
 
 class Reminders(Cog):
@@ -68,25 +73,26 @@ class Reminders(Cog):
         self.queue.handler.cancel()
 
     async def create_reminder(self, ctx, due, note):
-        cid = ctx.channel.id if isinstance(ctx.channel, discord.TextChannel) else ctx.author.id
+        cid = ctx.channel.id if isinstance(
+            ctx.channel, discord.TextChannel) else ctx.author.id
 
-        await self.bot.pgpool.execute(
-            """
+        await self.bot.pgpool.execute("""
             INSERT INTO reminders
             (author_id, channel_id, note, due)
             VALUES ($1, $2, $3, $4)
-            """,
-            ctx.author.id, cid, note, due
-        )
+            """, ctx.author.id, cid, note, due)
 
-        logger.debug('Creating reminder -- due=%s note=%s cid=%d aid=%d', due, note, cid, ctx.author.id)
+        logger.debug('Creating reminder -- due=%s note=%s cid=%d aid=%d', due,
+                     note, cid, ctx.author.id)
 
         # we just created a reminder, we definitely have one now!
         self.queue.has_item.set()
 
         # check if it's earlier
         if self.queue.current_item and self.queue.current_item['due'] > due:
-            logger.debug('Got a reminder that is due earlier than the current one, rebooting task!')
+            logger.debug(
+                'Got a reminder that is due earlier than the current one, rebooting task!'
+            )
             self.queue.reboot()
 
     @commands.group(invoke_without_command=True)
@@ -101,10 +107,13 @@ class Reminders(Cog):
     @remind.command()
     async def list(self, ctx):
         """Lists your reminders."""
-        reminders = await ctx.bot.pgpool.fetch('SELECT * FROM reminders WHERE author_id = $1', ctx.author.id)
+        reminders = await ctx.bot.pgpool.fetch(
+            'SELECT * FROM reminders WHERE author_id = $1', ctx.author.id)
 
         em = Embed(title=f'{len(reminders)} reminder(s)')
-        em.description = '\n'.join(f'{r["id"]}: {r["note"]} ({utils.ago(r["due"])})' for r in reminders)
+        em.description = '\n'.join(
+            f'{r["id"]}: {r["note"]} ({utils.ago(r["due"])})'
+            for r in reminders)
 
         if len(em.description) > 2048:
             return await ctx.send('You have too many reminders to show.')
@@ -117,16 +126,15 @@ class Reminders(Cog):
         async with ctx.acquire() as conn:
 
             # grab the reminder
-            reminder = await conn.fetchrow(
-                """
+            reminder = await conn.fetchrow("""
                 SELECT * FROM reminders
                 WHERE id = $1 AND author_id = $2
-                """,
-                rid, ctx.author.id
-            )
+                """, rid, ctx.author.id)
 
             if not reminder:
-                return await ctx.send("I couldn't find that reminder, or you didn't create that one.")
+                return await ctx.send(
+                    "I couldn't find that reminder, or you didn't create that one."
+                )
 
             # delete it
             await conn.execute('DELETE FROM reminders WHERE id = $1', rid)

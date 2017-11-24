@@ -14,7 +14,9 @@ class RPS(Cog):
     async def rps_is_being_excluded(self, who: discord.Member) -> bool:
         """Returns whether a person is being excluded from RPS."""
         async with self.bot.pgpool.acquire() as conn:
-            return await conn.fetchrow('SELECT * FROM rps_exclusions WHERE user_id = $1', who.id) is not None
+            return await conn.fetchrow(
+                'SELECT * FROM rps_exclusions WHERE user_id = $1', who.id
+            ) is not None
 
     @commands.group(invoke_without_command=True)
     @commands.guild_only()
@@ -24,26 +26,31 @@ class RPS(Cog):
         if await self.rps_is_being_excluded(opponent):
             return await ctx.send('That person chose to be excluded from RPS.')
 
-        progress_message = await ctx.send('Waiting for {} to choose...'.format(ctx.author))
+        progress_message = await ctx.send('Waiting for {} to choose...'.format(
+            ctx.author))
 
         def rps_check(who: discord.Member):
             """Returns a check that checks for a DM from a person."""
 
             def rps_predicate(reaction, adder):
                 is_original_person = adder == who
-                is_in_dm = isinstance(reaction.message.channel, discord.DMChannel)
+                is_in_dm = isinstance(reaction.message.channel,
+                                      discord.DMChannel)
                 return is_original_person and is_in_dm
 
             return rps_predicate
 
         async def rps_get_choice(who: discord.Member) -> str:
             """Sends someone the instructional message, then waits for a choice."""
-            desc = ('React with what you want to play. If you don\'t wish to be challenged to RPS, '
-                    'type `d?rps exclude` to exclude yourself from being challenged.')
-            desc_prefix = ('You have been challenged by {}!\n\n'.format(ctx.author.mention)
-                           if who == opponent else 'Because you initiated the game, you go first.\n\n')
-            embed = discord.Embed(title='Rock, paper, scissors!',
-                                  description=desc_prefix + desc)
+            desc = (
+                'React with what you want to play. If you don\'t wish to be challenged to RPS, '
+                'type `d?rps exclude` to exclude yourself from being challenged.'
+            )
+            desc_prefix = ('You have been challenged by {}!\n\n'.format(
+                ctx.author.mention) if who == opponent else
+                           'Because you initiated the game, you go first.\n\n')
+            embed = discord.Embed(
+                title='Rock, paper, scissors!', description=desc_prefix + desc)
             msg = await who.send(embed=embed)
             translate = {
                 '\N{NEW MOON SYMBOL}': 'rock',
@@ -53,18 +60,21 @@ class RPS(Cog):
             for emoji in translate:
                 await msg.add_reaction(emoji)
             while True:
-                reaction, _ = await self.bot.wait_for('reaction_add', check=rps_check(who))
+                reaction, _ = await self.bot.wait_for(
+                    'reaction_add', check=rps_check(who))
                 if reaction.emoji in translate:
                     return translate[reaction.emoji]
 
         # get their choices
         try:
             initiator_choice = await rps_get_choice(ctx.author)
-            await progress_message.edit(content='Waiting for the opponent ({}) to choose...'.format(
-                opponent))
+            await progress_message.edit(
+                content='Waiting for the opponent ({}) to choose...'.format(
+                    opponent))
             opponent_choice = await rps_get_choice(opponent)
         except discord.HTTPException:
-            return await progress_message.edit(content='I failed to DM the initiator or the opponent.')
+            return await progress_message.edit(
+                content='I failed to DM the initiator or the opponent.')
 
         # delete the original message, because edited mentions do not notify
         # the user
@@ -73,13 +83,16 @@ class RPS(Cog):
         # check if it was a tie
         if initiator_choice == opponent_choice:
             fmt = '{}, {}: It was a tie! You both chose {}.'
-            return await ctx.send(fmt.format(ctx.author.mention, opponent.mention,
-                                             initiator_choice))
+            return await ctx.send(
+                fmt.format(ctx.author.mention, opponent.mention,
+                           initiator_choice))
 
-        async def inform_winner(who: discord.Member, beats_left: str, beats_right: str):
+        async def inform_winner(who: discord.Member, beats_left: str,
+                                beats_right: str):
             fmt = '{}, {}: :first_place: {} was the winner! {} beats {}.'
-            return await ctx.send(fmt.format(ctx.author.mention, opponent.mention, who.mention,
-                                             beats_left.title(), beats_right))
+            return await ctx.send(
+                fmt.format(ctx.author.mention, opponent.mention, who.mention,
+                           beats_left.title(), beats_right))
 
         def beats(weapon: str, target: str) -> bool:
             """Rock, paper, scissors defeat checker."""
@@ -108,7 +121,8 @@ class RPS(Cog):
             return await ctx.send('You are already excluded from RPS.')
 
         async with self.bot.pgpool.acquire() as conn:
-            await conn.execute('INSERT INTO rps_exclusions VALUES ($1)', ctx.author.id)
+            await conn.execute('INSERT INTO rps_exclusions VALUES ($1)',
+                               ctx.author.id)
         await ctx.ok()
 
     @rps.command(name='include')
@@ -118,7 +132,8 @@ class RPS(Cog):
             return await ctx.send('You are not being excluded from RPS.')
 
         async with self.bot.pgpool.acquire() as conn:
-            await conn.execute('DELETE FROM rps_exclusions WHERE user_id = $1', ctx.author.id)
+            await conn.execute('DELETE FROM rps_exclusions WHERE user_id = $1',
+                               ctx.author.id)
         await ctx.ok()
 
 

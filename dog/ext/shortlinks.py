@@ -10,7 +10,8 @@ class Shortlinks(Cog):
     GITLAB_SHORTLINK = ('gitlab.com', re.compile(r'gl/' + _REPO))
 
     async def on_message(self, msg: discord.Message):
-        if not msg.guild or not await self.bot.config_is_set(msg.guild, 'shortlinks_enabled'):
+        if not msg.guild or not await self.bot.config_is_set(
+                msg.guild, 'shortlinks_enabled'):
             return
 
         for host, shortlink in (self.GITHUB_SHORTLINK, self.GITLAB_SHORTLINK):
@@ -22,7 +23,9 @@ class Shortlinks(Cog):
             owner, repository, issue_number = match.groups()
 
             if issue_number:
-                await msg.channel.send(f'https://{host}/{owner}/{repository}/issues/{issue_number}')
+                await msg.channel.send(
+                    f'https://{host}/{owner}/{repository}/issues/{issue_number}'
+                )
             else:
                 await msg.channel.send(f'https://{host}/{owner}/{repository}')
 

@@ -25,16 +25,13 @@ class Tagging(Cog):
             (name, guild_id, creator_id, value, uses, created_at)
             VALUES ($1, $2, $3, $4, 0, $5)
         """
-        await self.bot.pgpool.execute(
-            insert, name, ctx.guild.id, ctx.author.id, value,
-            datetime.datetime.utcnow()
-        )
+        await self.bot.pgpool.execute(insert, name, ctx.guild.id,
+                                      ctx.author.id, value,
+                                      datetime.datetime.utcnow())
 
     async def edit_tag(self, name: str, value: str):
         await self.bot.pgpool.execute(
-            'UPDATE tags SET value = $1 WHERE name = $2',
-            value, name
-        )
+            'UPDATE tags SET value = $1 WHERE name = $2', value, name)
 
     async def get_tag(self, ctx: DogbotContext, name: str) -> Union[None, Tag]:
         """Finds a tag, and returns it as a :class:``Tag`` object."""
@@ -47,18 +44,20 @@ class Tagging(Cog):
         if not record:
             return None
 
-        creator = ctx.guild.get_member(record['creator_id']) or record['creator_id']
+        creator = ctx.guild.get_member(
+            record['creator_id']) or record['creator_id']
         return Tag(
-            value=record['value'], creator=creator, uses=record['uses'], name=name,
-            created_at=record['created_at']
-        )
+            value=record['value'],
+            creator=creator,
+            uses=record['uses'],
+            name=name,
+            created_at=record['created_at'])
 
     async def delete_tag(self, ctx: DogbotContext, name: str):
         """Deletes a tag."""
         await self.bot.pgpool.execute(
-            'DELETE FROM tags WHERE guild_id = $1 AND name = $2',
-            ctx.guild.id, name
-        )
+            'DELETE FROM tags WHERE guild_id = $1 AND name = $2', ctx.guild.id,
+            name)
 
     def can_touch_tag(self, ctx: DogbotContext, tag: Tag) -> bool:
         """Returns whether someone can touch a tag (modify, delete, or edit it)."""
@@ -82,7 +81,11 @@ class Tagging(Cog):
 
     @commands.group(invoke_without_command=True)
     @commands.guild_only()
-    async def tag(self, ctx, name: clean_content, *, value: clean_content=None):
+    async def tag(self,
+                  ctx,
+                  name: clean_content,
+                  *,
+                  value: clean_content = None):
         """
         Tag related operations.
 
@@ -142,14 +145,16 @@ class Tagging(Cog):
     @guild_only()
     async def tag_list(self, ctx):
         """Lists tags in this server."""
-        tags = await self.bot.pgpool.fetch('SELECT * FROM tags WHERE guild_id = $1', ctx.guild.id)
+        tags = await self.bot.pgpool.fetch(
+            'SELECT * FROM tags WHERE guild_id = $1', ctx.guild.id)
         tag_names = [record['name'] for record in tags]
 
         if not tags:
             return await ctx.send('There are no tags in this server.')
 
         try:
-            await ctx.send(f'**{len(tag_names)} tag(s):** ' + ', '.join(tag_names))
+            await ctx.send(
+                f'**{len(tag_names)} tag(s):** ' + ', '.join(tag_names))
         except discord.HTTPException:
             await ctx.send('There are too many tags to display.')
 
@@ -197,8 +202,11 @@ class Tagging(Cog):
 
         if tag:
             embed = discord.Embed(title=tag.name, description=tag.value)
-            embed.add_field(name='Created', value=utils.standard_datetime(tag.created_at) + ' UTC')
-            embed.add_field(name='Created by', value=tag.creator.mention, inline=False)
+            embed.add_field(
+                name='Created',
+                value=utils.standard_datetime(tag.created_at) + ' UTC')
+            embed.add_field(
+                name='Created by', value=tag.creator.mention, inline=False)
             embed.add_field(name='Uses', value=tag.uses)
             await ctx.send(embed=embed)
         else:

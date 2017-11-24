@@ -54,7 +54,9 @@ class Music(Cog):
 
     async def __error(self, ctx, err):
         if isinstance(err, MustBeInVoice):
-            await ctx.send('I need to be in a voice channel to do that. To connect me, type `d?m join`.')
+            await ctx.send(
+                'I need to be in a voice channel to do that. To connect me, type `d?m join`.'
+            )
             err.should_suppress = True
 
     async def on_voice_state_update(self, member, _before, _after):
@@ -65,7 +67,8 @@ class Music(Cog):
         vc = member.guild.voice_client
         my_channel = vc.channel
 
-        log.debug('There are now %d people in this voice channel.', len(my_channel.members))
+        log.debug('There are now %d people in this voice channel.',
+                  len(my_channel.members))
 
         if len(my_channel.members) == 1:
             if not vc.is_paused():
@@ -79,15 +82,20 @@ class Music(Cog):
                     # XXX: have to unpause before disconnecting or else ffmpeg never dies
                     if vc.is_paused():
                         vc.resume()
-                    log.debug('Automatically disconnecting from guild %d.', member.guild.id)
+                    log.debug('Automatically disconnecting from guild %d.',
+                              member.guild.id)
                     await vc.disconnect()
 
             if member.guild.id in self.leave_tasks:
-                log.debug('I got moved to another empty channel, and I already have a leave task. Ignoring!')
+                log.debug(
+                    'I got moved to another empty channel, and I already have a leave task. Ignoring!'
+                )
                 return
 
-            log.debug('Nobody\'s in this voice channel! Creating a leave task.')
-            self.leave_tasks[member.guild.id] = self.bot.loop.create_task(leave())
+            log.debug(
+                'Nobody\'s in this voice channel! Creating a leave task.')
+            self.leave_tasks[member.guild.id] = self.bot.loop.create_task(
+                leave())
         else:
             log.debug('Someone has rejoined.')
 
@@ -99,7 +107,8 @@ class Music(Cog):
             if member.guild.id in self.leave_tasks:
                 self.leave_tasks[member.guild.id].cancel()
                 del self.leave_tasks[member.guild.id]
-                log.debug('Cancelling leave task for guild %d.', member.guild.id)
+                log.debug('Cancelling leave task for guild %d.',
+                          member.guild.id)
 
     @commands.group(aliases=['m'])
     @can_use_music_check()
@@ -112,14 +121,16 @@ class Music(Cog):
     @is_bot_admin()
     async def status(self, ctx: DogbotContext):
         """Views the status of voice clients."""
-        embed = discord.Embed(title='Voice status', color=discord.Color.blurple())
+        embed = discord.Embed(
+            title='Voice status', color=discord.Color.blurple())
 
         clients = len(ctx.bot.voice_clients)
         idle = sum(1 for cl in ctx.bot.voice_clients if not cl.is_playing())
         paused = sum(1 for cl in ctx.bot.voice_clients if cl.is_paused())
         active = sum(1 for cl in ctx.bot.voice_clients if cl.is_playing())
 
-        embed.description = '{} client(s)\n{} idle, **{} active**, {} paused'.format(clients, idle, active, paused)
+        embed.description = '{} client(s)\n{} idle, **{} active**, {} paused'.format(
+            clients, idle, active, paused)
 
         await ctx.send(embed=embed)
 
@@ -132,25 +143,33 @@ class Music(Cog):
 
         # already connected?
         if state.connected:
-            return await msg.edit(content='I\'m already playing music in `{}`.'.format(state.channel))
+            return await msg.edit(
+                content='I\'m already playing music in `{}`.'.format(
+                    state.channel))
 
         # can't join if we aren't in a voice channel.
         if ctx.author.voice is None:
-            return await msg.edit(content='I can\'t join you if you aren\'t in a voice channel.')
+            return await msg.edit(
+                content='I can\'t join you if you aren\'t in a voice channel.')
 
         # the channel that the command invoker is in
         ch = ctx.author.voice.channel
 
         # check if we can join that channel.
         if not ctx.guild.me.permissions_in(ch).connect:
-            return await msg.edit(content='\N{LOCK} I can\'t connect to that channel.')
+            return await msg.edit(
+                content='\N{LOCK} I can\'t connect to that channel.')
 
         try:
             log.debug('Connecting to %s.', ch)
             await ch.connect()
         except TimeoutError:
-            await msg.edit(content='\N{ALARM CLOCK} Couldn\'t connect, I took too long to reach Discord\'s servers.')
-            log.warning('Timed out while connecting to Discord\'s voice servers.')
+            await msg.edit(
+                content=
+                '\N{ALARM CLOCK} Couldn\'t connect, I took too long to reach Discord\'s servers.'
+            )
+            log.warning(
+                'Timed out while connecting to Discord\'s voice servers.')
         except ClientException:
             await msg.edit(content='\N{CONFUSED FACE} I\'m already connected.')
             log.warning('I couldn\'t detect being connected.')
@@ -169,11 +188,14 @@ class Music(Cog):
         state = self.state_for(ctx.guild)
 
         if not state.looping:
-            await ctx.send('Okay. I\'ll repeat songs once they finish playing.')
+            await ctx.send('Okay. I\'ll repeat songs once they finish playing.'
+                           )
             state.looping = True
             log.debug('Enabled looping for guild %d.', ctx.guild.id)
         else:
-            await ctx.send('Okay, I turned off looping. The queue will proceed as normal.')
+            await ctx.send(
+                'Okay, I turned off looping. The queue will proceed as normal.'
+            )
             state.looping = False
             log.debug('Disabled looping for guild %d.', ctx.guild.id)
 
@@ -203,28 +225,30 @@ class Music(Cog):
 
         state = self.state_for(ctx.guild)
         existing_votes = state.skip_votes
-        voice_members = len(state.channel.members)  # how many people in the channel?
-        votes_with_this_one = len(existing_votes) + 1  # votes with this one counted
+        voice_members = len(
+            state.channel.members)  # how many people in the channel?
+        votes_with_this_one = len(
+            existing_votes) + 1  # votes with this one counted
         required = required_votes(voice_members)  # how many votes do we need?
 
         # recalculate amount of users it takes to vote, not counting this vote.
         # (just in case someone left the channel)
         if len(existing_votes) >= required:
-            log.debug('Voteskip: Recalculated. Skipping. %d/%d', len(existing_votes), required)
+            log.debug('Voteskip: Recalculated. Skipping. %d/%d',
+                      len(existing_votes), required)
             state.skip()
             return
 
         # check if they already voted
         if ctx.author.id in existing_votes:
             return await ctx.send(
-                'You already voted to skip. **{}** more vote(s) needed to skip.'.format(
-                    required - len(existing_votes)
-                )
-            )
+                'You already voted to skip. **{}** more vote(s) needed to skip.'.
+                format(required - len(existing_votes)))
 
         # ok, their vote counts. now check if we surpass required votes with this vote!
         if votes_with_this_one >= required:
-            log.debug('Voteskip: Fresh vote! Skipping. %d/%d', votes_with_this_one, required)
+            log.debug('Voteskip: Fresh vote! Skipping. %d/%d',
+                      votes_with_this_one, required)
             state.skip()
             return
 
@@ -235,10 +259,10 @@ class Music(Cog):
         more_votes = required - votes_with_this_one
         await ctx.send(
             'Your request to skip this song has been acknowledged. '
-            '**{}** more vote(s) are required to skip.'.format(more_votes)
-        )
+            '**{}** more vote(s) are required to skip.'.format(more_votes))
 
-        log.debug('Voteskip: Now at %d/%d (%d more needed to skip.)', votes_with_this_one, required, more_votes)
+        log.debug('Voteskip: Now at %d/%d (%d more needed to skip.)',
+                  votes_with_this_one, required, more_votes)
 
     @music.command()
     @commands.check(must_be_in_voice)
@@ -275,7 +299,8 @@ class Music(Cog):
             return await ctx.send('You can\'t adjust the volume of silence.')
 
         if not vol:
-            return await ctx.send('The volume is at: `{}%`'.format(ctx.guild.voice_client.source.volume * 100))
+            return await ctx.send('The volume is at: `{}%`'.format(
+                ctx.guild.voice_client.source.volume * 100))
 
         ctx.guild.voice_client.source.volume = vol / 100
         await ctx.ok()
@@ -288,10 +313,13 @@ class Music(Cog):
             return await ctx.send('Nothing\'s playing at the moment.')
 
         state = self.state_for(ctx.guild)
-        src = state.to_loop if isinstance(state.vc.source, PCMVolumeTransformer) else state.vc.source.info
+        src = state.to_loop if isinstance(
+            state.vc.source, PCMVolumeTransformer) else state.vc.source.info
 
         minutes, seconds = divmod(src['duration'], 60)
-        await ctx.send('**Now playing:** {0[title]} {0[webpage_url]} ({1:02d}:{2:02d})'.format(src, minutes, seconds))
+        await ctx.send(
+            '**Now playing:** {0[title]} {0[webpage_url]} ({1:02d}:{2:02d})'.
+            format(src, minutes, seconds))
 
     @music.command(aliases=['unpause'])
     @commands.check(must_be_in_voice)
@@ -308,7 +336,8 @@ class Music(Cog):
         try:
             source = await YouTubeDLSource.create(url, ctx.bot)
         except youtube_dl.DownloadError:
-            return await msg.edit(content='\U0001f4ed YouTube gave me nothing.')
+            return await msg.edit(content='\U0001f4ed YouTube gave me nothing.'
+                                  )
         except YouTubeError as yterr:
             return await msg.edit(content='\N{CROSS MARK} ' + str(yterr))
 
@@ -320,12 +349,14 @@ class Music(Cog):
             # add it to the queue
             log.debug('Adding to queue.')
             state.queue.append(source)
-            await msg.edit(content=f'\N{LINKED PAPERCLIPS} Added {disp} to queue.')
+            await msg.edit(
+                content=f'\N{LINKED PAPERCLIPS} Added {disp} to queue.')
         else:
             # play immediately since we're not playing anything
             log.debug('Playing immediately.')
             state.play(source)
-            await msg.edit(content=f'\N{MULTIPLE MUSICAL NOTES} Playing {disp}.')
+            await msg.edit(
+                content=f'\N{MULTIPLE MUSICAL NOTES} Playing {disp}.')
 
     @music.command()
     async def queue(self, ctx: DogbotContext):
@@ -336,7 +367,9 @@ class Music(Cog):
         else:
             header = 'There are **{many}** item(s) in the queue. Run `d?m np` to view the currently playing song.\n\n'
             format = '`{index}.` {source.title} (<{source.info[webpage_url]}>)'
-            lst = '\n'.join(format.format(index=index + 1, source=source) for index, source in enumerate(queue))
+            lst = '\n'.join(
+                format.format(index=index + 1, source=source)
+                for index, source in enumerate(queue))
             await ctx.send(header.format(many=len(queue)) + lst)
 
     @music.command(aliases=['p'])
@@ -352,4 +385,5 @@ class Music(Cog):
             await self._play(ctx, query, search=search)
         except:
             log.exception('Error occurred searching.')
-            await ctx.send('\N{UPSIDE-DOWN FACE} An error has occurred. Sorry!')
+            await ctx.send('\N{UPSIDE-DOWN FACE} An error has occurred. Sorry!'
+                           )

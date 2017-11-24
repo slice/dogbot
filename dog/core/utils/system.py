@@ -15,9 +15,6 @@ async def shell(cmd: str) -> str:
         The command output.
     """
     process = await asyncio.create_subprocess_shell(
-        cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE
-    )
+        cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
     results = await process.communicate()
     return ''.join(x.decode() for x in results)

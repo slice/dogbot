@@ -1,3 +1,6 @@
+.vscode
+.mypy_cache
+
 # wiki
 /wiki
 

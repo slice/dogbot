@@ -24,7 +24,8 @@ class Prefix(commands.Converter):
     async def convert(self, ctx: DogbotContext, arg: str):
         # limit
         if len(arg) > 140:
-            raise commands.BadArgument('Prefixes cannot be greater than 140 characters.')
+            raise commands.BadArgument(
+                'Prefixes cannot be greater than 140 characters.')
 
         # scrub content of mentions, etc.
         return await clean_content().convert(ctx, arg)
@@ -43,17 +44,21 @@ class Key(namedtuple('Key', 'type description')):
         # boolean configuration keys's active state are determined by their presence in redis, so they don't have an
         # associated value.
         if self.type is bool and value != 'on':
-            raise ConfigurationError("Don't provide a value to this configuration key. It can only be on or off.")
+            raise ConfigurationError(
+                "Don't provide a value to this configuration key. It can only be on or off."
+            )
 
         if self.type is CustomKeyTypes.text_channel_id:
             # not a number
             if not value.isdigit():
-                raise ConfigurationError("That doesn't look like a channel ID.")
+                raise ConfigurationError(
+                    "That doesn't look like a channel ID.")
 
             channel = discord.utils.get(ctx.guild.text_channels, id=int(value))
 
             if not channel:
-                raise ConfigurationError(f"A text channel with an ID of `{value}` was not found.")
+                raise ConfigurationError(
+                    f"A text channel with an ID of `{value}` was not found.")
 
             return True
 
@@ -66,17 +71,34 @@ class Key(namedtuple('Key', 'type description')):
 
 class Config(Cog):
     CONFIG_KEYS = {
-        'invisible_nag': Key(type=bool, description="Makes me nag at invisible users when enabled."),
-        'modlog_filter_allow_bot': Key(type=bool, description="Allows bots' messages to be logged to the modlog."),
-        'welcome_message': Key(type=str, description="Sets the welcome message sent to #welcome."),
-        'modlog_notrack_deletes': Key(type=bool, description="Disables message deletion logging when enabled."),
-        'modlog_notrack_edits': Key(type=bool, description="Disables message edit logging when enabled."),
-        'modlog_channel_id': Key(type=CustomKeyTypes.text_channel_id,
-                                 description="The ID of the modlog channel to use, instead of #mod-log."),
-        'pollr_mod_log': Key(type=bool, description="Logs pollr-style bans to #bans when enabled."),
-        'log_all_message_events': Key(type=bool, description="Logs all messages, even from private channels when "
-                                                             "enabled."),
-        'shortlinks_enabled': Key(type=bool, description='Enables "shortlinks".')
+        'invisible_nag':
+        Key(type=bool,
+            description="Makes me nag at invisible users when enabled."),
+        'modlog_filter_allow_bot':
+        Key(type=bool,
+            description="Allows bots' messages to be logged to the modlog."),
+        'welcome_message':
+        Key(type=str,
+            description="Sets the welcome message sent to #welcome."),
+        'modlog_notrack_deletes':
+        Key(type=bool,
+            description="Disables message deletion logging when enabled."),
+        'modlog_notrack_edits':
+        Key(type=bool,
+            description="Disables message edit logging when enabled."),
+        'modlog_channel_id':
+        Key(type=CustomKeyTypes.text_channel_id,
+            description=
+            "The ID of the modlog channel to use, instead of #mod-log."),
+        'pollr_mod_log':
+        Key(type=bool,
+            description="Logs pollr-style bans to #bans when enabled."),
+        'log_all_message_events':
+        Key(type=bool,
+            description="Logs all messages, even from private channels when "
+            "enabled."),
+        'shortlinks_enabled':
+        Key(type=bool, description='Enables "shortlinks".')
     }
 
     def __init__(self, *args, **kwargs):
@@ -93,7 +115,7 @@ class Config(Cog):
             )
 
     @config.command(name='set')
-    async def config_set(self, ctx, name, *, value: str='on'):
+    async def config_set(self, ctx, name, *, value: str = 'on'):
         """Sets a config field for this server."""
 
         if len(value) > 1000:
@@ -102,7 +124,8 @@ class Config(Cog):
 
         # key isn't a valid key
         if name not in self.CONFIG_KEYS:
-            return await ctx.send(await ctx._('cmd.config.set.invalid', wikipage=CONFIGKEYS_HELP))
+            return await ctx.send(await ctx._(
+                'cmd.config.set.invalid', wikipage=CONFIGKEYS_HELP))
 
         key = self.CONFIG_KEYS[name]
 
@@ -127,10 +150,11 @@ class Config(Cog):
                 key.type.name
 
             return '`{name}` (`{type}`): {description}'.format(
-                name=name, type=key_type, description=key.description
-            )
+                name=name, type=key_type, description=key.description)
 
-        keys = '\n'.join(key_description(key_name, key) for key_name, key in self.CONFIG_KEYS.items())
+        keys = '\n'.join(
+            key_description(key_name, key)
+            for key_name, key in self.CONFIG_KEYS.items())
         await ctx.send(header + keys)
 
     @config.command(name='is_set')
@@ -142,10 +166,14 @@ class Config(Cog):
     @config.command(name='list', aliases=['ls'])
     async def config_list(self, ctx: DogbotContext):
         """Lists set configuration keys in this server."""
-        keys = [k.decode().split(':')[1] async for k in self.bot.redis.iscan(match=f'{ctx.guild.id}:*')]
+        keys = [
+            k.decode().split(':')[1]
+            async for k in self.bot.redis.iscan(match=f'{ctx.guild.id}:*')
+        ]
         if not keys:
             return await ctx.send(await ctx._('cmd.config.list.none'))
-        await ctx.send('Set configuration keys in this server: ' + ', '.join(keys))
+        await ctx.send(
+            'Set configuration keys in this server: ' + ', '.join(keys))
 
     @config.command(name='remove', aliases=['rm', 'del', 'delete', 'unset'])
     async def config_remove(self, ctx: DogbotContext, name):
@@ -180,7 +208,9 @@ class Config(Cog):
         in place of "d?".
         """
         if ctx.invoked_subcommand is None:
-            await ctx.send(f"You need to specify a valid subcommand to run. For help, run `{ctx.prefix}help prefix`.")
+            await ctx.send(
+                f"You need to specify a valid subcommand to run. For help, run `{ctx.prefix}help prefix`."
+            )
 
     @prefix.command(name='add')
     async def prefix_add(self, ctx: DogbotContext, prefix: Prefix):
@@ -203,8 +233,9 @@ class Config(Cog):
         """Lists all supplemental prefixes."""
         prefixes = await ctx.bot.get_prefixes(ctx.guild)
         if not prefixes:
-            return await ctx.send('There are no supplemental prefixes for this server. Add one with ' +
-                                  '`d?prefix add <prefix>`.')
+            return await ctx.send(
+                'There are no supplemental prefixes for this server. Add one with '
+                + '`d?prefix add <prefix>`.')
         prefix_list = ', '.join(f'`{p}`' for p in prefixes)
         await ctx.send(f'Prefixes for this server: {prefix_list}')
 

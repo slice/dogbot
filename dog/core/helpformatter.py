@@ -12,18 +12,21 @@ class DogbotHelpFormatter(HelpFormatter):
 
         note = super().get_ending_note()
         invite = self.context.bot.cfg['bot']['woof']['invite']
-        return note if not self.is_bot() else note + '\nNeed help? Visit the support server: ' + invite
+        return note if not self.is_bot(
+        ) else note + '\nNeed help? Visit the support server: ' + invite
 
     def format_help(self, description):
         # for each paragraph in the description, replace a newline with a space.
-        return '\n\n'.join(para.replace('\n', ' ') for para in description.split('\n\n'))
+        return '\n\n'.join(
+            para.replace('\n', ' ') for para in description.split('\n\n'))
 
     async def format(self):
         """A modified copy of Discord.py rewrite's vanilla HelpFormatter.format()."""
         self._paginator = Paginator()
 
         # we need a padding of ~80 or so
-        description = self.command.description if not self.is_cog() else inspect.getdoc(self.command)
+        description = self.command.description if not self.is_cog(
+        ) else inspect.getdoc(self.command)
 
         if description:
             # <description> portion
@@ -36,7 +39,8 @@ class DogbotHelpFormatter(HelpFormatter):
 
             # <long doc> section
             if self.command.help:
-                self._paginator.add_line(self.format_help(self.command.help), empty=True)
+                self._paginator.add_line(
+                    self.format_help(self.command.help), empty=True)
 
             # end it here if it's just a regular command
             if not self.has_subcommands():

@@ -44,7 +44,9 @@ class Flags(commands.Converter):
 
 class BannedUser(commands.Converter):
     """A converter that attempts to a resolve a banned user by ID, username, or username#discriminator."""
+
     async def convert(self, ctx: commands.Context, argument):
+
         def finder(entry):
             try:
                 user_id = int(argument)
@@ -53,7 +55,7 @@ class BannedUser(commands.Converter):
 
             return (str(entry.user) == argument or  # username#discriminator
                     entry.user.name == argument or  # username
-                    entry.user.id == user_id)       # id
+                    entry.user.id == user_id)  # id
 
         try:
             entry = discord.utils.find(finder, await ctx.guild.bans())
@@ -65,11 +67,13 @@ class BannedUser(commands.Converter):
 
             return entry.user
         except discord.Forbidden:
-            raise commands.BadArgument("I can't view the bans for this server.")
+            raise commands.BadArgument(
+                "I can't view the bans for this server.")
 
 
 class RawUser(commands.Converter):
     """A MemberConverter that falls back to UserConverter, then get_user_info."""
+
     async def convert(self, ctx, argument):
         for converter in (MemberConverter, UserConverter):
             try:
@@ -85,6 +89,7 @@ class RawUser(commands.Converter):
 
 class RawMember(commands.Converter):
     """A converter that attempts to convert to user, then falls back to a discord.Object with an ID."""
+
     async def convert(self, ctx, argument):
         try:
             return await MemberConverter().convert(ctx, argument)
@@ -92,14 +97,18 @@ class RawMember(commands.Converter):
             try:
                 return discord.Object(id=int(argument))
             except ValueError:
-                raise commands.BadArgument('Invalid member ID. I also couldn\'t find the user by username.')
+                raise commands.BadArgument(
+                    'Invalid member ID. I also couldn\'t find the user by username.'
+                )
 
 
-SAFE_IMAGE_HOSTS = ('https://i.imgur.com', 'https://cdn.discordapp.com', 'https://images.discordapp.net',
-                    'https://i.redd.it', 'https://media.discordapp.net')
+SAFE_IMAGE_HOSTS = ('https://i.imgur.com', 'https://cdn.discordapp.com',
+                    'https://images.discordapp.net', 'https://i.redd.it',
+                    'https://media.discordapp.net')
 
 
-async def _get_recent_image(channel: discord.TextChannel) -> typing.Optional[discord.Message]:
+async def _get_recent_image(
+        channel: discord.TextChannel) -> typing.Optional[discord.Message]:
     async for msg in channel.history(limit=100):
         # Scan any attached images.
         for attachment in msg.attachments:
@@ -122,6 +131,7 @@ class Image(commands.Converter):
     Could be passed a member to use their avatar.
     Could be passed an image URL to use it, however, only whitelisted image hosts will work.
     """
+
     async def convert(self, ctx, argument):
         # Scan attached images.
         if argument == 'attached':
@@ -133,7 +143,8 @@ class Image(commands.Converter):
         if argument == 'recent':
             result = await _get_recent_image(ctx.channel)
             if not result:
-                raise commands.BadArgument('No recent image was found in this channel.')
+                raise commands.BadArgument(
+                    'No recent image was found in this channel.')
             return result
 
         try:
@@ -147,8 +158,9 @@ class Image(commands.Converter):
         if any(argument.startswith(safe_url) for safe_url in SAFE_IMAGE_HOSTS):
             return argument
 
-        error = ("Invalid image URL or user. To use a recent image from this channel, specify `recent`. You can also "
-                 "attach any image and specify `attached` to use that image.")
+        error = (
+            "Invalid image URL or user. To use a recent image from this channel, specify `recent`. You can also "
+            "attach any image and specify `attached` to use that image.")
         raise commands.BadArgument(error)
 
 
@@ -165,7 +177,8 @@ class Guild(commands.Converter):
             guild_id = int(argument)
             guild = ctx.bot.get_guild(guild_id)
             if not guild:
-                raise commands.BadArgument(f'A guild with an ID of `{guild_id}` was not found.')
+                raise commands.BadArgument(
+                    f'A guild with an ID of `{guild_id}` was not found.')
             return guild
         except ValueError:
             raise commands.BadArgument('Invalid guild ID.')
@@ -176,14 +189,18 @@ class DeleteDays(commands.Converter):
         try:
             days = int(arg)
             if days < 0 or days > 7:
-                raise commands.BadArgument('Invalid `delete_days`: cannot be lower than 0, or higher than 7.')
+                raise commands.BadArgument(
+                    'Invalid `delete_days`: cannot be lower than 0, or higher than 7.'
+                )
         except ValueError:
-            raise commands.BadArgument('Invalid `delete_days`: not a valid number.')
+            raise commands.BadArgument(
+                'Invalid `delete_days`: not a valid number.')
         return days
 
 
 class EmojiStealer(Converter):
-    async def convert(self, ctx: DogbotContext, argument: str) -> Tuple[int, Union[None, str]]:
+    async def convert(self, ctx: DogbotContext,
+                      argument: str) -> Tuple[int, Union[None, str]]:
         # Emoji ID?
         if argument.isdigit():
             return BareCustomEmoji(id=int(argument), name=None)
@@ -210,10 +227,13 @@ class EmojiStealer(Converter):
 
         # Recently used custom emoji?
         if argument == 'recent':
-            custom_emoji = await history_reducer(ctx, _reducer, ignore_duplicates=True, limit=50)
+            custom_emoji = await history_reducer(
+                ctx, _reducer, ignore_duplicates=True, limit=50)
 
             if not custom_emoji:
-                raise BadArgument("No recently used custom emoji (that aren't already in this server) were found.")
+                raise BadArgument(
+                    "No recently used custom emoji (that aren't already in this server) were found."
+                )
 
             if len(custom_emoji) > 1:
                 # More than one custom emoji, pick from list.
@@ -224,5 +244,6 @@ class EmojiStealer(Converter):
 
             return to_steal
 
-        raise BadArgument('No emoji provided. Provide an emoji ID, emoji, or "recent" to scan the channel for '
-                          'recently used custom emoji.')
+        raise BadArgument(
+            'No emoji provided. Provide an emoji ID, emoji, or "recent" to scan the channel for '
+            'recently used custom emoji.')

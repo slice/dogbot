@@ -19,10 +19,8 @@ from dog.core import utils
 from dog.core.checks import is_moderator
 from dog.core.context import DogbotContext
 
-FW_TRANSLATE = str.maketrans(
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890\',.:;!?" ',
-    'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ１２３４５６７８９０＇，．：；！？＂　'
-)
+FW_TRANSLATE = str.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890\',.:;!?" ',
+                             'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ１２３４５６７８９０＇，．：；！？＂　')
 
 SHIBE_ENDPOINT = 'http://shibe.online/api/shibes?count=1&urls=true'
 UD_ENDPOINT = 'http://api.urbandictionary.com/v0/define?term={}'
@@ -30,24 +28,35 @@ UD_ENDPOINT = 'http://api.urbandictionary.com/v0/define?term={}'
 logger = logging.getLogger(__name__)
 
 
-class UrbanDefinition(namedtuple('UrbanDefinition', 'word definition thumbs_up thumbs_down example permalink author '
-                                                    'defid current_vote')):
+class UrbanDefinition(
+        namedtuple(
+            'UrbanDefinition',
+            'word definition thumbs_up thumbs_down example permalink author '
+            'defid current_vote')):
     """Represents an Urban Dictionary entry."""
 
     @property
     def embed(self) -> Embed:
         """Makes a :class:``discord.Embed`` from an ``UrbanDefinition``."""
-        embed = Embed(title=self.word, description=utils.truncate(self.definition, 2048))
+        embed = Embed(
+            title=self.word, description=utils.truncate(self.definition, 2048))
         if self.example:
-            embed.add_field(name='Example', value=utils.truncate(self.example, 1024), inline=False)
-        embed.add_field(name='\N{THUMBS UP SIGN}', value=utils.commas(self.thumbs_up))
-        embed.add_field(name='\N{THUMBS DOWN SIGN}', value=utils.commas(self.thumbs_down))
+            embed.add_field(
+                name='Example',
+                value=utils.truncate(self.example, 1024),
+                inline=False)
+        embed.add_field(
+            name='\N{THUMBS UP SIGN}', value=utils.commas(self.thumbs_up))
+        embed.add_field(
+            name='\N{THUMBS DOWN SIGN}', value=utils.commas(self.thumbs_down))
         return embed
 
     @classmethod
-    async def query(cls, session: ClientSession, word: str) -> Union[None, 'UrbanDefinition']:
+    async def query(cls, session: ClientSession,
+                    word: str) -> Union[None, 'UrbanDefinition']:
         """Queries UrbanDictionary for a definition."""
-        async with session.get(UD_ENDPOINT.format(utils.urlescape(word))) as resp:
+        async with session.get(UD_ENDPOINT.format(
+                utils.urlescape(word))) as resp:
             json = await resp.json()
 
             # no results :(
@@ -61,7 +70,9 @@ class UrbanDefinition(namedtuple('UrbanDefinition', 'word definition thumbs_up t
 class Fun(Cog):
     def __init__(self, bot):
         super().__init__(bot)
-        self.dogfacts = [fact.strip() for fact in open('resources/dogfacts.txt')]
+        self.dogfacts = [
+            fact.strip() for fact in open('resources/dogfacts.txt')
+        ]
 
     @command(hidden=True)
     @cooldown(1, 1, BucketType.channel)
@@ -75,7 +86,11 @@ class Fun(Cog):
         """mAkEs tExt Look LIkE thIs!"""
         spongemock = '<:spongemock:371555602964676610>'
         ev = random.randint(2, 4)
-        result = [character.upper() if not text.index(character) % ev == 0 else character.lower() for character in text]
+        result = [
+            character.upper()
+            if not text.index(character) % ev == 0 else character.lower()
+            for character in text
+        ]
         await ctx.send(spongemock + ' ' + ''.join(result) + ' ' + spongemock)
 
     @command(hidden=True)
@@ -90,7 +105,8 @@ class Fun(Cog):
 
     @command()
     @is_moderator()
-    async def say(self, ctx: DogbotContext, channel: TextChannel, *, text: clean_content):
+    async def say(self, ctx: DogbotContext, channel: TextChannel, *,
+                  text: clean_content):
         """
         Makes the bot say something in a certain channel.
 
@@ -104,7 +120,8 @@ class Fun(Cog):
         except discord.Forbidden:
             await ctx.send(f'I can\'t speak in {channel.mention}.')
         except discord.HTTPException:
-            await ctx.send(f'Your message is too long! 2,000 characters maximum.')
+            await ctx.send(
+                f'Your message is too long! 2,000 characters maximum.')
 
     @command()
     @cooldown(1, 2, BucketType.user)
@@ -129,7 +146,8 @@ class Fun(Cog):
             try:
                 resp = await utils.get_json(ctx.bot.session, SHIBE_ENDPOINT)
             except aiohttp.ClientError:
-                return await ctx.send('Failed to contact the Shibe API. Please try again later.')
+                return await ctx.send(
+                    'Failed to contact the Shibe API. Please try again later.')
             await ctx.send(embed=discord.Embed().set_image(url=resp[0]))
 
     @command()

@@ -26,10 +26,9 @@ class State:
         # if we are looping and have a song to loop, don't pop the queue. instead, make a ffmpeg source
         # and play that.
         if self.looping and self.to_loop:
-            log.debug('Bypassing State.advance() logic, looping %s.', self.to_loop['url'])
-            self.play(
-                VolumeTransformer(FFmpegPCMAudio(self.to_loop['url']))
-            )
+            log.debug('Bypassing State.advance() logic, looping %s.',
+                      self.to_loop['url'])
+            self.play(VolumeTransformer(FFmpegPCMAudio(self.to_loop['url'])))
             return
 
         # out of sources in the queue -- oh well.
@@ -68,7 +67,9 @@ class State:
     def play(self, source):
         # hm, we got kicked from voice?
         if not self.vc:
-            log.debug('Cannot State.play() -- we might have gotten kicked from voice.')
+            log.debug(
+                'Cannot State.play() -- we might have gotten kicked from voice.'
+            )
             return
 
         # if we got a youtube source, make sure to make this the url to loop, if we're looping

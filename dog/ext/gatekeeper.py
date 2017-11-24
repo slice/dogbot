@@ -56,20 +56,24 @@ class BlockDefaultAvatarCheck(GatekeeperCheck):
 class MinimumCreationTimeCheck(GatekeeperCheck):
     """A gatekeeper check that checks the minimum creation time of a user."""
     key = 'minimum_creation_time'
-    description = ("Blocks users that don't meet a \"minimum creation time\" check. Specify the amount of seconds "
-                   "that an account has to exist for to be allowed to pass through.")
+    description = (
+        "Blocks users that don't meet a \"minimum creation time\" check. Specify the amount of seconds "
+        "that an account has to exist for to be allowed to pass through.")
 
     async def check(self, time, member: Member):
         try:
             minimum_required = int(time)
-            seconds_on_discord = (datetime.datetime.utcnow() - member.created_at).total_seconds()
+            seconds_on_discord = (datetime.datetime.utcnow() -
+                                  member.created_at).total_seconds()
             ago = utils.ago(member.created_at)
 
             if seconds_on_discord < minimum_required:
-                raise Block(f'Failed minimum creation time check ({seconds_on_discord} < {minimum_required}'
-                            f', created {ago})')
+                raise Block(
+                    f'Failed minimum creation time check ({seconds_on_discord} < {minimum_required}'
+                    f', created {ago})')
         except ValueError:
-            raise Report('Invalid minimum creation time, must be a valid number.')
+            raise Report(
+                'Invalid minimum creation time, must be a valid number.')
 
 
 class BlockAllCheck(GatekeeperCheck):
@@ -91,24 +95,24 @@ class UsernameRegexCheck(GatekeeperCheck):
             if regex.search(member.name):
                 raise Block('Matched username regex')
         except re.error as err:
-            raise Report(f"\N{CROSS MARK} `username_regex` was invalid: `{err}`, ignoring this check.")
+            raise Report(
+                f"\N{CROSS MARK} `username_regex` was invalid: `{err}`, ignoring this check."
+            )
 
 
 GATEKEEPER_CHECKS = {
-    BlockDefaultAvatarCheck,
-    MinimumCreationTimeCheck,
-    BlockAllCheck,
+    BlockDefaultAvatarCheck, MinimumCreationTimeCheck, BlockAllCheck,
     UsernameRegexCheck
 }
 
 
 class Gatekeeper(Cog):
     CUSTOMIZATION_KEYS = (
-        'block_default_avatar',   # blocks users with default avatars
+        'block_default_avatar',  # blocks users with default avatars
         'minimum_creation_time',  # minimum discord registration time in seconds
-        'bounce_message',         # message to send to users right before getting bounced
-        'block_all',              # blocks all users
-        'username_regex',         # username regex
+        'bounce_message',  # message to send to users right before getting bounced
+        'block_all',  # blocks all users
+        'username_regex',  # username regex
     )
 
     async def __local_check(self, ctx):
@@ -118,19 +122,26 @@ class Gatekeeper(Cog):
         if not await self.bot.redis.exists(KEY_ENABLED.format(member.guild)):
             return
 
-        settings = await self.bot.redis.hgetall(KEY_SETTINGS.format(member.guild))  # get customization keys
-        settings = {key.decode(): value.decode() for key, value in settings.items()}  # decode keys and values
+        settings = await self.bot.redis.hgetall(
+            KEY_SETTINGS.format(member.guild))  # get customization keys
+        settings = {
+            key.decode(): value.decode()
+            for key, value in settings.items()
+        }  # decode keys and values
 
         async def report(*args, **kwargs):
             """Sends a message to the broadcast channel for this guild."""
             try:
                 broadcast_key = KEY_BROADCAST_CHANNEL.format(member.guild)
-                channel_id = int((await self.bot.redis.get(broadcast_key)).decode())
+                channel_id = int((await
+                                  self.bot.redis.get(broadcast_key)).decode())
                 broadcast_channel = self.bot.get_channel(channel_id)
 
                 # no channel
                 if not broadcast_channel:
-                    self.logger.warning("couldn't find broadcast channel gid=%d", member.guild.id)
+                    self.logger.warning(
+                        "couldn't find broadcast channel gid=%d",
+                        member.guild.id)
                     return
 
                 # send
@@ -160,13 +171,20 @@ class Gatekeeper(Cog):
 
             try:
                 # adios
-                await member.kick(reason=f'Gatekeeper check(s) failed ({reason})')
+                await member.kick(
+                    reason=f'Gatekeeper check(s) failed ({reason})')
             except discord.Forbidden:
-                await report(f"\N{CROSS MARK} Couldn't kick {describe(member)}, no permissions.")
+                await report(
+                    f"\N{CROSS MARK} Couldn't kick {describe(member)}, no permissions."
+                )
             else:
                 # report
-                embed = Embed(color=discord.Color.red(), title=f'Bounced {describe(member)}')
-                embed.add_field(name='Account creation', value=utils.ago(member.created_at))
+                embed = Embed(
+                    color=discord.Color.red(),
+                    title=f'Bounced {describe(member)}')
+                embed.add_field(
+                    name='Account creation',
+                    value=utils.ago(member.created_at))
                 embed.add_field(name='Reason', value=reason)
                 embed.set_footer(text=utils.now())
                 embed.set_thumbnail(url=member.avatar_url)
@@ -188,8 +206,12 @@ class Gatekeeper(Cog):
                 await report(str(report_exc))
 
         # this person has passed all checks
-        embed = Embed(color=discord.Color.green(), title=f'{describe(member)} joined',
-                      description='This user has passed all Gatekeeper checks and has joined the server.')
+        embed = Embed(
+            color=discord.Color.green(),
+            title=f'{describe(member)} joined',
+            description=
+            'This user has passed all Gatekeeper checks and has joined the server.'
+        )
         embed.set_thumbnail(url=member.avatar_url)
         embed.set_footer(text=utils.now())
         await report(embed=embed)
@@ -235,23 +257,33 @@ class Gatekeeper(Cog):
     async def enable(self, ctx: DogbotContext):
         """Turns on Gatekeeper."""
         if not ctx.guild.me.guild_permissions.kick_members:
-            return await ctx.send("I can't kick members, so Gatekeeper won't be useful.")
+            return await ctx.send(
+                "I can't kick members, so Gatekeeper won't be useful.")
 
         await ctx.bot.redis.set(KEY_ENABLED.format(ctx.guild), 'true')
-        await ctx.bot.redis.set(KEY_BROADCAST_CHANNEL.format(ctx.guild), ctx.channel.id)
-        await ctx.send("\U0001f6a8 Gatekeeper was **enabled**. I'll be broadcasting join messages to this channel.")
+        await ctx.bot.redis.set(
+            KEY_BROADCAST_CHANNEL.format(ctx.guild), ctx.channel.id)
+        await ctx.send(
+            "\U0001f6a8 Gatekeeper was **enabled**. I'll be broadcasting join messages to this channel."
+        )
 
     @gatekeeper.command(aliases=['disengage', 'off'])
     async def disable(self, ctx: DogbotContext):
         """Turns off Gatekeeper."""
-        if await ctx.confirm(title='Are you sure you want to disable Gatekeeper?',
-                             description='I will stop screening member joins.', confirm_cancellation=True):
+        if await ctx.confirm(
+                title='Are you sure you want to disable Gatekeeper?',
+                description='I will stop screening member joins.',
+                confirm_cancellation=True):
             await ctx.bot.redis.delete(KEY_ENABLED.format(ctx.guild))
             await ctx.bot.redis.delete(KEY_BROADCAST_CHANNEL.format(ctx.guild))
             await ctx.send('\U0001f6a8 Gatekeeper was **disabled**.')
 
     @gatekeeper.command()
-    async def set(self, ctx: DogbotContext, key, *, value: commands.clean_content = 'true'):
+    async def set(self,
+                  ctx: DogbotContext,
+                  key,
+                  *,
+                  value: commands.clean_content = 'true'):
         """
         Sets a Gatekeeper criteria.
 
@@ -272,33 +304,42 @@ class Gatekeeper(Cog):
         enabled = await ctx.gatekeeper_enabled()
 
         description = "I'm not screening member joins at the moment." if not enabled else "I'm screening member joins."
-        embed = Embed(color=discord.Color.green() if not enabled else discord.Color.red(),
-                      title='Gatekeeper is ' + ('active' if enabled else 'disabled') + '.',
-                      description=description)
+        embed = Embed(
+            color=discord.Color.green()
+            if not enabled else discord.Color.red(),
+            title='Gatekeeper is ' + ('active'
+                                      if enabled else 'disabled') + '.',
+            description=description)
 
         # add customization keys
         customs = await ctx.bot.redis.hgetall(KEY_SETTINGS.format(ctx.guild))
-        customs_field = '\n'.join([f'`{key.decode()}`: `{value.decode()}`' for key, value in customs.items()])
+        customs_field = '\n'.join([
+            f'`{key.decode()}`: `{value.decode()}`'
+            for key, value in customs.items()
+        ])
         if customs_field:
             embed.add_field(name='Settings', value=customs_field)
 
         # broadcasting channel
-        broadcast_channel = await ctx.bot.redis.get(KEY_BROADCAST_CHANNEL.format(ctx.guild))
+        broadcast_channel = await ctx.bot.redis.get(
+            KEY_BROADCAST_CHANNEL.format(ctx.guild))
         if broadcast_channel:
             try:
-                broadcast_channel = ctx.bot.get_channel(int(broadcast_channel.decode()))
+                broadcast_channel = ctx.bot.get_channel(
+                    int(broadcast_channel.decode()))
                 if broadcast_channel:
                     embed.add_field(
                         name='Join broadcast channel',
                         value=describe(broadcast_channel, mention=True),
-                        inline=False
-                    )
+                        inline=False)
                 else:
                     # channel wasn't good, remove the broadcast channel
-                    await ctx.bot.redis.delete(KEY_BROADCAST_CHANNEL.format(ctx.guild))
+                    await ctx.bot.redis.delete(
+                        KEY_BROADCAST_CHANNEL.format(ctx.guild))
             except ValueError:
                 # channel id wasn't a valid integer, remove the broadcast channel
-                await ctx.bot.redis.delete(KEY_BROADCAST_CHANNEL.format(ctx.guild))
+                await ctx.bot.redis.delete(
+                    KEY_BROADCAST_CHANNEL.format(ctx.guild))
 
         await ctx.send(embed=embed)
 

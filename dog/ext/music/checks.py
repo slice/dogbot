@@ -23,7 +23,8 @@ async def can_use_music(ctx: DogbotContext):
     is_admin = await user_is_bot_admin(ctx, ctx.author)
 
     # whitelisted guilds can play music
-    guild_is_whitelisted = ctx.guild and await is_whitelisted(ctx.bot, ctx.guild)
+    guild_is_whitelisted = ctx.guild and await is_whitelisted(
+        ctx.bot, ctx.guild)
 
     # is supporter
     is_a_supporter = is_supporter(ctx.bot, ctx.author)

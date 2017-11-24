@@ -30,6 +30,7 @@ class Dogbot(BotBase, AutoShardedClient):
     The main bot. It is automatically sharded. All parameters are passed
     to the constructor of :class:`discord.commands.AutoShardedBot`.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command_prefix=self.prefix, **kwargs)
 
@@ -45,7 +46,8 @@ class Dogbot(BotBase, AutoShardedClient):
         """
         return 'private' in self.cfg['bot'] and self.cfg['bot']['private']
 
-    def tick(self, tick_type: str, *, raw: bool = False, guild: Guild = None) -> str:
+    def tick(self, tick_type: str, *, raw: bool = False,
+             guild: Guild = None) -> str:
         """
         Returns a custom tick emoji.
 
@@ -93,10 +95,13 @@ class Dogbot(BotBase, AutoShardedClient):
 
         async with self.pgpool.acquire() as conn:
             # grab the record from postgres, if any
-            banned = (await conn.fetchrow('SELECT * FROM globalbans WHERE user_id = $1', user.id)) is not None
+            banned = (await conn.fetchrow(
+                'SELECT * FROM globalbans WHERE user_id = $1', user.id
+            )) is not None
 
             # cache the banned value for 2 hours
-            await self.redis.set(key, 'banned' if banned else 'not banned', expire=7200)
+            await self.redis.set(
+                key, 'banned' if banned else 'not banned', expire=7200)
 
             # return whether banned or not
             return banned
@@ -115,13 +120,14 @@ class Dogbot(BotBase, AutoShardedClient):
         if not guild:
             return []
 
-        return await self.redis.smembers(f'dog:prefixes:{guild.id}', encoding='utf-8')
+        return await self.redis.smembers(
+            f'dog:prefixes:{guild.id}', encoding='utf-8')
 
     def _get_lang_data(self, lang):
         with open(f'./resources/lang/{lang}.yml') as f:
             return YAML(typ='safe').load(f)
 
-    def lang(self, key: str, lang: str='en-US'):
+    def lang(self, key: str, lang: str = 'en-US'):
         fallback_data = self._get_lang_data('en-US')
         lang_data = self._get_lang_data(lang)
 
@@ -158,7 +164,8 @@ class Dogbot(BotBase, AutoShardedClient):
 
         await super().close()
 
-    async def command_is_disabled(self, guild: discord.Guild, command_name: str) -> bool:
+    async def command_is_disabled(self, guild: discord.Guild,
+                                  command_name: str) -> bool:
         return await self.redis.exists(f'disabled:{guild.id}:{command_name}')
 
     async def disable_command(self, guild: discord.Guild, command_name: str):
@@ -182,11 +189,13 @@ class Dogbot(BotBase, AutoShardedClient):
 
         try:
             manual_id = int(await self.config_get(guild, 'modlog_channel_id'))
-            manual_mod_log = discord.utils.get(guild.text_channels, id=manual_id)
+            manual_mod_log = discord.utils.get(
+                guild.text_channels, id=manual_id)
         except:
             manual_mod_log = None
 
-        mod_log = manual_mod_log or discord.utils.get(guild.text_channels, name='mod-log')
+        mod_log = manual_mod_log or discord.utils.get(
+            guild.text_channels, name='mod-log')
 
         # don't post to mod-log, couldn't find the channel
         if mod_log is None:
@@ -197,7 +206,9 @@ class Dogbot(BotBase, AutoShardedClient):
             return await mod_log.send(*args, **kwargs)
         except discord.Forbidden:
             # couldn't post to modlog
-            logger.warning('Couldn\'t post to modlog for guild %d. No permissions.', guild.id)
+            logger.warning(
+                'Couldn\'t post to modlog for guild %d. No permissions.',
+                guild.id)
             pass
 
     async def set_playing_statuses(self):
@@ -231,7 +242,8 @@ class Dogbot(BotBase, AutoShardedClient):
         if not ctx.guild.me:
             return
 
-        if not ctx.guild.me.permissions_in(ctx.channel).send_messages and ctx.command:
+        if not ctx.guild.me.permissions_in(
+                ctx.channel).send_messages and ctx.command:
             await ctx.message.author.send(await ctx._('misc.cant_respond'))
 
     async def on_command(self, ctx):
@@ -241,10 +253,9 @@ class Dogbot(BotBase, AutoShardedClient):
         location = '[DM]' if isinstance(ctx.channel, DMChannel) else '[Guild]'
 
         # log command invocation
-        logger.info(
-            '%s Command invocation by %s (%d) "%s" checks=%s',
-            location, author, author.id, ctx.message.content, ','.join(checks) or '(none)'
-        )
+        logger.info('%s Command invocation by %s (%d) "%s" checks=%s',
+                    location, author, author.id, ctx.message.content,
+                    ','.join(checks) or '(none)')
 
     async def on_command_error(self, ctx, ex):
         if getattr(ex, 'should_suppress', False):
@@ -258,7 +269,8 @@ class Dogbot(BotBase, AutoShardedClient):
             message = str(ex)
             if not message.endswith('.'):
                 message = message + '.'
-            await ctx.send(await ctx._('err.bad_arg', msg=message, see_help=see_help))
+            await ctx.send(await ctx._(
+                'err.bad_arg', msg=message, see_help=see_help))
         elif isinstance(ex, commands.errors.MissingRequiredArgument):
             await ctx.send(await ctx._('err.uh_oh', ex=ex, see_help=see_help))
         elif isinstance(ex, commands.NoPrivateMessage):
@@ -274,18 +286,22 @@ class Dogbot(BotBase, AutoShardedClient):
                 if ctx.command.name == 'help':
                     # can't dm that person :(
                     try:
-                        await ctx.send(await ctx._('err.dms_disabled', mention=ctx.author.mention))
+                        await ctx.send(await ctx._(
+                            'err.dms_disabled', mention=ctx.author.mention))
                     except discord.Forbidden:
                         pass
                     return
                 return await self.handle_forbidden(ctx)
 
             # get the traceback
-            tb = ''.join(traceback.format_exception(type(ex.original), ex.original, ex.original.__traceback__))
+            tb = ''.join(
+                traceback.format_exception(
+                    type(ex.original), ex.original, ex.original.__traceback__))
 
             # form a good human-readable message
             header = f'Command error: {type(ex.original).__name__}: {ex.original}'
             message = header + '\n' + str(tb)
 
-            self.dispatch('uncaught_command_invoke_error', ex.original, (message, tb, ctx))
+            self.dispatch('uncaught_command_invoke_error', ex.original,
+                          (message, tb, ctx))
             logger.error(message)

@@ -21,8 +21,8 @@ class State(Cog):
             for guild in ctx.bot.guilds:
                 await conn.execute(guild_sql, guild.id, guild.owner.id)
 
-            await msg.edit(content='Finished. Synced {} guilds and {} users.'.format(len(ctx.bot.guilds),
-                                                                                     len(ctx.bot.users)))
+            await msg.edit(content='Finished. Synced {} guilds and {} users.'.
+                           format(len(ctx.bot.guilds), len(ctx.bot.users)))
 
 
 def setup(bot):

@@ -10,7 +10,11 @@ from dog import Dogbot
 from dog.core.utils import setup_logging
 
 parser = argparse.ArgumentParser(description='Dogbot.')
-parser.add_argument('--docker', action='store_true', help='Enables Docker mode.', default=False)
+parser.add_argument(
+    '--docker',
+    action='store_true',
+    help='Enables Docker mode.',
+    default=False)
 args = parser.parse_args()
 
 # load yaml configuration
@@ -51,9 +55,7 @@ if args.docker:
 
 # additional options are passed directly to the bot as kwargs
 additional_options = cfg['bot'].get('options', {})
-additional_options.update({
-    'owner_id': getattr(cfg, 'owner_id', None)
-})
+additional_options.update({'owner_id': getattr(cfg, 'owner_id', None)})
 
 logger.info('Bot options: %s', additional_options)
 

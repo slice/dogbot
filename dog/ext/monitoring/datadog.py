@@ -35,7 +35,8 @@ class Datadog(Cog):
 
     async def datadog_increment(self, metric):
         try:
-            await self.bot.loop.run_in_executor(None, dd.statsd.increment, metric)
+            await self.bot.loop.run_in_executor(None, dd.statsd.increment,
+                                                metric)
         except Exception:
             logger.exception('Failed to report metric')
 
@@ -47,15 +48,22 @@ class Datadog(Cog):
         dd.initialize(**self.bot.cfg['monitoring']['datadog'])
 
         while True:
+
             def report():
                 try:
                     dd.statsd.gauge('discord.guilds', len(self.bot.guilds))
-                    dd.statsd.gauge('discord.voice.clients', len(self.bot.voice_clients))
+                    dd.statsd.gauge('discord.voice.clients',
+                                    len(self.bot.voice_clients))
                     dd.statsd.gauge('discord.users', len(self.bot.users))
-                    dd.statsd.gauge('discord.users.humans', sum(1 for user in self.bot.users if not user.bot))
-                    dd.statsd.gauge('discord.users.bots', sum(1 for user in self.bot.users if user.bot))
+                    dd.statsd.gauge(
+                        'discord.users.humans',
+                        sum(1 for user in self.bot.users if not user.bot))
+                    dd.statsd.gauge(
+                        'discord.users.bots',
+                        sum(1 for user in self.bot.users if user.bot))
                 except RuntimeError:
-                    logger.warning('Couldn\'t report metrics, trying again soon.')
+                    logger.warning(
+                        'Couldn\'t report metrics, trying again soon.')
 
             await self.bot.loop.run_in_executor(None, report)
             await asyncio.sleep(5)

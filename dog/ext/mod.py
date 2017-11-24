@@ -16,19 +16,24 @@ from dog.core.converters import DeleteDays, EMOJI_REGEX
 from dog.core.utils.formatting import describe
 
 logger = logging.getLogger(__name__)
-purge_command = create_stack(
-    checks.is_moderator(),
-    checks.bot_perms(manage_messages=True, read_message_history=True),
-    commands.guild_only()
-)
+purge_command = create_stack(checks.is_moderator(),
+                             checks.bot_perms(
+                                 manage_messages=True,
+                                 read_message_history=True),
+                             commands.guild_only())
 
 
-def _create_purge_command(name, base_purge_handler, *, parent, aliases=None, help_text=''):
+def _create_purge_command(name,
+                          base_purge_handler,
+                          *,
+                          parent,
+                          aliases=None,
+                          help_text=''):
     """A function used to dynamically construct purge command subcommands."""
 
     @parent.command(name=name, aliases=aliases or [])
     @purge_command
-    async def _purge_generated(self, ctx, amount: int=5):
+    async def _purge_generated(self, ctx, amount: int = 5):
         """..."""
         await self.base_purge(ctx, amount, base_purge_handler)
 
@@ -45,14 +50,16 @@ class Mod(Cog):
             return True
 
         # role names that cannot use dog
-        banned_names = (
-            'Can\'t Use Dog', 'can\'t use dog', 'Dog Plonk', 'dog plonk', 'Banned from Dog', 'banned from dog'
-        )
+        banned_names = ('Can\'t Use Dog', 'can\'t use dog', 'Dog Plonk',
+                        'dog plonk', 'Banned from Dog', 'banned from dog')
 
-        if any(discord.utils.get(ctx.author.roles, name=name) for name in banned_names):
+        if any(
+                discord.utils.get(ctx.author.roles, name=name)
+                for name in banned_names):
             return False
 
-        return not await self.bot.command_is_disabled(ctx.guild, ctx.command.name)
+        return not await self.bot.command_is_disabled(ctx.guild,
+                                                      ctx.command.name)
 
     async def on_message(self, message: discord.Message):
         # do not handle invisibility in dms
@@ -64,7 +71,11 @@ class Mod(Cog):
                 reply = 'Hey {0.mention}! You\'re invisible. Stop being invisible, please. Thanks.'
                 await message.channel.send(reply.format(message.author))
 
-    async def base_purge(self, ctx: DogbotContext, limit: int, check=None, **kwargs):
+    async def base_purge(self,
+                         ctx: DogbotContext,
+                         limit: int,
+                         check=None,
+                         **kwargs):
         # check if it's too much
         if limit > 5000:
             await ctx.send('Too many messages to purge. 5,000 is the maximum.')
@@ -75,7 +86,9 @@ class Mod(Cog):
 
         try:
             msgs = await ctx.channel.purge(limit=limit, check=check, **kwargs)
-            await ctx.send(f'Purge complete. Removed {len(msgs)} message(s).', delete_after=2.5)
+            await ctx.send(
+                f'Purge complete. Removed {len(msgs)} message(s).',
+                delete_after=2.5)
         except discord.NotFound:
             pass  # ignore not found errors
 
@@ -100,23 +113,31 @@ class Mod(Cog):
         await self.base_purge(ctx, amount, lambda m: m.author == target)
 
     purge_embeds = _create_purge_command(
-        'embeds', lambda m: len(m.embeds) != 0, parent=purge,
+        'embeds',
+        lambda m: len(m.embeds) != 0,
+        parent=purge,
         aliases=['e'],
-        help_text='Purges any message in the last <n> messages containing embeds.',
+        help_text=
+        'Purges any message in the last <n> messages containing embeds.',
     )
     purge_bot = _create_purge_command(
-        'bot', lambda m: m.author.bot, parent=purge,
+        'bot',
+        lambda m: m.author.bot,
+        parent=purge,
         help_text='Purges any message in the last <n> messages sent by bots.',
     )
     purge_attachments = _create_purge_command(
-        'attachments', lambda m: len(m.attachments) != 0, parent=purge,
+        'attachments',
+        lambda m: len(m.attachments) != 0,
+        parent=purge,
         aliases=['images', 'uploads', 'i'],
-        help_text='Purges any message in the last <n> messages containing attachments.',
+        help_text=
+        'Purges any message in the last <n> messages containing attachments.',
     )
 
     @purge.command(name='reactions')
     @purge_command
-    async def purge_reactions(self, ctx: DogbotContext, amount: int=5):
+    async def purge_reactions(self, ctx: DogbotContext, amount: int = 5):
         """Purges reactions in the last <n> messages."""
         count = 0
         total_reactions_removed = 0
@@ -127,22 +148,30 @@ class Mod(Cog):
                 continue
 
             # calculate total reaction count
-            total_reactions_removed += sum(reaction.count for reaction in message.reactions)
+            total_reactions_removed += sum(
+                reaction.count for reaction in message.reactions)
 
             # remove all reactions
             await message.clear_reactions()
             count += 1
 
-        await ctx.send(f'Purge complete. Removed {total_reactions_removed} reaction(s) from {count} message(s).',
-                       delete_after=2.5)
+        await ctx.send(
+            f'Purge complete. Removed {total_reactions_removed} reaction(s) from {count} message(s).',
+            delete_after=2.5)
 
     @purge.command(name='emoji', aliases=['emojis'])
     @purge_command
-    async def purge_emoji(self, ctx: DogbotContext, amount: int=5, minimum_emoji: int=1):
+    async def purge_emoji(self,
+                          ctx: DogbotContext,
+                          amount: int = 5,
+                          minimum_emoji: int = 1):
         """Purges any message in the last <n> messages with emoji."""
+
         def message_check(msg):
-            emoji_count = sum(1 for c in msg.content if c in emoji.UNICODE_EMOJI)
-            return emoji_count >= minimum_emoji or EMOJI_REGEX.search(msg.content) is not None
+            emoji_count = sum(
+                1 for c in msg.content if c in emoji.UNICODE_EMOJI)
+            return emoji_count >= minimum_emoji or EMOJI_REGEX.search(
+                msg.content) is not None
 
         await self.base_purge(ctx, amount, message_check)
 
@@ -151,7 +180,8 @@ class Mod(Cog):
     async def clean(self, ctx: DogbotContext):
         """Removes recent messages posted by the bot."""
         try:
-            await ctx.channel.purge(limit=50, check=lambda m: m.author == ctx.bot.user)
+            await ctx.channel.purge(
+                limit=50, check=lambda m: m.author == ctx.bot.user)
         except discord.NotFound:
             pass
 
@@ -165,11 +195,14 @@ class Mod(Cog):
         # scan the audit logs for the action they specified
         async for entry in ctx.guild.audit_logs(limit=None):
             # (id matches, or discordtag matches) && entry matches
-            if (entry.target.id == target_id or str(entry.target) == target) and entry.action == al_action:
+            if (entry.target.id == target_id or str(
+                    entry.target) == target) and entry.action == al_action:
                 # make readable string
                 fmt = '{0} (`{0.id}`) has {3} {1} (`{1.id}`). Reason: {2}'
-                return await ctx.send(fmt.format(entry.user, entry.target, f'"{entry.reason}"' if entry.reason else
-                                                 'No reason was provided.', action_past_tense))
+                return await ctx.send(
+                    fmt.format(entry.user, entry.target, f'"{entry.reason}"'
+                               if entry.reason else 'No reason was provided.',
+                               action_past_tense))
 
         # not found
         await ctx.send('I couldn\'t find the data from the audit logs. Sorry!')
@@ -178,7 +211,9 @@ class Mod(Cog):
         if not await self.bot.config_is_set(member.guild, 'welcome_message'):
             return
 
-        welcome_message = (await self.bot.redis.get(f'{member.guild.id}:welcome_message')).decode()
+        welcome_message = (
+            await
+            self.bot.redis.get(f'{member.guild.id}:welcome_message')).decode()
 
         transformations = {
             '%{mention}': member.mention,
@@ -191,10 +226,13 @@ class Mod(Cog):
             welcome_message = welcome_message.replace(var, value)
 
         try:
-            channel = discord.utils.get(member.guild.text_channels, name='welcome')
+            channel = discord.utils.get(
+                member.guild.text_channels, name='welcome')
             await channel.send(welcome_message)
         except discord.Forbidden:
-            logger.warning("Couldn't send welcome message for guild %d, no perms.", member.guild.id)
+            logger.warning(
+                "Couldn't send welcome message for guild %d, no perms.",
+                member.guild.id)
 
     @commands.command()
     @commands.guild_only()
@@ -220,7 +258,8 @@ class Mod(Cog):
         This works by denying @everyone Send Messages.
         """
         try:
-            await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=False)
+            await ctx.channel.set_permissions(
+                ctx.guild.default_role, send_messages=False)
         except discord.Forbidden:
             await ctx.send('I can\'t do that!')
         else:
@@ -240,7 +279,8 @@ class Mod(Cog):
         """
         value = True if explicit else None
         try:
-            await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=value)
+            await ctx.channel.set_permissions(
+                ctx.guild.default_role, send_messages=value)
         except discord.Forbidden:
             await ctx.send('I can\'t do that!')
         else:
@@ -274,7 +314,8 @@ class Mod(Cog):
         """
         existing_overwrite = ctx.channel.overwrites_for(someone)
         existing_overwrite.read_messages = False
-        await ctx.channel.set_permissions(someone, overwrite=existing_overwrite)
+        await ctx.channel.set_permissions(
+            someone, overwrite=existing_overwrite)
         await ctx.ok()
 
     @commands.command()
@@ -302,7 +343,8 @@ class Mod(Cog):
             else:
                 # overwrite still has stuff
                 logger.info('overwrite still has things!')
-                await ctx.channel.set_permissions(someone, overwrite=overwrites)
+                await ctx.channel.set_permissions(
+                    someone, overwrite=overwrites)
             await ctx.ok()
 
     @commands.command()
@@ -359,14 +401,19 @@ class Mod(Cog):
         is_mod = lambda m: (m.guild_permissions.kick_members or checks.member_is_moderator(m)) and not m.bot
         mods = [m for m in ctx.guild.members if is_mod(m)]
 
-        embed = discord.Embed(title='Moderators in ' + ctx.guild.name, color=discord.Color.blurple(),
-                              description=f'There are {len(mods)} mod(s) total in {ctx.guild.name}.')
+        embed = discord.Embed(
+            title='Moderators in ' + ctx.guild.name,
+            color=discord.Color.blurple(),
+            description=
+            f'There are {len(mods)} mod(s) total in {ctx.guild.name}.')
 
         for status in discord.Status:
             those_mods = [m for m in mods if m.status is status]
             if not those_mods:
                 continue
-            embed.add_field(name=str(status).title(), value='\n'.join(str(m) for m in those_mods))
+            embed.add_field(
+                name=str(status).title(),
+                value='\n'.join(str(m) for m in those_mods))
 
         await ctx.send(embed=embed)
 
@@ -377,7 +424,9 @@ class Mod(Cog):
     async def kick(self, ctx, member: discord.Member, *, reason: str = None):
         """Kicks someone."""
         try:
-            await ctx.guild.kick(member, reason=f'(By {ctx.author}) {reason or "No reason provided."}')
+            await ctx.guild.kick(
+                member,
+                reason=f'(By {ctx.author}) {reason or "No reason provided."}')
         except discord.Forbidden:
             await ctx.send('I can\'t do that.')
         else:
@@ -387,7 +436,12 @@ class Mod(Cog):
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @checks.bot_perms(ban_members=True)
-    async def softban(self, ctx, member: discord.Member, delete_days: DeleteDays=2, *, reason: str=None):
+    async def softban(self,
+                      ctx,
+                      member: discord.Member,
+                      delete_days: DeleteDays = 2,
+                      *,
+                      reason: str = None):
         """
         Bans, then unbans someone.
 
@@ -400,7 +454,8 @@ class Mod(Cog):
         except discord.Forbidden:
             await ctx.send("I can't do that.")
         else:
-            await ctx.send(f'\N{OK HAND SIGN} **Soft**banned {describe(member)}.')
+            await ctx.send(
+                f'\N{OK HAND SIGN} **Soft**banned {describe(member)}.')
 
     @commands.command()
     @commands.guild_only()
@@ -408,14 +463,21 @@ class Mod(Cog):
     @checks.bot_perms(ban_members=True)
     async def unban(self, ctx, member: converters.BannedUser, *, reason=''):
         """Unbans someone."""
-        await ctx.guild.unban(member, reason=f'(Unbanned by {ctx.author}) {reason or "No reason provided."}')
+        await ctx.guild.unban(
+            member,
+            reason=
+            f'(Unbanned by {ctx.author}) {reason or "No reason provided."}')
         await ctx.send(f'\N{OK HAND SIGN} Unbanned {describe(member)}.')
 
     @commands.command(aliases=['mban'])
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @checks.bot_perms(ban_members=True)
-    async def multiban(self, ctx, reason, delete_days: DeleteDays=2, *members: converters.RawMember):
+    async def multiban(self,
+                       ctx,
+                       reason,
+                       delete_days: DeleteDays = 2,
+                       *members: converters.RawMember):
         """
         Bans multiple users.
 
@@ -427,14 +489,20 @@ class Mod(Cog):
         paginator = commands.Paginator(prefix='', suffix='')
         for member in members:
             try:
-                await ctx.guild.ban(member, delete_message_days=delete_days,
-                                    reason=f'(Multi-banned by {ctx.author}) {reason}')
-                paginator.add_line(f'{ctx.green_tick} Banned {describe(member)}.')
+                await ctx.guild.ban(
+                    member,
+                    delete_message_days=delete_days,
+                    reason=f'(Multi-banned by {ctx.author}) {reason}')
+                paginator.add_line(
+                    f'{ctx.green_tick} Banned {describe(member)}.')
             except discord.NotFound:
                 # XXX: This code path might be unreachable, research further
-                paginator.add_line(f"{ctx.red_tick} {describe(member)} wasn't found.")
+                paginator.add_line(
+                    f"{ctx.red_tick} {describe(member)} wasn't found.")
             except discord.HTTPException:
-                paginator.add_line(f'{ctx.red_tick} Failed to ban {describe(member)}. No permissions?')
+                paginator.add_line(
+                    f'{ctx.red_tick} Failed to ban {describe(member)}. No permissions?'
+                )
 
         await progress.delete()
 
@@ -445,7 +513,12 @@ class Mod(Cog):
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @checks.bot_perms(ban_members=True)
-    async def ban(self, ctx, member: converters.RawMember, delete_days: DeleteDays=2, *, reason=None):
+    async def ban(self,
+                  ctx,
+                  member: converters.RawMember,
+                  delete_days: DeleteDays = 2,
+                  *,
+                  reason=None):
         """
         Bans someone.
 
@@ -458,35 +531,49 @@ class Mod(Cog):
         """
         try:
             reason = reason or 'No reason provided.'
-            await ctx.guild.ban(member, delete_message_days=delete_days, reason=f'(Banned by {ctx.author}) {reason}')
+            await ctx.guild.ban(
+                member,
+                delete_message_days=delete_days,
+                reason=f'(Banned by {ctx.author}) {reason}')
             ctx.bot.dispatch('member_dog_ban', member, ctx.author, reason)
         except discord.Forbidden:
             await ctx.send("I can't do that.")
         except discord.NotFound:
             await ctx.send("User not found.")
         else:
-            banned = await ctx.bot.get_user_info(member.id) if isinstance(member, discord.Object) else member
+            banned = await ctx.bot.get_user_info(member.id) if isinstance(
+                member, discord.Object) else member
             await ctx.send(f'\N{OK HAND SIGN} Banned {describe(banned)}.')
 
     @commands.command()
     @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     @checks.bot_perms(manage_roles=True)
-    async def vanity(self, ctx, name: str, color: discord.Color = None, assign_to: discord.Member = None):
+    async def vanity(self,
+                     ctx,
+                     name: str,
+                     color: discord.Color = None,
+                     assign_to: discord.Member = None):
         """
         Creates a vanity role.
 
         A vanity role is defined as a role with no permissions.
         """
-        role = await ctx.guild.create_role(name=name, permissions=discord.Permissions.none(),
-                                           color=color or discord.Color.default())
+        role = await ctx.guild.create_role(
+            name=name,
+            permissions=discord.Permissions.none(),
+            color=color or discord.Color.default())
         if assign_to:
             try:
                 await assign_to.add_roles(role)
             except discord.HTTPException:
-                return await ctx.send(f"{ctx.red_tick} Couldn't give {role.name} to that person.")
+                return await ctx.send(
+                    f"{ctx.red_tick} Couldn't give {role.name} to that person."
+                )
 
-        await ctx.send(f'{ctx.green_tick} Created vanity role {describe(role, quote=True)}.')
+        await ctx.send(
+            f'{ctx.green_tick} Created vanity role {describe(role, quote=True)}.'
+        )
 
     @commands.command()
     @commands.guild_only()
@@ -499,7 +586,9 @@ class Mod(Cog):
         This effectively turn it into a vanity role.
         """
         if role > ctx.guild.me.top_role:
-            return await ctx.send('My position on the role hierarchy is lower than that role, so I can\'t edit it.')
+            return await ctx.send(
+                'My position on the role hierarchy is lower than that role, so I can\'t edit it.'
+            )
 
         try:
             await role.edit(permissions=discord.Permissions(permissions=0))
@@ -507,7 +596,8 @@ class Mod(Cog):
         except discord.Forbidden:
             await ctx.send('I can\'t do that.')
 
-    @commands.command(aliases=['roleping'], brief='Pings a role with a message.')
+    @commands.command(
+        aliases=['roleping'], brief='Pings a role with a message.')
     @commands.guild_only()
     @commands.has_permissions(mention_everyone=True, manage_roles=True)
     @checks.bot_perms(manage_roles=True)
@@ -519,14 +609,18 @@ class Mod(Cog):
         The role must be below my highest role.
         """
         if role.position >= ctx.guild.me.top_role.position:
-            return await ctx.send("I can't edit that role because it's above my highest role.")
+            return await ctx.send(
+                "I can't edit that role because it's above my highest role.")
 
         try:
-            await role.edit(mentionable=True, reason=f'Pingrole by {describe(ctx.author)}')
+            await role.edit(
+                mentionable=True, reason=f'Pingrole by {describe(ctx.author)}')
             await ctx.send(f'{role.mention}: {message}')
         finally:
             try:
-                await role.edit(mentionable=False, reason=f'Pingrole by {describe(ctx.author)}')
+                await role.edit(
+                    mentionable=False,
+                    reason=f'Pingrole by {describe(ctx.author)}')
             except discord.HTTPException:
                 pass
 
@@ -544,7 +638,9 @@ class Mod(Cog):
         The renaming of attention-seekers is borrowed from the Discord API
         server.
         """
-        attention_seekers = [m for m in ctx.guild.members if m.display_name.startswith('!')]
+        attention_seekers = [
+            m for m in ctx.guild.members if m.display_name.startswith('!')
+        ]
         succeeded = len(attention_seekers)
         for seeker in attention_seekers:
             try:
@@ -552,7 +648,9 @@ class Mod(Cog):
             except discord.HTTPException:
                 succeeded -= 1
         failed_count = len(attention_seekers) - succeeded
-        await ctx.send(f'Renamed {succeeded} attention seeker(s). Failed to rename {failed_count}.')
+        await ctx.send(
+            f'Renamed {succeeded} attention seeker(s). Failed to rename {failed_count}.'
+        )
 
 
 def setup(bot):

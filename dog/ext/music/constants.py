@@ -9,11 +9,7 @@ YTDL_OPTS = {
 }
 
 # searching flavor text
-SEARCHING_TEXT = (
-    'Beep boop...',
-    'Searching...',
-    'Just a sec...'
-)
+SEARCHING_TEXT = ('Beep boop...', 'Searching...', 'Just a sec...')
 
 # ffmpeg options
 FFMPEG_OPTIONS = {

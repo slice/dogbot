@@ -24,18 +24,25 @@ class Abalbots(Cog):
         logger.debug('Abal bot reporter task started.')
 
         endpoint = f'https://bots.discord.pw/api/bots/{self.bot.user.id}/stats'
-        headers = {'Authorization': self.bot.cfg['monitoring']['discordpw_token']}
+        headers = {
+            'Authorization': self.bot.cfg['monitoring']['discordpw_token']
+        }
 
         while True:
             logger.info('POSTing guild count to abal\'s website...')
             guilds = len(self.bot.guilds)
 
             # HTTP POST to the endpoint
-            async with self.bot.session.post(endpoint, json={'server_count': guilds}, headers=headers) as resp:
+            async with self.bot.session.post(
+                endpoint, json={'server_count': guilds},
+                headers=headers) as resp:
                 if resp.status != 200:
                     # this happens a lot
-                    logger.warning('Failed to post guild count, ignoring. (HTTP %d)', resp.status)
+                    logger.warning(
+                        'Failed to post guild count, ignoring. (HTTP %d)',
+                        resp.status)
                 else:
-                    logger.info('Posted guild count successfully! (%d guilds)', guilds)
+                    logger.info('Posted guild count successfully! (%d guilds)',
+                                guilds)
 
             await asyncio.sleep(self.reporting_interval)

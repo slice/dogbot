@@ -17,13 +17,15 @@ class CrashTextCensorshipFilter(ReCensorshipFilter):
     show_content = False
 
     async def does_violate(self, msg):
-        return any(crash in msg.content for crash in ('\U000009e3', '\U0000094c'))
+        return any(
+            crash in msg.content for crash in ('\U000009e3', '\U0000094c'))
 
 
 class InviteCensorshipFilter(ReCensorshipFilter):
     censor_type = CensorType.INVITES
     mod_log_description = 'Invite censored'
-    regex = re.compile(r'(discordapp\.com/invite|discord\.gg)/([a-zA-Z_\-0-9]+)')
+    regex = re.compile(
+        r'(discordapp\.com/invite|discord\.gg)/([a-zA-Z_\-0-9]+)')
 
 
 class VideositeCensorshipFilter(ReCensorshipFilter):
@@ -32,13 +34,15 @@ class VideositeCensorshipFilter(ReCensorshipFilter):
     regex = re.compile(r'(https?://)?(www\.)?(twitch\.tv|youtube\.com)/(.+)')
 
 
-media_types = ('png', 'webp', 'jpg', 'jpeg', 'gif', 'gifv', 'tif', 'tiff', 'webm', 'mp4', 'mkv', 'mov', 'avi', 'ogg',
-               'ogv', 'wmv')
+media_types = ('png', 'webp', 'jpg', 'jpeg', 'gif', 'gifv', 'tif', 'tiff',
+               'webm', 'mp4', 'mkv', 'mov', 'avi', 'ogg', 'ogv', 'wmv')
 
-executable_types = ('exe', 'scr', 'app', 'sh', 'terminal', 'pif', 'application', 'hta', 'cpl', 'msc', 'jar', 'bat',
-                    'cmd', 'vb', 'vbs', 'vbe', 'js', 'jse', 'ws', 'wsf', 'wsc', 'wsh', 'ps1', 'ps1xml', 'ps2',
-                    'ps2xml', 'psc1', 'psc2', 'msh', 'msh1', 'msh2', 'mshxml', 'msh1xml', 'msh2xml', 'lnk', 'inf',
-                    'scf', 'reg')
+executable_types = ('exe', 'scr', 'app', 'sh', 'terminal', 'pif',
+                    'application', 'hta', 'cpl', 'msc', 'jar', 'bat', 'cmd',
+                    'vb', 'vbs', 'vbe', 'js', 'jse', 'ws', 'wsf', 'wsc', 'wsh',
+                    'ps1', 'ps1xml', 'ps2', 'ps2xml', 'psc1', 'psc2', 'msh',
+                    'msh1', 'msh2', 'mshxml', 'msh1xml', 'msh2xml', 'lnk',
+                    'inf', 'scf', 'reg')
 
 
 def _link_regex(types: 'Tuple[str]') -> str:

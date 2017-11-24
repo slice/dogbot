@@ -18,12 +18,10 @@ class PollrBans(Cog):
         self.ban_debounce = DebounceProcessor('pollr bans')
 
     async def on_member_dog_ban(self, member, moderator, reason):
-        logger.debug('dog ban catch: member_id=%d mod=%s reason=%s', member.id, moderator, reason)
+        logger.debug('dog ban catch: member_id=%d mod=%s reason=%s', member.id,
+                     moderator, reason)
         self.ban_debounce.add(
-            member_id=member.id,
-            moderator=moderator,
-            reason=reason
-        )
+            member_id=member.id, moderator=moderator, reason=reason)
 
     async def on_member_ban(self, guild: Guild, user):
         if not await self.bot.config_is_set(guild, 'pollr_mod_log'):
@@ -36,7 +34,8 @@ class PollrBans(Cog):
         bans = discord.utils.get(guild.text_channels, name='bans')
 
         if not bans:
-            logger.debug('not announcing ban, couldn\'t find channel. gid=%d', guild.id)
+            logger.debug('not announcing ban, couldn\'t find channel. gid=%d',
+                         guild.id)
             return
 
         ban = f'**Ban:** {describe(user)}'
@@ -49,8 +48,7 @@ class PollrBans(Cog):
             member_id=user.id,
             return_information=True,
             partial=True,
-            wait_period=2.0
-        )
+            wait_period=2.0)
 
         if information:
             reason = information['reason']
@@ -60,9 +58,11 @@ class PollrBans(Cog):
         if not information and perms.view_audit_log:
             # fall back to audit log
 
-            await asyncio.sleep(1)  # wait a bit, because audit logs can be slow
+            await asyncio.sleep(
+                1)  # wait a bit, because audit logs can be slow
 
-            logs = await guild.audit_logs(action=AuditLogAction.ban, limit=5).flatten()
+            logs = await guild.audit_logs(
+                action=AuditLogAction.ban, limit=5).flatten()
 
             # grab the entry that targeted our banned user
             entry = get(logs, target=user)
@@ -76,7 +76,8 @@ class PollrBans(Cog):
             # send the ban message
             await bans.send(ban)
         except discord.HTTPException as exc:
-            logger.warning('Cannot announce ban, error! gid=%d %s', guild.id, exc)
+            logger.warning('Cannot announce ban, error! gid=%d %s', guild.id,
+                           exc)
 
 
 def setup(bot):

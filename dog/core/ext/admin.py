@@ -107,7 +107,9 @@ class Admin(Cog):
     @is_bot_admin()
     async def shutdown(self, ctx: DogbotContext):
         """Turns off the bot."""
-        if await ctx.confirm(title='Are you sure?', description="Are you sure you want to shut me down?"):
+        if await ctx.confirm(
+                title='Are you sure?',
+                description="Are you sure you want to shut me down?"):
             logger.info('Commencing shutdown!')
             await ctx.send('\N{WAVING HAND SIGN} Bye!')
             sys.exit(0)

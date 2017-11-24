@@ -46,7 +46,8 @@ class Timezone(Converter):
 
         # hippo checking
         blacklisted = list('`\\<>@')
-        if any(character in argument for character in blacklisted) or len(argument) > 30:
+        if any(character in argument
+               for character in blacklisted) or len(argument) > 30:
             raise BadArgument("That doesn't look like a timezone.")
 
         # actually check if it's a valid timezone with arrow's parser
@@ -68,10 +69,11 @@ class Time(Cog):
         await self.redis.set(TIMEZONE_KEY.format(who), timezone.encode())
 
     def format_time(self, time: Union[str, Arrow]) -> str:
-        return time.format(TIME_FORMAT) if isinstance(time, Arrow) else arrow.utcnow().to(time).format(TIME_FORMAT)
+        return time.format(TIME_FORMAT) if isinstance(
+            time, Arrow) else arrow.utcnow().to(time).format(TIME_FORMAT)
 
     @group(aliases=['t'], invoke_without_command=True)
-    async def time(self, ctx: DogbotContext, *, who: Member=None):
+    async def time(self, ctx: DogbotContext, *, who: Member = None):
         """Views someone's time."""
         who = who or ctx.author
         timezone = await self.get_timezone_for(who)
@@ -84,13 +86,14 @@ class Time(Cog):
 
     @time.command(name='write', hidden=True)
     @is_bot_admin()
-    async def time_write(self, ctx: DogbotContext, target: Member, timezone: Timezone):
+    async def time_write(self, ctx: DogbotContext, target: Member,
+                         timezone: Timezone):
         """Sets someone else's timezone."""
         await self.set_timezone_for(target, timezone)
         await ctx.ok()
 
     @time.command(name='set')
-    async def time_set(self, ctx: DogbotContext, timezone: Timezone=None):
+    async def time_set(self, ctx: DogbotContext, timezone: Timezone = None):
         """Sets your timezone."""
         if not timezone:
             return await ctx.send(TIMEZONE_QUERY.format(prefix=ctx.prefix))

@@ -20,13 +20,15 @@ def require_logging_enabled(func):
             return
 
         # args[0] = self, args[1] = msg
-        if not await args[0].bot.redis.exists(f'message_logging:{args[1].guild.id}:enabled'):
+        if not await args[0].bot.redis.exists(
+                f'message_logging:{args[1].guild.id}:enabled'):
             return
 
         # don't log ourselves
         if args[1].author == args[0].bot.user:
             return
         return await func(*args, **kwargs)
+
     return wrapper
 
 
@@ -61,10 +63,8 @@ def attachment_to_dict(attachment):
         'id': attachment.id,
         'size': attachment.size,
         'filename': attachment.filename,
-
         'height': attachment.height,
         'width': attachment.width,
-
         'url': attachment.url,
         'proxy_url': attachment.proxy_url
     }
@@ -84,13 +84,13 @@ class MessageLogging(Cog):
                  edited, deleted_at, edited_at, created_at)
                 VALUES ($1, $2, $3, $4, $5, '', $6, FALSE, FALSE, NULL, NULL, $7);
             """
-            encoded_attachments = json.dumps([attachment_to_dict(tch) for tch in msg.attachments])
+            encoded_attachments = json.dumps(
+                [attachment_to_dict(tch) for tch in msg.attachments])
             content = postprocess_message_content(msg.content)
 
-            await conn.execute(
-                insertion_sql,
-                msg.id, msg.guild.id, msg.channel.id, msg.author.id, content, encoded_attachments, msg.created_at
-            )
+            await conn.execute(insertion_sql, msg.id, msg.guild.id,
+                               msg.channel.id, msg.author.id, content,
+                               encoded_attachments, msg.created_at)
 
     @require_logging_enabled
     async def on_message_edit(self, before, after):
@@ -99,7 +99,8 @@ class MessageLogging(Cog):
                 UPDATE messages SET edited = TRUE, new_content = $1, edited_at = $3 WHERE message_id = $2
             """
             content = postprocess_message_content(after.content)
-            await conn.execute(update_sql, content, before.id, datetime.datetime.utcnow())
+            await conn.execute(update_sql, content, before.id,
+                               datetime.datetime.utcnow())
 
     @require_logging_enabled
     async def on_message_delete(self, msg):
@@ -111,7 +112,12 @@ class MessageLogging(Cog):
 
     @commands.command()
     @checks.is_moderator()
-    async def archive(self, ctx, user: discord.User, amount: int, *, flags: converters.Flags={}):
+    async def archive(self,
+                      ctx,
+                      user: discord.User,
+                      amount: int,
+                      *,
+                      flags: converters.Flags = {}):
         """
         Fetches logged messages from a user.
 
@@ -127,17 +133,24 @@ class MessageLogging(Cog):
             fetch_sql = """
                 SELECT * FROM messages WHERE author_id = $1 AND guild_id = $2 ORDER BY created_at DESC LIMIT $3
             """
-            messages = await conn.fetch(fetch_sql, user.id, ctx.guild.id, amount)
+            messages = await conn.fetch(fetch_sql, user.id, ctx.guild.id,
+                                        amount)
 
         paginator = commands.Paginator()
 
         flag_processors = {
-            'has-attachments': lambda value, msg: json.loads(msg['attachments']),
-            'contains': lambda value, msg: value in msg,
-            'edited': lambda value, msg: msg['edited'],
-            'deleted': lambda value, msg: msg['deleted'],
-            'channel': lambda value, msg: msg['channel_id'] == int(value),
-            'mentions': lambda value, msg: re.search(f'<@!?{value}>', content) is None
+            'has-attachments':
+            lambda value, msg: json.loads(msg['attachments']),
+            'contains':
+            lambda value, msg: value in msg,
+            'edited':
+            lambda value, msg: msg['edited'],
+            'deleted':
+            lambda value, msg: msg['deleted'],
+            'channel':
+            lambda value, msg: msg['channel_id'] == int(value),
+            'mentions':
+            lambda value, msg: re.search(f'<@!?{value}>', content) is None
         }
 
         # add messages
@@ -160,7 +173,8 @@ class MessageLogging(Cog):
 
     @archive.error
     async def archive_error(self, ctx, err):
-        original = None if not isinstance(err, commands.CommandInvokeError) else err.original
+        original = None if not isinstance(
+            err, commands.CommandInvokeError) else err.original
         if isinstance(original, ValueError):
             await ctx.send('Invalid flag value provided.')
             err.should_suppress = True

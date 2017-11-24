@@ -10,6 +10,7 @@ class AsyncQueue(ABC):
     """
     An arbitrary queue that consumes items asynchronously. All items are processed in a background task.
     """
+
     def __init__(self, bot, name: str):
         #: The name of this :class:`AsyncQueue`.
         self.name = name
@@ -34,7 +35,9 @@ class AsyncQueue(ABC):
 
     def _log(self, level, msg, *args):
         # ugh
-        logger.log(getattr(logging, level.upper(), logging.INFO), f'queue {self.name}: {msg}', *args)
+        logger.log(
+            getattr(logging, level.upper(), logging.INFO),
+            f'queue {self.name}: {msg}', *args)
 
     @abstractmethod
     async def get_latest_item(self):

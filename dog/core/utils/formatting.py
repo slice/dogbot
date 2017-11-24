@@ -37,8 +37,12 @@ def user_format(format_string: str, parameters: Dict[Any, Any]) -> str:
     return result
 
 
-async def history_reducer(ctx, reducer: Callable[[Message], Any], *,
-                          ignore_duplicates=False, result_container_type: Type=list, **kwargs) -> Union[List, Set]:
+async def history_reducer(ctx,
+                          reducer: Callable[[Message], Any],
+                          *,
+                          ignore_duplicates=False,
+                          result_container_type: Type = list,
+                          **kwargs) -> Union[List, Set]:
     """
     Iterates through message history, and outputs a list of items populated by a function that receives each
     message.
@@ -104,9 +108,11 @@ def format_dict(d: Dict[Any, Any], *, style='equals') -> str:
 
     for name, value in d.items():
         if style == 'equals':
-            code_block += '{name: <{width}} = {value}\n'.format(name=name, width=padding, value=value)
+            code_block += '{name: <{width}} = {value}\n'.format(
+                name=name, width=padding, value=value)
         elif style == 'ini':
-            code_block += '{name: <{width}} {value}\n'.format(name=f'[{name}]', width=padding + 2, value=value)
+            code_block += '{name: <{width}} {value}\n'.format(
+                name=f'[{name}]', width=padding + 2, value=value)
 
     return code_block + '```'
 
@@ -146,7 +152,7 @@ def make_profile_embed(member: Member) -> Embed:
     return Embed().set_author(name=str(member), icon_url=member.avatar_url)
 
 
-def codeblock(text: str, *, lang: str='') -> str:
+def codeblock(text: str, *, lang: str = '') -> str:
     """
     Formats a codeblock.
 
@@ -230,7 +236,8 @@ def format_list(lst: List[Any]) -> str:
     str
         The formatted string.
     """
-    return '\n'.join('`{:03d}`: {}'.format(index + 1, value) for index, value in enumerate(lst))
+    return '\n'.join('`{:03d}`: {}'.format(index + 1, value)
+                     for index, value in enumerate(lst))
 
 
 def now() -> str:
@@ -299,13 +306,19 @@ def filesize(byte_size: int) -> str:
     str
         The human-readable filesize.
     """
-    if bytes > 10 ** 5 * 5:  # 0.5 MB
+    if bytes > 10**5 * 5:  # 0.5 MB
         return f'{round(byte_size / 10 ** 6, 2)} MB'
     else:
         return f'{round(byte_size / 1000, 2)} KB'
 
 
-def describe(thing: Any, *, mention=False, before='', created=False, joined=False, quote=False):
+def describe(thing: Any,
+             *,
+             mention=False,
+             before='',
+             created=False,
+             joined=False,
+             quote=False):
     """
     Returns a string representing an project. Usually consists of the object in string form,
     then the object's ID in parentheses after.

@@ -33,7 +33,8 @@ class MonitorChannel(Cog):
         All parameters are passed to `send()`.
         """
         logger.info('Monitor sending args=%s, kwargs=%s', args, kwargs)
-        monitor_channels = self.bot.cfg['monitoring'].get('monitor_channels', [])
+        monitor_channels = self.bot.cfg['monitoring'].get(
+            'monitor_channels', [])
 
         # no specified channel
         if not monitor_channels:
@@ -54,7 +55,8 @@ class MonitorChannel(Cog):
             for channel in channels:
                 await channel.send(*args, embed=embed)
         except discord.Forbidden:
-            logger.warning('Forbidden to send to monitoring channel -- ignoring.')
+            logger.warning(
+                'Forbidden to send to monitoring channel -- ignoring.')
 
     def guild_fields(self, g: Guild):
         """Returns a list of fields to be passed into :method:``monitor_send`` from a guild."""
@@ -66,7 +68,9 @@ class MonitorChannel(Cog):
             ('Guild', f'{g.name}\n`{g.id}`'),
             ('Owner', f'{g.owner.mention} {g.owner}\n`{g.owner.id}`'),
             ('Info', f'Created {utils.ago(g.created_at)}'),
-            ('Members', f'Members: {len(g.members)} (UTBR: {ratio})\n{humans} human(s), {bots} bot(s)')
+            ('Members',
+             f'Members: {len(g.members)} (UTBR: {ratio})\n{humans} human(s), {bots} bot(s)'
+             )
         ]
 
     async def on_guild_join(self, g: Guild):
@@ -74,19 +78,26 @@ class MonitorChannel(Cog):
         fields = self.guild_fields(g)
 
         is_collection = await botcollection.is_bot_collection(self.bot, g)
-        should_detect_collections = self.bot.cfg['bot'].get('bot_collection_detection', False)
+        should_detect_collections = self.bot.cfg['bot'].get(
+            'bot_collection_detection', False)
 
-        if await botcollection.is_blacklisted(self.bot, g.id) or (is_collection and should_detect_collections):
+        if await botcollection.is_blacklisted(
+                self.bot, g.id) or (is_collection
+                                    and should_detect_collections):
             # leave it
             self.refuse_notify_left.append(g.id)
             await g.leave()
 
             # monitor
             title = '\N{RADIOACTIVE SIGN} Left toxic guild'
-            return await self.monitor_send(title=title, fields=fields, color=Colors.LIGHT_RED)
+            return await self.monitor_send(
+                title=title, fields=fields, color=Colors.LIGHT_RED)
 
         # monitor
-        await self.monitor_send(title='\N{INBOX TRAY} Added to new guild', fields=fields, color=Colors.NEON_GREEN)
+        await self.monitor_send(
+            title='\N{INBOX TRAY} Added to new guild',
+            fields=fields,
+            color=Colors.NEON_GREEN)
         await self.bot.redis.incr('stats:guilds:adds')
 
     async def on_guild_remove(self, g: Guild):
@@ -97,7 +108,10 @@ class MonitorChannel(Cog):
             return
 
         fields = self.guild_fields(g)
-        await self.monitor_send(title='\N{OUTBOX TRAY} Removed from guild', fields=fields, color=Colors.ORANGE)
+        await self.monitor_send(
+            title='\N{OUTBOX TRAY} Removed from guild',
+            fields=fields,
+            color=Colors.ORANGE)
         await self.bot.redis.incr('stats:guilds:removes')
 
 

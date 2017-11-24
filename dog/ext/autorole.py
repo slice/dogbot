@@ -36,13 +36,16 @@ class Autorole(Cog):
         Learn more about autorole here: https://github.com/slice/dogbot/wiki/Autorole
         """
         if ctx.invoked_subcommand is None:
-            await ctx.send('You must specify a valid subcommand to run. For help, run `d?help ar`.')
+            await ctx.send(
+                'You must specify a valid subcommand to run. For help, run `d?help ar`.'
+            )
 
     async def assign_roles(self, autorole_type: str, member: Member):
         async with self.bot.pgpool.acquire() as pg:
             # fetch autoroles for that user
-            record = await pg.fetchrow('SELECT * FROM autoroles WHERE guild_id = $1 AND type = $2', member.guild.id,
-                                       autorole_type)
+            record = await pg.fetchrow(
+                'SELECT * FROM autoroles WHERE guild_id = $1 AND type = $2',
+                member.guild.id, autorole_type)
             if not record:
                 return []
 
@@ -50,7 +53,10 @@ class Autorole(Cog):
             role_ids = record['roles']
 
             # collect roles to add
-            roles_to_add = [discord.utils.get(member.guild.roles, id=role_id) for role_id in role_ids]
+            roles_to_add = [
+                discord.utils.get(member.guild.roles, id=role_id)
+                for role_id in role_ids
+            ]
 
             # filter out dead roles
             roles_to_add = list(filter(lambda r: r is not None, roles_to_add))
@@ -59,7 +65,8 @@ class Autorole(Cog):
                 # no roles to add
                 return
 
-            log.debug('Adding {} roles to {}.'.format(len(roles_to_add), member))
+            log.debug('Adding {} roles to {}.'.format(
+                len(roles_to_add), member))
 
             try:
                 # add roles
@@ -84,43 +91,52 @@ class Autorole(Cog):
         self.bot.dispatch('member_autorole', member, roles_added)
 
     @autorole.command()
-    async def add(self, ctx: DogbotContext, type: AutoroleType, *roles: discord.Role):
+    async def add(self, ctx: DogbotContext, type: AutoroleType,
+                  *roles: discord.Role):
         """Adds autoroles."""
         for role in roles:
             if role.position > ctx.guild.me.top_role.position:
-                await ctx.send('I can\'t autorole the role \"{0.name}\". It\'s too high on the role list. Move my '
-                               'role above it.'.format(role))
+                await ctx.send(
+                    'I can\'t autorole the role \"{0.name}\". It\'s too high on the role list. Move my '
+                    'role above it.'.format(role))
                 return
 
         log.debug('Adding autorole. (type=%s, roles=%s)', type, roles)
         try:
             async with ctx.acquire() as conn:
-                await conn.execute('INSERT INTO autoroles (guild_id, type, roles) VALUES ($1, $2, $3)', ctx.guild.id,
-                                   type.name, list(map(lambda r: r.id, roles)))
+                await conn.execute(
+                    'INSERT INTO autoroles (guild_id, type, roles) VALUES ($1, $2, $3)',
+                    ctx.guild.id, type.name, list(map(lambda r: r.id, roles)))
         except asyncpg.UniqueViolationError:
-            return await ctx.send('There\'s already autoroles for that type on this server.')
+            return await ctx.send(
+                'There\'s already autoroles for that type on this server.')
         await ctx.ok()
 
     @autorole.command()
     async def delete(self, ctx: DogbotContext, type: AutoroleType):
         """Deletes an autorole."""
         async with ctx.acquire() as conn:
-            await conn.execute('DELETE FROM autoroles WHERE guild_id = $1 AND type = $2', ctx.guild.id, type.name)
+            await conn.execute(
+                'DELETE FROM autoroles WHERE guild_id = $1 AND type = $2',
+                ctx.guild.id, type.name)
         await ctx.ok()
 
     @autorole.command()
     async def list(self, ctx: DogbotContext):
         """Lists autoroles on this server."""
+
         def format_role(role_id):
             role = discord.utils.get(ctx.guild.roles, id=role_id)
             return role.name if role else '`<dead role>`'
 
         def format_record(record):
-            formatted_roles = ', '.join(format_role(role_id) for role_id in record['roles'])
+            formatted_roles = ', '.join(
+                format_role(role_id) for role_id in record['roles'])
             return '{0[type]}: {1}'.format(record, formatted_roles)
 
         async with ctx.acquire() as conn:
-            autoroles = await conn.fetch('SELECT * FROM autoroles WHERE guild_id = $1', ctx.guild.id)
+            autoroles = await conn.fetch(
+                'SELECT * FROM autoroles WHERE guild_id = $1', ctx.guild.id)
         if not autoroles:
             return await ctx.send('There are no autoroles in this server.')
         await ctx.send('\n'.join(format_record(r) for r in autoroles))

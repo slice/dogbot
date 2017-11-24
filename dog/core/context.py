@@ -57,13 +57,15 @@ class DogbotContext(commands.Context):
         """
 
         # user-preferred lang takes precedence
-        user_lang = await self.bot.redis.get(f'i18n:user:{self.author.id}:lang')
+        user_lang = await self.bot.redis.get(f'i18n:user:{self.author.id}:lang'
+                                             )
         if user_lang:
             return user_lang.decode()
 
         # guild lang then comes
         if self.guild:
-            guild_lang = await self.bot.redis.get(f'i18n:guild:{self.guild.id}:lang')
+            guild_lang = await self.bot.redis.get(
+                f'i18n:guild:{self.guild.id}:lang')
             if guild_lang:
                 return guild_lang.decode()
 
@@ -72,22 +74,31 @@ class DogbotContext(commands.Context):
 
     async def _(self, key: str, *args, **kwargs):
         val = self.bot.lang(key, await self.preferred_lang())
-        return val if (not args and not kwargs) else val.format(*args, **kwargs)
+        return val if (not args and not kwargs) else val.format(
+            *args, **kwargs)
 
-    async def confirm(self, *, title: str, description: str, confirm_cancellation=False):
+    async def confirm(self,
+                      *,
+                      title: str,
+                      description: str,
+                      confirm_cancellation=False):
         """Confirms something."""
-        embed = discord.Embed(color=discord.Color.red(), title=title, description=description)
+        embed = discord.Embed(
+            color=discord.Color.red(), title=title, description=description)
         confirmation = await self.send(embed=embed)
 
-        for tick in (self.bot.tick(tick_type, raw=True, guild=self.guild) for tick_type in ('green', 'red')):
+        for tick in (self.bot.tick(tick_type, raw=True, guild=self.guild)
+                     for tick_type in ('green', 'red')):
             await confirmation.add_reaction(tick)
 
         while True:
+
             def check(reaction: discord.Reaction, adder: discord.User) -> bool:
                 return adder == self.message.author and reaction.message.id == confirmation.id
 
             # wait for a reaction
-            reaction, adder = await self.bot.wait_for('reaction_add', check=check)
+            reaction, adder = await self.bot.wait_for(
+                'reaction_add', check=check)
 
             # ignore regular emoji
             if isinstance(reaction.emoji, str):
@@ -102,15 +113,28 @@ class DogbotContext(commands.Context):
                     await self.send('Operation cancelled.')
                 return False
 
-    async def send(self, content=None, *, tts=False, embed=None, file=None, files=None, delete_after=None, nonce=None):
+    async def send(self,
+                   content=None,
+                   *,
+                   tts=False,
+                   embed=None,
+                   file=None,
+                   files=None,
+                   delete_after=None,
+                   nonce=None):
         # do not mention everyone
         if content:
             content = content.replace('@everyone', '@\u200beveryone')
             content = content.replace('@here', '@\u200bhere')
 
         return await super().send(
-            content, tts=tts, embed=embed, file=file, files=files, delete_after=delete_after, nonce=nonce
-        )
+            content,
+            tts=tts,
+            embed=embed,
+            file=file,
+            files=files,
+            delete_after=delete_after,
+            nonce=nonce)
 
     async def wait_for_response(self):
         """
@@ -137,15 +161,20 @@ class DogbotContext(commands.Context):
         if not self.guild:
             return False
 
-        return await self.bot.redis.exists(f'gatekeeper:{self.guild.id}:enabled')
+        return await self.bot.redis.exists(
+            f'gatekeeper:{self.guild.id}:enabled')
 
-    async def pick_from_list(self, choices: List[Any], *, delete_after_choice=False) -> Any:
+    async def pick_from_list(self,
+                             choices: List[Any],
+                             *,
+                             delete_after_choice=False) -> Any:
         """Shows the user a list of items to pick from. Returns the picked item."""
         # format list of stuff
         choices_list = utils.format_list(choices)
 
         # send list of stuff
-        choices_message = await self.send('Pick one, or send `cancel`.\n\n' + choices_list)
+        choices_message = await self.send(
+            'Pick one, or send `cancel`.\n\n' + choices_list)
         remaining_tries = 3
         picked = None
 

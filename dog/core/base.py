@@ -47,8 +47,7 @@ class BotBase(commands.bot.BotBase):
 
         # connect to redis
         self.redis = await aioredis.create_redis(
-            (self.cfg['db']['redis'], 6379), loop=self.loop
-        )
+            (self.cfg['db']['redis'], 6379), loop=self.loop)
 
     def load_extensions(self, directory: str, prefix: str = 'Recursive load'):
         """Loads extensions from a directory recursively."""
@@ -96,20 +95,29 @@ class BotBase(commands.bot.BotBase):
                 logger.info('Reloading extension: %s', name)
                 self.reload_extension(name)
             except:
-                logger.exception('While reloading all: Failed extension reload for %s', name)
+                logger.exception(
+                    'While reloading all: Failed extension reload for %s',
+                    name)
                 raise
 
     def reload_modules(self):
         """Reloads all Dogbot related modules."""
         # get applicable modules to reload
-        modules = {k: m for k, m in sys.modules.items() if ('dog' in k and 'datadog' not in k) and 'ext' not in k and
-                   k != 'dog'}
+        modules = {
+            k: m
+            for k, m in sys.modules.items()
+            if ('dog' in k and 'datadog' not in k) and 'ext' not in k
+            and k != 'dog'
+        }
         for name, module in modules.items():
             logger.info('Reloading bot module: %s', name)
             importlib.reload(module)
         logger.info('Finished reloading bot modules!')
 
-    async def post_to_webhook(self, content=None, *, embed: discord.Embed = None):
+    async def post_to_webhook(self,
+                              content=None,
+                              *,
+                              embed: discord.Embed = None):
         """ Posts to the configured health webhook.
 
         If a health webhook is not configured, then Dogbot does nothing.
@@ -118,14 +126,21 @@ class BotBase(commands.bot.BotBase):
         webhook_url = self.cfg['monitoring'].get('health_webhook', None)
 
         if not webhook_url:
-            logger.debug('Ignoring post_to_webhook, no health_webhook! content=%s, embed=%s', content, embed)
+            logger.debug(
+                'Ignoring post_to_webhook, no health_webhook! content=%s, embed=%s',
+                content, embed)
             return
 
         if self.session.closed:
             logger.warning('Cannot post to webhook -- it\'s closed! Bailing.')
             return
 
-        await self.session.post(webhook_url, json={'content': content, 'embeds': [embed.to_dict()]})
+        await self.session.post(
+            webhook_url,
+            json={
+                'content': content,
+                'embeds': [embed.to_dict()]
+            })
 
     async def on_message(self, msg):
         # do not process messages from other bots
@@ -140,12 +155,15 @@ class BotBase(commands.bot.BotBase):
         await self.invoke(ctx)
 
     async def on_shard_ready(self, shard_id):
-        embed = discord.Embed(title=f'Shard #{shard_id} is ready.', color=discord.Color.green())
+        embed = discord.Embed(
+            title=f'Shard #{shard_id} is ready.', color=discord.Color.green())
         await self.post_to_webhook(embed=embed)
 
     async def on_resumed(self):
-        embed = discord.Embed(title='Resumed', description='The bot has resumed its connection to Discord.',
-                              color=discord.Color.orange())
+        embed = discord.Embed(
+            title='Resumed',
+            description='The bot has resumed its connection to Discord.',
+            color=discord.Color.orange())
         await self.post_to_webhook(embed=embed)
 
     async def on_ready(self):
@@ -153,6 +171,8 @@ class BotBase(commands.bot.BotBase):
         print('[User]', self.user)
         print('[ID]  ', self.user.id)
 
-        ready_embed = discord.Embed(title='Bot is ready!', description='The bot has connected to Discord.',
-                                    color=discord.Color.green())
+        ready_embed = discord.Embed(
+            title='Bot is ready!',
+            description='The bot has connected to Discord.',
+            color=discord.Color.green())
         await self.post_to_webhook(embed=ready_embed)

@@ -11,7 +11,8 @@ class LangConverter(commands.Converter):
         if arg == 'default':
             return ''
         if len(arg) != 5:
-            raise commands.BadArgument('Languages are 5 letters long, like so: `en-US`')
+            raise commands.BadArgument(
+                'Languages are 5 letters long, like so: `en-US`')
         if not os.path.isfile(f'./resources/lang/{arg}.yml'):
             raise commands.BadArgument('That language isn\'t supported.')
         return arg
@@ -32,7 +33,9 @@ class Lang(Cog):
     @commands.command()
     async def langs(self, ctx):
         """Lists supported languages."""
-        langs = [p.stem for p in pathlib.Path('./resources/lang/').glob('*.yml')]
+        langs = [
+            p.stem for p in pathlib.Path('./resources/lang/').glob('*.yml')
+        ]
         await ctx.send(', '.join(langs))
 
     @commands.command(aliases=['ssl'])

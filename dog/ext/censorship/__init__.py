@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class Censorship(Cog):
-    async def is_censoring(self, guild: discord.Guild, what: CensorType) -> bool:
+    async def is_censoring(self, guild: discord.Guild,
+                           what: CensorType) -> bool:
         """Returns whether something is being censored for a guild."""
         if not await self.has_censorship_record(guild):
             return False
@@ -32,32 +33,43 @@ class Censorship(Cog):
         logger.info('Censoring %s for %s (%d)', what, guild.name, guild.id)
         async with self.bot.pgpool.acquire() as conn:
             if not await self.has_censorship_record(guild):
-                logger.debug('Creating initial censorship data for guild %s (%d)', guild.name, guild.id)
-                await conn.execute('INSERT INTO censorship VALUES ($1, \'{}\', \'{}\')', guild.id)
-            await conn.execute('UPDATE censorship SET enabled = array_append(enabled, $1) '
-                               'WHERE guild_id = $2', what.name, guild.id)
+                logger.debug(
+                    'Creating initial censorship data for guild %s (%d)',
+                    guild.name, guild.id)
+                await conn.execute(
+                    'INSERT INTO censorship VALUES ($1, \'{}\', \'{}\')',
+                    guild.id)
+            await conn.execute(
+                'UPDATE censorship SET enabled = array_append(enabled, $1) '
+                'WHERE guild_id = $2', what.name, guild.id)
 
     async def delete_punishment(self, guild: discord.Guild, type: CensorType):
         """Deletes a punishment."""
         logger.debug('Removing punishment. gid=%d, censor=%s', guild.id, type)
         async with self.bot.pgpool.acquire() as conn:
-            await conn.execute('DELETE FROM censorship_punishments WHERE guild_id = $1 AND censorship_type = $2',
-                               guild.id, type.name)
+            await conn.execute(
+                'DELETE FROM censorship_punishments WHERE guild_id = $1 AND censorship_type = $2',
+                guild.id, type.name)
 
-    async def add_punishment(self, guild: discord.Guild, type: CensorType, punishment: PunishmentType):
+    async def add_punishment(self, guild: discord.Guild, type: CensorType,
+                             punishment: PunishmentType):
         """Adds a punishment."""
-        logger.debug('Adding punishment. gid=%d, censor=%s, punishment=%s', guild.id, type, punishment)
+        logger.debug('Adding punishment. gid=%d, censor=%s, punishment=%s',
+                     guild.id, type, punishment)
         async with self.bot.pgpool.acquire() as conn:
-            await conn.execute('INSERT INTO censorship_punishments VALUES ($1, $2, $3)', guild.id, type.name,
-                               punishment.name)
+            await conn.execute(
+                'INSERT INTO censorship_punishments VALUES ($1, $2, $3)',
+                guild.id, type.name, punishment.name)
 
-    async def get_punishment(self, guild: discord.Guild, type: CensorType) -> 'Union[PunishmentType, None]':
+    async def get_punishment(self, guild: discord.Guild, type: CensorType
+                             ) -> 'Union[PunishmentType, None]':
         """Returns a punishment for a censorship type."""
         logger.debug('Fetching punishment. gid=%d, censor=%s', guild.id, type)
         sql = 'SELECT punishment FROM censorship_punishments WHERE guild_id = $1 AND censorship_type = $2'
         async with self.bot.pgpool.acquire() as conn:
             row = await conn.fetchrow(sql, guild.id, type.name)
-            return getattr(PunishmentType, row['punishment'], None) if row else None
+            return getattr(PunishmentType, row['punishment'],
+                           None) if row else None
 
     async def uncensor(self, guild: discord.Guild, what: CensorType):
         """Uncensors something for a guild."""
@@ -65,18 +77,22 @@ class Censorship(Cog):
             return
         logging.info('Uncensoring %s for %s (%d)', what, guild.name, guild.id)
         async with self.bot.pgpool.acquire() as conn:
-            await conn.execute('UPDATE censorship SET enabled = array_remove(enabled, $1) '
-                               'WHERE guild_id = $2', what.name, guild.id)
+            await conn.execute(
+                'UPDATE censorship SET enabled = array_remove(enabled, $1) '
+                'WHERE guild_id = $2', what.name, guild.id)
 
-    async def carry_out_punishment(self, censor_type: CensorType, msg: discord.Message):
+    async def carry_out_punishment(self, censor_type: CensorType,
+                                   msg: discord.Message):
         """Carries out a punishment."""
         punishment = await self.get_punishment(msg.guild, censor_type)
         if not punishment:
-            logger.debug('Not carrying out punishment for %d, no punishment assigned to censor type %s.', msg.id,
-                         censor_type)
+            logger.debug(
+                'Not carrying out punishment for %d, no punishment assigned to censor type %s.',
+                msg.id, censor_type)
             return
-        logger.debug('Carrying out punishment. mid=%d aid=%d censor_type=%s punishment_type=%s', msg.id, msg.author.id,
-                     censor_type, punishment)
+        logger.debug(
+            'Carrying out punishment. mid=%d aid=%d censor_type=%s punishment_type=%s',
+            msg.id, msg.author.id, censor_type, punishment)
 
         reason = f'(Automated) Censorship violation: {censor_type.name}'
 
@@ -118,15 +134,18 @@ class Censorship(Cog):
         d?roles.
         """
         if not discord.utils.get(ctx.guild.roles, id=role_id):
-            return await ctx.send('I couldn\'t find a role with that ID. To view the list of roles '
-                                  '(and their IDs) in this server, use the `d?roles` command.'
-                                  ' **Note:** This command only takes role IDs, not role names or '
-                                  'mentions.')
+            return await ctx.send(
+                'I couldn\'t find a role with that ID. To view the list of roles '
+                '(and their IDs) in this server, use the `d?roles` command.'
+                ' **Note:** This command only takes role IDs, not role names or '
+                'mentions.')
         if not await self.has_censorship_record(ctx.guild):
-            return await ctx.send('You need to censor something first before you can except.')
+            return await ctx.send(
+                'You need to censor something first before you can except.')
         async with self.bot.pgpool.acquire() as conn:
-            await conn.execute('UPDATE censorship SET exceptions = array_append(exceptions, $1) WHERE '
-                               'guild_id = $2', role_id, ctx.guild.id)
+            await conn.execute(
+                'UPDATE censorship SET exceptions = array_append(exceptions, $1) WHERE '
+                'guild_id = $2', role_id, ctx.guild.id)
         await ctx.ok()
 
     @censorship.command(name='unexcept')
@@ -145,7 +164,8 @@ class Censorship(Cog):
     @censorship.command(name='exceptions', aliases=['excepted'])
     async def _exceptions(self, ctx):
         """Lists the excepted roles, and their IDs."""
-        roles = [(i, discord.utils.get(ctx.guild.roles, id=i)) for i in await self.get_guild_exceptions(ctx.guild)]
+        roles = [(i, discord.utils.get(ctx.guild.roles, id=i))
+                 for i in await self.get_guild_exceptions(ctx.guild)]
 
         if not roles:
             return await ctx.send('There are no roles being excepted.')
@@ -172,7 +192,9 @@ class Censorship(Cog):
         """Lists the censorship types."""
         types = ', '.join(f'`{t.name.lower()}`' for t in CensorType)
         wiki = 'https://github.com/slice/dogbot/wiki/Censorship'
-        await ctx.send(f'Censorship types: {types}\n\nTo see what these do, click here: <{wiki}>')
+        await ctx.send(
+            f'Censorship types: {types}\n\nTo see what these do, click here: <{wiki}>'
+        )
 
     @censorship.command(name='censoring')
     async def _censoring(self, ctx, censor_type: CensorType = None):
@@ -185,8 +207,12 @@ class Censorship(Cog):
 
         if not censor_type:
             censor_types = [t.name for t in CensorType]
-            censoring_dict = {name.lower(): await self.is_censoring(ctx.guild, getattr(CensorType, name))
-                              for name in censor_types}
+            censoring_dict = {
+                name.lower(): await self.is_censoring(ctx.guild,
+                                                      getattr(
+                                                          CensorType, name))
+                for name in censor_types
+            }
             await ctx.send(utils.format_dict(censoring_dict))
             return
 
@@ -225,15 +251,18 @@ class Censorship(Cog):
             )
 
     @censor_punish.command(name='add')
-    async def censor_punish_add(self, ctx, censor_type: CensorType, punishment: PunishmentType):
+    async def censor_punish_add(self, ctx, censor_type: CensorType,
+                                punishment: PunishmentType):
         """Adds a punishment."""
         if not await self.is_censoring(ctx.guild, censor_type):
-            return await ctx.send(f'You aren\'t censoring `{censor_type.name.lower()}`, you should censor it first '
-                                  f'with `d?cs censor {censor_type.name.lower()}`.')
+            return await ctx.send(
+                f'You aren\'t censoring `{censor_type.name.lower()}`, you should censor it first '
+                f'with `d?cs censor {censor_type.name.lower()}`.')
         try:
             await self.add_punishment(ctx.guild, censor_type, punishment)
         except asyncpg.IntegrityConstraintViolationError:
-            return await ctx.send('That censorship type already has a punishment!')
+            return await ctx.send(
+                'That censorship type already has a punishment!')
         await ctx.ok()
 
     @censor_punish.command(name='delete', aliases=['del', 'rm', 'remove'])
@@ -251,13 +280,20 @@ class Censorship(Cog):
         the censorship filter's name, and its punishment.
         """
         async with ctx.acquire() as conn:
-            punishments = await conn.fetch('SELECT * FROM censorship_punishments WHERE guild_id = $1', ctx.guild.id)
-            status = {r['censorship_type'].lower(): r['punishment'].lower() for r in punishments}
+            punishments = await conn.fetch(
+                'SELECT * FROM censorship_punishments WHERE guild_id = $1',
+                ctx.guild.id)
+            status = {
+                r['censorship_type'].lower(): r['punishment'].lower()
+                for r in punishments
+            }
             await ctx.send(utils.format_dict(status))
 
-    async def should_censor(self, msg: discord.Message, filter: CensorshipFilter) -> bool:
+    async def should_censor(self, msg: discord.Message,
+                            filter: CensorshipFilter) -> bool:
         """Returns whether a message should be censored based on a censorship filter and censor type."""
-        return await self.is_censoring(msg.guild, filter.censor_type) and await filter().does_violate(msg)
+        return await self.is_censoring(msg.guild, filter.censor_type
+                                       ) and await filter().does_violate(msg)
 
     async def censor_message(self, msg: discord.Message, filter):
         """Censors a message, and posts to the modlog."""
@@ -276,7 +312,8 @@ class Censorship(Cog):
             return record['exceptions'] if record else []
 
     async def on_message(self, msg: discord.Message):
-        if not isinstance(msg.channel, discord.abc.GuildChannel) or isinstance(msg.author, discord.User):
+        if not isinstance(msg.channel, discord.abc.GuildChannel) or isinstance(
+                msg.author, discord.User):
             # no dms
             return
 
@@ -284,12 +321,16 @@ class Censorship(Cog):
             # no censorship record yet!
             return
 
-        censors = (InviteCensorshipFilter, VideositeCensorshipFilter, ZalgoCensorshipFilter,
-                   MediaLinksCensorshipFilter, ExecutableLinksCensorshipFilter, CapsCensorshipFilter,
+        censors = (InviteCensorshipFilter, VideositeCensorshipFilter,
+                   ZalgoCensorshipFilter, MediaLinksCensorshipFilter,
+                   ExecutableLinksCensorshipFilter, CapsCensorshipFilter,
                    CrashTextCensorshipFilter)
 
         # if the message author has a role that has been excepted, don't even check the message
-        if any([role.id in await self.get_guild_exceptions(msg.guild) for role in msg.author.roles]):
+        if any([
+                role.id in await self.get_guild_exceptions(msg.guild)
+                for role in msg.author.roles
+        ]):
             return
 
         # don't censor myself or other bots
@@ -302,9 +343,12 @@ class Censorship(Cog):
 
                 # punish the user
                 try:
-                    await self.carry_out_punishment(censorship_filter.censor_type, msg)
+                    await self.carry_out_punishment(
+                        censorship_filter.censor_type, msg)
                 except discord.Forbidden:
-                    logger.warning('Unable to carry out punishment, forbidden! gid=%d', msg.guild.id)
+                    logger.warning(
+                        'Unable to carry out punishment, forbidden! gid=%d',
+                        msg.guild.id)
                     pass
                 break
 

@@ -8,8 +8,13 @@ def setup_logging():
     root_logger.setLevel(logging.INFO)
 
     # formatters
-    console_fmt = logging.Formatter('[{asctime}] [{levelname: <7}] {name}: {message}', '%I:%M:%S %p', style='{')
-    nice_fmt = logging.Formatter('%(asctime)s [%(name)s %(levelname)s] %(message)s', '%m/%d/%Y %I:%M:%S %p')
+    console_fmt = logging.Formatter(
+        '[{asctime}] [{levelname: <7}] {name}: {message}',
+        '%I:%M:%S %p',
+        style='{')
+    nice_fmt = logging.Formatter(
+        '%(asctime)s [%(name)s %(levelname)s] %(message)s',
+        '%m/%d/%Y %I:%M:%S %p')
 
     # enable debug logging for us, but not for discord
     logging.getLogger('discord').setLevel(logging.INFO)

@@ -1,5 +1,11 @@
 # http://jesselegg.com/archives/2009/09/5/simple-word-wrap-algorithm-pythons-pil/
-def draw_word_wrap(draw, font, text, xpos=0, ypos=0, max_width=130, fill=(0, 0, 0)):
+def draw_word_wrap(draw,
+                   font,
+                   text,
+                   xpos=0,
+                   ypos=0,
+                   max_width=130,
+                   fill=(0, 0, 0)):
     """
     Draws text that automatically word wraps.
 

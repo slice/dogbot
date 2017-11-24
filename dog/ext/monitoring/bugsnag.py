@@ -15,16 +15,21 @@ class BugsnagReporting(Cog):
 
     def setup_reporting(self):
         if 'docker' not in self.bot.cfg:
-            logger.warning('Not running in Docker mode, Bugsnag project root will be inaccurate.')
+            logger.warning(
+                'Not running in Docker mode, Bugsnag project root will be inaccurate.'
+            )
 
         bs_cfg = self.bot.cfg['monitoring']['bugsnag']
 
-        bugsnag.configure(api_key=bs_cfg['key'], project_root='/opt/dogbot',
-                          release_stage=bs_cfg.get('stage', 'production'),
-                          notify_release_stages=['production'])
+        bugsnag.configure(
+            api_key=bs_cfg['key'],
+            project_root='/opt/dogbot',
+            release_stage=bs_cfg.get('stage', 'production'),
+            notify_release_stages=['production'])
 
         if bs_cfg.get('log_errors', False):
-            logging.getLogger('dog').addHandler(bugsnag.handlers.BugsnagHandler())
+            logging.getLogger('dog').addHandler(
+                bugsnag.handlers.BugsnagHandler())
 
     async def capture(self, ctx, ex):
         if ctx:
