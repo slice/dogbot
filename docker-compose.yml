@@ -4,17 +4,6 @@ services:
     build: ./docker/postgres
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
-  datadog:
-    build: ./docker/datadog
-    environment:
-      - 'API_KEY=${DATADOG_API_KEY}'
-    links:
-     - redis
-     - postgres
-    volumes:
-     - /var/run/docker.sock:/var/run/docker.sock
-     - /proc:/host/proc:ro
-     - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
   redis:
     image: redis:latest
     command: redis-server

@@ -36,10 +36,6 @@ db:
     host: '<postgres host>'
 monitoring:
   health_webhook: '<webhook url with token>' # optional
-  datadog: # optional
-    statsd_host: '<statsd host>'
-    api_key: '<http api key>'
-    app_key: '<http app key>'
   monitor_channels: # optional
     # guild joins/leaves will be logged here
     - <monitor channel id>
