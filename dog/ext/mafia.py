@@ -300,7 +300,8 @@ class MafiaGame:
                 await self.mafia_chat.send(
                     f"{alive_mafia}: It's time to kill! \N{HOCHO} Discuss someone to kill, then type "
                     "`!kill <username>` in chat when you have decided on someone to stab. You have 30 seconds! "
-                    "Alternatively, you can do nothing to stay low. Once you choose someone, you can't go back!\n\n" +
+                    "Alternatively, you can do nothing to stay low. "
+                    "Once you choose someone to kill, you can't go back to killing nobody!\n\n" +
                     '\n'.join(f'- {player.name}' for player in self.players if player not in self.mafia)
                 )
                 task = self.bot.loop.create_task(self.pick_victim())
