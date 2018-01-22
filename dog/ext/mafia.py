@@ -68,6 +68,9 @@ class MafiaGame:
                 )
 
             if len(self.players) == self.REQUIRED_PLAYERS or (reaction.emoji == '\N{OK HAND SIGN}' and user == self.master):
+                if len(self.players) < 3:
+                    await self.channel.send("Override failed. At least 3 players are required for a game.")
+                    continue
                 await m.edit(content='Game started!')
                 try:
                     await m.clear_reactions()
