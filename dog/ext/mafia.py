@@ -122,7 +122,7 @@ class MafiaGame:
             )
             if message.content.startswith('!kill '):
                 target_name = message.content[len('!kill '):]
-                target = discord.utils.find(lambda player: player.name == target_name, self.players)
+                target = discord.utils.find(lambda player: player.name.lower() == target_name.lower() or player.mention == target_name, self.players)
                 if not target or target in self.mafia:
                     await self.mafia_chat.send(f'{message.author.mention}: Invalid choice.')
                     continue
@@ -159,7 +159,7 @@ class MafiaGame:
 
             try:
                 target_name = message.content[len('!vote '):]
-                target = discord.utils.find(lambda player: player.name == target_name, self.players)
+                target = discord.utils.find(lambda player: player.name.lower() == target_name.lower() or player.mention == target_name, self.players)
                 if not target:
                     await self.game_channel.send(f'{message.author.mention}: Invalid choice.')
                     continue
