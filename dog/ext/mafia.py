@@ -5,7 +5,7 @@ from typing import Optional
 from collections import defaultdict
 
 import enum
-from random import shuffle, randint, choice
+from random import randint, choice
 
 import discord
 from discord.ext.commands import guild_only
@@ -20,22 +20,39 @@ class MafiaGameState(enum.Enum):
 class MafiaGame:
     def __init__(self, bot, *, master: discord.Member, channel: discord.TextChannel):
         self.bot = bot
+        # the person who started the game
         self.master = master
+        # the channel the lobby started in
         self.channel = channel
+        # the main game channel where both mafia and town can talk
         self.game_channel: Optional[discord.TextChannel] = None
+        # guild where the game started
         self.guild: discord.Guild = channel.guild
+        # set of alive players
         self.players = {master}
+        # set of all players who joined at the beginning
         self.participants = set()
+        # set of alive mafia
         self.mafia = set()
-        self.mafia_chat = None
+        # mafia text channel
+        self.mafia_chat: Optional[discord.TextChannel] = None
+        # current game state (unused)
         self.state = MafiaGameState.WAITING
+        # day counter
         self.day = 1
+        # currently in daytime?
         self.daytime = True
+        # dict of hanging votes during the daytime:
+        # key: user id of person to hang - value: list of user ids who voted to hang that person
+        # 1: [2, 3] - users 2 and 3 are voting for 1 to be hanged
         self.hanging_votes = defaultdict(list)
+        # victim that will be killed tonight, decided by mafia. can be none if they decide to spare.
         self.victim_tonight: Optional[discord.Member] = None
         self.log = logging.getLogger(__name__)
 
+    # number of players required before game autostarts
     REQUIRED_PLAYERS = 6
+    # debug mode: arbitrarily shorten some wait times
     DEBUG = False
 
     async def gather_players(self):
@@ -79,6 +96,8 @@ class MafiaGame:
                 await self.channel.send('Okay, game starting!')
                 break
 
+        # players set will be modified as the game goes on, so let's keep a set of participants
+        # when we alltalk later
         self.participants = self.players.copy()
         overwrites = {
             self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
@@ -135,11 +154,13 @@ class MafiaGame:
                 )
 
     async def alltalk(self):
+        # let all people who joined speak again at the end because we're nice <3
         for participant in self.participants:
             self.log.info('Alltalk: Allowing %s to speak in #%s.', participant, self.game_channel.name)
             await self.game_channel.set_permissions(participant, read_messages=True, send_messages=True)
 
     async def gather_hanging_votes(self):
+        # TODO: these are bad
         def has_voted(voter):
             for target_id, voter_ids in self.hanging_votes.items():
                 if voter.id in voter_ids:
