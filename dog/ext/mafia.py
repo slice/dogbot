@@ -217,6 +217,18 @@ class MafiaGame:
     async def unlock(self):
         await self.game_channel.set_permissions(self.guild.default_role, send_messages=None)
 
+    async def game_over(self, *, mafia_won: bool):
+        if mafia_won:
+            mafia_alive = ', '.join(mafia.mention for mafia in self.mafia)
+            await self.game_channel.send(f'**Currently Alive Mafia:** {mafia_alive}')
+        else:
+            townies_alive = ', '.join(player.mention for player in self.players if player not in self.mafia)
+            await self.game_channel.send(f'**Currently Alive Town:** {townies_alive}')
+
+        await asyncio.sleep(2.0)
+        await self.alltalk()
+        await asyncio.sleep(8.0)
+
     async def game_loop(self):
         mentions = ', '.join(player.mention for player in self.players)
         await self.game_channel.send(f'{mentions}: The main game will be conducted here! Make sure to have fun!')
@@ -256,9 +268,7 @@ class MafiaGame:
 
                     if all(player in self.mafia for player in self.players):
                         await self.game_channel.send('\U0001f52a **Mafia win!** \U0001f52a')
-                        await asyncio.sleep(2.0)
-                        await self.alltalk()
-                        await asyncio.sleep(8.0)
+                        await self.game_over(mafia_won=True)
                         break
 
                 votes_required = round(len(self.players) / 3)
@@ -332,15 +342,11 @@ class MafiaGame:
 
             if len(self.mafia) == 0:
                 await self.game_channel.send('\U0001f64f **Innocents win!** \U0001f64f')
-                await asyncio.sleep(2.0)
-                await self.alltalk()
-                await asyncio.sleep(8.0)
+                await self.game_over(mafia_won=False)
                 break
             elif all(player in self.mafia for player in self.players):
                 await self.game_channel.send('\U0001f52a **Mafia win!** \U0001f52a')
-                await asyncio.sleep(2.0)
-                await self.alltalk()
-                await asyncio.sleep(8.0)
+                await self.game_over(mafia_won=True)
                 break
 
             if not self.daytime:
