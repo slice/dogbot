@@ -67,7 +67,7 @@ class MafiaGame:
                     content='Join by clicking \N{RAISED HAND}! Current players: ' + players_formatted
                 )
 
-            if len(self.players) == self.REQUIRED_PLAYERS or reaction.emoji == '\N{OK HAND SIGN}':
+            if len(self.players) == self.REQUIRED_PLAYERS or (reaction.emoji == '\N{OK HAND SIGN}' and user == self.master):
                 await m.edit(content='Game started!')
                 try:
                     await m.clear_reactions()
