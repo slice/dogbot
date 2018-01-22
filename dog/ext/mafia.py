@@ -344,12 +344,20 @@ class MafiaGame:
 
 
 class Mafia(Cog):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.sessions = set()
 
     @command()
     @guild_only()
     async def mafia(self, ctx: Context):
+        if ctx.channel.id in self.sessions:
+            await ctx.send('Game already started here.')
+            return
+        self.sessions.add(ctx.channel.id)
         game = MafiaGame(ctx.bot, master=ctx.author, channel=ctx.channel)
         await game.start()
+        self.sessions.remove(ctx.channel.id)
 
 
 def setup(bot):
