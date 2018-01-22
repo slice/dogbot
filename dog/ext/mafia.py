@@ -274,9 +274,9 @@ class MafiaGame:
                     await self.game_channel.set_permissions(hanged, read_messages=True, send_messages=True)
                     await self.game_channel.send(
                         f'\N{SKULL} {hanged.mention}, you have been voted to be hanged. Do you have any last words '
-                        'before your death? You have 10 seconds.'
+                        'before your death? You have 15 seconds.'
                     )
-                    await asyncio.sleep(3.0 if self.DEBUG else 10.0)
+                    await asyncio.sleep(3.0 if self.DEBUG else 15.0)
                     await self.game_channel.set_permissions(hanged, read_messages=True, send_messages=False)
                     await self.unlock()
                     await self.game_channel.send(f'\N{SKULL} **Rest in peace, {hanged}. You will be missed.** \N{SKULL}')
