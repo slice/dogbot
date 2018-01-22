@@ -78,7 +78,8 @@ class MafiaGame:
 
         self.participants = self.players.copy()
         overwrites = {
-            self.guild.default_role: discord.PermissionOverwrite(read_messages=False)
+            self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            self.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True),
         }
         for player in self.players:
             overwrites[player] = discord.PermissionOverwrite(read_messages=True)
@@ -97,6 +98,7 @@ class MafiaGame:
             self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
             first_mafia: discord.PermissionOverwrite(read_messages=True),
             second_mafia: discord.PermissionOverwrite(read_messages=True),
+            self.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True),
         })
         await self.mafia_chat.send(
             f'{first_mafia.mention}, {second_mafia.mention}: Greet each other, mafia! Here you may coordinate with '
