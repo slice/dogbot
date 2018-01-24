@@ -70,7 +70,7 @@ class Code(Converter):
 
             # remove inline code ticks
             result = result.strip('` \n')
-
+        
         if self.wrap_code:
             # wrap in a coroutine and indent
             result = 'async def _func():\n' + textwrap.indent(
@@ -78,16 +78,11 @@ class Code(Converter):
 
         if self.wrap_code and self.implicit_return:
             last_line = result.splitlines()[-1]
-
-            # if the last line isn't indented and not returning, add it
-            first_word = last_line.strip().split(' ')[0]
-            no_stop = all(
-                first_word != word for word in IMPLICIT_RETURN_STOP_WORDS)
-            if not last_line[4:].startswith(' ') and no_stop:
-                last_line = (
-                    ' ' * self.indent_width) + 'return ' + last_line[4:]
-
-            result = '\n'.join(result.splitlines()[:-1] + [last_line])
+                if not last_line.startswith(' '):
+                    first_word = last_line.split(' ')[0]
+                    if first_word not in IMPLICIT_RETURN_STOP_WORDS:
+                        last_line = 'return ' + last_line
+                        result = '\n'.join(result.splitlines()[:-1] + [last_line])
 
         return result
 
