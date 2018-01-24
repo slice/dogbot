@@ -64,9 +64,10 @@ class Code(Converter):
         result = arg
 
         if self.strip_ticks:
+            # Unneeded. This is already covered by the strip after it.
             # remove codeblock ticks
-            if result.startswith('```') and result.endswith('```'):
-                result = '\n'.join(result.split('\n')[1:-1])
+            #if result.startswith('```') and result.endswith('```'):
+            #    result = '\n'.join(result.split('\n')[1:-1])
 
             # remove inline code ticks
             result = result.strip('` \n')
