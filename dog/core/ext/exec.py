@@ -64,30 +64,30 @@ class Code(Converter):
         result = arg
 
         if self.strip_ticks:
+            # Unneeded. This is already covered by the strip after it.
             # remove codeblock ticks
-            if result.startswith('```') and result.endswith('```'):
-                result = '\n'.join(result.split('\n')[1:-1])
+            #if result.startswith('```') and result.endswith('```'):
+            #    result = '\n'.join(result.split('\n')[1:-1])
 
             # remove inline code ticks
             result = result.strip('` \n')
+        
+        if wrap_code:
+            result = result.splitlines()
 
-        if self.wrap_code:
-            # wrap in a coroutine and indent
-            result = 'async def _func():\n' + textwrap.indent(
-                result, ' ' * self.indent_width)
+            if implicit_return:
+                # Add "return" if there is not one already and not inside a function.
+                last_line = result[-1]
+                if not last_line.startswith(' '):
+                    first_word = last_line.split(' ')[0]
+                    if first_word not in IMPLICIT_RETURN_STOP_WORDS:
+                        result[-1] = 'return ' + last_line
 
-        if self.wrap_code and self.implicit_return:
-            last_line = result.splitlines()[-1]
-
-            # if the last line isn't indented and not returning, add it
-            first_word = last_line.strip().split(' ')[0]
-            no_stop = all(
-                first_word != word for word in IMPLICIT_RETURN_STOP_WORDS)
-            if not last_line[4:].startswith(' ') and no_stop:
-                last_line = (
-                    ' ' * self.indent_width) + 'return ' + last_line[4:]
-
-            result = '\n'.join(result.splitlines()[:-1] + [last_line])
+            # Wrap in a coroutine and indent.
+            # Indentation level for wrapping does not matter and could be 1 for more efficiency.
+            indentStr = ' ' * indent_width
+            result = ('\n' + indentStr).join(result)
+            result = 'async def func():\n' + indentStr + result
 
         return result
 
