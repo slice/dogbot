@@ -1,5 +1,6 @@
 import aiohttp
 import discord
+from discord.ext import commands
 from discord.ext.commands import bot_has_permissions, has_permissions, guild_only
 from lifesaver.bot import Cog, command, Context
 from lifesaver.bot.storage import AsyncJSONStorage
@@ -38,7 +39,7 @@ class Utility(Cog):
                 pass
 
     @command()
-    async def afk(self, ctx: Context, *, reason=None):
+    async def afk(self, ctx: Context, *, reason: commands.clean_content = None):
         """Marks yourself as AFK."""
         await self.afk_persistent.put(ctx.author.id, reason)
         await ctx.ok()
