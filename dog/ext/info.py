@@ -2,7 +2,7 @@ from textwrap import dedent
 
 import discord
 from discord.ext.commands import guild_only
-from lifesaver.bot import Cog, group, Context
+from lifesaver.bot import Cog, command, group, Context
 from lifesaver.utils import human_delta
 
 from dog.converters import HardMember
@@ -30,6 +30,16 @@ class Info(Cog):
             embed.title = '<:bot:349717107124207617> ' + embed.title
 
         await ctx.send(embed=embed)
+
+    @profile.command(name='avatar')
+    async def profile_avatar(self, ctx: Context, user: HardMember):
+        """Views the avatar of a user."""
+        await ctx.send(user.avatar_url_as(format='png'))
+
+    @command(aliases=['avatar_url'])
+    async def avatar(self, ctx: Context, user: HardMember):
+        """Views the avatar of a user."""
+        await ctx.invoke(self.profile_avatar, user)
 
     @group(aliases=['guild', 'guild_info', 'server_info'], invoke_without_command=True)
     @guild_only()
