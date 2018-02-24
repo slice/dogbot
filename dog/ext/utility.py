@@ -6,7 +6,7 @@ from discord.ext.commands import bot_has_permissions, has_permissions, guild_onl
 from lifesaver.bot import Cog, group, command, Context
 from lifesaver.bot.storage import AsyncJSONStorage
 
-from dog.converters import EmojiStealer
+from dog.converters import EmojiStealer, UserIDs
 
 
 class Utility(Cog):
@@ -50,6 +50,12 @@ class Utility(Cog):
                 await message.author.send(notice)
             except discord.Forbidden:
                 pass
+
+    @command(aliases=['ginv'])
+    async def inv(self, ctx: Context, *ids: UserIDs):
+        """Generates bot invites."""
+        urls = '\n'.join('<' + discord.utils.oauth_url(bot_id) + '>' for bot_id in ids)
+        await ctx.send(urls)
 
     @group(aliases=['afk'], invoke_without_command=True)
     async def away(self, ctx: Context, *, reason: commands.clean_content = None):

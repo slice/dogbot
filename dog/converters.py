@@ -80,6 +80,22 @@ class EmojiStealer(Converter):
         )
 
 
+class UserIDs(Converter):
+    """Converts user mentions or IDs to ID objects."""
+
+    async def convert(self, ctx: Context, argument: str):
+        try:
+            member = await MemberConverter().convert(ctx, argument)
+            return member.id
+        except commands.BadArgument:
+            pass
+
+        if not argument.isdigit():
+            raise commands.BadArgument('Invalid ID.')
+
+        return int(argument)
+
+
 class HardMember(Converter):
     """A MemberConverter that falls back to a ``get_user_info`` call."""
 
