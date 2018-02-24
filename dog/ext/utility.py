@@ -1,3 +1,5 @@
+import random
+
 import aiohttp
 import discord
 import time
@@ -56,6 +58,20 @@ class Utility(Cog):
         """Generates bot invites."""
         urls = '\n'.join('<' + discord.utils.oauth_url(bot_id) + '>' for bot_id in ids)
         await ctx.send(urls)
+
+    @command(aliases=['choose'])
+    async def pick(self, ctx: Context, *choices: commands.clean_content):
+        """Pick from a list of choices."""
+        if not choices:
+            await ctx.send('Send some choices.')
+            return
+
+        if len(set(choices)) == 1:
+            await ctx.send('Invalid choices.')
+            return
+
+        result = random.choice(choices)
+        await ctx.send(result)
 
     @group(aliases=['afk'], invoke_without_command=True)
     async def away(self, ctx: Context, *, reason: commands.clean_content = None):
