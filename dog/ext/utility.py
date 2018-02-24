@@ -1,8 +1,9 @@
 import aiohttp
 import discord
+import time
 from discord.ext import commands
-from discord.ext.commands import bot_has_permissions, has_permissions, guild_only
-from lifesaver.bot import Cog, command, Context
+from discord.ext.commands import bot_has_permissions, has_permissions, guild_only, is_owner
+from lifesaver.bot import Cog, group, command, Context
 from lifesaver.bot.storage import AsyncJSONStorage
 
 from dog.converters import EmojiStealer
@@ -17,6 +18,18 @@ class Utility(Cog):
         if message.author.bot:
             return
 
+        if message.author.id in self.afk_persistent:
+            time_difference = time.time() - self.afk_persistent[message.author.id]['time']
+            if time_difference < 5.0:
+                # ignore any messages sent within 5s of going away
+                return
+
+            await self.afk_persistent.delete(message.author.id)
+            try:
+                await message.add_reaction('\N{WAVING HAND SIGN}')
+            except discord.Forbidden:
+                pass
+
         mentioned_afk = [user for user in message.mentions if user.id in self.afk_persistent]
         mentioned_self = any(user == message.author for user in message.mentions)
 
@@ -24,11 +37,11 @@ class Utility(Cog):
             return
 
         if len(mentioned_afk) == 1:
-            reason = self.afk_persistent[mentioned_afk[0].id] or 'No reason provided.'
-            notice = f'{message.author.mention}: {mentioned_afk[0]} is AFK and cannot respond at this time. ({reason})'
+            reason = self.afk_persistent[mentioned_afk[0].id]['reason'] or 'No reason provided.'
+            notice = f'{message.author.mention}: {mentioned_afk[0]} is away. ({reason})'
         else:
             users = ', '.join(str(user) for user in mentioned_afk)
-            notice = f'{message.author.mention}: {users} have marked themselves as AFK and cannot respond at this time.'
+            notice = f'{message.author.mention}: {users} are away.'
 
         try:
             await message.channel.send(notice)
@@ -38,17 +51,32 @@ class Utility(Cog):
             except discord.Forbidden:
                 pass
 
-    @command()
-    async def afk(self, ctx: Context, *, reason: commands.clean_content = None):
-        """Marks yourself as AFK."""
-        await self.afk_persistent.put(ctx.author.id, reason)
+    @group(aliases=['afk'], invoke_without_command=True)
+    async def away(self, ctx: Context, *, reason: commands.clean_content = None):
+        """
+        Marks yourself as away with a message.
+
+        Anybody who mentions you will be shown the message you provided. Do not abuse this.
+        To reset your away status, send any message or send d?back.
+        """
+        await self.afk_persistent.put(ctx.author.id, {'reason': reason, 'time': time.time()})
+        await ctx.ok()
+
+    @away.command(hidden=True)
+    @is_owner()
+    async def reset(self, ctx: Context, *, target: discord.User):
+        """Forcibly removes someone's away status."""
+        try:
+            await self.afk_persistent.delete(target.id)
+        except KeyError:
+            pass
         await ctx.ok()
 
     @command()
     async def back(self, ctx: Context):
-        """Returns from AFK status."""
+        """Returns from away status."""
         if ctx.author.id not in self.afk_persistent:
-            await ctx.send("You aren't AFK!")
+            await ctx.send("You aren't away.")
         else:
             await self.afk_persistent.delete(ctx.author.id)
             await ctx.ok()
