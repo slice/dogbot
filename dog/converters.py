@@ -80,6 +80,30 @@ class EmojiStealer(Converter):
         )
 
 
+class HardMember(Converter):
+    """A MemberConverter that falls back to a ``get_user_info`` call."""
+
+    async def convert(self, ctx: Context, argument: str):
+        try:
+            member = await MemberConverter().convert(ctx, argument)
+            return member
+        except commands.BadArgument:
+            pass
+
+        if not argument.isdigit():
+            raise commands.BadArgument('Member not found. Try specifying an ID.')
+
+        argument_as_id = int(argument)
+
+        try:
+            user = await ctx.bot.get_user_info(argument_as_id)
+            return user
+        except discord.NotFound:
+            raise commands.BadArgument('User not found.')
+        except discord.HTTPException as exception:
+            raise commands.BadArgument(f'Failed to get user information: `{exception}`')
+
+
 class SoftMember(Converter):
     """A MemberConverter that falls back to a :class:`discord.Object` when an ID is provided and they weren't found."""
 

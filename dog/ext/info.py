@@ -5,9 +5,31 @@ from discord.ext.commands import guild_only
 from lifesaver.bot import Cog, group, Context
 from lifesaver.utils import human_delta
 
+from dog.converters import HardMember
+
+
+def date(date) -> str:
+    return f'{date}\n{human_delta(date)} ago'
+
 
 class Info(Cog):
     """A cog that provides information about various entities like guilds or members."""
+
+    @group(aliases=['user_info', 'user', 'member_info', 'member'], invoke_without_command=True)
+    async def profile(self, ctx: Context, user: HardMember):
+        """Views information about a user."""
+
+        embed = discord.Embed(title=f'{user} ({user.id})')
+        embed.add_field(name='Account Creation', value=date(user.created_at))
+        embed.set_thumbnail(url=user.avatar_url)
+
+        if isinstance(user, discord.Member):
+            embed.add_field(name=f'Joined {ctx.guild.name}', value=date(user.joined_at), inline=False)
+
+        if user.bot:
+            embed.title = '<:bot:349717107124207617> ' + embed.title
+
+        await ctx.send(embed=embed)
 
     @group(aliases=['guild', 'guild_info', 'server_info'], invoke_without_command=True)
     @guild_only()
