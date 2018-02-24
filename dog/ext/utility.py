@@ -15,6 +15,10 @@ class Utility(Cog):
     def __init__(self, bot):
         super().__init__(bot)
         self.afk_persistent = AsyncJSONStorage('afk.json', loop=bot.loop)
+        self.session = aiohttp.ClientSession(loop=bot.loop)
+
+    def __unload(self):
+        self.session.close()
 
     async def on_message(self, message: discord.Message):
         if message.author.bot:
@@ -58,6 +62,16 @@ class Utility(Cog):
         """Generates bot invites."""
         urls = '\n'.join('<' + discord.utils.oauth_url(bot_id) + '>' for bot_id in ids)
         await ctx.send(urls)
+
+    @command(aliases=['shiba', 'dog'], typing=True)
+    async def shibe(self, ctx: Context):
+        """Sends a random shibe picture."""
+        try:
+            async with self.session.get('http://shibe.online/api/shibes?count=1&urls=true') as resp:
+                data = await resp.json()
+                await ctx.send(data[0])
+        except aiohttp.ClientError:
+            await ctx.send('Failed to grab a shibe. \N{DOG FACE}')
 
     @command(aliases=['choose'])
     async def pick(self, ctx: Context, *choices: commands.clean_content):
