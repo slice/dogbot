@@ -1,114 +1,34 @@
+import inspect
 import logging
 import datetime
-import re
 from typing import Optional
 
 import discord
 from discord import Member, Embed
 from discord.ext import commands
-
 from lifesaver.bot import Cog, Context
 from lifesaver.bot.storage import AsyncJSONStorage
 from lifesaver.utils import human_delta
 
+from dog.ext.gatekeeper import checks
+from dog.ext.gatekeeper.core import Block, Report, Check
 from dog.formatting import represent
 
 log = logging.getLogger(__name__)
 
+GATEKEEPER_CHECKS = [
+    getattr(checks, check) for check in dir(checks)
+    if inspect.isclass(getattr(checks, check)) and issubclass(getattr(checks, check), Check) and \
+    getattr(checks, check) is not Check
+]
+log.debug('Checks: %s', GATEKEEPER_CHECKS)
 
-class Block(Exception):
-    """
-    An exception that blocks a user from joining a guild.
-    This should only be thrown inside of a :class:`GatekeeperCheck`.
-    """
-    pass
-
-
-class Report(Exception):
-    """
-    An exception that immediately sends text to the broadcasting channel.
-    This should only be thrown inside of a :class:`GatekeeperCheck`.
-    """
-    pass
-
-
-class GatekeeperCheck:
-    """A Gatekeeper check."""
-    key = None
-
-    async def check(self, config_value, member: Member):
-        raise NotImplementedError
-
-
-class BlockDefaultAvatarCheck(GatekeeperCheck):
-    """A gatekeeper check that bounces users with a default avatar."""
-    key = 'block_default_avatar'
-    description = 'Blocks all users with a default avatar.'
-
-    async def check(self, _, member: Member):
-        if member.default_avatar_url == member.avatar_url:
-            raise Block('Has default avatar')
-
-
-class MinimumCreationTimeCheck(GatekeeperCheck):
-    """A gatekeeper check that checks the minimum creation time of a user."""
-    key = 'minimum_creation_time'
-    description = (
-        "Blocks users that don't meet a \"minimum creation time\" check. Specify the amount of seconds "
-        "that an account has to exist for to be allowed to pass through.")
-
-    async def check(self, time, member: Member):
-        try:
-            minimum_required = int(time)
-            seconds_on_discord = (datetime.datetime.utcnow() - member.created_at).total_seconds()
-
-            if seconds_on_discord < minimum_required:
-                raise Block(
-                    f'Failed minimum creation time check ({seconds_on_discord} < {minimum_required}')
-        except ValueError:
-            raise Report(
-                'Invalid minimum creation time, must be a valid number.')
-
-
-class BlockAllCheck(GatekeeperCheck):
-    """A gatekeeper check that bounces all users that attempt to join."""
-    key = 'block_all'
-    description = 'Blocks all users that try to join.'
-
-    async def check(self, _, member: Member) -> bool:
-        raise Block('Blocking all users')
-
-
-class UsernameRegexCheck(GatekeeperCheck):
-    key = 'username_regex'
-    description = 'Blocks all usernames that match a regex. Specify a regex.'
-
-    async def check(self, regex: str, member: Member):
-        try:
-            regex = re.compile(regex)
-            if regex.search(member.name):
-                raise Block('Matched username regex')
-        except re.error as err:
-            raise Report(
-                f"\N{CROSS MARK} `username_regex` was invalid: `{err}`, ignoring this check."
-            )
-
-
-GATEKEEPER_CHECKS = {
-    BlockDefaultAvatarCheck, MinimumCreationTimeCheck, BlockAllCheck,
-    UsernameRegexCheck
-}
+CUSTOMIZATION_KEYS = set([
+    check.key for check in GATEKEEPER_CHECKS
+])
 
 
 class Gatekeeper(Cog):
-    CUSTOMIZATION_KEYS = (
-        'block_default_avatar',  # blocks users with default avatars
-        'minimum_creation_time',  # minimum discord registration time in seconds
-        'bounce_message',  # message to send to users right before getting bounced
-        'block_all',  # blocks all users
-        'username_regex',  # username regex
-    )
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.storage = AsyncJSONStorage('gatekeeper.json', loop=self.bot.loop)
@@ -135,21 +55,17 @@ class Gatekeeper(Cog):
                 channel_id = state.get('broadcast_channel_id')
                 broadcast_channel = self.bot.get_channel(channel_id)
 
-                # no channel
                 if not broadcast_channel:
                     log.warning("Couldn't find broadcast channel for guild %d.", member.guild.id)
                     return
 
-                # send
                 return await broadcast_channel.send(*args, **kwargs)
             except (TypeError, discord.Forbidden):
-                # couldn't send or parse the broadcast channel id
                 pass
 
         async def block(reason: str):
             """Bounces a user from this guild."""
 
-            # person got bounced, send bounce message
             if 'bounce_message' in settings:
                 try:
                     await member.send(settings['bounce_message'])
@@ -157,7 +73,6 @@ class Gatekeeper(Cog):
                     pass
 
             try:
-                # adios
                 await member.kick(reason=f'Gatekeeper check(s) failed ({reason})')
             except discord.Forbidden:
                 await report(
@@ -177,18 +92,15 @@ class Gatekeeper(Cog):
                 await report(embed=embed)
 
         for check in GATEKEEPER_CHECKS:
-            # if the check's config key hasn't been set, skip it
             if check.key not in settings:
                 continue
 
             try:
-                # run the check
                 await check().check(settings[check.key], member)
             except Block as block_exc:
-                # we have bounced this user, no point in checking anymore
-                return await block(str(block_exc))
+                await block(str(block_exc))
+                return
             except Report as report_exc:
-                # something went wrong...report it
                 await report(str(report_exc))
 
         # this person has passed all checks
@@ -276,8 +188,8 @@ class Gatekeeper(Cog):
         """
 
         # check for valid customization keys
-        if key not in self.CUSTOMIZATION_KEYS:
-            keys = ', '.join(f'`{key}`' for key in self.CUSTOMIZATION_KEYS)
+        if key not in CUSTOMIZATION_KEYS:
+            keys = ', '.join(f'`{key}`' for key in CUSTOMIZATION_KEYS)
             return await ctx.send(f'Invalid key. Valid keys: {keys}')
 
         settings = self.state(ctx.guild).get('settings', {})
@@ -318,7 +230,3 @@ class Gatekeeper(Cog):
             embed.add_field(name='Join broadcast channel', value=channel.mention, inline=False)
 
         await ctx.send(embed=embed)
-
-
-def setup(bot):
-    bot.add_cog(Gatekeeper(bot))
