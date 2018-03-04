@@ -10,6 +10,8 @@ from lifesaver.bot.storage import AsyncJSONStorage
 
 from dog.converters import EmojiStealer, UserIDs
 
+AUTORETURN_AVOIDERS = ["[no-return]", "[noreturn]", "[no-unafk]", "[nounafk]", "[no-back]", "[noback]"]
+
 
 class Utility(Cog):
     def __init__(self, bot):
@@ -28,6 +30,10 @@ class Utility(Cog):
             time_difference = time.time() - self.afk_persistent[message.author.id]['time']
             if time_difference < 5.0:
                 # ignore any messages sent within 5s of going away
+                return
+
+            aborted = any(avoider in message.content.lower() for avoider in AUTORETURN_AVOIDERS)
+            if aborted:
                 return
 
             await self.afk_persistent.delete(message.author.id)
@@ -93,7 +99,8 @@ class Utility(Cog):
         Marks yourself as away with a message.
 
         Anybody who mentions you will be shown the message you provided. Do not abuse this.
-        To reset your away status, send any message or send d?back.
+        To reset your away status, send any message or send d?back. To prevent automatic d?back,
+        include "[noback]" (without quotes) in your message.
         """
         await self.afk_persistent.put(ctx.author.id, {'reason': reason, 'time': time.time()})
         await ctx.ok()
