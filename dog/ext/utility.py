@@ -66,6 +66,9 @@ class Utility(Cog):
     @command(aliases=['ginv'])
     async def inv(self, ctx: Context, *ids: UserIDs):
         """Generates bot invites."""
+        if not ids:
+            await ctx.send('Provide mentions or IDs!')
+            return
         urls = '\n'.join('<' + discord.utils.oauth_url(bot_id) + '>' for bot_id in ids)
         await ctx.send(urls)
 
