@@ -28,6 +28,12 @@ class Time(Cog):
         """Views the time for another user."""
         who = who or ctx.author
         formatted_time = self.get_time_for(who)
+        if not formatted_time:
+            await ctx.send(
+                f'{who.display_name} has not set their time. You can tell them to set their time with '
+                f'`{ctx.prefix}time set`.'
+            )
+            return
         await ctx.send(f'{who.display_name}: {formatted_time}')
 
     @time.command(name='set')
