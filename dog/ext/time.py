@@ -96,8 +96,10 @@ class Time(Cog):
             )
             await target.send(embed=embed)
         except discord.HTTPException:
-            await ctx.send("I can't DM you.")
+            await ctx.send("I can't DM or interact with you.")
             return
+
+        await ctx.send(f'{target.display_name}: Check your DMs.')
 
         log.debug('%d: Timezone wizard started.', target.id)
 
