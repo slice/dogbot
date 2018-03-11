@@ -36,6 +36,18 @@ class Time(Cog):
             return
         await ctx.send(f'{who.display_name}: {formatted_time}')
 
+    @time.command(name='reset')
+    async def time_reset(self, ctx: Context):
+        """Resets your timezone."""
+        if await ctx.confirm(title='Are you sure?', message='Your timezone will be removed.'):
+            try:
+                await self.timezones.delete(ctx.author.id)
+            except KeyError:
+                pass
+            await ctx.send('Done.')
+        else:
+            await ctx.send('Okay, cancelled.')
+
     @time.command(name='set')
     async def time_set(self, ctx: Context):
         """Sets your current timezone interactively."""
