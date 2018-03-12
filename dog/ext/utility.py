@@ -2,66 +2,20 @@ import random
 
 import aiohttp
 import discord
-import time
 from discord.ext import commands
-from discord.ext.commands import bot_has_permissions, has_permissions, guild_only, is_owner
-from lifesaver.bot import Cog, group, command, Context
-from lifesaver.bot.storage import AsyncJSONStorage
+from discord.ext.commands import bot_has_permissions, has_permissions, guild_only
+from lifesaver.bot import Cog, command, Context
 
 from dog.converters import EmojiStealer, UserIDs
-
-AUTORETURN_AVOIDERS = ["[no-return]", "[noreturn]", "[no-unafk]", "[nounafk]", "[no-back]", "[noback]"]
 
 
 class Utility(Cog):
     def __init__(self, bot):
         super().__init__(bot)
-        self.afk_persistent = AsyncJSONStorage('afk.json', loop=bot.loop)
         self.session = aiohttp.ClientSession(loop=bot.loop)
 
     def __unload(self):
         self.session.close()
-
-    async def on_message(self, message: discord.Message):
-        if message.author.bot:
-            return
-
-        if message.author.id in self.afk_persistent:
-            time_difference = time.time() - self.afk_persistent[message.author.id]['time']
-            if time_difference < 5.0:
-                # ignore any messages sent within 5s of going away
-                return
-
-            aborted = any(avoider in message.content.lower() for avoider in AUTORETURN_AVOIDERS)
-            if aborted:
-                return
-
-            await self.afk_persistent.delete(message.author.id)
-            try:
-                await message.add_reaction('\N{WAVING HAND SIGN}')
-            except discord.Forbidden:
-                pass
-
-        mentioned_afk = [user for user in message.mentions if user.id in self.afk_persistent]
-        mentioned_self = any(user == message.author for user in message.mentions)
-
-        if not mentioned_afk or mentioned_self:
-            return
-
-        if len(mentioned_afk) == 1:
-            reason = self.afk_persistent[mentioned_afk[0].id]['reason'] or 'No reason provided.'
-            notice = f'{message.author.mention}: {mentioned_afk[0]} is away. ({reason})'
-        else:
-            users = ', '.join(str(user) for user in mentioned_afk)
-            notice = f'{message.author.mention}: {users} are away.'
-
-        try:
-            await message.channel.send(notice)
-        except discord.Forbidden:
-            try:
-                await message.author.send(notice)
-            except discord.Forbidden:
-                pass
 
     @command(aliases=['ginv'])
     async def inv(self, ctx: Context, *ids: UserIDs):
@@ -95,37 +49,6 @@ class Utility(Cog):
 
         result = random.choice(choices)
         await ctx.send(result)
-
-    @group(aliases=['afk'], invoke_without_command=True)
-    async def away(self, ctx: Context, *, reason: commands.clean_content = None):
-        """
-        Marks yourself as away with a message.
-
-        Anybody who mentions you will be shown the message you provided. Do not abuse this.
-        To reset your away status, send any message or send d?back. To prevent automatic d?back,
-        include "[noback]" (without quotes) in your message.
-        """
-        await self.afk_persistent.put(ctx.author.id, {'reason': reason, 'time': time.time()})
-        await ctx.ok()
-
-    @away.command(hidden=True)
-    @is_owner()
-    async def reset(self, ctx: Context, *, target: discord.User):
-        """Forcibly removes someone's away status."""
-        try:
-            await self.afk_persistent.delete(target.id)
-        except KeyError:
-            pass
-        await ctx.ok()
-
-    @command()
-    async def back(self, ctx: Context):
-        """Returns from away status."""
-        if ctx.author.id not in self.afk_persistent:
-            await ctx.send("You aren't away.")
-        else:
-            await self.afk_persistent.delete(ctx.author.id)
-            await ctx.ok()
 
     @command()
     @guild_only()
