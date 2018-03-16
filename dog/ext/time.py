@@ -4,6 +4,7 @@ import datetime
 import discord
 import pycountry
 import pytz
+from discord.ext import commands
 from discord.ext.commands import group
 from lifesaver.bot import Cog, Context
 from lifesaver.bot.storage import AsyncJSONStorage
@@ -49,9 +50,26 @@ class Time(Cog):
             await ctx.send('Okay, cancelled.')
 
     @time.command(name='set')
-    async def time_set(self, ctx: Context):
-        """Sets your current timezone interactively."""
+    async def time_set(self, ctx: Context, *, timezone: commands.clean_content = None):
+        """Sets your current timezone."""
         target = ctx.author
+
+        if timezone is not None:
+            if any(c in timezone for c in ['`', ' ']) or len(timezone) > 80:
+                await ctx.send("That's not a timezone.")
+                return
+            try:
+                pytz.timezone(timezone)
+            except pytz.exceptions.UnknownTimeZoneError:
+                await ctx.send(
+                    f'Unknown timezone. Not sure what the timezone codes are? Use `{ctx.prefix}t set` to set your '
+                    'timezone interactively through a direct message, or look here: '
+                    '<https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>'
+                )
+                return
+            await self.timezones.put(target.id, timezone)
+            await ctx.ok()
+            return
 
         # TODO: refactor, improve, and build upon ask and prompt into a generic interface. should be usable by others.
         #       it's currently too trashy and narrow the way it stands.
