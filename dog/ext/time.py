@@ -24,7 +24,7 @@ class Time(Cog):
         return their_time.strftime('%B %d, %Y  %H:%M:%S (%I:%M:%S %p)')
 
     @group(invoke_without_command=True, aliases=['t'])
-    async def time(self, ctx: Context, *, who: discord.User = None):
+    async def time(self, ctx: Context, *, who: discord.Member = None):
         """Views the time for another user."""
         who = who or ctx.author
         formatted_time = self.get_time_for(who)
