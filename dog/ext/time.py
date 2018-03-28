@@ -28,6 +28,11 @@ class Time(Cog):
     async def time(self, ctx: Context, *, who: discord.Member = None):
         """Views the time for another user."""
         who = who or ctx.author
+
+        if self.bot.is_blacklisted(who):
+            await ctx.send(f"{who} can't use this bot.")
+            return
+
         formatted_time = self.get_time_for(who)
         if not formatted_time:
             await ctx.send(
