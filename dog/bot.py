@@ -11,7 +11,10 @@ class Dogbot(Bot):
         self.load_all()
         self.blacklisted_storage = AsyncJSONStorage('blacklisted_users.json', loop=self.loop)
 
+    def is_blacklisted(self, user: discord.User) -> bool:
+        return user.id in self.blacklisted_storage
+
     async def on_message(self, message: discord.Message):
-        if message.author.id in self.blacklisted_storage:
+        if self.is_blacklisted(message.author):
             return
         await super().on_message(message)
