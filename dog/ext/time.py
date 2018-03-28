@@ -36,8 +36,10 @@ class Time(Cog):
         formatted_time = self.get_time_for(who)
         if not formatted_time:
             await ctx.send(
-                f'{who.display_name} has not set their time. You can tell them to set their time with '
-                f'`{ctx.prefix}time set`.'
+                f"You haven't set your timezone yet. Send `{ctx.prefix}time set` to do so in a DM."
+                if who == ctx.author else
+                (f'{who.display_name} has not set their timezone. They can set their timezone with '
+                 f'`{ctx.prefix}time set`.')
             )
             return
         await ctx.send(f'{who.display_name}: {formatted_time}')
