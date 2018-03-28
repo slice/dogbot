@@ -102,6 +102,30 @@ class Currency(Cog):
         await ctx.ok()
 
     @command()
+    async def send(self, ctx: Context, target: discord.Member, amount: float):
+        """Sends currency to someone else."""
+        if target == ctx.author:
+            await ctx.send("You cannot send money to yourself.")
+            return
+
+        if amount <= 0:
+            await ctx.send("Invalid amount.")
+            return
+
+        if not self.manager.has_wallet(ctx.author) or not self.manager.has_wallet(target):
+            await ctx.send("One of you don't have a wallet!")
+            return
+
+        if amount > self.manager.bal(ctx.author):
+            await ctx.send(f"You don't have that much money, {ctx.author.mention}.")
+            return
+
+        await self.manager.sub(ctx.author, amount)
+        await self.manager.add(target, amount)
+
+        await ctx.send("Transaction completed.")
+
+    @command()
     async def register(self, ctx: Context):
         """Creates a wallet."""
         if self.manager.has_wallet(ctx.author):
