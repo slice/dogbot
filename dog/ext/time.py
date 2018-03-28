@@ -109,6 +109,7 @@ class Time(Cog):
             while True:
                 def _check(_r, u):
                     return u == target
+
                 reaction, user = await self.bot.wait_for('reaction_add', check=_check)
                 if reaction.emoji in emoji:
                     return reaction.emoji == emoji[0]
