@@ -314,7 +314,7 @@ class Currency(Cog):
         is_triple = results.count(results[0]) == 3
         is_two_in_a_row = results[0] == results[1] or results[1] == results[2]  # [X X o] or [o X X]
 
-        if is_triple and redsults[1] == CURRENCY_SYMBOL:
+        if is_triple and results[1] == CURRENCY_SYMBOL:
             net = 3
             message = f'\U0001f631 **TRIPLE {CURRENCY_SYMBOL}!**'
         elif is_triple:
