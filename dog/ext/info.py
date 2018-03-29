@@ -2,7 +2,7 @@ from textwrap import dedent
 
 import discord
 from discord.ext.commands import guild_only
-from lifesaver.bot import Cog, command, group, Context
+from lifesaver.bot import Cog, Context, command, group
 from lifesaver.utils import human_delta
 
 from dog.converters import HardMember
@@ -13,7 +13,18 @@ def date(date) -> str:
 
 
 class Info(Cog):
-    """A cog that provides information about various entities like guilds or members."""
+    """A cog that provides information about various entidties like guilds or members."""
+
+    @command(aliases=['about'])
+    async def info(self, ctx: Context):
+        """Information about me."""
+        app_info = await ctx.bot.application_info()
+        embed = discord.Embed(color=discord.Color.green())
+        embed.set_author(name=ctx.bot.user, url='https://github.com/slice/dogbot', icon_url=ctx.bot.user.avatar_url)
+        embed.description = ctx.bot.description
+        embed.add_field(name='Created', value=human_delta(ctx.bot.user.created_at) + ' ago')
+        embed.set_footer(text=f'Owned by {app_info.owner}', icon_url=app_info.owner.avatar_url)
+        await ctx.send(embed=embed)
 
     @group(aliases=['user_info', 'user', 'member_info', 'member'], invoke_without_command=True)
     async def profile(self, ctx: Context, user: HardMember):
