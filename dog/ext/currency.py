@@ -147,13 +147,49 @@ class Currency(Cog):
         await ctx.ok()
 
     @command()
+    async def donate(self, ctx: Context, amount: currency):
+        """
+        Donates some currency.
+
+        This will increase the chance of you passively gaining currency, to a maximum of 50%.
+        """
+        if not self.manager.has_wallet(ctx.author):
+            await ctx.send("You don't have a wallet.")
+            return
+
+        wallet = self.manager.get_wallet(ctx.author)
+        if wallet['passive_chance'] >= 0.5:
+            await ctx.send("Your chance is at max! (50%)")
+            return
+
+        percent_increase = min((amount / 100) * 0.5, 0.5 - wallet['passive_chance'])
+        wallet['passive_chance'] += percent_increase
+        now = wallet['passive_chance'] * 100
+
+        await self.manager.set_wallet(ctx.author, wallet)
+        await self.manager.sub(ctx.author, amount)
+        await ctx.send(f'Your chance of gaining {CURRENCY_NAME_PLURAL} is now {now}% (up by {percent_increase * 100}%).')
+
+    @command()
+    async def delete(self, ctx: Context):
+        """Deletes your wallet."""
+        if not await ctx.confirm(title='Are you sure?', message=f'All {CURRENCY_NAME_PLURAL} will be lost forever.',
+                                 delete_after=True, cancellation_message='Cancelled.'):
+            return
+
+        # TODO: abstract
+        await self.manager.storage.delete(ctx.author.id)
+        await ctx.ok()
+
+    @command()
     async def top(self, ctx: Context):
         """Views the top users."""
-        table = Table('User', 'Balance')
+        table = Table('User', 'Balance', 'Chance')
         for (user_id, wallet) in islice(self.manager.top(), 10):
             balance = wallet['balance']
+            chance = f"{wallet['passive_chance'] * 100}%"
             user = self.bot.get_user(int(user_id))
-            table.add_row(str(user) if user else user_id, truncate_float(balance, 2))
+            table.add_row(str(user) if user else user_id, truncate_float(balance, 2), chance)
         table = await table.render(loop=self.bot.loop)
         await ctx.send(codeblock(table))
 
@@ -168,7 +204,8 @@ class Currency(Cog):
             return
 
         bal = self.manager.bal(target)
-        await ctx.send(f'{target} > {format(bal, symbol=True)}')
+        chance = f"{self.manager.get_wallet(target)['passive_chance'] * 100}%"
+        await ctx.send(f'{target} > {format(bal, symbol=True)} ({chance} chance)')
 
 
 def setup(bot):
