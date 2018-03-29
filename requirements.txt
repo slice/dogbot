@@ -3,3 +3,4 @@ git+https://github.com/Gorialis/jishaku@master
 git+https://github.com/slice/lifesaver
 pytz==2018.3
 pycountry==18.2.23
+lark-parser
