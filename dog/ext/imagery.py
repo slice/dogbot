@@ -87,49 +87,60 @@ class ProgramError(Exception):
 class Manipulations:
     @staticmethod
     def flip(image: WandImage):
+        """Flips an image."""
         image.flip()
 
     @staticmethod
     def flop(image: WandImage):
+        """Flop an image. (Opposite of flip.)"""
         image.flop()
 
     @staticmethod
     def resize(image: WandImage, width: int, height: int):
+        """Resizes the image."""
         image.resize(width, height)
 
     @staticmethod
     def transform(image: WandImage, to: str):
+        """Transforms an image with ImageMagick transform syntax."""
         image.transform(to)
 
     @staticmethod
-    def rotate(image: WandImage, angle: int):
-        image.rotate(angle)
+    def rotate(image: WandImage, by: int):
+        """Rotates the image by degrees."""
+        image.rotate(by)
 
     @staticmethod
     def threshold(image: WandImage, threshold: float):
+        """Performs a threshold dependent on pixel intensity."""
         image.threshold(threshold, None)
 
     @staticmethod
     def chroma(image: WandImage, color: str, fuzz: int, invert: bool = False):
+        """Performs a chroma-key, turning one color into transparency."""
         with Color(color) as col:
             image.transparent_color(col, alpha=0.0, fuzz=fuzz, invert=invert)
 
     @staticmethod
     def composite(image: WandImage, other: WandImage, x: int = 0, y: int = 0, width: int = None, height: int = None):
+        """Places another image on top of this image."""
         if width and height:
             other.resize(width, height)
         image.composite(other, left=x, top=y)
 
     @staticmethod
     def sharpen(image: WandImage, amount: int, threshold: int, sigma: int = 0, radius: int = 0):
+        """Sharpens the image."""
         image.unsharp_mask(radius, sigma, amount, threshold)
 
     @staticmethod
     def gamma(image: WandImage, amount: float):
+        """Modifies the gamma level of the image."""
         image.gamma(amount)
 
     @staticmethod
     def caption(image: WandImage, text: str, ox: int = 0, oy: int = 0, color: str = 'black', gravity: str = 'center'):
+        """Adds some text to the image."""
         with Color(color) as col:
             font = wand.font.Font(FONT.path, color=col)
             image.caption(text, left=ox, top=oy, font=font, gravity=gravity)
@@ -242,7 +253,20 @@ class Image(WandImage):
 
 
 class Imagery(Cog):
-    @command(hidden=True, typing=True)
+    @command()
+    async def manipulations(self, ctx: Context):
+        """Shows a list of available manipulations for use."""
+        for (name, method) in inspect.getmembers(Manipulations):
+            if not inspect.isfunction(method):
+                continue
+            signature = inspect.signature(method)
+            params = list(signature.parameters.values())
+            formatted = ', '.join(str(param) for param in params[1:])
+
+            ctx += f'{name}({formatted})\n{method.__doc__}\n'
+        await ctx.send_pages()
+
+    @command(typing=True)
     async def manip(self, ctx: Context, target: Image, *, program: Program):
         """Runs an image manipulation program on someone's avatar."""
         log.debug('Tree: %s\nTransformed: %s', program.tree, program.transformed)
