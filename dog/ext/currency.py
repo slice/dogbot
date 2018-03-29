@@ -217,7 +217,7 @@ class Currency(Cog):
         table = Table('User', 'Balance', 'Chance')
         for (user_id, wallet) in islice(self.manager.top(), 10):
             balance = wallet['balance']
-            chance = f"{wallet['passive_chance'] * 100}%"
+            chance = f"{truncate_float(wallet['passive_chance'] * 100)}%"
             user = self.bot.get_user(int(user_id))
             table.add_row(str(user) if user else user_id, truncate_float(balance), chance)
         table = await table.render(loop=self.bot.loop)
@@ -235,7 +235,7 @@ class Currency(Cog):
 
         bal = self.manager.bal(target)
         chance = f"{self.manager.get_wallet(target)['passive_chance'] * 100}%"
-        await ctx.send(f'{target} > {format(bal, symbol=True)} ({chance} chance)')
+        await ctx.send(f'{target} > {format(bal, symbol=True)} ({truncate_float(chance)}% chance)')
 
 
 def setup(bot):
