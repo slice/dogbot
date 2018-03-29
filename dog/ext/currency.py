@@ -183,7 +183,10 @@ class Currency(Cog):
 
         await self.manager.set_wallet(ctx.author, wallet)
         await self.manager.sub(ctx.author, amount)
-        await ctx.send(f'Your chance of gaining {CURRENCY_NAME_PLURAL} is now {now}% (up by {percent_increase * 100}%).')
+        await ctx.send(
+            f'Your chance of gaining {CURRENCY_NAME_PLURAL} is now {truncate_float(now)}% '
+            f'(up by {truncate_float(percent_increase * 100)}%).'
+        )
 
     @command()
     async def delete(self, ctx: Context):
