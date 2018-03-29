@@ -120,7 +120,7 @@ class Currency(Cog):
 
     @command(hidden=True)
     @is_owner()
-    async def write(self, ctx: Context, target: discord.Member, amount: currency):
+    async def write(self, ctx: Context, target: discord.Member, amount: float):
         """Sets someone's balance."""
         if not self.manager.has_wallet(target):
             await ctx.send(f"{target} does not have a wallet.")
