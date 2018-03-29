@@ -1,9 +1,11 @@
 import random
 from itertools import islice
+from typing import Dict, Any, Tuple, List
 
 import discord
-from discord.ext.commands import is_owner
-from lifesaver.bot import Cog, command, group, Context
+from discord import User
+from discord.ext.commands import is_owner, BadArgument
+from lifesaver.bot import Cog, command, Context
 from lifesaver.bot.storage import AsyncJSONStorage
 from lifesaver.utils.formatting import Table, codeblock
 
@@ -29,30 +31,44 @@ def format(amount: float, *, symbol: bool = False) -> str:
     return f'{amount} {CURRENCY_NAME}' if amount == 1.0 else f'{amount} {CURRENCY_NAME_PLURAL}'
 
 
+def currency(string: str) -> float:
+    try:
+        result = float(string)
+        if result == float('inf') or result <= 0:
+            raise BadArgument('Invalid amount.')
+        return result
+    except ValueError:
+        raise BadArgument('Invalid number.')
+
+
+Wallet = Dict[str, Any]
+
+
 class CurrencyManager:
     def __init__(self, file, *, loop):
         self.storage = AsyncJSONStorage(file, loop=loop)
 
-    def has_wallet(self, user):
+    def has_wallet(self, user: User) -> bool:
         return self.storage.get(user.id) is not None
 
-    def get_wallet(self, user):
+    def get_wallet(self, user: User) -> Wallet:
         return self.storage.get(user.id)
 
-    async def set_wallet(self, user, wallet):
+    async def set_wallet(self, user: User, wallet: Wallet):
         await self.storage.put(user.id, wallet)
 
     ###
 
-    def bal(self, user):
+    def bal(self, user: User) -> float:
         return self.get_wallet(user)['balance']
 
-    async def write(self, user, amount):
+    async def write(self, user: User, amount: float):
         wallet = self.get_wallet(user)
         wallet['balance'] = amount
         await self.set_wallet(user, wallet)
 
-    async def register(self, user):
+    async def register(self, user: User):
+        """Creates a wallet for a user."""
         await self.set_wallet(user, {
             'balance': 0.0,
             'passive_chance': 0.3
@@ -60,14 +76,14 @@ class CurrencyManager:
 
     ###
 
-    async def add(self, user, amount):
+    async def add(self, user: User, amount: float):
         bal = self.bal(user)
         await self.write(user, bal + amount)
 
-    async def sub(self, user, amount):
+    async def sub(self, user: User, amount: float):
         return await self.add(user, -amount)
 
-    def top(self, *, descending: bool = True):
+    def top(self, *, descending: bool = True) -> List[Tuple[int, Wallet]]:
         def key(entry):
             user_id, wallet = entry
             return wallet['balance']
@@ -93,7 +109,7 @@ class Currency(Cog):
 
     @command(hidden=True)
     @is_owner()
-    async def write(self, ctx: Context, target: discord.Member, amount: float):
+    async def write(self, ctx: Context, target: discord.Member, amount: currency):
         """Sets someone's balance."""
         if not self.manager.has_wallet(target):
             await ctx.send(f"{target} does not have a wallet.")
@@ -101,15 +117,11 @@ class Currency(Cog):
         await self.manager.write(target, amount)
         await ctx.ok()
 
-    @command()
-    async def send(self, ctx: Context, target: discord.Member, amount: float):
+    @command(aliases=['transfer'])
+    async def send(self, ctx: Context, target: discord.Member, amount: currency):
         """Sends currency to someone else."""
         if target == ctx.author:
             await ctx.send("You cannot send money to yourself.")
-            return
-
-        if amount <= 0:
-            await ctx.send("Invalid amount.")
             return
 
         if not self.manager.has_wallet(ctx.author) or not self.manager.has_wallet(target):
