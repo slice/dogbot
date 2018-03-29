@@ -84,7 +84,7 @@ class CurrencyManager:
 
     async def add_passive(self, user: User, amount: float):
         wallet = self.get_wallet(user)
-        if wallet['passive_cooldown'] and (time.time() - wallet['passive_cooldown']) < 60 * 2:
+        if wallet['passive_cooldown'] and (time.time() - wallet['passive_cooldown']) < 60:
             return False
         wallet['passive_cooldown'] = time.time()
         wallet['balance'] += amount
