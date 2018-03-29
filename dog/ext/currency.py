@@ -3,6 +3,7 @@ from itertools import islice
 from typing import Dict, Any, Tuple, List
 
 import discord
+import time
 from discord import User
 from discord.ext.commands import is_owner, BadArgument
 from lifesaver.bot import Cog, command, Context
@@ -71,7 +72,8 @@ class CurrencyManager:
         """Creates a wallet for a user."""
         await self.set_wallet(user, {
             'balance': 0.0,
-            'passive_chance': 0.3
+            'passive_chance': 0.3,
+            'passive_cooldown': None
         })
 
     ###
@@ -79,6 +81,15 @@ class CurrencyManager:
     async def add(self, user: User, amount: float):
         bal = self.bal(user)
         await self.write(user, bal + amount)
+
+    async def add_passive(self, user: User, amount: float):
+        wallet = self.get_wallet(user)
+        if wallet['passive_cooldown'] and (time.time() - wallet['passive_cooldown']) < 60 * 2:
+            return False
+        wallet['passive_cooldown'] = time.time()
+        wallet['balance'] += amount
+        await self.set_wallet(user, wallet)
+        return True
 
     async def sub(self, user: User, amount: float):
         return await self.add(user, -amount)
@@ -105,7 +116,7 @@ class Currency(Cog):
 
         wallet = self.manager.get_wallet(msg.author)
         if random.random() > (1.0 - wallet['passive_chance']):
-            await self.manager.add(msg.author, 0.3)
+            await self.manager.add_passive(msg.author, 0.3)
 
     @command(hidden=True)
     @is_owner()
