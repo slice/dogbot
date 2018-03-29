@@ -244,6 +244,7 @@ class Image(WandImage):
 class Imagery(Cog):
     @command(hidden=True, typing=True)
     async def manip(self, ctx: Context, target: Image, *, program: Program):
+        """Runs an image manipulation program on someone's avatar."""
         log.debug('Tree: %s\nTransformed: %s', program.tree, program.transformed)
         try:
             coro = program.run(target, loop=ctx.bot.loop)
