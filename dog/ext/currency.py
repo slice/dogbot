@@ -173,6 +173,10 @@ class Currency(Cog):
             await ctx.send("Your chance is at max! (50%)")
             return
 
+        if wallet['balance'] < amount:
+            await ctx.send("Not enough funds.")
+            return
+
         percent_increase = min((amount / 100) * 0.5, 0.5 - wallet['passive_chance'])
         wallet['passive_chance'] += percent_increase
         now = wallet['passive_chance'] * 100
