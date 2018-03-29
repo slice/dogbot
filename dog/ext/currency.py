@@ -196,6 +196,18 @@ class Currency(Cog):
         await self.manager.storage.delete(ctx.author.id)
         await ctx.ok()
 
+    @command(hidden=True)
+    @is_owner()
+    async def smash(self, ctx: Context, target: discord.Member):
+        """Delete someone else's wallet."""
+        if not self.manager.has_wallet(target):
+            await ctx.send(f"{target} doesn't have a wallet.")
+            return
+
+        # TODO: abstract
+        await self.manager.storage.delete(target.id)
+        await ctx.ok()
+
     @command()
     async def top(self, ctx: Context):
         """Views the top users."""
