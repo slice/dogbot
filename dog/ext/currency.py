@@ -5,7 +5,7 @@ from typing import Dict, Any, Tuple, List
 import discord
 import time
 from discord import User
-from discord.ext.commands import is_owner, BadArgument
+from discord.ext.commands import is_owner, BadArgument, cooldown, BucketType
 from lifesaver.bot import Cog, command, Context
 from lifesaver.bot.storage import AsyncJSONStorage
 from lifesaver.utils.formatting import Table, codeblock
@@ -187,6 +187,50 @@ class Currency(Cog):
             f'Your chance of gaining {CURRENCY_NAME_PLURAL} is now {truncate_float(now)}% '
             f'(up by {truncate_float(percent_increase * 100)}%).'
         )
+
+    @command(aliases=['slots'])
+    @cooldown(1, 3, BucketType.user)
+    async def spin(self, ctx: Context):
+        """Gamble your life away."""
+        if not self.manager.has_wallet(ctx.author):
+            await ctx.send("You can't spin your life away without a wallet!")
+            return
+
+        fee = 0.5
+
+        if self.manager.bal(ctx.author) < fee:
+            await ctx.send(f"You need at least 0.5 {CURRENCY_SYMBOL} to spin.")
+            return
+
+        SYMBOLS = ['\N{CHERRIES}', '\N{AUBERGINE}', '\N{TANGERINE}', '\N{LEMON}', '\N{GRAPES}', CURRENCY_SYMBOL]
+
+        results = [random.choice(SYMBOLS) for _ in range(3)]
+        results_formatted = ' '.join(results)
+        net = -fee
+        message = f"\N{CRYING FACE} Nothing interesting."
+        is_triple = results.count(results[0]) == 3
+        is_two_in_a_row = results[0] == results[1] or results[1] == results[2]  # [X X o] or [o X X]
+
+        if is_triple and results[1] == CURRENCY_SYMBOL:
+            net = 3
+            message = f'\U0001f631 **TRIPLE {CURRENCY_SYMBOL}!**'
+        elif is_triple:
+            net = 2
+            message = f'\U0001f62e **TRIPLE!** You got 3 {results[1]}!'
+        elif is_two_in_a_row:
+            net = 1
+            message = f'\U0001f604 **Two in a row!** You got 2 {results[1]} in a row!'
+        else:
+            for result in results:
+                if results.count(result) == 2:
+                    net = 0.5
+                    message = f'\U0001f642 **Double!** You got 2 {result}!'
+                    break
+
+        footer = (f'{message} You have lost {abs(net)} {CURRENCY_SYMBOL}.' if net < 0 else
+                  f'{message} You have gained {net} {CURRENCY_SYMBOL}.')
+        await ctx.send(f"{ctx.author.mention}'s Slot Machine\n\n|  {results_formatted}  |\n\n{footer}")
+        await self.manager.add(ctx.author, net)
 
     @command()
     async def delete(self, ctx: Context):
