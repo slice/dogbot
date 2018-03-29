@@ -16,7 +16,7 @@ CURRENCY_SYMBOL = '\N{COOKIE}'
 
 
 # https://stackoverflow.com/a/783927/2491753
-def truncate_float(f: float, n: int) -> str:
+def truncate_float(f: float, n: int = 2) -> str:
     """Truncates/pads a float f to n decimal places without rounding."""
     s = '{}'.format(f)
     if 'e' in s or 'E' in s:
@@ -26,7 +26,7 @@ def truncate_float(f: float, n: int) -> str:
 
 
 def format(amount: float, *, symbol: bool = False) -> str:
-    amount = truncate_float(amount, 2)
+    amount = truncate_float(amount)
     if symbol:
         return f'{amount} {CURRENCY_SYMBOL}'
     return f'{amount} {CURRENCY_NAME}' if amount == 1.0 else f'{amount} {CURRENCY_NAME_PLURAL}'
@@ -200,7 +200,7 @@ class Currency(Cog):
             balance = wallet['balance']
             chance = f"{wallet['passive_chance'] * 100}%"
             user = self.bot.get_user(int(user_id))
-            table.add_row(str(user) if user else user_id, truncate_float(balance, 2), chance)
+            table.add_row(str(user) if user else user_id, truncate_float(balance), chance)
         table = await table.render(loop=self.bot.loop)
         await ctx.send(codeblock(table))
 
