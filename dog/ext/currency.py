@@ -10,9 +10,9 @@ from lifesaver.bot import Cog, command, Context
 from lifesaver.bot.storage import AsyncJSONStorage
 from lifesaver.utils.formatting import Table, codeblock, human_delta
 
-CURRENCY_NAME = 'cookie'
-CURRENCY_NAME_PLURAL = 'cookies'
-CURRENCY_SYMBOL = '\N{COOKIE}'
+CURRENCY_NAME = 'treat'
+CURRENCY_NAME_PLURAL = 'treats'
+CURRENCY_SYMBOL = '\N{MEAT ON BONE}'
 
 
 # https://stackoverflow.com/a/783927/2491753
