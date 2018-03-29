@@ -1,12 +1,12 @@
 import random
+import time
 from itertools import islice
-from typing import Dict, Any, Tuple, List
+from typing import Any, Dict, List, Tuple
 
 import discord
-import time
 from discord import User
-from discord.ext.commands import is_owner, BadArgument, cooldown, BucketType
-from lifesaver.bot import Cog, command, Context
+from discord.ext.commands import BadArgument, BucketType, cooldown, is_owner
+from lifesaver.bot import Cog, Context, command
 from lifesaver.bot.storage import AsyncJSONStorage
 from lifesaver.utils.formatting import Table, codeblock, human_delta
 
@@ -22,7 +22,7 @@ def truncate_float(f: float, n: int = 2) -> str:
     if 'e' in s or 'E' in s:
         return '{0:.{1}f}'.format(f, n)
     i, p, d = s.partition('.')
-    return '.'.join([i, (d+'0'*n)[:n]])
+    return '.'.join([i, (d + '0' * n)[:n]])
 
 
 def format(amount: float, *, symbol: bool = False) -> str:
@@ -99,6 +99,7 @@ class CurrencyManager:
         def key(entry):
             user_id, wallet = entry
             return wallet['balance']
+
         wallets = self.storage.all()
         return sorted(wallets.items(), key=key, reverse=descending)
 
@@ -314,8 +315,8 @@ class Currency(Cog):
                     message = f'\U0001f642 **Double!** You got 2 {result}!'
                     break
 
-        footer = (f'{message} You have lost {abs(net)} {CURRENCY_SYMBOL}.' if net < 0 else
-                  f'{message} You have gained {net} {CURRENCY_SYMBOL}.')
+        footer = (f'{message} You have lost {format(abs(net), symbol=True)}.' if net < 0 else
+                  f'{message} You have gained {format(net, symbol=True)}.')
         await ctx.send(f"{ctx.author.mention}'s Slot Machine\n\n|  {results_formatted}  |\n\n{footer}")
         await self.manager.add(ctx.author, net)
 
