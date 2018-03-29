@@ -1,7 +1,8 @@
-FROM python:latest
+FROM gorialis/discord.py:extras
 
 WORKDIR /app
-ADD . /app
-
+COPY requirements.txt ./
 RUN pip install -r requirements.txt
+COPY . .
+
 CMD ["python", "run.py"]
