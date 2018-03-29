@@ -1,11 +1,12 @@
 import random
 import time
 from itertools import islice
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 import discord
 from discord import User
-from discord.ext.commands import BadArgument, BucketType, cooldown, is_owner
+from discord.ext import commands
+from discord.ext.commands import BadArgument, BucketType, CheckFailure, MemberConverter, cooldown, is_owner
 from lifesaver.bot import Cog, Context, command
 from lifesaver.bot.storage import AsyncJSONStorage
 from lifesaver.utils.formatting import Table, codeblock, human_delta
@@ -42,72 +43,97 @@ def currency(string: str) -> float:
         raise BadArgument('Invalid number.')
 
 
-Wallet = Dict[str, Any]
+def _wallet_mirror(key):
+    @property
+    def _generated(self):
+        return self.wallet[key]
+
+    @_generated.setter
+    def _generated(self, value):
+        self.wallet[key] = value
+
+    return _generated
+
+
+class Wallet:
+    def __init__(self, user: User, wallet: Dict[str, Any], *, manager: 'CurrencyManager'):
+        self.user = user
+        self.manager = manager
+        self.wallet = wallet
+
+    balance = _wallet_mirror('balance')
+    last_stole = _wallet_mirror('last_stole')
+    passive_chance = _wallet_mirror('passive_chance')
+    passive_cooldown = _wallet_mirror('passive_cooldown')
+
+    def add_passive(self, amount: float):
+        if self.passive_cooldown and (time.time() - self.passive_cooldown) < 60:
+            return False
+        self.passive_cooldown = time.time()
+        self.balance += amount
+
+    async def commit(self):
+        await self.manager.set_raw_wallet(self.user, self.wallet)
+
+    async def delete(self):
+        await self.manager.storage.delete(self.user.id)
+
+    @classmethod
+    async def convert(cls, ctx: Context, argument: str):
+        user = await MemberConverter().convert(ctx, argument)
+        cog: 'Currency' = ctx.cog
+        if not cog.manager.has_wallet(user):
+            raise BadArgument(f"{user} doesn't have a wallet. They can create one by sending `{ctx.prefix}register`.")
+        return cog.manager.get_wallet(user)
 
 
 class CurrencyManager:
-    def __init__(self, file, *, loop):
-        self.storage = AsyncJSONStorage(file, loop=loop)
+    def __init__(self, file, *, bot):
+        self.bot = bot
+        self.storage = AsyncJSONStorage(file, loop=bot.loop)
 
     def has_wallet(self, user: User) -> bool:
         return self.storage.get(user.id) is not None
 
     def get_wallet(self, user: User) -> Wallet:
-        return self.storage.get(user.id)
+        return Wallet(user, self.storage.get(user.id), manager=self)
 
-    async def set_wallet(self, user: User, wallet: Wallet):
+    async def set_raw_wallet(self, user: User, wallet: Dict[str, Any]):
         await self.storage.put(user.id, wallet)
-
-    ###
-
-    def bal(self, user: User) -> float:
-        return self.get_wallet(user)['balance']
-
-    async def write(self, user: User, amount: float):
-        wallet = self.get_wallet(user)
-        wallet['balance'] = amount
-        await self.set_wallet(user, wallet)
 
     async def register(self, user: User):
         """Creates a wallet for a user."""
-        await self.set_wallet(user, {
-            'balance': 0.0,
+        await self.set_raw_wallet(user, {
+            'balance': 1.0,
             'passive_chance': 0.3,
             'passive_cooldown': None,
             'last_stole': None,
         })
 
-    ###
-
-    async def add(self, user: User, amount: float):
-        bal = self.bal(user)
-        await self.write(user, bal + amount)
-
-    async def add_passive(self, user: User, amount: float):
-        wallet = self.get_wallet(user)
-        if wallet['passive_cooldown'] and (time.time() - wallet['passive_cooldown']) < 60:
-            return False
-        wallet['passive_cooldown'] = time.time()
-        wallet['balance'] += amount
-        await self.set_wallet(user, wallet)
-        return True
-
-    async def sub(self, user: User, amount: float):
-        return await self.add(user, -amount)
-
-    def top(self, *, descending: bool = True) -> List[Tuple[int, Wallet]]:
-        def key(entry):
+    def top(self, *, descending: bool = True) -> List[Wallet]:
+        def expander(entry):
             user_id, wallet = entry
-            return wallet['balance']
+            return Wallet(self.bot.get_user(int(user_id)), wallet, manager=self)
 
         wallets = self.storage.all()
-        return sorted(wallets.items(), key=key, reverse=descending)
+        return sorted(map(expander, wallets.items()), key=lambda wallet: wallet.balance, reverse=descending)
+
+
+def invoker_has_wallet():
+    def predicate(ctx):
+        cog: Currency = ctx.cog
+        if not cog.manager.has_wallet(ctx.author):
+            raise CheckFailure(f"You don't have a wallet! You can create one by sending `{ctx.prefix}register`.")
+        ctx.wallet = cog.manager.get_wallet(ctx.author)
+        return True
+
+    return commands.check(predicate)
 
 
 class Currency(Cog):
     def __init__(self, bot):
         super().__init__(bot)
-        self.manager = CurrencyManager('currency.json', loop=bot.loop)
+        self.manager = CurrencyManager('currency.json', bot=bot)
 
     async def on_message(self, msg: discord.Message):
         if not msg.guild or msg.author.bot or self.bot.is_blacklisted(msg.author):
@@ -117,36 +143,34 @@ class Currency(Cog):
             return
 
         wallet = self.manager.get_wallet(msg.author)
-        if random.random() > (1.0 - wallet['passive_chance']):
-            await self.manager.add_passive(msg.author, 0.3)
+        if random.random() > (1.0 - wallet.passive_chance):
+            wallet.add_passive(0.3)
+            await wallet.commit()
 
     @command(hidden=True)
     @is_owner()
-    async def write(self, ctx: Context, target: discord.Member, amount: float):
+    async def write(self, ctx: Context, target: Wallet, amount: float):
         """Sets someone's balance."""
-        if not self.manager.has_wallet(target):
-            await ctx.send(f"{target} does not have a wallet.")
-            return
-        await self.manager.write(target, amount)
+        target.balance = amount
+        await target.commit()
         await ctx.ok()
 
     @command(aliases=['transfer'])
-    async def send(self, ctx: Context, target: discord.Member, amount: currency):
+    @invoker_has_wallet()
+    async def send(self, ctx: Context, target: Wallet, amount: currency):
         """Sends currency to someone else."""
-        if target == ctx.author:
+        if target.user == ctx.author:
             await ctx.send("You cannot send money to yourself.")
             return
 
-        if not self.manager.has_wallet(ctx.author) or not self.manager.has_wallet(target):
-            await ctx.send("One of you don't have a wallet!")
-            return
-
-        if amount > self.manager.bal(ctx.author):
+        if amount > ctx.wallet.balance:
             await ctx.send(f"You don't have that much money, {ctx.author.mention}.")
             return
 
-        await self.manager.sub(ctx.author, amount)
-        await self.manager.add(target, amount)
+        ctx.wallet.balance -= amount
+        target.balance += amount
+        await ctx.wallet.commit()
+        await target.commit()
 
         await ctx.send("Transaction completed.")
 
@@ -161,47 +185,43 @@ class Currency(Cog):
 
     @command(hidden=True)
     @is_owner()
-    async def bail(self, ctx: Context, *, target: discord.Member = None):
+    @invoker_has_wallet()
+    async def bail(self, ctx: Context, *, target: Wallet = None):
         """Busts someone out of jail."""
-        target = target or ctx.author
-
-        wallet = self.manager.get_wallet(target)
-        wallet['last_stole'] = None
-        await self.manager.set_wallet(target, wallet)
-        await ctx.send(f'\N{CHAINS} {"You are" if target == ctx.author else f"{target} is"} free to go.')
+        wallet = target or ctx.wallet
+        wallet.last_stole = None
+        await wallet.commit()
+        await ctx.send(f'\N{CHAINS} {"You are" if wallet.user == ctx.author else f"{target} is"} free to go.')
 
     @command()
-    async def steal(self, ctx: Context, target: discord.Member, amount: currency):
+    @invoker_has_wallet()
+    async def steal(self, ctx: Context, target: Wallet, amount: currency):
         """
         Steals from someone.
 
         You cannot steal from someone who has never stolen.
         """
-        if target == ctx.author:
-            await ctx.send("You can't steal from yourself...? You okay?")
+        if target.user == ctx.author:
+            await ctx.send("You can't steal from yourself... You okay?")
             return
-        if not self.manager.has_wallet(target) or self.manager.bal(target) == 0:
+        if target.balance == 0:
             await ctx.send("You can't steal from someone who doesn't any money! For shame.")
             return
-        if not self.manager.has_wallet(ctx.author):
-            await ctx.send("You don't have a wallet.")
-            return
 
-        thief = self.manager.get_wallet(ctx.author)
-        old_balance = thief['balance']
-        victim = self.manager.get_wallet(target)
+        thief: Wallet = ctx.wallet
+        old_balance = thief.balance
 
-        if victim['balance'] < amount:
+        if target.balance < amount:
             await ctx.send(f"{target} doesn't have that much money.")
             return
 
-        if thief['last_stole'] is not None and (time.time() - thief['last_stole']) < 60 * 60 * 8:
-            jail_time = human_delta(60 * 60 * 8 - (time.time() - thief['last_stole']))
+        if thief.last_stole is not None and (time.time() - thief.last_stole) < 60 * 60 * 8:
+            jail_time = human_delta(60 * 60 * 8 - (time.time() - thief.last_stole))
             await ctx.send(f"You can't steal yet, buddy. {jail_time} to go.")
             return
 
-        thief['last_stole'] = time.time()
-        await self.manager.set_wallet(ctx.author, thief)
+        thief.last_stole = time.time()
+        await thief.commit()
 
         message = ''
 
@@ -209,28 +229,31 @@ class Currency(Cog):
         # it gets easier to steal from someone with more coins, and vice versa
         # bottoms out at 60% success by 9.4 coins -- TODO: this isn't desirable, tweak this later.
         chance_result = random.uniform(0, 10)
-        chance_threshold = max(-0.1 * (victim['balance'] ** 2) + 9, 6)
+        chance_threshold = max(-0.1 * (target.balance ** 2) + 9, 6)
 
         # chance #2: the percentage of coins that the thief is trying to steal to the victim's wallet
         #            (100% is the victim's entire wallet, 0% is none)
         # stealing 10% is 90% chance, and stealing 100% is 0% chance (impossible)
-        percentage = amount / victim['balance']
+        percentage = amount / target.balance
         amount_result = random.random()
         amount_threshold = 1 - (percentage ** 2)
 
         if chance_result > chance_threshold and amount_result < amount_threshold:
-            await self.manager.add(ctx.author, amount)
-            await self.manager.sub(target, amount)
+            thief.balance += amount
+            target.balance -= amount
+            await thief.commit()
+            await target.commit()
             flavor = ['Nice one.', 'Do you feel the guilt sinking in?', 'But why would you do that?', 'Pretty evil.']
             message = f"**Steal succeeded.** {random.choice(flavor)}"
         else:
-            new_balance = max(thief['balance'] - (amount / 2), 0)
-            await self.manager.write(ctx.author, new_balance)
+            new_balance = max(thief.balance - (amount / 2), 0)
+            thief.balance = new_balance
+            await thief.commit()
             flavor = ['You deserved that.', "That's what you get.", "Welp.", "Better try again later?", "Ouch."]
             message = f"**Steal failed.** {random.choice(flavor)}"
 
         # show difference in thief balances
-        new_balance = self.manager.bal(ctx.author)
+        new_balance = thief.balance
         results = (f'Your {CURRENCY_NAME_PLURAL}: '
                    f'{format(old_balance, symbol=True)} \N{RIGHTWARDS ARROW} {format(new_balance, symbol=True)}')
 
@@ -238,68 +261,59 @@ class Currency(Cog):
         schance_balance = (10 - chance_threshold) / 10
         schance_amount = amount_threshold
         schance_overall = schance_balance * schance_amount
-        TF = truncate_float  # shortcut
-        results += (f'\n\nBased on how much they have: {TF(schance_balance * 100)}% chance of success\n'
-                    f'Based on how much you wanted to steal: {TF(schance_amount * 100)}% chance of success\n\n'
-                    f'**Overall chance of success: {TF(schance_overall * 100)}%**')
+        tf = truncate_float  # shortcut
+        results += (f'\n\nBased on how much they have: {tf(schance_balance * 100)}% chance of success\n'
+                    f'Based on how much you wanted to steal: {tf(schance_amount * 100)}% chance of success\n\n'
+                    f'**Overall chance of success: {tf(schance_overall * 100)}%**')
 
-        await ctx.send(message + '\n\n' + results)
+        await ctx.send(f'{message}\n\n{results}')
 
     @command()
+    @invoker_has_wallet()
     async def donate(self, ctx: Context, amount: currency):
         """
         Donates some currency.
 
         This will increase the chance of you passively gaining currency, to a maximum of 50%.
         """
-        if not self.manager.has_wallet(ctx.author):
-            await ctx.send("You don't have a wallet.")
-            return
-
-        wallet = self.manager.get_wallet(ctx.author)
-        if wallet['passive_chance'] >= 0.5:
+        if ctx.wallet.passive_chance >= 0.5:
             await ctx.send("Your chance is at max! (50%)")
             return
 
-        if wallet['balance'] < amount:
+        if ctx.wallet.balance < amount:
             await ctx.send("Not enough funds.")
             return
 
-        percent_increase = min((amount / 100) * 0.5, 0.5 - wallet['passive_chance'])
-        wallet['passive_chance'] += percent_increase
-        now = wallet['passive_chance'] * 100
-
-        await self.manager.set_wallet(ctx.author, wallet)
-        await self.manager.sub(ctx.author, amount)
+        percent_increase = min((amount / 100) * 0.5, 0.5 - ctx.wallet.passive_chance)
+        ctx.wallet.passive_chance += percent_increase
+        ctx.wallet.balance -= amount
+        await ctx.wallet.commit()
         await ctx.send(
-            f'Your chance of gaining {CURRENCY_NAME_PLURAL} is now {truncate_float(now)}% '
+            f'Your chance of gaining {CURRENCY_NAME_PLURAL} is now {truncate_float(ctx.wallet.passive_chance * 100)}% '
             f'(up by {truncate_float(percent_increase * 100)}%).'
         )
 
     @command(aliases=['slots'])
     @cooldown(1, 3, BucketType.user)
+    @invoker_has_wallet()
     async def spin(self, ctx: Context):
         """Gamble your life away."""
-        if not self.manager.has_wallet(ctx.author):
-            await ctx.send("You can't spin your life away without a wallet!")
-            return
-
         fee = 0.5
 
-        if self.manager.bal(ctx.author) < fee:
+        if ctx.wallet.balance < fee:
             await ctx.send(f"You need at least 0.5 {CURRENCY_SYMBOL} to spin.")
             return
 
-        SYMBOLS = ['\N{CHERRIES}', '\N{AUBERGINE}', '\N{TANGERINE}', '\N{LEMON}', '\N{GRAPES}', CURRENCY_SYMBOL]
+        emojis = ['\N{CHERRIES}', '\N{AUBERGINE}', '\N{TANGERINE}', '\N{LEMON}', '\N{GRAPES}', CURRENCY_SYMBOL]
 
-        results = [random.choice(SYMBOLS) for _ in range(3)]
+        results = [random.choice(emojis) for _ in range(3)]
         results_formatted = ' '.join(results)
         net = -fee
-        message = f"\N{CRYING FACE} Nothing interesting."
+        message = f"\N{NEUTRAL FACE} Nothing interesting."
         is_triple = results.count(results[0]) == 3
         is_two_in_a_row = results[0] == results[1] or results[1] == results[2]  # [X X o] or [o X X]
 
-        if is_triple and results[1] == CURRENCY_SYMBOL:
+        if is_triple and redsults[1] == CURRENCY_SYMBOL:
             net = 3
             message = f'\U0001f631 **TRIPLE {CURRENCY_SYMBOL}!**'
         elif is_triple:
@@ -318,56 +332,45 @@ class Currency(Cog):
         footer = (f'{message} You have lost {format(abs(net), symbol=True)}.' if net < 0 else
                   f'{message} You have gained {format(net, symbol=True)}.')
         await ctx.send(f"{ctx.author.mention}'s Slot Machine\n\n|  {results_formatted}  |\n\n{footer}")
-        await self.manager.add(ctx.author, net)
+        ctx.wallet.balance += net
+        await ctx.wallet.commit()
 
     @command()
+    @invoker_has_wallet()
     async def delete(self, ctx: Context):
         """Deletes your wallet."""
-        if not await ctx.confirm(title='Are you sure?', message=f'All {CURRENCY_NAME_PLURAL} will be lost forever.',
+        if not await ctx.confirm(title='Are you sure?',
+                                 message=f'All of your {CURRENCY_NAME_PLURAL} will be lost forever.',
                                  delete_after=True, cancellation_message='Cancelled.'):
             return
 
-        # TODO: abstract
-        await self.manager.storage.delete(ctx.author.id)
+        await ctx.wallet.delete()
         await ctx.ok()
 
     @command(hidden=True)
     @is_owner()
-    async def smash(self, ctx: Context, target: discord.Member):
+    async def smash(self, ctx: Context, target: Wallet):
         """Delete someone else's wallet."""
-        if not self.manager.has_wallet(target):
-            await ctx.send(f"{target} doesn't have a wallet.")
-            return
-
-        # TODO: abstract
-        await self.manager.storage.delete(target.id)
+        await target.delete()
         await ctx.ok()
 
     @command()
     async def top(self, ctx: Context):
         """Views the top users."""
         table = Table('User', 'Balance', 'Chance')
-        for (user_id, wallet) in islice(self.manager.top(), 10):
-            balance = wallet['balance']
-            chance = f"{truncate_float(wallet['passive_chance'] * 100)}%"
-            user = self.bot.get_user(int(user_id))
-            table.add_row(str(user) if user else user_id, truncate_float(balance), chance)
+        for wallet in islice(self.manager.top(), 10):
+            chance = f"{truncate_float(wallet.passive_chance * 100)}%"
+            table.add_row(str(wallet.user) if wallet.user else '???', truncate_float(wallet.balance), chance)
         table = await table.render(loop=self.bot.loop)
         await ctx.send(codeblock(table))
 
     @command()
-    async def wallet(self, ctx: Context, *, target: discord.Member = None):
+    @invoker_has_wallet()
+    async def wallet(self, ctx: Context, *, target: Wallet = None):
         """Views your current wallet balance."""
-        target = target or ctx.author
-        if not self.manager.has_wallet(target):
-            subject = 'You' if target == ctx.author else ctx.author
-            verb = 'You can send' if target == ctx.author else 'Ask them to send'
-            await ctx.send(f"{subject} don't have a wallet. {verb} `{ctx.prefix}register` to make one.")
-            return
-
-        bal = self.manager.bal(target)
-        chance = f"{self.manager.get_wallet(target)['passive_chance'] * 100}%"
-        await ctx.send(f'{target} > {format(bal, symbol=True)} ({truncate_float(chance)} chance)')
+        wallet = target or ctx.wallet
+        chance = f"{wallet.passive_chance * 100}%"
+        await ctx.send(f'{wallet.user} > {format(wallet.balance, symbol=True)} ({truncate_float(chance)} chance)')
 
 
 def setup(bot):
