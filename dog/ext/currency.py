@@ -249,7 +249,8 @@ class Currency(Cog):
             new_balance = max(thief.balance - (amount / 2), 0)
             thief.balance = new_balance
             await thief.commit()
-            flavor = ['You deserved that.', "That's what you get.", "Welp.", "Better try again later?", "Ouch."]
+            flavor = ['You deserved that.', "That's what you get.", "Welp.", "Better try again later?", "Ouch.",
+                      "Bad dog."]
             message = f"**Steal failed.** {random.choice(flavor)}"
 
         # show difference in thief balances
