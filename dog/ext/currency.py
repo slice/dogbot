@@ -8,7 +8,7 @@ from discord import User
 from discord.ext.commands import is_owner, BadArgument, cooldown, BucketType
 from lifesaver.bot import Cog, command, Context
 from lifesaver.bot.storage import AsyncJSONStorage
-from lifesaver.utils.formatting import Table, codeblock
+from lifesaver.utils.formatting import Table, codeblock, human_delta
 
 CURRENCY_NAME = 'cookie'
 CURRENCY_NAME_PLURAL = 'cookies'
@@ -73,7 +73,8 @@ class CurrencyManager:
         await self.set_wallet(user, {
             'balance': 0.0,
             'passive_chance': 0.3,
-            'passive_cooldown': None
+            'passive_cooldown': None,
+            'last_stole': None,
         })
 
     ###
@@ -156,6 +157,92 @@ class Currency(Cog):
             return
         await self.manager.register(ctx.author)
         await ctx.ok()
+
+    @command(hidden=True)
+    @is_owner()
+    async def bail(self, ctx: Context, *, target: discord.Member = None):
+        """Busts someone out of jail."""
+        target = target or ctx.author
+
+        wallet = self.manager.get_wallet(target)
+        wallet['last_stole'] = None
+        await self.manager.set_wallet(target, wallet)
+        await ctx.send(f'\N{CHAINS} {"You are" if target == ctx.author else f"{target} is"} free to go.')
+
+    @command()
+    async def steal(self, ctx: Context, target: discord.Member, amount: currency):
+        """
+        Steals from someone.
+
+        You cannot steal from someone who has never stolen.
+        """
+        if target == ctx.author:
+            await ctx.send("You can't steal from yourself...? You okay?")
+            return
+        if not self.manager.has_wallet(target) or self.manager.bal(target) == 0:
+            await ctx.send("You can't steal from someone who doesn't any money! For shame.")
+            return
+        if not self.manager.has_wallet(ctx.author):
+            await ctx.send("You don't have a wallet.")
+            return
+
+        thief = self.manager.get_wallet(ctx.author)
+        old_balance = thief['balance']
+        victim = self.manager.get_wallet(target)
+
+        if victim['balance'] < amount:
+            await ctx.send(f"{target} doesn't have that much money.")
+            return
+
+        if thief['last_stole'] is not None and (time.time() - thief['last_stole']) < 60 * 60 * 8:
+            jail_time = human_delta(60 * 60 * 8 - (time.time() - thief['last_stole']))
+            await ctx.send(f"You can't steal yet, buddy. {jail_time} to go.")
+            return
+
+        thief['last_stole'] = time.time()
+        await self.manager.set_wallet(ctx.author, thief)
+
+        message = ''
+
+        # chance #1: the amount of coins that the victim has
+        # it gets easier to steal from someone with more coins, and vice versa
+        # bottoms out at 60% success by 9.4 coins -- TODO: this isn't desirable, tweak this later.
+        chance_result = random.uniform(0, 10)
+        chance_threshold = max(-0.1 * (victim['balance'] ** 2) + 9, 6)
+
+        # chance #2: the percentage of coins that the thief is trying to steal to the victim's wallet
+        #            (100% is the victim's entire wallet, 0% is none)
+        # stealing 10% is 90% chance, and stealing 100% is 0% chance (impossible)
+        percentage = amount / victim['balance']
+        amount_result = random.random()
+        amount_threshold = 1 - (percentage ** 2)
+
+        if chance_result > chance_threshold and amount_result < amount_threshold:
+            await self.manager.add(ctx.author, amount)
+            await self.manager.sub(target, amount)
+            flavor = ['Nice one.', 'Do you feel the guilt sinking in?', 'But why would you do that?', 'Pretty evil.']
+            message = f"**Steal succeeded.** {random.choice(flavor)}"
+        else:
+            new_balance = max(thief['balance'] - (amount / 2), 0)
+            await self.manager.write(ctx.author, new_balance)
+            flavor = ['You deserved that.', "That's what you get.", "Welp.", "Better try again later?", "Ouch."]
+            message = f"**Steal failed.** {random.choice(flavor)}"
+
+        # show difference in thief balances
+        new_balance = self.manager.bal(ctx.author)
+        results = (f'Your {CURRENCY_NAME_PLURAL}: '
+                   f'{format(old_balance, symbol=True)} \N{RIGHTWARDS ARROW} {format(new_balance, symbol=True)}')
+
+        # show chances of the stealing algorithm
+        schance_balance = (10 - chance_threshold) / 10
+        schance_amount = amount_threshold
+        schance_overall = schance_balance * schance_amount
+        TF = truncate_float  # shortcut
+        results += (f'\n\nBased on how much they have: {TF(schance_balance * 100)}% chance of success\n'
+                    f'Based on how much you wanted to steal: {TF(schance_amount * 100)}% chance of success\n\n'
+                    f'**Overall chance of success: {TF(schance_overall * 100)}%**')
+
+        await ctx.send(message + '\n\n' + results)
 
     @command()
     async def donate(self, ctx: Context, amount: currency):
