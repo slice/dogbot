@@ -366,7 +366,7 @@ class Currency(Cog):
 
         bal = self.manager.bal(target)
         chance = f"{self.manager.get_wallet(target)['passive_chance'] * 100}%"
-        await ctx.send(f'{target} > {format(bal, symbol=True)} ({truncate_float(chance)}% chance)')
+        await ctx.send(f'{target} > {format(bal, symbol=True)} ({truncate_float(chance)} chance)')
 
 
 def setup(bot):
