@@ -212,7 +212,7 @@ class Currency(Cog):
         old_balance = thief.balance
 
         if target.balance < amount:
-            await ctx.send(f"{target} doesn't have that much money.")
+            await ctx.send(f"{target.user} doesn't have that much money.")
             return
 
         if thief.last_stole is not None and (time.time() - thief.last_stole) < 60 * 60 * 8:
