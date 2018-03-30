@@ -191,7 +191,7 @@ class Currency(Cog):
         wallet = target or ctx.wallet
         wallet.last_stole = None
         await wallet.commit()
-        await ctx.send(f'\N{CHAINS} {"You are" if wallet.user == ctx.author else f"{target} is"} free to go.')
+        await ctx.send(f'\N{CHAINS} {"You are" if wallet.user == ctx.author else f"{target.user} is"} free to go.')
 
     @command()
     @invoker_has_wallet()
