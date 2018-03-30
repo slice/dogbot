@@ -272,7 +272,7 @@ class Imagery(Cog):
         """Runs an image manipulation program on someone's avatar."""
         log.debug('Tree: %s\nTransformed: %s', program.tree, program.transformed)
         if len(program.tree) > 20:
-            await ctx.send("Slow down there. Maximum of 20 transformations.")
+            await ctx.send("Slow down there. Maximum of 20 manipulations.")
             return
         try:
             coro = program.run(target, loop=ctx.bot.loop)
