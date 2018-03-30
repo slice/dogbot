@@ -7,7 +7,7 @@ from io import BytesIO
 import aiohttp
 import discord
 import wand.font
-from discord.ext.commands import BadArgument, MemberConverter
+from discord.ext.commands import BadArgument, MemberConverter, cooldown, BucketType
 from lark import Lark, LexError, ParseError, Transformer
 from lifesaver.bot import Cog, Context, command
 from lifesaver.utils import escape_backticks
@@ -267,9 +267,13 @@ class Imagery(Cog):
         await ctx.send_pages()
 
     @command(typing=True)
+    @cooldown(1, 3, BucketType.user)
     async def manip(self, ctx: Context, target: Image, *, program: Program):
         """Runs an image manipulation program on someone's avatar."""
         log.debug('Tree: %s\nTransformed: %s', program.tree, program.transformed)
+        if len(program.tree) > 20:
+            await ctx.send("Slow down there. Maximum of 20 transformations.")
+            return
         try:
             coro = program.run(target, loop=ctx.bot.loop)
             await asyncio.wait_for(coro, timeout=10.0, loop=ctx.bot.loop)
