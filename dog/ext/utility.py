@@ -17,13 +17,13 @@ class Utility(Cog):
     def __unload(self):
         self.session.close()
 
-    @command(aliases=['ginv'])
+    @command(aliases=['ginv', 'invite'])
     async def inv(self, ctx: Context, *ids: UserIDs):
         """Generates bot invites."""
         if not ids:
-            await ctx.send('Provide mentions or IDs!')
-            return
-        urls = '\n'.join('<' + discord.utils.oauth_url(bot_id) + '>' for bot_id in ids)
+            ids = (self.bot.user.id,)
+
+        urls = '\n'.join(f'<{discord.utils.oauth_url(bot_id)}>' for bot_id in ids)
         await ctx.send(urls)
 
     @command(aliases=['shiba', 'dog'], typing=True)
