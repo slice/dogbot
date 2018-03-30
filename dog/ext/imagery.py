@@ -273,6 +273,9 @@ class Imagery(Cog):
         try:
             coro = program.run(target, loop=ctx.bot.loop)
             await asyncio.wait_for(coro, timeout=10.0, loop=ctx.bot.loop)
+            file = await target.render_to_file(loop=self.bot.loop)
+            await ctx.send(file=file)
+            file.close()
         except ProgramError as error:
             await ctx.send(f'Program runtime error. {error}')
             return
@@ -282,9 +285,6 @@ class Imagery(Cog):
         except Exception as error:
             await ctx.send(f'Program runtime error. `{escape_backticks(str(error))}`')
             return
-        file = await target.render_to_file(loop=self.bot.loop)
-        await ctx.send(file=file)
-        file.close()
 
 
 def setup(bot):
