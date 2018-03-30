@@ -143,7 +143,7 @@ class Time(Cog):
 
             log.debug('%d: Provided country: %s', target.id, country)
 
-            name = getattr(country, 'official_name', None) or country.name
+            name = getattr(country, 'official_name', country.name)
 
             if await prompt(f'Do you live in **{name}**?\n'
                             'Click \N{WHITE HEAVY CHECK MARK} to continue.'):
