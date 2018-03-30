@@ -1,15 +1,56 @@
-import logging
-
 import datetime
+import logging
+from collections import defaultdict
+from io import BytesIO
+
+import aiohttp
 import discord
 import pycountry
 import pytz
+from PIL import Image, ImageDraw, ImageFont
 from discord.ext import commands
-from discord.ext.commands import group
-from lifesaver.bot import Cog, Context
+from discord.ext.commands import BucketType, cooldown
+from lifesaver.bot import Cog, Context, group
 from lifesaver.bot.storage import AsyncJSONStorage
 
 log = logging.getLogger(__name__)
+TWELVEHOUR_COUNTRIES = ['US', 'AU', 'CA', 'PH']
+
+
+def draw_rotated_text(image, angle, xy, text, fill, *args, **kwargs):
+    """https://stackoverflow.com/a/45405131/2491753"""
+    # get the size of our image
+    width, height = image.size
+    max_dim = max(width, height)
+
+    # build a transparency mask large enough to hold the text
+    mask_size = (max_dim * 2, max_dim * 2)
+    mask = Image.new('L', mask_size, 0)
+
+    # add text to mask
+    draw = ImageDraw.Draw(mask)
+    draw.text((max_dim, max_dim), text, 255, *args, **kwargs)
+
+    if angle % 90 == 0:
+        # rotate by multiple of 90 deg is easier
+        rotated_mask = mask.rotate(angle)
+    else:
+        # rotate an an enlarged mask to minimize jaggies
+        bigger_mask = mask.resize((max_dim * 8, max_dim * 8),
+                                  resample=Image.BICUBIC)
+        rotated_mask = bigger_mask.rotate(angle).resize(
+            mask_size, resample=Image.LANCZOS)
+
+    # crop the mask to match image
+    mask_xy = (max_dim - xy[0], max_dim - xy[1])
+    b_box = mask_xy + (mask_xy[0] + width, mask_xy[1] + height)
+    mask = rotated_mask.crop(b_box)
+
+    # paste the appropriate color, with the text transparency mask
+    color_image = Image.new('RGBA', image.size, fill)
+    image.paste(color_image, mask)
+
+    return draw.textsize(text=text, font=kwargs.get('font'))
 
 
 class Time(Cog):
@@ -43,6 +84,80 @@ class Time(Cog):
             )
             return
         await ctx.send(f'{who.display_name}: {formatted_time}')
+
+    @time.command(typing=True)
+    @cooldown(1, 5, BucketType.guild)
+    async def map(self, ctx: Context):
+        """Views a timezone map."""
+        font = ImageFont.truetype('assets/SourceSansPro-Bold.otf', size=35)
+        map_image = Image.open('assets/timezone_map.png').convert('RGBA')
+        map_draw = ImageDraw.Draw(map_image)
+        session = aiohttp.ClientSession()
+
+        is_twelvehour = False
+        try:
+            invoker_timezone = self.timezones.get(ctx.author.id)
+            country = next(country for (country, timezones) in pytz.country_timezones.items() if invoker_timezone
+                           in timezones)
+            is_twelvehour = country in TWELVEHOUR_COUNTRIES
+        except StopIteration:
+            pass
+
+        timezones = defaultdict(list)
+
+        for member in ctx.guild.members:
+            timezone = self.timezones.get(member.id)
+            if not timezone:
+                continue
+            now = datetime.datetime.now(pytz.timezone(timezone))
+            offset = (now.utcoffset().total_seconds() - now.dst().total_seconds()) / 60 / 60
+            time_here = datetime.datetime.now(pytz.timezone(timezone))
+            formatted = time_here.strftime('%I:%M %p' if is_twelvehour else '%H:%M')
+            timezones[(formatted, offset)].append(member)
+
+        drawn_in_offset = defaultdict(int)
+
+        for (formatted, offset), members in timezones.items():
+            x = int((offset + 11) * 38.5 + 21)
+            log.debug('Checking drawn_in_offset for %d. (result=%d)', offset, drawn_in_offset[str(offset)])
+            my_offset = drawn_in_offset[str(offset)]
+            y = my_offset if my_offset != 0 else 480
+            log.debug('Y coordinate is now %d.', y)
+            for member in members:
+                log.debug('Drawing %s (%d).', member, member.id)
+                avatar_url = member.avatar_url_as(static_format='png', size=128)
+                async with session.get(avatar_url) as avatar_response:
+                    avatar_bytes = await avatar_response.read()
+                    avatar = Image.open(fp=BytesIO(avatar_bytes))
+                    avatar.convert('RGBA')
+                    resized = avatar.resize((32, 32), resample=Image.LANCZOS)
+                    log.info('map_image: Adding %s (%d) at (%d, %d)', member, member.id, x, y)
+                    map_image.paste(resized, box=(x, y))
+                y -= 32 + 5
+                log.debug('After drawing %s, Y coordinate is now %d.', member, y)
+            log.debug('Okay, drew this timezone. (time=%s, offset=%d. members=%s)', formatted, offset, members)
+            text_yofs = 30
+            ts_big = draw_rotated_text(
+                map_image, 90, (x - 7, y + text_yofs), formatted, fill=(0, 0, 0, 255),
+                font=font
+            )
+            registered_offset = y - ts_big[0] - 30
+            log.debug('Registering Y offset for this time offset (offset=%d, time=%s, y=%d)', registered_offset,
+                      formatted, y)
+            drawn_in_offset[str(offset)] = registered_offset
+
+        def render():
+            buffer = BytesIO()
+            map_image.save(buffer, format='png')
+            buffer.seek(0)
+            return buffer
+
+        buffer = await ctx.bot.loop.run_in_executor(None, render)
+        file = discord.File(fp=buffer, filename=f'map_{ctx.guild.id}.png')
+        await ctx.send(file=file)
+        map_image.close()
+        del map_draw
+        session.close()
 
     @time.command(name='reset')
     async def time_reset(self, ctx: Context):
