@@ -125,14 +125,13 @@ class Time(Cog):
             log.debug('Y coordinate is now %d.', y)
             for member in members:
                 log.debug('Drawing %s (%d).', member, member.id)
-                avatar_url = member.avatar_url_as(static_format='png', size=128)
+                avatar_url = member.avatar_url_as(static_format='png', size=32)
                 async with session.get(avatar_url) as avatar_response:
                     avatar_bytes = await avatar_response.read()
-                    avatar = Image.open(fp=BytesIO(avatar_bytes))
-                    avatar.convert('RGBA')
-                    resized = avatar.resize((32, 32), resample=Image.LANCZOS)
+                    avatar = Image.open(fp=BytesIO(avatar_bytes)).convert('RGBA')
+                    # resized = avatar.resize((32, 32), resample=Image.LANCZOS)
                     log.info('map_image: Adding %s (%d) at (%d, %d)', member, member.id, x, y)
-                    map_image.paste(resized, box=(x, y))
+                    map_image.paste(avatar, box=(x, y))
                 y -= 32 + 5
                 log.debug('After drawing %s, Y coordinate is now %d.', member, y)
             log.debug('Okay, drew this timezone. (time=%s, offset=%d. members=%s)', formatted, offset, members)
