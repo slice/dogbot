@@ -143,7 +143,9 @@ class Time(Cog):
 
             log.debug('%d: Provided country: %s', target.id, country)
 
-            if await prompt(f'Do you live in **{country.official_name}**?\n'
+            name = getattr(country, 'official_name', None) or country.name
+
+            if await prompt(f'Do you live in **{name}**?\n'
                             'Click \N{WHITE HEAVY CHECK MARK} to continue.'):
                 break
 
@@ -153,7 +155,7 @@ class Time(Cog):
         try:
             timezones = pytz.country_timezones[code]
         except KeyError:
-            await ctx.send(f"Sorry, but I couldn't find any designated timezones for **{country.official_name}** "
+            await ctx.send(f"Sorry, but I couldn't find any designated timezones for **{name}** "
                            "in my database. I still love you, though. \N{HEAVY BLACK HEART}")
             log.warning('%d: Failed to find any timezones for %s (%s)', target.id, code, country)
             return
