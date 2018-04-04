@@ -1,6 +1,7 @@
 import discord
-from discord.ext.commands import guild_only, bot_has_permissions, has_permissions
-from lifesaver.bot import Cog, command, Context
+from discord.ext.commands import bot_has_permissions, guild_only, has_permissions
+from lifesaver.bot import Cog, Context, command
+from lifesaver.utils import escape_backticks
 
 from dog.converters import SoftMember
 from dog.formatting import represent
@@ -21,6 +22,41 @@ class Mod(Cog):
             await ctx.send(f"I can't ban {target}.")
         else:
             await ctx.send(f'\N{OK HAND SIGN} Banned {represent(target)}.')
+
+    @command()
+    @guild_only()
+    @bot_has_permissions(manage_roles=True)
+    @has_permissions(manage_roles=True)
+    async def vanity(self, ctx: Context, name, color: discord.Color = None, *targets: discord.Member):
+        """Creates a vanity role."""
+        try:
+            role = await ctx.guild.create_role(
+                name=name,
+                color=color or discord.Color.default(),
+                permissions=discord.Permissions.none(),
+                reason=f'Vanity role created by {represent(ctx.author)}'
+            )
+        except discord.HTTPException as error:
+            await ctx.send(f'Failed to create vanity role. Error: `{error}`')
+            return
+
+        if not targets:
+            await ctx.ok()
+            return
+
+        name = escape_backticks(role.name)
+        ctx.new_paginator(prefix='', suffix='')
+        ctx += f'\U00002705 Created vanity role `{name}`.'
+
+        for target in targets:
+            try:
+                await target.add_roles(role, reason=f'Vanity role auto-assign by {represent(ctx.author)}')
+            except discord.HTTPException as error:
+                ctx += f'\N{CROSS MARK} Failed to add `{name}` to {represent(target)}: {error}'
+            else:
+                ctx += f'\U00002705 Added `{name}` to {represent(target)}.'
+
+        await ctx.send_pages()
 
     @command()
     @guild_only()
