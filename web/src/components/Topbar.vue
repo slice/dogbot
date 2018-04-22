@@ -52,6 +52,7 @@ export default {
   components: { FontAwesomeIcon },
   async mounted () {
     let resp = await API.request('/api/status')
+    this.$emit('statusUpdate', resp.ready)
     if (resp.ready) {
       this.color = COLORS.green
       this.message = 'Connected'

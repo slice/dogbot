@@ -1,9 +1,9 @@
 <template>
   <div id="app">
-    <topbar :loggedIn="loggedIn"/>
+    <topbar :loggedIn="loggedIn" @statusUpdate="statusUpdate"/>
     <div class="content" :class="{ 'logged-out': loggedIn === false }">
       <!-- loggedIn will be null before fetching, so show nothing while loading -->
-      <router-view v-if="loggedIn === true"/>
+      <router-view :class="{ inactive: !ready }" v-if="loggedIn === true"/>
       <login v-if="loggedIn === false"/>
     </div>
   </div>
@@ -17,12 +17,17 @@ import API from '@/api'
 export default {
   name: 'app',
   data () {
-    return { loggedIn: null }
+    return { loggedIn: null, ready: false }
   },
   components: { Topbar, Login },
   async beforeCreate () {
     let resp = await API.request('/auth/user')
     this.loggedIn = resp.active
+  },
+  methods: {
+    statusUpdate (ready) {
+      this.ready = ready
+    }
   }
 }
 </script>
@@ -51,6 +56,10 @@ html, body, #app
     padding 1em
   h2:first-child
     margin-top 0
+
+.inactive
+  opacity 0.3
+  pointer-events none
 
 *
   box-sizing border-box
