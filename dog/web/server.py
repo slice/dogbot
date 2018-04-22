@@ -1,8 +1,9 @@
+import functools
 import random
 from urllib.parse import quote_plus
 
 import aiohttp
-from quart import Quart, session, redirect, request
+from quart import Quart, session, redirect, request, g
 from quart.json import jsonify as json
 
 app = Quart(__name__)
@@ -44,6 +45,20 @@ async def get_access_token(code):
         return (await response.json())['access_token']
 
 
+def require_auth(func):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        if 'user' not in session:
+            return 'Unauthorized.', 401
+        user_id = int(session['user']['id'])
+        user_object = app.bot.get_user(user_id)
+        if not user_object:
+            return 'Who are you? Unknown user.', 401
+        g.user = user_object
+        return func(*args, **kwargs)
+    return wrapped
+
+
 @app.route('/api/status')
 def api_ping():
     return json({
@@ -71,6 +86,16 @@ def dashboard():
     if 'token' not in session:
         return redirect('/auth/login')
     return 'this should be the dashboard.'
+
+
+@app.route('/api/guilds')
+@require_auth
+def api_guilds():
+    guilds = [
+        {"id": str(guild.id), "name": guild.name, "members": guild.member_count}
+        for guild in app.bot.guilds if guild.owner == g.user
+    ]
+    return json(guilds)
 
 
 @app.route('/auth/redirect')

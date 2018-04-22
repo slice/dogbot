@@ -45,10 +45,12 @@ html, body, #app
     display flex
     justify-content center
     align-items center
-  :not(.logged-out)
+  &:not(.logged-out)
     max-width 950px
     margin 0 auto
-    padding 0.5em
+    padding 1em
+  h2:first-child
+    margin-top 0
 
 *
   box-sizing border-box
