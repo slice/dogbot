@@ -2,7 +2,8 @@
   <div class="home">
     <h2>Guilds</h2>
     <div class="guilds">
-      <router-link to="/where" class="guild" v-for="guild of guilds" :key="guild.id">
+      <div class="empty" v-if="guilds && !guilds.length">Nothing here.</div>
+      <router-link :to="`/guild/${guild.id}`" class="guild" v-for="guild of guilds" :key="guild.id">
         <strong>{{ guild.name }}</strong>&nbsp;
         <span class="count">({{ guild.members }} member{{ guild.members === 1 ? '' : 's' }})</span>
       </router-link>
@@ -27,6 +28,8 @@ export default {
 </script>
 
 <style scoped lang="stylus">
+.empty
+  color #999
 .guild
   display block
   color inherit
