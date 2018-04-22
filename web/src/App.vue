@@ -1,10 +1,10 @@
 <template>
   <div id="app">
-    <Topbar/>
+    <topbar :loggedIn="loggedIn"/>
     <div class="content" :class="{ 'logged-out': loggedIn === false }">
       <!-- loggedIn will be null before fetching, so show nothing while loading -->
       <router-view v-if="loggedIn === true"/>
-      <Login v-if="loggedIn === false"/>
+      <login v-if="loggedIn === false"/>
     </div>
   </div>
 </template>

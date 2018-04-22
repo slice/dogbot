@@ -13,9 +13,7 @@ def assign_globals():
 
 @app.route('/')
 def dashboard():
-    if 'token' not in session:
-        return redirect('/auth/login')
-    return 'this should be the dashboard.'
+    return '...'
 
 
 app.register_blueprint(api, url_prefix='/api')

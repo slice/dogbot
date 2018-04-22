@@ -6,13 +6,17 @@
       {{ message }}
     </div>
     <div class="links">
-      <a href="https://github.com/slice/dogbot" target="_blank" rel="noreferrer">
+      <a href="https://github.com/slice/dogbot" class="promo" target="_blank" rel="noreferrer">
         <font-awesome-icon :icon="githubIcon"/>
         Open Source
       </a>
-      <a href="https://patreon.com/slcxyz" target="_blank" rel="noreferrer">
+      <a href="https://patreon.com/slcxyz" class="promo" target="_blank" rel="noreferrer">
         <font-awesome-icon :icon="patreonIcon"/>
         Donate on Patreon
+      </a>
+      <a href="/auth/logout" v-if="loggedIn">
+        <font-awesome-icon :icon="signOutIcon"/>
+        <span>Sign Out</span>
       </a>
     </div>
   </div>
@@ -21,7 +25,8 @@
 <script>
 import API from '@/api'
 import FontAwesomeIcon from '@fortawesome/vue-fontawesome'
-import brands from '@fortawesome/fontawesome-free-brands'
+import { faGithub, faPatreon } from '@fortawesome/fontawesome-free-brands'
+import { faSignOutAlt } from '@fortawesome/fontawesome-free-solid'
 
 const COLORS = {
   green: 'hsla(128, 100%, 70%, 1)',
@@ -29,7 +34,10 @@ const COLORS = {
 }
 
 export default {
-  name: 'status',
+  name: 'topbar',
+  props: {
+    loggedIn: Boolean
+  },
   data () {
     return {
       color: COLORS.red,
@@ -37,8 +45,9 @@ export default {
     }
   },
   computed: {
-    githubIcon () { return brands.faGithub },
-    patreonIcon () { return brands.faPatreon }
+    githubIcon () { return faGithub },
+    patreonIcon () { return faPatreon },
+    signOutIcon () { return faSignOutAlt }
   },
   components: { FontAwesomeIcon },
   async mounted () {
@@ -85,6 +94,11 @@ export default {
   .topbar
     padding 0.5em 1em !important
 
-  .links
+  .links .promo
     display none
+  .links a
+    svg
+      margin 0
+    span
+      display none
 </style>

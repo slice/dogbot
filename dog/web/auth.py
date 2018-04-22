@@ -56,6 +56,13 @@ async def auth_redirect():
     return redirect(url_for('dashboard'))
 
 
+@auth.route('/logout')
+def auth_logout():
+    del session['token']
+    del session['user']
+    return redirect(url_for('dashboard'))
+
+
 @auth.route('/login')
 def auth_login():
     state, url = redirect_url()
