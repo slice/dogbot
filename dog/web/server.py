@@ -2,14 +2,13 @@ import random
 from urllib.parse import quote_plus
 
 import aiohttp
-from sanic import Sanic, response
-from sanic_session import InMemorySessionInterface
+from quart import Quart, session, redirect, request
+from quart.json import jsonify as json
 
-app = Sanic(__name__)
-session_interface = InMemorySessionInterface()
+app = Quart(__name__)
 app.bot = None
 
-REDIRECT_URI = 'http://0.0.0.0:8080'
+REDIRECT_URI = 'http://localhost:8993'
 API_BASE = 'https://discordapp.com/api/v6'
 
 
@@ -24,8 +23,8 @@ def redirect_url():
 
 async def get_user(bearer):
     headers = {'Authorization': 'Bearer ' + bearer}
-    async with aiohttp.ClientSession(headers=headers) as session:
-        return await (await session.get(API_BASE + '/users/@me')).json()
+    async with aiohttp.ClientSession(headers=headers) as s:
+        return await (await s.get(API_BASE + '/users/@me')).json()
 
 
 async def get_access_token(code):
@@ -40,52 +39,56 @@ async def get_access_token(code):
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded'
     }
-    async with aiohttp.ClientSession(raise_for_status=True) as session:
-        response = await session.post(ENDPOINT, data=data, headers=headers)
+    async with aiohttp.ClientSession(raise_for_status=True) as s:
+        response = await s.post(ENDPOINT, data=data, headers=headers)
         return (await response.json())['access_token']
 
 
-@app.middleware('request')
-async def before_add(request):
-    await session_interface.open(request)
-
-
-@app.middleware('response')
-async def after_add(request, response):
-    await session_interface.save(request, response)
-
-
 @app.route('/api/status')
-async def api_ping(_request):
-    return response.json({
+def api_ping():
+    return json({
         'ready': app.bot.is_ready(),
         'ping': app.bot.latency,
-        'guilds': len(app.bot.guilds),
+        'guilds': len(app.bot.guilds)
     })
 
 
+@app.route('/auth/user')
+async def auth_user():
+    active = 'token' in session
+    print('User request.', session)
+    if not active:
+        return json({'active': False})
+    try:
+        user = await get_user(session['token'])
+        return json({'active': True, 'user': user})
+    except aiohttp.ClientResponseError:
+        return json({'active': False})
+
+
 @app.route('/dashboard')
-async def dashboard(req):
-    if 'token' not in req['session']:
-        return response.redirect('/auth/login')
-    return response.text('this should be the dashboard.')
+def dashboard():
+    if 'token' not in session:
+        return redirect('/auth/login')
+    return 'this should be the dashboard.'
 
 
 @app.route('/auth/redirect')
-async def auth_redirect(req):
-    if req['session'].get('oauth_state') != req.args['state'][0]:
-        return response.text('invalid state', status=401)
-    if 'code' not in req.args:
-        return response.text('no code', status=400)
-    access_token = await get_access_token(req.args['code'][0])
-    req['session']['token'] = access_token
+async def auth_redirect():
+    if session.get('oauth_state') != request.args.get('state'):
+        return 'invalid state', 401
+    if 'code' not in request.args:
+        return 'no code', 400
+    access_token = await get_access_token(request.args['code'])
+    session['token'] = access_token
     user = await get_user(access_token)
-    req['session']['user'] = user
-    return response.redirect('/dashboard')
+    session['user'] = user
+    print(user, 'has logged in! Their session:', session)
+    return redirect(f'/dashboard?token={access_token}')
 
 
 @app.route('/auth/login')
-async def auth_login(req):
+def auth_login():
     state, url = redirect_url()
-    req['session']['oauth_state'] = state
-    return response.redirect(url)
+    session['oauth_state'] = state
+    return redirect(url)
