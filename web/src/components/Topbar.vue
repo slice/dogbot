@@ -1,6 +1,6 @@
 <template>
   <div class="topbar">
-    <div class="brand"><strong>dog</strong></div>
+    <router-link to="/" class="brand"><strong>dog</strong></router-link>
     <div class="status">
       <div class="dot" :style="{ 'background-color': color }"></div>
       {{ message }}
@@ -72,6 +72,8 @@ export default {
   align-items center
 
 .brand
+  color inherit
+  text-decoration inherit
   margin-right 1em
 
 .links
