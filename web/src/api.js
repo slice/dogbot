@@ -1,5 +1,5 @@
 export default class API {
   static request (url) {
-    return fetch(url).then(resp => resp.json())
+    return fetch(url, { credentials: 'include' }).then(resp => resp.json())
   }
 }
