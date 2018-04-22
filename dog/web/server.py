@@ -9,7 +9,7 @@ app = Sanic(__name__)
 session_interface = InMemorySessionInterface()
 app.bot = None
 
-REDIRECT_URI = 'http://0.0.0.0:8993'
+REDIRECT_URI = 'http://0.0.0.0:8080'
 API_BASE = 'https://discordapp.com/api/v6'
 
 

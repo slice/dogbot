@@ -1,6 +1,21 @@
 /*.json
 
+node_modules
+/web/dist
+
+.env.local
+.env.*.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+.idea
 .vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
 .mypy_cache
 
 # bot
@@ -8,11 +23,6 @@
 config*.yml
 data
 .env
-
-# idea
-.idea
-
-###Python###
 
 venv
 .DS_Store
