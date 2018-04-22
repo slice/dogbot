@@ -44,16 +44,16 @@ html, body, #app
   font 16px/1.5 system-ui, sans-serif
 
 .content
+  padding 1em
+  width 100%
+  height 100%
   &.logged-out
-    width 100%
-    height 100%
     display flex
     justify-content center
     align-items center
   &:not(.logged-out)
     max-width 950px
     margin 0 auto
-    padding 1em
   h2:first-child
     margin-top 0
 
