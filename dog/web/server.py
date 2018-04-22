@@ -8,26 +8,34 @@ from sanic_session import InMemorySessionInterface
 app = Sanic(__name__)
 session_interface = InMemorySessionInterface()
 app.bot = None
-base_redirect = 'http://0.0.0.0:8993'
+
+REDIRECT_URI = 'http://0.0.0.0:8993'
+API_BASE = 'https://discordapp.com/api/v6'
 
 
 def redirect_url():
     state = hex(random.getrandbits(256))[2:]
-    url = 'https://discordapp.com/api/oauth2/authorize?client_id='
+    url = API_BASE + '/oauth2/authorize?client_id='
     url += str(app.bot.cfg.oauth['client_id'])
-    url += f'&redirect_uri={quote_plus(base_redirect)}%2Fauth%2Fredirect'
+    url += f'&redirect_uri={quote_plus(REDIRECT_URI)}%2Fauth%2Fredirect'
     url += f'&response_type=code&scope=identify&state={state}'
     return state, url
 
 
+async def get_user(bearer):
+    headers = {'Authorization': 'Bearer ' + bearer}
+    async with aiohttp.ClientSession(headers=headers) as session:
+        return await (await session.get(API_BASE + '/users/@me')).json()
+
+
 async def get_access_token(code):
-    ENDPOINT = 'https://discordapp.com/api/v6/oauth2/token'
+    ENDPOINT = API_BASE + '/oauth2/token'
     data = {
         'client_id': str(app.bot.cfg.oauth['client_id']),
         'client_secret': app.bot.cfg.oauth['client_secret'],
         'code': code,
         'grant_type': 'authorization_code',
-        'redirect_uri': base_redirect + '/auth/redirect'
+        'redirect_uri': REDIRECT_URI + '/auth/redirect'
     }
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -71,6 +79,8 @@ async def auth_redirect(req):
         return response.text('no code', status=400)
     access_token = await get_access_token(req.args['code'][0])
     req['session']['token'] = access_token
+    user = await get_user(access_token)
+    req['session']['user'] = user
     return response.redirect('/dashboard')
 
 
