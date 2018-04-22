@@ -4,6 +4,7 @@
     <div class="guilds">
       <div class="empty" v-if="guilds && !guilds.length">Nothing here.</div>
       <router-link :to="`/guild/${guild.id}`" class="guild" v-for="guild of guilds" :key="guild.id">
+        <guild-icon :guild="guild"/>
         <strong>{{ guild.name }}</strong>&nbsp;
         <span class="count">({{ guild.members }} member{{ guild.members === 1 ? '' : 's' }})</span>
       </router-link>
@@ -13,6 +14,7 @@
 
 <script>
 import API from '@/api'
+import GuildIcon from '@/components/GuildIcon'
 
 export default {
   name: 'home',
@@ -20,6 +22,9 @@ export default {
     return {
       guilds: null
     }
+  },
+  components: {
+    GuildIcon
   },
   async created () {
     this.guilds = await API.guilds()
@@ -31,11 +36,14 @@ export default {
 .empty
   color #999
 .guild
-  display block
+  display flex
+  align-items center
   color inherit
   text-decoration none
   border-radius 0.15rem
   padding 0.5em 1em
+  .guild-icon
+    margin-right 1em
   &:hover
     background #eee
   .count
