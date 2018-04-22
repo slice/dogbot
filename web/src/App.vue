@@ -21,7 +21,7 @@ export default {
   },
   components: { Topbar, Login },
   async beforeCreate () {
-    let resp = await API.request('/auth/user')
+    let resp = await API.get('/auth/user')
     this.loggedIn = resp.active
   },
   methods: {

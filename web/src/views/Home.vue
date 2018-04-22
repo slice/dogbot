@@ -22,7 +22,7 @@ export default {
     }
   },
   async created () {
-    this.guilds = await API.request('/api/guilds')
+    this.guilds = await API.guilds()
   }
 }
 </script>

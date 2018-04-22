@@ -51,7 +51,7 @@ export default {
   },
   components: { FontAwesomeIcon },
   async mounted () {
-    let resp = await API.request('/api/status')
+    let resp = await API.get('/api/status')
     this.$emit('statusUpdate', resp.ready)
     if (resp.ready) {
       this.color = COLORS.green
