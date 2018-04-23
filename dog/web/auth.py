@@ -13,7 +13,7 @@ def redirect_url():
     state = hex(random.getrandbits(256))[2:]
     url = API_BASE + '/oauth2/authorize?client_id='
     url += str(g.bot.cfg.oauth['client_id'])
-    redirect_uri = url_for('.auth_redirect', _external=True)
+    redirect_uri = g.bot.cfg.oauth['redirect_uri']
     url += f'&redirect_uri={quote_plus(redirect_uri)}'
     url += f'&response_type=code&scope=identify&state={state}'
     return state, url
@@ -32,7 +32,7 @@ async def get_access_token(code):
         'client_secret': g.bot.cfg.oauth['client_secret'],
         'code': code,
         'grant_type': 'authorization_code',
-        'redirect_uri': url_for('.auth_redirect', _external=True)
+        'redirect_uri': g.bot.cfg.oauth['redirect_uri']
     }
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded'
