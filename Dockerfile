@@ -1,4 +1,4 @@
-FROM gorialis/discord.py:extras
+FROM gorialis/discord.py:rewrite-extras
 
 WORKDIR /app
 COPY requirements.txt ./
