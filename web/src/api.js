@@ -9,4 +9,13 @@ export default class API {
   static get (url) {
     return fetch(url, { credentials: 'include' }).then(resp => resp.json())
   }
+
+  static patch (url, content, config = {}) {
+    return fetch(url, {
+      body: content,
+      credentials: 'include',
+      method: 'PATCH',
+      ...config
+    }).then(resp => resp.json())
+  }
 }
