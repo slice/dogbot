@@ -19,7 +19,7 @@ export default {
   mounted () {
     let editor = ace.edit(this.$el)
     this.editor = editor
-    editor.setValue(this.content)
+    editor.setValue(this.content, 1)
     editor.setTheme('ace/theme/' + this.theme)
 
     editor.commands.addCommand({
@@ -43,7 +43,7 @@ export default {
   },
   watch: {
     content (newContent) {
-      this.editor.setValue(newContent)
+      this.editor.setValue(newContent, 1)
     }
   }
 }
