@@ -32,8 +32,9 @@ async def api_guild_config(guild_id):
 
     if request.method == 'PATCH':
         # TODO: handle invalid yaml etc
-        await g.bot.guild_configs.write(guild_id, request.data)
-        return
+        text = await request.get_data(raw=False)
+        await g.bot.guild_configs.write(guild_id, text)
+        return json({"success": True})
 
     config = g.bot.guild_configs.get(guild_id, yaml=True)
     return json({"guild_id": guild_id, "config": config})
