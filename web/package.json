@@ -20,7 +20,6 @@
     "@vue/cli-plugin-eslint": "^3.0.0-beta.6",
     "@vue/cli-service": "^3.0.0-beta.6",
     "@vue/eslint-config-standard": "^3.0.0-beta.6",
-    "lint-staged": "^6.0.0",
     "stylus": "^0.54.5",
     "stylus-loader": "^3.0.1",
     "vue-template-compiler": "^2.5.13"
@@ -46,18 +45,5 @@
     "> 1%",
     "last 2 versions",
     "not ie <= 8"
-  ],
-  "gitHooks": {
-    "pre-commit": "lint-staged"
-  },
-  "lint-staged": {
-    "*.js": [
-      "vue-cli-service lint",
-      "git add"
-    ],
-    "*.vue": [
-      "vue-cli-service lint",
-      "git add"
-    ]
-  }
+  ]
 }
