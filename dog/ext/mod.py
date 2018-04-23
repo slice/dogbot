@@ -24,7 +24,7 @@ class Mod(Cog):
             await ctx.send(f'\N{OK HAND SIGN} Banned {represent(target)}.')
 
     async def on_message(self, message):
-        if not message.guild:
+        if not message.guild or message.author.bot:
             return
 
         config = self.bot.guild_configs.get(message.guild)
