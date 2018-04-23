@@ -24,8 +24,8 @@ def api_ping():
 @api.route('/guilds')
 @require_auth
 def api_guilds():
-    # TODO: don't do owner check, do "can see configuration" check
     guilds = [
-        inflate_guild(guild) for guild in g.bot.guilds if guild.owner == g.user
+        inflate_guild(guild) for guild in g.bot.guilds
+        if g.bot.guild_configs.can_edit(g.user, guild)
     ]
     return json(guilds)
