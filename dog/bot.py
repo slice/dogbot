@@ -1,12 +1,17 @@
+import logging
+
 import aiohttp
 import discord
 from lifesaver.bot import Bot
 from lifesaver.bot.storage import AsyncJSONStorage
 from dog.web.server import app as webapp
 from ruamel.yaml import YAML
+from ruamel.yaml.error import YAMLError
 
 from quart.serving import Server
 from quart.logging import create_serving_logger
+
+log = logging.getLogger(__name__)
 
 
 class GuildConfigManager:
@@ -53,7 +58,12 @@ class GuildConfigManager:
             return None
         if yaml:
             return config
-        return self.yaml.load(config)
+
+        try:
+            return self.yaml.load(config)
+        except YAMLError:
+            log.warning('Invalid YAML config: %s', config)
+            return None
 
     def __getitem__(self, guild):
         config = self.get(self._id(guild))
