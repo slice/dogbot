@@ -7,7 +7,7 @@
     </ul>
     <h3>Configuration</h3>
     <button type="button" @click="save" title="You can also press CTRL+S (or CMD+S on Macs).">Save Changes</button>
-    <ace-editor @change="processEditorChange" @save="save" :content="config" lang="yaml" theme="chrome"/>
+    <ace-editor @change="processEditorChange" @save="save" :content="loadedConfig" lang="yaml" theme="chrome"/>
   </div>
 </template>
 
@@ -25,7 +25,8 @@ export default {
   data () {
     return {
       guild: null,
-      config: ''
+      config: '',
+      loadedConfig: ''
     }
   },
   components: { GuildIcon, AceEditor },
@@ -46,7 +47,7 @@ export default {
   async created () {
     let guilds = await API.guilds()
     this.guild = guilds.find(g => g.id === this.guildId)
-    this.config = (await API.get(`/api/guild/${this.guildId}/config`)).config || ''
+    this.loadedConfig = (await API.get(`/api/guild/${this.guildId}/config`)).config || ''
   },
   computed: {
     guildId () { return this.$route.params.id }
