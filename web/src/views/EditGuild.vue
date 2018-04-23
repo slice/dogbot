@@ -28,7 +28,7 @@ import yaml from 'js-yaml'
 let schema = joi.compile(
   joi.object().keys({
     editors: joi.array().items(joi.number().label('user id')),
-    autoresponses: joi.object().keys().pattern(/^/, joi.string())
+    autoresponses: joi.object().keys().pattern(/.{4}/, joi.string())
   })
 )
 
