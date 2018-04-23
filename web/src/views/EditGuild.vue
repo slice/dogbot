@@ -144,7 +144,7 @@ header
 
 .flash
   position fixed
-  color green
+  color darken(lightgreen, 70%)
   bottom 1rem
   left 1rem
   padding 0.5em 1em
