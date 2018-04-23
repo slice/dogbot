@@ -1,4 +1,4 @@
-from quart import Blueprint, jsonify as json, g
+from quart import Blueprint, jsonify as json, g, request
 from .decorators import require_auth
 
 api = Blueprint('api', __name__)
@@ -19,6 +19,24 @@ def api_ping():
         'ping': g.bot.latency,
         'guilds': len(g.bot.guilds)
     })
+
+
+@api.route('/guild/<int:guild_id>/config', methods=['GET', 'PATCH'])
+@require_auth
+async def api_guild_config(guild_id):
+    if g.bot.get_guild(guild_id) is None:
+        return 'Unknown guild', 400
+
+    if not g.bot.guild_configs.can_edit(g.user, guild_id):
+        return 'Unauthorized.', 401
+
+    if request.method == 'PATCH':
+        # TODO: handle invalid yaml etc
+        await g.bot.guild_configs.write(guild_id, request.data)
+        return
+
+    config = g.bot.guild_configs.get(guild_id)
+    return json({"guild_id": guild_id, "config": config})
 
 
 @api.route('/guilds')
