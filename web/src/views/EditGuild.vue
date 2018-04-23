@@ -37,6 +37,6 @@ h2
   vertical-align middle
 .guild-icon
   margin-right 0.5rem
-  height 0.8em
-  width 0.8em
+  height 0.8em !important
+  width 0.8em !important
 </style>
