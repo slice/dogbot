@@ -21,6 +21,12 @@ class GuildConfigManager:
         return str(obj)
 
     def can_edit(self, user: discord.User, guild) -> bool:
+        # resolve passed ids
+        if isinstance(guild, int):
+            guild = self.bot.get_guild(guild)
+            if not guild:
+                return False
+
         # owners can always see the guild's configuration
         if guild.owner == user:
             return True
