@@ -1,6 +1,9 @@
 <template>
   <div class="edit-guild" v-if="guild != null">
-    <h2><guild-icon :guild="guild"/> {{ guild.name }}</h2>
+    <header>
+      <guild-icon :guild="guild"/>
+      <h2>{{ guild.name }}</h2>
+    </header>
     <div class="flash" v-if="flash">{{ flash }}</div>
     <ul>
       <li>Members: {{ guild.members }}</li>
@@ -125,9 +128,15 @@ button
   border-radius 0.15rem
 
 .guild-icon
-  margin-right 0.5rem
-  height 0.8em !important
-  width 0.8em !important
+  margin-right 1em
+
+header
+  display flex
+  flex-flow row nowrap
+  align-items center
+  margin-bottom 1rem
+  h2
+    margin 0 !important
 
 .editor
   width 100%
