@@ -31,9 +31,15 @@ import joi from 'joi-browser'
 import yaml from 'js-yaml'
 
 let schema = joi.compile(
-  joi.object().keys({
+  joi.object({
     editors: joi.array().items(joi.number().label('user id')),
-    autoresponses: joi.object().keys().pattern(/.{4}/, joi.string())
+    autoresponses: joi.object().keys().pattern(/.{4}/, joi.string()),
+    gatekeeper: joi.object({
+      enabled: joi.boolean(),
+      checks: joi.object(),
+      bounce_message: joi.string().min(1),
+      broadcast_channel: joi.number().label('broadcast channel id')
+    })
   })
 )
 
