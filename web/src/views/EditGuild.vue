@@ -12,13 +12,15 @@
     <h3>Configuration{{ dirty ? '*' : '' }}</h3>
     <div class="error" v-if="error">{{ error }}</div>
     <button type="button" :disabled="error" @click="save" title="You can also press CTRL+S (or CMD+S on Macs).">Save Changes</button>
-    <ace-editor @change="processEditorChange" @save="save" :content="loadedConfig" lang="yaml" theme="chrome"/>
+    <ace-editor v-if="loadedConfig != null" @change="processEditorChange" @save="save" :content="loadedConfig" lang="yaml" theme="chrome"/>
+    <spinner v-else/>
   </div>
 </template>
 
 <script>
 import API from '@/api'
 import GuildIcon from '@/components/GuildIcon'
+import Spinner from '@/components/Spinner'
 
 import AceEditor from '@/components/AceEditor'
 import 'brace/mode/yaml'
@@ -56,7 +58,7 @@ export default {
       error: null
     }
   },
-  components: { GuildIcon, AceEditor },
+  components: { GuildIcon, AceEditor, Spinner },
   methods: {
     async save () {
       if (this.error) return

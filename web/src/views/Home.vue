@@ -8,6 +8,7 @@
         <strong>{{ guild.name }}</strong>&nbsp;
         <span class="count">({{ guild.members }} member{{ guild.members === 1 ? '' : 's' }})</span>
       </router-link>
+      <spinner v-if="!guilds"/>
     </div>
   </div>
 </template>
@@ -15,6 +16,7 @@
 <script>
 import API from '@/api'
 import GuildIcon from '@/components/GuildIcon'
+import Spinner from '@/components/Spinner'
 
 export default {
   name: 'home',
@@ -23,9 +25,7 @@ export default {
       guilds: null
     }
   },
-  components: {
-    GuildIcon
-  },
+  components: { GuildIcon, Spinner },
   async created () {
     this.guilds = await API.guilds()
   }
