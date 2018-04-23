@@ -1,6 +1,8 @@
-version: '2'
+version: '3.6'
 services:
   bot:
     build: .
+    ports:
+    - "8993:8993" # web
     volumes:
     - ./:/app

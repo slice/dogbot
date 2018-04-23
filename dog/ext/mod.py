@@ -1,7 +1,8 @@
 import discord
 from discord.ext.commands import bot_has_permissions, guild_only, has_permissions
 from lifesaver.bot import Cog, Context, command
-from lifesaver.utils import escape_backticks
+from lifesaver.utils import escape_backticks, clean_mentions
+from lifesaver.utils.timing import Ratelimiter
 
 from dog.converters import SoftMember
 from dog.formatting import represent
@@ -9,6 +10,10 @@ from dog.formatting import represent
 
 class Mod(Cog):
     """Moderation-related commands."""
+    def __init__(self, bot):
+        super().__init__(bot)
+        self.auto_cooldown = Ratelimiter(1, 3)
+
     @command()
     @guild_only()
     @bot_has_permissions(ban_members=True)
@@ -22,6 +27,25 @@ class Mod(Cog):
             await ctx.send(f"I can't ban {target}.")
         else:
             await ctx.send(f'\N{OK HAND SIGN} Banned {represent(target)}.')
+
+    async def on_message(self, message):
+        if not message.guild or message.author.bot:
+            return
+
+        config = self.bot.guild_configs.get(message.guild)
+        if not config:
+            return
+        autoresponses = config.get('autoresponses', {})
+
+        for trigger, response in autoresponses.items():
+            if trigger in message.content:
+                if self.auto_cooldown.is_rate_limited(message.author.id, message.channel.id):
+                    return
+                cleaned_response = clean_mentions(message.channel, response)
+                try:
+                    await message.channel.send(cleaned_response)
+                except discord.HTTPException:
+                    pass
 
     @command()
     @guild_only()
