@@ -35,7 +35,7 @@ async def api_guild_config(guild_id):
         await g.bot.guild_configs.write(guild_id, request.data)
         return
 
-    config = g.bot.guild_configs.get(guild_id)
+    config = g.bot.guild_configs.get(guild_id, yaml=True)
     return json({"guild_id": guild_id, "config": config})
 
 

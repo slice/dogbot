@@ -47,10 +47,12 @@ class GuildConfigManager:
     async def write(self, guild, config: str):
         await self.persistent.put(self._id(guild), config)
 
-    def get(self, guild):
+    def get(self, guild, *, yaml: bool = False):
         config = self.persistent.get(self._id(guild))
         if config is None:
             return None
+        if yaml:
+            return config
         return self.yaml.load(config)
 
     def __getitem__(self, guild):
