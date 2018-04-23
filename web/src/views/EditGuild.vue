@@ -6,7 +6,7 @@
       <li>Members: {{ guild.members }}</li>
       <li>Owner: <strong>{{ guild.owner.tag }}</strong> (<code>{{ guild.owner.id }}</code>)</li>
     </ul>
-    <h3>Configuration</h3>
+    <h3>Configuration{{ dirty ? '*' : '' }}</h3>
     <div class="error" v-if="error">{{ error }}</div>
     <button type="button" :disabled="error" @click="save" title="You can also press CTRL+S (or CMD+S on Macs).">Save Changes</button>
     <ace-editor @change="processEditorChange" @save="save" :content="loadedConfig" lang="yaml" theme="chrome"/>
@@ -46,6 +46,7 @@ export default {
       guild: null,
       config: '',
       loadedConfig: '',
+      dirty: false,
       flash: null,
       flashing: false,
       error: null
@@ -62,6 +63,7 @@ export default {
         }
       })
       this.showFlash('Saved.')
+      this.dirty = false
     },
 
     showFlash (flash) {
@@ -80,7 +82,9 @@ export default {
         this.error = null
       } catch (error) {
         this.error = error.message || error.toString()
+        return
       }
+      this.dirty = true
       this.config = content
     }
   },
@@ -117,6 +121,7 @@ button
   white-space pre
   margin-bottom 1rem
   font 12px monospace
+  border-radius 0.15rem
 
 .guild-icon
   margin-right 0.5rem
