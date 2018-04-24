@@ -110,6 +110,7 @@ export default {
     let guilds = await API.guilds()
     this.guild = guilds.find(g => g.id === this.guildId)
     this.loadedConfig = (await API.get(`/api/guild/${this.guildId}/config`)).config || ''
+    this.config = this.loadedConfig
   },
   computed: {
     guildId () { return this.$route.params.id }
