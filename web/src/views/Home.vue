@@ -1,8 +1,8 @@
 <template>
   <div class="home">
-    <h2>Guilds</h2>
+    <h2>Servers</h2>
     <div class="guilds">
-      <div class="empty" v-if="guilds && !guilds.length">Nothing here.</div>
+      <div class="empty" v-if="guilds && !guilds.length">No servers that you can edit.</div>
       <router-link :to="`/guild/${guild.id}`" class="guild" v-for="guild of guilds" :key="guild.id">
         <guild-icon :guild="guild"/>
         <strong>{{ guild.name }}</strong>&nbsp;
