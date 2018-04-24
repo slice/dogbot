@@ -11,7 +11,10 @@
     </ul>
     <h3>Configuration{{ dirty ? '*' : '' }}</h3>
     <div class="error" v-if="error">{{ error }}</div>
-    <button type="button" :disabled="error" @click="save" title="You can also press CTRL+S (or CMD+S on Macs).">Save Changes</button>
+    <div class="toolbar">
+      <button type="button" :disabled="error" @click="save" title="You can also press CTRL+S (or CMD+S on Macs).">Save Changes</button>
+      <spinner v-if="saving"/>
+    </div>
     <ace-editor v-if="loadedConfig != null" @change="processEditorChange" @save="save" :content="loadedConfig" lang="yaml" theme="chrome"/>
     <spinner v-else/>
   </div>
@@ -61,13 +64,15 @@ export default {
       dirty: false,
       flash: null,
       flashing: false,
-      error: null
+      error: null,
+      saving: false
     }
   },
   components: { GuildIcon, AceEditor, Spinner },
   methods: {
     async save () {
       if (this.error) return
+      this.saving = true
       console.log('Saving...')
       await API.patch(`/api/guild/${this.guildId}/config`, this.config, {
         headers: {
@@ -75,6 +80,7 @@ export default {
         }
       })
       this.showFlash('Saved.')
+      this.saving = false
       this.dirty = false
     },
 
@@ -115,17 +121,20 @@ export default {
 h2
   vertical-align middle
 
-button
-  background #dedede
-  border none
-  padding 0.5em 1em
-  display block
-  font inherit
-  border-radius 0.15rem
+.toolbar
   margin-bottom 1rem
-  cursor pointer
-  &[disabled]
-    cursor not-allowed
+  display flex
+  align-items center
+  button
+    background #dedede
+    border none
+    padding 0.5em 1em
+    font inherit
+    border-radius 0.15rem
+    cursor pointer
+    &[disabled]
+      cursor not-allowed
+    margin-right 1em
 
 .error
   padding 0.5em
