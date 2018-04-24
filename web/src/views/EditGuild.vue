@@ -159,6 +159,7 @@ header
   border-radius 0.15rem
   background lightgreen
   animation out 2s linear 1 forwards
+  z-index 100
 
 @keyframes out
   50%
