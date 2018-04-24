@@ -50,11 +50,13 @@ export default {
   .count
     color #999
 
+@media (max-width: 650px)
+  .count
+    display none
+
 @media (max-width: 550px)
   .guild
     padding 0 0 0.5em 0 !important
-    .count
-      display none
     strong
       width 100%
       white-space nowrap
