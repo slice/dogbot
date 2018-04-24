@@ -1,10 +1,11 @@
 <template>
   <div id="app">
-    <topbar :loggedIn="loggedIn" @statusUpdate="statusUpdate"/>
-    <div class="content" :class="{ 'logged-out': loggedIn === false }">
+    <topbar :loggedIn="loggedIn"/>
+    <div class="content" :class="{ 'logged-out': !loggedIn }">
       <!-- loggedIn will be null before fetching, so show nothing while loading -->
-      <router-view :class="{ inactive: !ready }" v-if="loggedIn === true"/>
+      <router-view v-if="loggedIn === true"/>
       <login v-if="loggedIn === false"/>
+      <spinner v-if="loggedIn == null"/>
     </div>
   </div>
 </template>
@@ -13,21 +14,17 @@
 import Topbar from '@/components/Topbar'
 import Login from '@/components/Login'
 import API from '@/api'
+import Spinner from '@/components/Spinner'
 
 export default {
   name: 'app',
   data () {
-    return { loggedIn: null, ready: false }
+    return { loggedIn: null }
   },
-  components: { Topbar, Login },
+  components: { Topbar, Login, Spinner },
   async beforeCreate () {
     let resp = await API.get('/auth/user')
     this.loggedIn = resp.active
-  },
-  methods: {
-    statusUpdate (ready) {
-      this.ready = ready
-    }
   }
 }
 </script>
@@ -56,10 +53,6 @@ html, body, #app
     margin 0 auto
   h2:first-child
     margin-top 0
-
-.inactive
-  opacity 0.3
-  pointer-events none
 
 *
   box-sizing border-box

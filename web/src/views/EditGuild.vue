@@ -57,7 +57,7 @@ export default {
     return {
       guild: null,
       config: '',
-      loadedConfig: '',
+      loadedConfig: null,
       dirty: false,
       flash: null,
       flashing: false,

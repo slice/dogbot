@@ -55,9 +55,9 @@ export default {
     this.$emit('statusUpdate', resp.ready)
     if (resp.ready) {
       this.color = COLORS.green
-      this.message = 'Connected'
+      this.message = 'is ready'
     } else {
-      this.message = 'Disconnected'
+      this.message = 'is booting'
     }
   }
 }
