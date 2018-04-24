@@ -169,4 +169,15 @@ header
 
 .ace_editor
   font 13pt Menlo, Consolas, monospace
+
+@media (max-width: 550px)
+  header h2
+    width 100%
+    white-space nowrap
+    overflow hidden
+    text-overflow ellipsis
+  .guild-icon
+    display none
+  .ace_editor
+    font-size 1rem
 </style>

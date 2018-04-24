@@ -93,7 +93,7 @@ export default {
   border-radius 100%
   margin-right 0.5em
 
-@media (max-width: 550px)
+@media (max-width: 650px)
   .topbar
     padding 0.5em 1em !important
 

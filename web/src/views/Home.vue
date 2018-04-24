@@ -43,9 +43,21 @@ export default {
   border-radius 0.15rem
   padding 0.5em 1em
   .guild-icon
+    display block
     margin-right 1em
   &:hover
     background #eee
   .count
     color #999
+
+@media (max-width: 550px)
+  .guild
+    padding 0 0 0.5em 0 !important
+    .count
+      display none
+    strong
+      width 100%
+      white-space nowrap
+      overflow hidden
+      text-overflow ellipsis
 </style>
