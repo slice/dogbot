@@ -106,6 +106,10 @@ beatmap_cooldown = cooldown(1, 5, BucketType.user)
 
 class Osu(Cog):
     async def search(self, ctx: Context, query, status):
+        # don't use the typing kwarg on the command decorator because this coro
+        # will run for 5 minutes
+        await ctx.channel.trigger_typing()
+
         mapsets = await self.beatmap_search(query, status)
         log.debug('Found %d mapsets: %s', len(mapsets), mapsets)
 
@@ -179,13 +183,13 @@ class Osu(Cog):
             log.debug('Stopped paginator.')
             pass
 
-    @group(typing=True, invoke_without_command=True)
+    @group(invoke_without_command=True)
     @beatmap_cooldown
     async def beatmap(self, ctx: Context, *, query=None):
         """Searches for ranked osu! beatmaps from Bloodcat."""
         await self.search(ctx, query, Beatmap.Status.RANKED)
 
-    @beatmap.command(typing=True, name='unranked')
+    @beatmap.command(name='unranked')
     @beatmap_cooldown
     async def beatmap_unranked(self, ctx: Context, *, query=None):
         """Searches for unranked osu! beatmaps from Bloodcat."""
