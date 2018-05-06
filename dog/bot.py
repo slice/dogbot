@@ -4,12 +4,11 @@ import aiohttp
 import discord
 from lifesaver.bot import Bot
 from lifesaver.bot.storage import AsyncJSONStorage
+from quart.logging import create_serving_logger
+from quart.serving import Server
 
 from dog.guild_config import GuildConfigManager
 from dog.web.server import app as webapp
-
-from quart.serving import Server
-from quart.logging import create_serving_logger
 
 log = logging.getLogger(__name__)
 

@@ -1,12 +1,11 @@
 import re
-from typing import Tuple, Union, Optional
+from typing import Optional, Tuple, Union
 
 import discord
 from discord import PartialEmoji
 from discord.ext import commands
 from discord.ext.commands import Converter, MemberConverter
 from lifesaver.bot import Context
-
 # https://github.com/Rapptz/discord.py/commit/04d9dd9c0dc82b4d870c6269ecc3a9e46cd7292e
 from lifesaver.utils import history_reducer
 

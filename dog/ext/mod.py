@@ -1,7 +1,7 @@
 import discord
 from discord.ext.commands import bot_has_permissions, guild_only, has_permissions
 from lifesaver.bot import Cog, Context, command
-from lifesaver.utils import escape_backticks, clean_mentions
+from lifesaver.utils import clean_mentions, escape_backticks
 from lifesaver.utils.timing import Ratelimiter
 
 from dog.converters import SoftMember
@@ -10,6 +10,7 @@ from dog.formatting import represent
 
 class Mod(Cog):
     """Moderation-related commands."""
+
     def __init__(self, bot):
         super().__init__(bot)
         self.auto_cooldown = Ratelimiter(1, 3)

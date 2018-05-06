@@ -3,8 +3,8 @@ import random
 import aiohttp
 import discord
 from discord.ext import commands
-from discord.ext.commands import bot_has_permissions, has_permissions, guild_only
-from lifesaver.bot import Cog, command, Context
+from discord.ext.commands import bot_has_permissions, guild_only, has_permissions
+from lifesaver.bot import Cog, Context, command
 
 from dog.converters import EmojiStealer, UserIDs
 

@@ -1,16 +1,16 @@
+import datetime
 import inspect
 import logging
-import datetime
 from typing import Optional
 
 import discord
-from discord import Member, Embed
+from discord import Embed, Member
 from discord.ext import commands
 from lifesaver.bot import Cog, Context
 from lifesaver.utils import human_delta
 
 from dog.ext.gatekeeper import checks
-from dog.ext.gatekeeper.core import Block, Report, Check
+from dog.ext.gatekeeper.core import Block, Check, Report
 from dog.formatting import represent
 
 log = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 GATEKEEPER_CHECKS = [
     getattr(checks, check) for check in dir(checks)
     if inspect.isclass(getattr(checks, check)) and issubclass(getattr(checks, check), Check) and
-    getattr(checks, check) is not Check
+       getattr(checks, check) is not Check
 ]
 
 

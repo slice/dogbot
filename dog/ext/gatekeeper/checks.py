@@ -1,8 +1,9 @@
 import datetime
-import discord
 import re
 
-from dog.ext.gatekeeper.core import Check, Block, Report
+import discord
+
+from dog.ext.gatekeeper.core import Block, Check, Report
 
 
 class BlockDefaultAvatarCheck(Check):

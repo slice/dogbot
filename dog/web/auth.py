@@ -2,8 +2,7 @@ import random
 from urllib.parse import quote_plus
 
 import aiohttp
-from quart import Blueprint, jsonify as json, session, request, redirect, \
-    url_for, g
+from quart import Blueprint, g, jsonify as json, redirect, request, session, url_for
 
 auth = Blueprint('auth', __name__)
 API_BASE = 'https://discordapp.com/api/v6'

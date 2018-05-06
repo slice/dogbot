@@ -1,6 +1,6 @@
 import functools
 
-from quart import session, current_app as app, g
+from quart import current_app as app, g, session
 
 
 def require_auth(func):
@@ -14,4 +14,5 @@ def require_auth(func):
             return 'Who are you? Unknown user.', 401
         g.user = user_object
         return func(*args, **kwargs)
+
     return wrapped

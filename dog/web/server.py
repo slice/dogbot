@@ -1,4 +1,5 @@
-from quart import Quart, session, redirect, g
+from quart import Quart, g
+
 from .api import api
 from .auth import auth
 

@@ -1,6 +1,6 @@
 import discord
 from discord.ext.commands import is_owner
-from lifesaver.bot import Cog, Context, group, command
+from lifesaver.bot import Cog, Context, command, group
 
 
 class Administration(Cog):

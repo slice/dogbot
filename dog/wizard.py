@@ -77,6 +77,7 @@ class Wizard:
                 if not result:
                     return False
             return check(*args, **kwargs)
+
         return await self.bot.wait_for(event, check=_check)
 
     async def prompt(self, *args, check=None, **kwargs):
@@ -89,6 +90,7 @@ class Wizard:
     async def pick(self, choices, *args, **kwargs):
         def check(message):
             return message.content in choices
+
         return await self.prompt(*args, **kwargs, check=check)
 
     async def confirm(self, *args, emoji=None, **kwargs):

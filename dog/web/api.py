@@ -1,4 +1,5 @@
-from quart import Blueprint, jsonify as json, g, request
+from quart import Blueprint, g, jsonify as json, request
+
 from .decorators import require_auth
 
 api = Blueprint('api', __name__)
