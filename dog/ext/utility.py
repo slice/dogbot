@@ -1,15 +1,19 @@
+import datetime
 import random
 import re
+import logging
+from collections import defaultdict
 
 import aiohttp
 import discord
 from discord.ext import commands
-from discord.ext.commands import bot_has_permissions, guild_only, has_permissions
+from discord.ext.commands import bot_has_permissions, guild_only, has_permissions, group
 from lifesaver.bot import Cog, Context, command
 from lifesaver.utils import history_reducer
 
 from dog.converters import EmojiStealer, UserIDs
 
+log = logging.getLogger(__name__)
 EMOJI_NAME_REGEX = re.compile(r'<a?(:.+:)\d+>')
 
 
@@ -17,9 +21,24 @@ class Utility(Cog):
     def __init__(self, bot):
         super().__init__(bot)
         self.session = aiohttp.ClientSession(loop=bot.loop)
+        self.gateway_lag = defaultdict(list)
 
     def __unload(self):
         self.session.close()
+
+    async def on_message(self, message: discord.Message):
+        if not message.guild:
+            return
+
+        config = self.bot.guild_configs.get(message.guild)
+        if not config or not config.get('measure_gateway_lag', False):
+            return
+
+        # calculate gateway lag
+        lag = int((datetime.datetime.utcnow() - message.created_at).total_seconds() * 1000)
+
+        self.gateway_lag[message.channel.id].append(lag)
+        log.debug('Measured gateway lag for %d: %d', message.channel.id, lag)
 
     @command(aliases=['ginv', 'invite'])
     async def inv(self, ctx: Context, *ids: UserIDs):
@@ -29,6 +48,32 @@ class Utility(Cog):
 
         urls = '\n'.join(f'<{discord.utils.oauth_url(bot_id)}>' for bot_id in ids)
         await ctx.send(urls)
+
+    @group(hidden=True, invoke_without_command=True)
+    @guild_only()
+    async def gw_lag(self, ctx: Context):
+        """Views gateway lag for this channel."""
+        config = ctx.bot.guild_configs.get(ctx.guild)
+        if not config or not config.get('measure_gateway_lag', False):
+            await ctx.send('No guild configuration was found, or gateway lag measuring was disabled.')
+            return
+        latencies = self.gateway_lag[ctx.channel.id]
+        if not latencies:
+            await ctx.send('Not enough latencies were collected.')
+            return
+        await ctx.send(
+            '**Gateway latency report**\n\n'
+            f'channel: {ctx.channel.mention} (`{ctx.channel.id}`), collected: {len(latencies):,}\n'
+            f'max: `{max(latencies)}ms`, min: `{min(latencies)}ms`, avg: `{sum(latencies)/len(latencies):.2f}ms`'
+        )
+
+    @gw_lag.command(name='clear')
+    @guild_only()
+    @has_permissions(manage_messages=True)
+    async def gw_lag_clear(self, ctx: Context):
+        """Clear gathered latencies for this channel."""
+        self.gateway_lag[ctx.channel.id] = []
+        await ctx.ok()
 
     @command(aliases=['shiba', 'dog'], typing=True)
     async def shibe(self, ctx: Context):
