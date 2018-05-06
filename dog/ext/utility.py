@@ -1,12 +1,16 @@
 import random
+import re
 
 import aiohttp
 import discord
 from discord.ext import commands
 from discord.ext.commands import bot_has_permissions, guild_only, has_permissions
 from lifesaver.bot import Cog, Context, command
+from lifesaver.utils import history_reducer
 
 from dog.converters import EmojiStealer, UserIDs
+
+EMOJI_NAME_REGEX = re.compile(r'<a?(:.+:)\d+>')
 
 
 class Utility(Cog):
@@ -49,6 +53,27 @@ class Utility(Cog):
 
         result = random.choice(choices)
         await ctx.send(result)
+
+    @command()
+    @guild_only()
+    @bot_has_permissions(read_message_history=True)
+    async def emojinames(self, ctx: Context):
+        """
+        Shows the names of recent custom emoji used.
+
+        Useful for mobile users, who can't see the names of custom emoji.
+        """
+
+        def reducer(message):
+            return EMOJI_NAME_REGEX.findall(message.content)
+
+        emoji_names = await history_reducer(ctx, reducer, ignore_duplicates=True, limit=50)
+
+        if not emoji_names:
+            await ctx.send('No recently used custom emoji were found.')
+        else:
+            formatted = ', '.join(f'`{name}`' for name in emoji_names)
+            await ctx.send(formatted)
 
     @command()
     @guild_only()
