@@ -52,7 +52,7 @@ class Mapset:
             self.ranked_at = None
         self.status = int(data.get('status'))
         self.source = data.get('source')
-        self.tags = data.get('tags').split(' ')
+        self.tags = data.get('tags', [])
         self.title_romanized = data.get('title')
         self.title_original = data.get('titleU')
 
