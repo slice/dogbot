@@ -131,7 +131,7 @@ class Time(Cog):
                     avatar = Image.open(fp=BytesIO(avatar_bytes)).convert('RGBA')
                     # resized = avatar.resize((32, 32), resample=Image.LANCZOS)
                     log.info('map_image: Adding %s (%d) at (%d, %d)', member, member.id, x, y)
-                    map_image.paste(avatar, box=(x, y))
+                    map_image.paste(avatar, box=(x, y), mask=avatar)
                 y -= 32 + 5
                 log.debug('After drawing %s, Y coordinate is now %d.', member, y)
             log.debug('Okay, drew this timezone. (time=%s, offset=%d. members=%s)', formatted, offset, members)
