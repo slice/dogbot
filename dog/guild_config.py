@@ -12,6 +12,7 @@ class GuildConfigManager:
         self.bot = bot
         self.yaml = YAML(typ='safe')
         self.persistent = AsyncJSONStorage('guild_configs.json', loop=bot.loop)
+        self.parsed_cache = {}
 
     def _id(self, obj):
         if isinstance(obj, discord.Guild):
@@ -52,8 +53,15 @@ class GuildConfigManager:
         if yaml:
             return config
 
+        if config in self.parsed_cache:
+            log.debug('Using parsed cache.')
+            return self.parsed_cache[config]
+
         try:
-            return self.yaml.load(config)
+            log.debug('Cold configuration, parsing.')
+            result = self.yaml.load(config)
+            self.parsed_cache[config] = result
+            return result
         except YAMLError:
             log.warning('Invalid YAML config: %s', config)
             return None
