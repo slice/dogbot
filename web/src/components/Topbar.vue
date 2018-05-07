@@ -3,7 +3,11 @@
     <router-link to="/" class="brand"><strong>dog</strong></router-link>
     <div class="status">
       <div class="dot" :style="{ 'background-color': color }"></div>
-      {{ message }}
+      <div class="user" v-if="user != null">
+        <img class="icon" draggable="false"
+          :src="`https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64`">
+        <span class="name">{{ user.username }}#{{ user.discriminator }}</span>
+      </div>
     </div>
     <div class="links">
       <a href="https://github.com/slice/dogbot" class="promo" target="_blank" rel="noreferrer">
@@ -41,7 +45,7 @@ export default {
   data () {
     return {
       color: COLORS.red,
-      message: '...'
+      user: null
     }
   },
   computed: {
@@ -55,9 +59,13 @@ export default {
     this.$emit('statusUpdate', resp.ready)
     if (resp.ready) {
       this.color = COLORS.green
-      this.message = 'is ready'
-    } else {
-      this.message = 'is booting'
+    }
+  },
+  watch: {
+    loggedIn: async function (new_, old) {
+      if (!new_) return
+      let { user } = await API.get('/auth/user')
+      this.user = user
     }
   }
 }
@@ -70,6 +78,21 @@ export default {
   padding 1em 2em
   display flex
   align-items center
+
+.status
+  display flex
+  align-items center
+
+.user
+  display flex
+  align-items center
+  .icon
+    display block
+    width 1.5em
+    height 1.5em
+    object-fit cover
+    border-radius 100%
+    margin-right 0.5em
 
 .brand
   color inherit
@@ -91,9 +114,9 @@ export default {
   width 10px
   height 10px
   border-radius 100%
-  margin-right 0.5em
+  margin-right 2em
 
-@media (max-width: 650px)
+@media (max-width: 700px)
   .topbar
     padding 0.5em 1em !important
 

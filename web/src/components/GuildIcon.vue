@@ -1,5 +1,5 @@
 <template>
-  <img :src="guild.icon_url" class="guild-icon">
+  <img :src="guild.icon_url" draggable="false" class="guild-icon">
 </template>
 
 <script>
