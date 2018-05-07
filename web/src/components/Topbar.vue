@@ -29,8 +29,8 @@ import { faGithub, faPatreon } from '@fortawesome/fontawesome-free-brands'
 import { faSignOutAlt } from '@fortawesome/fontawesome-free-solid'
 
 const COLORS = {
-  green: 'hsla(128, 100%, 70%, 1)',
-  red: 'hsla(0, 100%, 70%, 1)'
+  green: 'hsla(128, 100%, 30%, 1)',
+  red: 'hsla(0, 100%, 30%, 1)'
 }
 
 export default {
@@ -65,8 +65,8 @@ export default {
 
 <style scoped lang="stylus">
 .topbar
-  background #222
-  color #fff
+  background #eee
+  color #444
   padding 1em 2em
   display flex
   align-items center

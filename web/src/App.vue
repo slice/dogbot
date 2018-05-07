@@ -2,7 +2,7 @@
   <div id="app">
     <topbar :loggedIn="loggedIn"/>
     <div class="content" :class="{ 'logged-out': !loggedIn }">
-      <!-- loggedIn will be null before fetching, so show nothing while loading -->
+      <!-- loggedIn will be null before fetching, so show a spinner while loading -->
       <router-view v-if="loggedIn === true"/>
       <login v-if="loggedIn === false"/>
       <spinner v-if="loggedIn == null"/>
