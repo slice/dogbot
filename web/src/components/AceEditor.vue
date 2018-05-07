@@ -40,11 +40,6 @@ export default {
       tabSize: 4,
       useSoftTabs: true
     })
-  },
-  watch: {
-    content (newContent) {
-      this.editor.setValue(newContent, 1)
-    }
   }
 }
 </script>
