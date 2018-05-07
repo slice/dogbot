@@ -22,7 +22,7 @@
       <spinner v-if="saving"/>
     </div>
     <ace-editor v-if="config != null"
-      @change="processEditorChange"
+      @change="validateConfig"
       @save="save"
       :content="config"
       lang="yaml"
@@ -41,29 +41,12 @@ import 'brace/mode/yaml'
 import 'brace/ext/searchbox'
 import 'brace/theme/chrome'
 
-import joi from 'joi-browser'
 import yaml from 'js-yaml'
+import { validate } from '@/schema'
 
-let schema = joi.compile(
-  joi.object({
-    editors: joi.array().items(joi.number().label('user id')),
-    autoresponses: joi.object().keys().pattern(/.{4}/, joi.string()),
-    gatekeeper: joi.object({
-      enabled: joi.boolean(),
-      checks: joi.object(),
-      bounce_message: joi.string().min(1),
-      broadcast_channel: joi.number().label('broadcast channel id')
-    }),
-    measure_gateway_lag: joi.boolean()
-  })
-)
-
-function validate (raw) {
+function check (raw) {
   let doc = yaml.safeLoad(raw)
-  let { error } = joi.validate(doc, schema, {
-    convert: false
-  })
-  if (error) throw error
+  validate(doc)
 }
 
 export default {
@@ -107,9 +90,9 @@ export default {
       }, 2000)
     },
 
-    processEditorChange (content) {
+    validateConfig (content) {
       try {
-        validate(content)
+        check(content)
         this.error = null
       } catch (error) {
         this.error = error.message || error.toString()
