@@ -5,17 +5,28 @@
       <h2>{{ guild.name }}</h2>
     </header>
     <div class="flash" v-if="flash">{{ flash }}</div>
+
+    <!-- guild information -->
     <ul>
       <li>Members: {{ guild.members }}</li>
       <li>Owner: <strong>{{ guild.owner.tag }}</strong> (<code>{{ guild.owner.id }}</code>)</li>
     </ul>
+
+    <!-- guild config -->
     <h3>Configuration{{ dirty ? '*' : '' }}</h3>
     <div class="error" v-if="error">{{ error }}</div>
+    <!-- buttons above textarea -->
     <div class="toolbar">
-      <button type="button" :disabled="error" @click="save" title="You can also press CTRL+S (or CMD+S on Macs).">Save Changes</button>
+      <button type="button" :disabled="error" @click="save"
+        title="You can also press CTRL+S (or CMD+S on Macs).">Save Changes</button>
       <spinner v-if="saving"/>
     </div>
-    <ace-editor v-if="loadedConfig != null" @change="processEditorChange" @save="save" :content="loadedConfig" lang="yaml" theme="chrome"/>
+    <ace-editor v-if="config != null"
+      @change="processEditorChange"
+      @save="save"
+      :content="config"
+      lang="yaml"
+      theme="chrome"/>
     <spinner v-else/>
   </div>
 </template>
@@ -60,19 +71,20 @@ export default {
   data () {
     return {
       guild: null,
-      config: '',
-      loadedConfig: null,
       dirty: false,
       flash: null,
       flashing: false,
       error: null,
-      saving: false
+      saving: false,
+      config: null
     }
   },
   components: { GuildIcon, AceEditor, Spinner },
   methods: {
     async save () {
       if (this.error) return
+      if (this.config == null) return
+
       this.saving = true
       console.log('Saving...')
       await API.patch(`/api/guild/${this.guildId}/config`, this.config, {
@@ -110,8 +122,9 @@ export default {
   async created () {
     let guilds = await API.guilds()
     this.guild = guilds.find(g => g.id === this.guildId)
-    this.loadedConfig = (await API.get(`/api/guild/${this.guildId}/config`)).config || ''
-    this.config = this.loadedConfig
+
+    const config = (await API.get(`/api/guild/${this.guildId}/config`)).config || ''
+    this.config = config
   },
   computed: {
     guildId () { return this.$route.params.id }
