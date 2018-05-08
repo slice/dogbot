@@ -5,8 +5,7 @@ from typing import Optional
 
 import discord
 from discord import Embed, Member
-from discord.ext import commands
-from lifesaver.bot import Cog, Context
+from lifesaver.bot import Cog, Context, group
 from lifesaver.utils import human_delta
 
 from dog.ext.gatekeeper import checks
@@ -105,8 +104,8 @@ class Gatekeeper(Cog):
         embed.timestamp = datetime.datetime.utcnow()
         await report(embed=embed)
 
-    @commands.group(aliases=['gk'])
-    async def gatekeeper(self, ctx: commands.Context):
+    @group(aliases=['gk'], hollow=True)
+    async def gatekeeper(self, ctx: Context):
         """
         Manages Gatekeeper.
 
@@ -114,10 +113,6 @@ class Gatekeeper(Cog):
         and automatically kick those who don't fit a certain criteria. Only users who can ban can use it.
         This is very useful when your server is undergoing raids, unwanted attention, unwanted members, etc.
         """
-        if ctx.invoked_subcommand is None:
-            return await ctx.send(
-                f'You need to specify a valid subcommand to run. For help, run `{ctx.prefix}help gk`.'
-            )
 
     @gatekeeper.command()
     async def status(self, ctx: Context):
