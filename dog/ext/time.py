@@ -282,8 +282,7 @@ class Time(Cog):
         try:
             timezones = pytz.country_timezones[code]
         except KeyError:
-            await ctx.send(f"Sorry, but I couldn't find any designated timezones for **{name}** "
-                           "in my database. I still love you, though. \N{HEAVY BLACK HEART}")
+            await ctx.send(f"Sorry, but I couldn't find any designated timezones for **{name}**.")
             log.warning('%d: Failed to find any timezones for %s (%s)', target.id, code, country)
             return
 
@@ -319,8 +318,8 @@ class Time(Cog):
 
         log.debug('%d: Timezone is: %s', target.id, user_timezone)
         await self.timezones.put(target.id, user_timezone)
-        embed = discord.Embed(title='You made it!', color=discord.Color.magenta(),
-                              description=f'Your timezone is now {user_timezone}. Thanks for putting up with me.')
+        embed = discord.Embed(title='Timezone set', color=discord.Color.magenta(),
+                              description=f'Your timezone is now {user_timezone}.')
         await target.send(embed=embed)
 
 
