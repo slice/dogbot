@@ -1,9 +1,10 @@
 from quart import Blueprint, g, jsonify as json, request
+from ruamel.yaml import YAML, YAMLError
 
 from .decorators import require_auth
 
 api = Blueprint('api', __name__)
-
+yaml = YAML(typ='safe')
 
 def inflate_guild(g):
     return {
@@ -34,6 +35,13 @@ async def api_guild_config(guild_id):
     if request.method == 'PATCH':
         # TODO: handle invalid yaml etc
         text = await request.get_data(raw=False)
+        try:
+            yml = yaml.load(text)
+            if type(yml) is not dict: # Bare words become strings which break stuff
+                return json({"success": False})
+        except YAMLError as err:
+            return json({"success": False})
+
         await g.bot.guild_configs.write(guild_id, text)
         return json({"success": True})
 
