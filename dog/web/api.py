@@ -33,14 +33,13 @@ async def api_guild_config(guild_id):
         return 'Unauthorized.', 401
 
     if request.method == 'PATCH':
-        # TODO: handle invalid yaml etc
         text = await request.get_data(raw=False)
         try:
             yml = yaml.load(text)
             if type(yml) is not dict: # Bare words become strings which break stuff
-                return json({"success": False})
+                return json({"success": False}), 400
         except YAMLError as err:
-            return json({"success": False})
+            return json({"success": False}), 400
 
         await g.bot.guild_configs.write(guild_id, text)
         return json({"success": True})
