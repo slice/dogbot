@@ -88,6 +88,7 @@ export default {
   align-items center
   .icon
     display block
+    flex-shrink 0
     width 1.5em
     height 1.5em
     object-fit cover

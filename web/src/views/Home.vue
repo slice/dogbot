@@ -44,6 +44,7 @@ export default {
   padding 0.5em 1em
   .guild-icon
     display block
+    flex-shrink 0
     margin-right 1em
   &:hover
     background #eee
