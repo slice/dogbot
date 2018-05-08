@@ -17,6 +17,11 @@ log = logging.getLogger(__name__)
 TWELVEHOUR_COUNTRIES = ['US', 'AU', 'CA', 'PH']
 
 
+def timezone_is_concrete(timezone: str) -> bool:
+    tz = pytz.timezone(timezone)
+    return isinstance(tz, pytz.tzinfo.StaticTzInfo)
+
+
 def draw_rotated_text(image, angle, xy, text, fill, *args, **kwargs):
     """https://stackoverflow.com/a/45405131/2491753"""
     # get the size of our image
@@ -83,6 +88,7 @@ class Time(Cog):
                  f'`{ctx.prefix}time set`.')
             )
             return
+
         await ctx.send(f'{who.display_name}: {formatted_time}')
 
     @time.command(typing=True)
@@ -186,6 +192,13 @@ class Time(Cog):
                     f'Unknown timezone. Not sure what the timezone codes are? Use `{ctx.prefix}t set` to set your '
                     'timezone interactively through a direct message, or look here: '
                     '<https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>'
+                )
+                return
+            if timezone_is_concrete(timezone):
+                await ctx.send(
+                    "Error! I won't use that timezone because it uses a constant hour offset, "
+                    "which almost always results in an invalid time being reported. Please use a "
+                    f"more specific timezone. (Run `{ctx.prefix}time set` to set your timezone through a DM.)"
                 )
                 return
             await self.timezones.put(target.id, timezone)
