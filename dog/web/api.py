@@ -6,6 +6,7 @@ from .decorators import require_auth
 api = Blueprint('api', __name__)
 yaml = YAML(typ='safe')
 
+
 def inflate_guild(g):
     return {
         "id": str(g.id), "name": g.name, "members": g.member_count,
@@ -34,12 +35,14 @@ async def api_guild_config(guild_id):
 
     if request.method == 'PATCH':
         text = await request.get_data(raw=False)
+
         try:
             yml = yaml.load(text)
-            if type(yml) is not dict: # Bare words become strings which break stuff
-                return json({"success": False}), 400
         except YAMLError as err:
-            return json({"success": False}), 400
+            return json({"success": False, "message": f"invalid yaml ({err})"}), 400
+
+        if type(yml) is not dict:  # bare words become strings which break stuff
+            return json({"success": False, "message": "not a dict"}), 400
 
         await g.bot.guild_configs.write(guild_id, text)
         return json({"success": True})
