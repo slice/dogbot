@@ -42,12 +42,13 @@ export default {
   text-decoration none
   border-radius 0.15rem
   padding 0.5em 1em
+  transition background .1s
   .guild-icon
     display block
     flex-shrink 0
     margin-right 1em
   &:hover
-    background #eee
+    background #efefef
   .count
     color #999
 
