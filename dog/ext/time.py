@@ -184,6 +184,7 @@ class Time(Cog):
     async def map(self, ctx: Context):
         """Views a timezone map."""
 
+        twelve_hour = False
         try:
             invoker_timezone = self.timezones.get(ctx.author.id)
             country = next(
