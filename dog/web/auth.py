@@ -11,8 +11,8 @@ API_BASE = 'https://discordapp.com/api/v6'
 def redirect_url():
     state = hex(random.getrandbits(256))[2:]
     url = API_BASE + '/oauth2/authorize?client_id='
-    url += str(g.bot.cfg.oauth['client_id'])
-    redirect_uri = g.bot.cfg.oauth['redirect_uri']
+    url += str(g.bot.config.oauth['client_id'])
+    redirect_uri = g.bot.config.oauth['redirect_uri']
     url += f'&redirect_uri={quote_plus(redirect_uri)}'
     url += f'&response_type=code&scope=identify&state={state}'
     return state, url
@@ -27,11 +27,11 @@ async def get_user(bearer):
 async def get_access_token(code):
     ENDPOINT = API_BASE + '/oauth2/token'
     data = {
-        'client_id': str(g.bot.cfg.oauth['client_id']),
-        'client_secret': g.bot.cfg.oauth['client_secret'],
+        'client_id': str(g.bot.config.oauth['client_id']),
+        'client_secret': g.bot.config.oauth['client_secret'],
         'code': code,
         'grant_type': 'authorization_code',
-        'redirect_uri': g.bot.cfg.oauth['redirect_uri']
+        'redirect_uri': g.bot.config.oauth['redirect_uri']
     }
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded'

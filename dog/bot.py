@@ -22,7 +22,7 @@ class Dogbot(Bot):
         self.guild_configs = GuildConfigManager(self)
 
         webapp.bot = self
-        webapp.secret_key = self.cfg.web['secret_key']
+        webapp.secret_key = self.config.web['secret_key']
         self.boot_server()
 
     def boot_server(self):
