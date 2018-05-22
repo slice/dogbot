@@ -11,7 +11,7 @@ import pytz
 from PIL import Image, ImageDraw, ImageFont
 from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
-from lifesaver.bot import Cog, Context, group
+from lifesaver.bot import Cog, Context, group, command
 from lifesaver.bot.storage import AsyncJSONStorage
 
 log = logging.getLogger(__name__)
@@ -57,6 +57,22 @@ def draw_rotated_text(image, angle, xy, text, fill, *args, **kwargs):
     image.paste(color_image, mask)
 
     return draw.textsize(text=text, font=kwargs.get('font'))
+
+
+def hour_minute(stamp):
+    parts = stamp.split(':')
+    if len(parts) != 2:
+        raise commands.BadArgument('Invalid sleep time. Example: 7:00')
+    try:
+        hour = int(parts[0])
+        minute = int(parts[1])
+
+        return datetime.datetime(
+            year=2018, month=3, day=15,  # random date
+            hour=hour, minute=minute
+        )
+    except ValueError:
+        raise commands.BadArgument('Invalid hour/minute numerals.')
 
 
 class Map:
@@ -157,6 +173,25 @@ class Time(Cog):
             return None
         their_time = datetime.datetime.now(pytz.timezone(timezone))
         return their_time.strftime('%B %d, %Y  %H:%M:%S (%I:%M:%S %p)')
+
+    @command(aliases=['st'])
+    async def sleepytime(self, ctx: Context, *, awaken_time: hour_minute):
+        """Calculates the time you should go to sleep at night."""
+
+        cycle_length = datetime.timedelta(seconds=90 * 60)
+
+        most_late = awaken_time - datetime.timedelta(seconds=270 * 60)
+        second_time = most_late - cycle_length
+        third_time = second_time - cycle_length
+        fourth_time = third_time - cycle_length
+
+        times = [fourth_time, third_time, second_time, most_late]
+        time_format = '%I:%M %p'
+        formatted = [f'**{time.strftime(time_format)}**' for time in times]
+        await ctx.send(
+            f'To wake up at {awaken_time.strftime(time_format)} feeling great, '
+            f'try falling sleep at these times: {", ".join(formatted)}'
+        )
 
     @group(invoke_without_command=True, aliases=['t'])
     async def time(self, ctx: Context, *, who: discord.Member = None):
