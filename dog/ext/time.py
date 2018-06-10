@@ -172,7 +172,8 @@ class Time(Cog):
         if not timezone:
             return None
         their_time = datetime.datetime.now(pytz.timezone(timezone))
-        return their_time.strftime('%B %d, %Y  %H:%M:%S (%I:%M:%S %p)')
+        time_format = '%H:%M:%S' if their_time.hour < 12 else '%H:%M:%S (%I:%M:%S %p)'
+        return their_time.strftime('%B %d, %Y  ' + time_format)
 
     @command(aliases=['st'])
     async def sleepytime(self, ctx: Context, *, awaken_time: hour_minute):
