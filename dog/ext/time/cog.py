@@ -2,14 +2,15 @@ import datetime
 import logging
 
 import discord
-import pycountry
 import pytz
 from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
 from lifesaver.bot import Cog, Context, command, group
 from lifesaver.bot.storage import AsyncJSONStorage
+from geopy import exc as geopy_errors
 
 from .converters import hour_minute
+from .geocoder import Geocoder
 from .map import Map
 
 log = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ TWELVEHOUR_COUNTRIES = ['US', 'AU', 'CA', 'PH']
 class Time(Cog):
     def __init__(self, bot):
         super().__init__(bot)
+        self.geocoder = Geocoder(bot=bot, loop=bot.loop)
         self.timezones = AsyncJSONStorage('timezones.json', loop=bot.loop)
 
     def get_time_for(self, user: discord.User):
@@ -119,148 +121,25 @@ class Time(Cog):
         else:
             await ctx.send('Okay, cancelled.')
 
-    @time.command(name='set')
-    async def time_set(self, ctx: Context, *, timezone: commands.clean_content = None):
-        """Sets your current timezone."""
-        target = ctx.author
+    @time.command(name='set', typing=True)
+    @cooldown(1, 3, BucketType.user)
+    async def time_set(self, ctx: Context, *, location: commands.clean_content):
+        """Sets your current timezone from location."""
 
-        if timezone is not None:
-            if any(c in timezone for c in ['`', ' ']) or len(timezone) > 80:
-                await ctx.send("That's not a timezone.")
-                return
-            try:
-                pytz.timezone(timezone)
-            except pytz.exceptions.UnknownTimeZoneError:
-                await ctx.send(
-                    f'Unknown timezone. Not sure what the timezone codes are? Use `{ctx.prefix}t set` to set your '
-                    'timezone interactively through a direct message, or look here: '
-                    '<https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>'
-                )
-                return
-            if timezone_is_concrete(timezone):
-                await ctx.send(
-                    "Error! I won't use that timezone because it uses a constant hour offset, "
-                    "which almost always results in an invalid time being reported. Please use a "
-                    f"more specific timezone. (Run `{ctx.prefix}time set` to set your timezone through a DM.)"
-                )
-                return
-            await self.timezones.put(target.id, timezone)
-            await ctx.ok()
-            return
-
-        # TODO: refactor, improve, and build upon ask and prompt into a generic interface. should be usable by others.
-        #       it's currently too trashy and narrow the way it stands.
-        ask_aborted = object()  # sentinel that indicates abort
-
-        async def ask(prompt, *, determiner, on_fail="Invalid response. Please try again."):
-            embed = discord.Embed(color=discord.Color.green(), title='Timezone wizard', description=prompt)
-            await target.send(embed=embed)
-            while True:
-                message = await self.bot.wait_for('message', check=lambda m: not m.guild and m.author == target)
-                if message.content == 'cancel':
-                    return ask_aborted
-                try:
-                    value = determiner(message.content)
-                    if not value:
-                        continue
-                    else:
-                        return value
-                except:
-                    await target.send(on_fail)
-                    continue
-
-        async def prompt(message):
-            embed = discord.Embed(color=discord.Color.gold(), title='Confirmation', description=message)
-            confirmation: discord.Message = await target.send(embed=embed)
-            emoji = ['\N{WHITE HEAVY CHECK MARK}', '\N{NO ENTRY SIGN}']
-            for e in emoji:
-                await confirmation.add_reaction(e)
-
-            while True:
-                def _check(_r, u):
-                    return u == target
-
-                reaction, user = await self.bot.wait_for('reaction_add', check=_check)
-                if reaction.emoji in emoji:
-                    return reaction.emoji == emoji[0]
-
+        timezone = None
         try:
-            embed = discord.Embed(
-                title='Timezone wizard',
-                description="Hello! I'll be helping you pick your timezone. By setting your timezone, other people "
-                            "will be able to see what time it is for you, and other cool stuff."
-            )
-            await target.send(embed=embed)
-        except discord.HTTPException:
-            await ctx.send("I can't DM or interact with you.")
-            return
-
-        await ctx.send(f'{target.display_name}: Check your DMs.')
-
-        log.debug('%d: Timezone wizard started.', target.id)
-
-        while True:
-            country = await ask(
-                'Please send me the name of the country you live in.\n\n'
-                'Something like "USA", "United States", or even the two-letter country code like "US".\n'
-                "Send 'cancel' to abort.",
-                determiner=pycountry.countries.lookup,
-                on_fail="Sorry, that didn't seem like a country to me. Please try again, or send 'cancel' to abort."
-            )
-            if country is ask_aborted:
-                await target.send('Operation cancelled. Sorry about that!')
+            location = await self.geocoder.geocode(location)
+            if location is None:
+                await ctx.send('\U00002753 Unknown location. Examples: "Arizona", "London", "California"')
                 return
 
-            log.debug('%d: Provided country: %s', target.id, country)
+            timezone = await self.geocoder.timezone(location.point)
+        except geopy_errors.GeocoderQuotaExceeded:
+            await ctx.send('\U0001f6b1 API quota exceeded, please try again later.')
+        except geopy_errors.GeopyError as error:
+            await ctx.send(f'\U00002753 Unable to resolve your location: `{error}`')
 
-            name = getattr(country, 'official_name', country.name)
-
-            if await prompt(f'Do you live in **{name}**?\n'
-                            'Click \N{WHITE HEAVY CHECK MARK} to continue.'):
-                break
-
-        code = country.alpha_2
-        log.debug('%d: Lives in %s (%s)', target.id, code, country)
-
-        try:
-            timezones = pytz.country_timezones[code]
-        except KeyError:
-            await ctx.send(f"Sorry, but I couldn't find any designated timezones for **{name}**.")
-            log.warning('%d: Failed to find any timezones for %s (%s)', target.id, code, country)
-            return
-
-        embed = discord.Embed(
-            title='Timezone wizard',
-            description='Which timezone are you living in?\n\n',
-            color=discord.Color.green()
+        await self.timezones.put(ctx.author.id, str(timezone))
+        await ctx.send(
+            f'\N{OK HAND SIGN} Your timezone is now set to {timezone}.'
         )
-        for timezone in timezones:
-            pytz_timezone = pytz.timezone(timezone)
-            now_in_timezone: datetime.datetime = datetime.datetime.now(pytz_timezone)
-            time_now = now_in_timezone.strftime('%H:%M  (%I:%M %p)')
-            embed.description += f'\N{BULLET} {timezone}  {time_now}\n'
-        embed.description += '\nPlease send the timezone code.'
-        if len(embed.description) > 2048:
-            await target.send(
-                "Hmm. Looks like there's so many timezones in that region, I can't display them all. "
-                "Sorry about that."
-            )
-            return
-        await target.send(embed=embed)
-
-        while True:
-            response = await self.bot.wait_for('message', check=lambda m: not m.guild and m.author == target)
-            if response.content == 'cancel':
-                await target.send('Aborted. Sorry.')
-                return
-            if response.content not in timezones:
-                await target.send("That's not a timezone code that was listed above. Send 'cancel' to abort.")
-            else:
-                user_timezone = response.content
-                break
-
-        log.debug('%d: Timezone is: %s', target.id, user_timezone)
-        await self.timezones.put(target.id, user_timezone)
-        embed = discord.Embed(title='Timezone set', color=discord.Color.magenta(),
-                              description=f'Your timezone is now {user_timezone}.')
-        await target.send(embed=embed)
