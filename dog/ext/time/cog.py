@@ -1,5 +1,6 @@
 import datetime
 import logging
+from typing import Optional
 
 import discord
 import pytz
@@ -30,14 +31,21 @@ class Time(Cog):
         self.geocoder = Geocoder(bot=bot, loop=bot.loop)
         self.timezones = AsyncJSONStorage('timezones.json', loop=bot.loop)
 
-    def get_time_for(self, user: discord.User):
+    def get_time_for(self, user: discord.User) -> Optional[datetime.datetime]:
         timezone = self.timezones.get(user.id)
         if not timezone:
             return None
-        their_time = datetime.datetime.now(pytz.timezone(timezone))
+        time = datetime.datetime.now(pytz.timezone(timezone))
+        return time
+
+    def get_formatted_time_for(self, user: discord.User) -> Optional[str]:
+        time = self.get_time_for(user)
+        if not time:
+            return None
+
         # omit the 12-hour representation before noon as it is redundant (both are essentially the same)
-        time_format = '%H:%M:%S' if their_time.hour < 12 else '%H:%M:%S (%I:%M:%S %p)'
-        return their_time.strftime('%B %d, %Y  ' + time_format)
+        time_format = '%H:%M:%S' if time.hour < 12 else '%H:%M:%S (%I:%M:%S %p)'
+        return time.strftime('%B %d, %Y  ' + time_format)
 
     @command(aliases=['st'])
     async def sleepytime(self, ctx: Context, *, awaken_time: hour_minute):
@@ -67,13 +75,13 @@ class Time(Cog):
             await ctx.send(f"{who} can't use this bot.")
             return
 
-        formatted_time = self.get_time_for(who)
+        formatted_time = self.get_formatted_time_for(who)
         if not formatted_time:
             await ctx.send(
-                f"You haven't set your timezone yet. Send `{ctx.prefix}time set` to do so in a DM."
+                f"\U00002753 You haven't set your timezone yet. Send `{ctx.prefix}time set` to do so in a DM."
                 if who == ctx.author else
-                (f'{who.display_name} has not set their timezone. They can set their timezone with '
-                 f'`{ctx.prefix}time set`.')
+                (f'\U00002753 {who.display_name} has not set their timezone. They can set their timezone with '
+                 f'`{ctx.prefix}time set`, like: `{ctx.prefix}time set London`.')
             )
             return
 
