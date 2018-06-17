@@ -4,6 +4,5 @@ git+https://github.com/slice/lifesaver
 
 pytz==2018.3
 geopy
-lark-parser
 quart
 uvloop
