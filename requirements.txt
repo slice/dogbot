@@ -1,5 +1,4 @@
 git+https://github.com/Rapptz/discord.py@rewrite
-git+https://github.com/Gorialis/jishaku@master
 git+https://github.com/slice/lifesaver
 
 pytz==2018.3
