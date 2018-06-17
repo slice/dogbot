@@ -33,7 +33,7 @@ class Map:
         if self.twelve_hour:
             return '%I:%M %p'
         else:
-            return '%H:%M:'
+            return '%H:%M'
 
     def close(self):
         self.image.close()
