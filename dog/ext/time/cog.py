@@ -149,6 +149,15 @@ class Time(Cog):
             await ctx.send(f'\U00002753 Unable to resolve your location: `{error}`')
 
         await self.timezones.put(ctx.author.id, str(timezone))
+
+        time = self.get_time_for(ctx.author)
+        greeting = 'Good evening!'
+
+        if 5 < time.hour < 13:
+            greeting = 'Good morning!'
+        elif 13 <= time.hour < 19:
+            greeting = 'Good afternoon!'
+
         await ctx.send(
-            f'\N{OK HAND SIGN} Your timezone is now set to {timezone}.'
+            f'\N{OK HAND SIGN} Your timezone is now set to {timezone}. {greeting}'
         )
