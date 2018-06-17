@@ -1,21 +1,18 @@
 import datetime
-import functools
 import logging
-from collections import defaultdict
-from io import BytesIO
 
-import aiohttp
 import discord
 import pycountry
 import pytz
-from PIL import Image, ImageDraw, ImageFont
 from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
-from lifesaver.bot import Cog, Context, group, command
+from lifesaver.bot import Cog, Context, command, group
 from lifesaver.bot.storage import AsyncJSONStorage
 
+from .converters import hour_minute
+from .map import Map
+
 log = logging.getLogger(__name__)
-TWELVEHOUR_COUNTRIES = ['US', 'AU', 'CA', 'PH']
 
 
 def timezone_is_concrete(timezone: str) -> bool:
@@ -23,143 +20,7 @@ def timezone_is_concrete(timezone: str) -> bool:
     return isinstance(tz, pytz.tzinfo.StaticTzInfo)
 
 
-def draw_rotated_text(image, angle, xy, text, fill, *args, **kwargs):
-    """https://stackoverflow.com/a/45405131/2491753"""
-    # get the size of our image
-    width, height = image.size
-    max_dim = max(width, height)
-
-    # build a transparency mask large enough to hold the text
-    mask_size = (max_dim * 2, max_dim * 2)
-    mask = Image.new('L', mask_size, 0)
-
-    # add text to mask
-    draw = ImageDraw.Draw(mask)
-    draw.text((max_dim, max_dim), text, 255, *args, **kwargs)
-
-    if angle % 90 == 0:
-        # rotate by multiple of 90 deg is easier
-        rotated_mask = mask.rotate(angle)
-    else:
-        # rotate an an enlarged mask to minimize jaggies
-        bigger_mask = mask.resize((max_dim * 8, max_dim * 8),
-                                  resample=Image.BICUBIC)
-        rotated_mask = bigger_mask.rotate(angle).resize(
-            mask_size, resample=Image.LANCZOS)
-
-    # crop the mask to match image
-    mask_xy = (max_dim - xy[0], max_dim - xy[1])
-    b_box = mask_xy + (mask_xy[0] + width, mask_xy[1] + height)
-    mask = rotated_mask.crop(b_box)
-
-    # paste the appropriate color, with the text transparency mask
-    color_image = Image.new('RGBA', image.size, fill)
-    image.paste(color_image, mask)
-
-    return draw.textsize(text=text, font=kwargs.get('font'))
-
-
-def hour_minute(stamp):
-    parts = stamp.split(':')
-    if len(parts) != 2:
-        raise commands.BadArgument('Invalid sleep time. Example: 7:00')
-    try:
-        hour = int(parts[0])
-        minute = int(parts[1])
-
-        return datetime.datetime(
-            year=2018, month=3, day=15,  # random date
-            hour=hour, minute=minute
-        )
-    except ValueError:
-        raise commands.BadArgument('Invalid hour/minute numerals.')
-
-
-class Map:
-    def __init__(self, *, session: aiohttp.ClientSession, twelve_hour: bool = False, loop):
-        self.font = ImageFont.truetype('assets/SourceSansPro-Bold.otf', size=35)
-        self.image = Image.open('assets/timezone_map.png').convert('RGBA')
-        self.session = session
-        self.twelve_hour = twelve_hour
-        self.loop = loop
-
-        # defaultdict to keep track of users and their timezones.
-        #
-        # keys are a tuple: (time as pretty string, hour offset)
-        # values are a discord.Member
-        #
-        # this is because users can have the same time offset, but have different
-        # actual times because timezones are inconsistent. bleh.
-        self.timezones = defaultdict(list)
-
-    @property
-    def format(self):
-        if self.twelve_hour:
-            return '%I:%M %p'
-        else:
-            return '%H:%M:'
-
-    def close(self):
-        self.image.close()
-
-    def add_member(self, member: discord.Member, timezone: str):
-        now = datetime.datetime.now(pytz.timezone(timezone))
-
-        # calculate the hour offset, not accounting for dst
-        offset = (now.utcoffset().total_seconds() - now.dst().total_seconds()) / 60 / 60
-        formatted = now.strftime(self.format)
-
-        self.timezones[(formatted, offset)].append(member)
-
-    async def draw_member(self, member: discord.Member, x, y):
-        def target():
-            avatar = Image.open(fp=BytesIO(avatar_bytes)).convert('RGBA')
-            self.image.paste(avatar, box=(x, y), mask=avatar)
-
-        avatar_url = member.avatar_url_as(static_format='png', size=32)
-        async with self.session.get(avatar_url) as resp:
-            avatar_bytes = await resp.read()
-            await self.loop.run_in_executor(None, target)
-
-    async def draw_rotated_text(self, *args, **kwargs):
-        func = functools.partial(draw_rotated_text, *args, **kwargs)
-        return await self.loop.run_in_executor(None, func)
-
-    async def render(self):
-        def save():
-            buffer = BytesIO()
-            self.image.save(buffer, format='png')
-            buffer.seek(0)  # go back to beginning
-            return buffer
-        buffer = await self.loop.run_in_executor(None, save)
-        return buffer
-
-    async def draw(self):
-        # keep track of how far up we are for each hour offset, so there are no
-        # overlaps. (this is for each "pretty group")
-        offset_positions = defaultdict(int)
-
-        for (formatted, offset), members in self.timezones.items():
-            # x position based on hour, for appropriate positioning on the map
-            x = int((offset + 11) * 38.5 + 21)
-
-            begin_y = offset_positions[str(offset)]
-            y = begin_y if begin_y != 0 else 480  # start at 480 pixels down if we don't have an offset already
-
-            for member in members:
-                await self.draw_member(member, x, y)
-
-                # move up the map (32 for avatar, 5 for some padding)
-                y -= 32 + 5
-
-            size = await self.draw_rotated_text(
-                self.image, 90, (x - 7, y + 30), formatted, fill=(0, 0, 0, 255),
-                font=self.font
-            )
-
-            # register our offset (size[0] is text width)
-            # because it's rotated by 90 degrees, we use width instead of height
-            offset_positions[str(offset)] = y - size[0] - 30
+TWELVEHOUR_COUNTRIES = ['US', 'AU', 'CA', 'PH']
 
 
 class Time(Cog):
@@ -403,7 +264,3 @@ class Time(Cog):
         embed = discord.Embed(title='Timezone set', color=discord.Color.magenta(),
                               description=f'Your timezone is now {user_timezone}.')
         await target.send(embed=embed)
-
-
-def setup(bot):
-    bot.add_cog(Time(bot))
