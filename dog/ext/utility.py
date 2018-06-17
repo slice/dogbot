@@ -24,7 +24,7 @@ class Utility(Cog):
         self.gateway_lag = defaultdict(list)
 
     def __unload(self):
-        self.session.close()
+        self.loop.create_task(self.session.close())
 
     async def on_message(self, message: discord.Message):
         if not message.guild:

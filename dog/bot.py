@@ -25,6 +25,11 @@ class Dogbot(Bot):
         webapp.secret_key = self.config.web['secret_key']
         self.boot_server()
 
+    async def close(self):
+        log.info('bot is exiting')
+        await self.session.close()
+        await super().close()
+
     def boot_server(self):
         self.loop.create_task(self.loop.create_server(
             lambda: Server(webapp, self.loop, create_serving_logger(), "%(h)s %(r)s %(s)s %(b)s %(D)s",
