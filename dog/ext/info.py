@@ -27,8 +27,9 @@ class Info(Cog):
         await ctx.send(embed=embed)
 
     @group(aliases=['user_info', 'user', 'member_info', 'member'], invoke_without_command=True)
-    async def profile(self, ctx: Context, user: HardMember):
+    async def profile(self, ctx: Context, user: HardMember = None):
         """Views information about a user."""
+        user = user or ctx.author
 
         embed = discord.Embed(title=f'{user} ({user.id})')
         embed.add_field(name='Account Creation', value=date(user.created_at))
@@ -65,7 +66,7 @@ class Info(Cog):
         n_bots = len(g.members) - n_humans
         embed.description = dedent(f"""\
             {n_humans} humans, {n_bots} bots ({n_humans + n_bots} members)
-            
+
             Created {g.created_at}
             {human_delta(g.created_at)} ago
         """)
