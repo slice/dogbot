@@ -58,10 +58,9 @@ class UsernameRegexCheck(Check):
     key = 'username_regex'
     description = 'Blocks all usernames that match a regex. Specify a regex.'
 
-    async def check(self, regex: str, member: discord.Member):
+    async def check(self, pattern: str, member: discord.Member):
         try:
-            regex = re.compile(regex)
-            if regex.search(member.name):
+            if re.search(pattern, member.name):
                 raise Block('Matched username regex')
         except re.error as err:
             raise Report(
