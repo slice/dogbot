@@ -14,10 +14,23 @@ from dog.formatting import represent
 
 log = logging.getLogger(__name__)
 
+
+def thing_is_check(thing) -> bool:
+    # only care about classes
+    if not inspect.isclass(thing):
+        return False
+
+    # only look at subclasses of check
+    if not issubclass(thing, Check):
+        return False
+
+    # ignore the base class
+    return thing is not Check
+
+
+# dir() the checks module to create a list of all checks on the fly
 GATEKEEPER_CHECKS = [
-    getattr(checks, check) for check in dir(checks)
-    if inspect.isclass(getattr(checks, check)) and issubclass(getattr(checks, check), Check) and
-       getattr(checks, check) is not Check
+    getattr(checks, check) for check in dir(checks) if thing_is_check(getattr(checks, check))
 ]
 
 
