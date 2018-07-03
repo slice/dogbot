@@ -51,7 +51,6 @@ async def auth_redirect():
     session['token'] = access_token
     user = await get_user(access_token)
     session['user'] = user
-    print(user, 'has logged in! Their session:', session)
     return redirect(url_for('dashboard'))
 
 
@@ -72,7 +71,6 @@ def auth_login():
 @auth.route('/user')
 async def auth_user():
     active = 'token' in session
-    print('User request.', session)
     if not active:
         return json({'active': False})
     try:
