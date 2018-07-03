@@ -1,7 +1,6 @@
 import datetime
 import random
 import re
-import logging
 from collections import defaultdict
 
 import aiohttp
@@ -13,7 +12,6 @@ from lifesaver.utils import history_reducer
 
 from dog.converters import EmojiStealer, UserIDs
 
-log = logging.getLogger(__name__)
 EMOJI_NAME_REGEX = re.compile(r'<a?(:.+:)\d+>')
 
 
@@ -38,7 +36,6 @@ class Utility(Cog):
         lag = int((datetime.datetime.utcnow() - message.created_at).total_seconds() * 1000)
 
         self.gateway_lag[message.channel.id].append(lag)
-        log.debug('Measured gateway lag for %d: %d', message.channel.id, lag)
 
     @command(aliases=['ginv', 'invite'])
     async def inv(self, ctx: Context, *ids: UserIDs):
