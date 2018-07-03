@@ -5,3 +5,4 @@ pytz==2018.3
 geopy
 quart
 uvloop
+Pillow
