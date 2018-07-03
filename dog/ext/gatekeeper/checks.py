@@ -16,6 +16,16 @@ class BlockDefaultAvatarCheck(Check):
             raise Block('Has default avatar')
 
 
+class BlockBotsCheck(Check):
+    """A gatekeeper check that bounces all bots."""
+    key = 'block_bots'
+    description = "Blocks all bots from joining."
+
+    async def check(self, _, member: discord.Member):
+        if member.bot:
+            raise Block('Blocking all bots')
+
+
 class MinimumCreationTimeCheck(Check):
     """A gatekeeper check that checks the minimum creation time of a user."""
     key = 'minimum_creation_time'
@@ -40,7 +50,7 @@ class BlockAllCheck(Check):
     key = 'block_all'
     description = 'Blocks all users that try to join.'
 
-    async def check(self, _, member: discord.Member) -> bool:
+    async def check(self, _, member: discord.Member):
         raise Block('Blocking all users')
 
 
