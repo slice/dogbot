@@ -69,12 +69,19 @@ export default {
       if (this.config == null) return
 
       this.saving = true
-      console.log('Saving...')
-      await API.patch(`/api/guild/${this.guildId}/config`, this.config, {
+
+      const resp = await API.patch(`/api/guild/${this.guildId}/config`, this.config, {
         headers: {
           'content-type': 'text/yaml'
         }
       })
+
+      if (resp.error) {
+        alert(`Failed to save: ${resp.message} (${resp.code})`)
+        this.saving = false
+        return
+      }
+
       this.showFlash('Saved.')
       this.saving = false
       this.dirty = false
