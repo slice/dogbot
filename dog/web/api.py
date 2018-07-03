@@ -28,10 +28,18 @@ def api_ping():
 @require_auth
 async def api_guild_config(guild_id):
     if g.bot.get_guild(guild_id) is None:
-        return 'Unknown guild', 400
+        return json({
+            'error': True,
+            'message': 'Unknown guild.',
+            'code': 'UNKNOWN_GUILD',
+        }), 400
 
     if not g.bot.guild_configs.can_edit(g.user, guild_id):
-        return 'Unauthorized.', 401
+        return json({
+            'error': True,
+            'message': 'You are unable to edit this guild.',
+            'code': 'CONFIG_FORBIDDEN',
+        }), 401
 
     if request.method == 'PATCH':
         text = await request.get_data(raw=False)
@@ -39,10 +47,18 @@ async def api_guild_config(guild_id):
         try:
             yml = yaml.load(text)
         except YAMLError as err:
-            return json({"success": False, "message": f"invalid yaml ({err})"}), 400
+            return json({
+                "error": True,
+                "message": f"Invalid YAML ({err!r}).",
+                "code": "INVALID_YAML"
+            }), 400
 
         if type(yml) is not dict:  # bare words become strings which break stuff
-            return json({"success": False, "message": "not a dict"}), 400
+            return json({
+                "error": True,
+                "message": "Configuration is not a dict.",
+                "code": "INVALID_CONFIG",
+            }), 400
 
         await g.bot.guild_configs.write(guild_id, text)
         return json({"success": True})
