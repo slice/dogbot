@@ -1,6 +1,9 @@
 <template>
   <div class="home">
     <h2>Servers</h2>
+    <div class="ghost-notice" v-if="ghost">
+      <strong>Warning:</strong> You do not share any servers with Dog.
+    </div>
     <div class="guilds">
       <div class="empty" v-if="guilds && !guilds.length">No servers that you can edit.</div>
       <router-link :to="`/guild/${guild.id}`" class="guild" v-for="guild of guilds" :key="guild.id">
@@ -22,17 +25,32 @@ export default {
   name: 'home',
   data () {
     return {
-      guilds: null
+      guilds: null,
+      ghost: false
     }
   },
   components: { GuildIcon, Spinner },
   async created () {
-    this.guilds = await API.guilds()
+    const resp = await API.guilds()
+
+    if (resp.error) {
+      if (resp.code === 'UNKNOWN_DISCORD_USER') {
+        this.ghost = true
+      }
+      this.guilds = []
+    } else {
+      this.guilds = resp
+    }
   }
 }
 </script>
 
 <style scoped lang="stylus">
+.ghost-notice
+  background pink
+  border-radius 0.15em
+  padding 1em
+  margin 1em
 .empty
   color #999
 .guild
