@@ -14,10 +14,11 @@ class GuildConfigManager:
         self.persistent = AsyncJSONStorage('guild_configs.json', loop=bot.loop)
         self.parsed_cache = {}
 
-    def _id(self, obj):
+    def _id(self, obj) -> str:
+        """Resolves an object into a key for guild_configs.json."""
         if isinstance(obj, discord.Guild):
-            return str(obj.id)
-        return str(obj)
+            return str(obj.id)  # unwrap ID from guild object
+        return str(obj)  # just the ID was passed, probably.
 
     def can_edit(self, user: discord.User, guild) -> bool:
         # resolve passed ids
@@ -36,9 +37,9 @@ class GuildConfigManager:
             return False
 
         editors = config.get('editors', [])
-        if isinstance(editors, list):
+        if isinstance(editors, list):  # list of ids
             return str(user) in editors or user.id in editors
-        elif isinstance(editors, int):
+        elif isinstance(editors, int):  # a single id
             return user.id == editors
         else:
             return False
@@ -50,20 +51,21 @@ class GuildConfigManager:
         config = self.persistent.get(self._id(guild))
         if config is None:
             return None
+
         if yaml:
+            # return the configuration as-is, without parsing
             return config
 
+        # use the parsed version if applicable
         if config in self.parsed_cache:
-            log.debug('Using parsed cache.')
             return self.parsed_cache[config]
 
         try:
-            log.debug('Cold configuration, parsing.')
             result = self.yaml.load(config)
-            self.parsed_cache[config] = result
+            self.parsed_cache[config] = result  # cache
             return result
         except YAMLError:
-            log.warning('Invalid YAML config: %s', config)
+            log.warning('Invalid YAML config (%s): %s', self._id(guild), config)
             return None
 
     def __getitem__(self, guild):
