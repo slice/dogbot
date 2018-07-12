@@ -12,13 +12,13 @@ class Timezone(commands.Converter):
             member = await commands.MemberConverter().convert(ctx, argument)
             timezone = cog.timezones.get(member.id)
             if timezone:
-                return pytz.timezone(timezone)
+                return (member, pytz.timezone(timezone))
         except commands.BadArgument:
             pass
 
         try:
             timezone = pytz.timezone(argument)
-            return timezone
+            return (argument, timezone)
         except (pytz.exceptions.InvalidTimeError, pytz.exceptions.UnknownTimeZoneError):
             raise commands.BadArgument('Invalid timezone. Specify a user to use their timezone or use a timezone code.')
 

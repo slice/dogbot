@@ -100,20 +100,34 @@ class Time(Cog):
         await ctx.send(f'{who.display_name}: {formatted_time}')
 
     @time.command(aliases=['sim'])
-    async def simulate(self, ctx: Context, other_timezone: Timezone, time: hour_minute):
+    async def diff(self, ctx: Context, timezone: Timezone, time: hour_minute = None):
         """View what time it is in another timezone compared to yours."""
+        (source, other_tz) = timezone
         if not self.timezones.get(ctx.author.id):
             await ctx.send(f"You don't have a timezone, so you can't use this. Set one with `{ctx.prefix}t set`.")
             return
 
-        our_time = self.get_timezone_for(ctx.author).localize(time)
-        their_time = our_time.astimezone(other_timezone)
+        if time is None:
+            local_time = self.get_time_for(ctx.author)
+            time = datetime.datetime(
+                year=2018, month=3, day=15,
+                hour=local_time.hour, minute=local_time.minute,
+            )
 
-        fmt = "When it's {} for you, it would be {} for them."
+        our_time = self.get_timezone_for(ctx.author).localize(time)
+        their_time = our_time.astimezone(other_tz)
+        hour_difference = their_time.hour - our_time.hour
+
+        possessive_source = 'in' if isinstance(source, str) else 'for'
+        fmt = "There is a **{}** hour difference between you and {}.\n\nWhen it's {} for you, it would be {} {} {}."
         log.debug('A = %s, B = %s', their_time, our_time)
         await ctx.send(fmt.format(
+            abs(hour_difference),
+            source,
             self.format_time(our_time, hm=True),
             self.format_time(their_time, hm=True),
+            possessive_source,
+            source
         ))
 
     @time.command(typing=True)
