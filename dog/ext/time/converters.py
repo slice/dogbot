@@ -1,6 +1,26 @@
 import datetime
 
+import pytz
 from discord.ext import commands
+
+
+class Timezone(commands.Converter):
+    async def convert(self, ctx, argument):
+        cog = ctx.command.instance
+
+        try:
+            member = await commands.MemberConverter().convert(ctx, argument)
+            timezone = cog.timezones.get(member.id)
+            if timezone:
+                return pytz.timezone(timezone)
+        except commands.BadArgument:
+            pass
+
+        try:
+            timezone = pytz.timezone(argument)
+            return timezone
+        except (pytz.exceptions.InvalidTimeError, pytz.exceptions.UnknownTimeZoneError):
+            raise commands.BadArgument('Invalid timezone. Specify a user to use their timezone or use a timezone code.')
 
 
 def hour_minute(stamp):

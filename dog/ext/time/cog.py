@@ -10,7 +10,7 @@ from lifesaver.bot import Cog, Context, command, group
 from lifesaver.bot.storage import AsyncJSONStorage
 from geopy import exc as geopy_errors
 
-from .converters import hour_minute
+from .converters import hour_minute, Timezone
 from .geocoder import Geocoder
 from .map import Map
 
@@ -31,11 +31,20 @@ class Time(Cog):
         self.geocoder = Geocoder(bot=bot, loop=bot.loop)
         self.timezones = AsyncJSONStorage('timezones.json', loop=bot.loop)
 
-    def get_time_for(self, user: discord.User) -> Optional[datetime.datetime]:
+    def get_timezone_for(self, user: discord.User, *, raw: bool = False):
         timezone = self.timezones.get(user.id)
+        if raw:
+            return timezone
+        else:
+            if not timezone:
+                return None
+            return pytz.timezone(timezone)
+
+    def get_time_for(self, user: discord.User) -> Optional[datetime.datetime]:
+        timezone = self.get_timezone_for(user, raw=False)
         if not timezone:
             return None
-        time = datetime.datetime.now(pytz.timezone(timezone))
+        time = datetime.datetime.now(timezone)
         return time
 
     def get_formatted_time_for(self, user: discord.User) -> Optional[str]:
@@ -43,9 +52,12 @@ class Time(Cog):
         if not time:
             return None
 
+        return self.format_time(time)
+
+    def format_time(self, time: datetime.datetime, *, shorten: bool = True, hm: bool = False) -> str:
         # omit the 12-hour representation before noon as it is redundant (both are essentially the same)
-        time_format = '%H:%M:%S' if time.hour < 12 else '%H:%M:%S (%I:%M:%S %p)'
-        return time.strftime('%B %d, %Y  ' + time_format)
+        time_format = '%H:%M:%S' if time.hour < 12 and shorten else '%H:%M:%S (%I:%M:%S %p)'
+        return time.strftime(time_format if hm else ('%B %d, %Y  ' + time_format))
 
     @command(aliases=['st'])
     async def sleepytime(self, ctx: Context, *, awaken_time: hour_minute):
@@ -86,6 +98,23 @@ class Time(Cog):
             return
 
         await ctx.send(f'{who.display_name}: {formatted_time}')
+
+    @time.command(aliases=['sim'])
+    async def simulate(self, ctx: Context, other_timezone: Timezone, time: hour_minute):
+        """View what time it is in another timezone compared to yours."""
+        if not self.timezones.get(ctx.author.id):
+            await ctx.send(f"You don't have a timezone, so you can't use this. Set one with `{ctx.prefix}t set`.")
+            return
+
+        their_time = time.astimezone(other_timezone)
+        our_time = time.astimezone(self.get_timezone_for(ctx.author))
+
+        fmt = "When it's {} for you, it would be {} for them."
+        log.debug('A = %s, B = %s', their_time, our_time)
+        await ctx.send(fmt.format(
+            self.format_time(our_time, hm=True),
+            self.format_time(their_time, hm=True),
+        ))
 
     @time.command(typing=True)
     @cooldown(1, 5, BucketType.guild)
