@@ -32,6 +32,17 @@ class GuildConfigManager:
             return True
 
         config = self.get(guild)
+
+        # special exception:
+        #
+        # if there is no configuration present for this guild, let in people
+        # who can ban along with the owner.
+        member = guild.get_member(user.id)
+        if member is not None:
+            can_ban = member.guild_permissions.ban_members
+            if config is None and can_ban:
+                return True
+
         # no config, so only the owner is let in
         if config is None:
             return False
