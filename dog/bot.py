@@ -59,8 +59,11 @@ class Dogbot(Bot):
 
     def cog_is_disabled(self, guild: discord.Guild, cog_name: str) -> bool:
         config = self.guild_configs.get(guild)
-        disabled_cogs = config.get('disabled_cogs', [])
-        return cog_name in disabled_cogs
+        if config:
+            disabled_cogs = config.get('disabled_cogs', [])
+            return cog_name in disabled_cogs
+        else:
+            return False
 
     async def can_run(self, ctx, **kwargs):
         cog_name = type(ctx.command.instance).__name__
