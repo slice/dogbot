@@ -106,8 +106,8 @@ class Time(Cog):
             await ctx.send(f"You don't have a timezone, so you can't use this. Set one with `{ctx.prefix}t set`.")
             return
 
-        their_time = time.astimezone(other_timezone)
-        our_time = time.astimezone(self.get_timezone_for(ctx.author))
+        our_time = self.get_timezone_for(ctx.author).localize(time)
+        their_time = our_time.astimezone(other_timezone)
 
         fmt = "When it's {} for you, it would be {} for them."
         log.debug('A = %s, B = %s', their_time, our_time)
