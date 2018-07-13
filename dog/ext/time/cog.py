@@ -116,7 +116,7 @@ class Time(Cog):
 
         our_time = self.get_timezone_for(ctx.author).localize(time)
         their_time = our_time.astimezone(other_tz)
-        hour_difference = their_time.hour - our_time.hour
+        hour_difference = min(their_time.hour - our_time.hour, our_time.hour - their_time.hour)
 
         possessive_source = 'in' if isinstance(source, str) else 'for'
         fmt = "There is a **{}** hour difference between you and {}.\n\nWhen it's {} for you, it would be {} {} {}."
