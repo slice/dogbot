@@ -94,6 +94,13 @@ class Quoting(Cog):
         are preserved. Additionally, quotes contain a jump URL to jump to the
         first message in the quote directly with your client.
 
+        If you want to create a quote without having the quote echo in chat,
+        prefix the quote name with "!":
+
+            d?quote !quote 467753625024987136:3
+
+        The bot will DM you the quote instead of echoing it in chat.
+
         Quotes contain the following data:
             - All message content, all numbers of embeds, all attachment URLs
             - Channel ID and name, first message ID, guild ID
@@ -101,6 +108,11 @@ class Quoting(Cog):
             - Quote creator ID and name#discriminator
         """
         quotes = self.quotes(ctx.guild)
+
+        silent = False
+        if name.startswith('!'):
+            silent = True
+            name = name[1:]
 
         if not messages:
             quote = quotes.get(name)
@@ -153,7 +165,7 @@ class Quoting(Cog):
         await self.storage.put(str(ctx.guild.id), quotes)
 
         embed = embed_quote(quote)
-        await ctx.send(f'Created quote "{name}".', embed=embed)
+        await (ctx.author if silent else ctx).send(f'Created quote "{name}".', embed=embed)
 
     @quote.command()
     @commands.guild_only()
