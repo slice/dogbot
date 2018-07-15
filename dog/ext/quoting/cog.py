@@ -73,14 +73,16 @@ class Quoting(Cog):
         Alternatively, you can specify a message ID then a number of messages
         to store after that, like:
 
-            d?quote "my quote" 467753625024987136:5
+            d?quote "my quote" 467753625024987136+5
 
         That would store message 467753625024987136 and the 5 messages after
-        that. Alternatively, you can specify the last 5 messages like so:
+        that. You can also combine them if you would like to simultaneously
+        specify individual messages and groups of messages. Alternatively,
+        you can select the last 5 messages like so:
 
             d?quote "my quote" :-5
 
-        The :n, (called the "range") will grab up to 50 messages both ways.
+        The :n or +n (called the "range") will grab up to 50 messages both ways.
 
         Your quote's content has a length limit of 2048, Discord's embed
         description limit. You will be prompted to confirm if your created
@@ -97,9 +99,11 @@ class Quoting(Cog):
         If you want to create a quote without having the quote echo in chat,
         prefix the quote name with "!":
 
-            d?quote !quote 467753625024987136:3
+            d?quote !quote 467753625024987136+3
 
-        The bot will DM you the quote instead of echoing it in chat.
+        The bot will DM you the quote instead of echoing it in chat, and no
+        feedback will be provided in the channel. Keep in mind that the name of
+        the created quote will not have the "!".
 
         Quotes contain the following data:
             - All message content, all numbers of embeds, all attachment URLs

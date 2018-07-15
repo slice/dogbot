@@ -7,7 +7,7 @@ from lifesaver.utils import clean_mentions
 
 from dog.ext.quoting.command import QuoteNotFound
 
-MESSAGE_SPECIFIER_RE = re.compile(r"(\d+)?(?::(-?\d+))?")
+MESSAGE_SPECIFIER_RE = re.compile(r"(\d+)?(?:[:+](-?\d+))?")
 
 
 class Specifier(namedtuple('Specifier', ['id', 'range'])):
