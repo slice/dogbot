@@ -32,7 +32,8 @@ class Shortlink:
         converted = {}
         for name, value in dct.items():
             if '__' not in name:
-                return
+                converted[name] = value
+                continue
             name, converter = name.split('__')
             converted[name] = self.CONVERTERS[converter](value)
         return converted
