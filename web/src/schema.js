@@ -14,6 +14,11 @@ export const schema = joi.compile(
     measure_gateway_lag: joi.boolean(),
     disabled_cogs: joi.array().items(joi.string().label('cog name')),
     publish_quotes: joi.boolean(),
+    shortlinks: joi.object({
+      enabled: joi.boolean(),
+      whitelist: joi.array().items(joi.string().label('shortlink name')),
+      blacklist: joi.array().items(joi.string().label('shortlink name'))
+    })
   })
 )
 
