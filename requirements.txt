@@ -3,6 +3,6 @@ git+https://github.com/slice/lifesaver
 
 pytz==2018.3
 geopy
-quart
+quart==0.6.3
 uvloop
 Pillow
