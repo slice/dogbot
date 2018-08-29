@@ -4,6 +4,8 @@ from urllib.parse import quote_plus
 import aiohttp
 from quart import Blueprint, g, jsonify as json, redirect, request, session, url_for
 
+from .decorators import ratelimit
+
 auth = Blueprint('auth', __name__)
 API_BASE = 'https://discordapp.com/api/v6'
 
@@ -24,20 +26,27 @@ async def get_user(bearer):
         return await (await s.get(API_BASE + '/users/@me')).json()
 
 
-async def get_access_token(code):
+async def get_access_token(code, *, refresh=False):
     ENDPOINT = API_BASE + '/oauth2/token'
+
     data = {
         'client_id': str(g.bot.config.oauth['client_id']),
         'client_secret': g.bot.config.oauth['client_secret'],
-        'code': code,
         'grant_type': 'authorization_code',
         'redirect_uri': g.bot.config.oauth['redirect_uri']
     }
+
+    if refresh:
+        data['refresh_token'] = code
+    else:
+        data['code'] = code
+
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded'
     }
-    async with aiohttp.ClientSession(raise_for_status=True) as s:
-        response = await s.post(ENDPOINT, data=data, headers=headers)
+
+    async with aiohttp.ClientSession(raise_for_status=True) as session:
+        response = await session.post(ENDPOINT, data=data, headers=headers)
         return (await response.json())['access_token']
 
 
@@ -69,6 +78,7 @@ def auth_login():
 
 
 @auth.route('/user')
+@ratelimit(4, 2)
 async def auth_user():
     active = 'token' in session
     if not active:
