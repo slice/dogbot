@@ -22,7 +22,7 @@ def redirect_url():
 
 async def get_user(bearer):
     headers = {'Authorization': 'Bearer ' + bearer}
-    async with aiohttp.ClientSession(headers=headers) as s:
+    async with aiohttp.ClientSession(headers=headers, raise_for_status=True) as s:
         return await (await s.get(API_BASE + '/users/@me')).json()
 
 
