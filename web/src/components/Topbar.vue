@@ -2,7 +2,6 @@
   <div class="topbar">
     <router-link to="/" class="brand"><strong>dog</strong></router-link>
     <div class="status">
-      <div class="dot" :style="{ 'background-color': color }"></div>
       <div class="user" v-if="user != null">
         <img class="icon" draggable="false"
           :src="`https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64`">
@@ -32,11 +31,6 @@ import FontAwesomeIcon from '@fortawesome/vue-fontawesome'
 import { faGithub, faPatreon } from '@fortawesome/fontawesome-free-brands'
 import { faSignOutAlt } from '@fortawesome/fontawesome-free-solid'
 
-const COLORS = {
-  green: 'hsla(128, 100%, 30%, 1)',
-  red: 'hsla(0, 100%, 30%, 1)'
-}
-
 export default {
   name: 'topbar',
   props: {
@@ -44,7 +38,6 @@ export default {
   },
   data () {
     return {
-      color: COLORS.red,
       user: null
     }
   },
@@ -57,9 +50,6 @@ export default {
   async mounted () {
     let resp = await API.get('/api/status')
     this.$emit('statusUpdate', resp.ready)
-    if (resp.ready) {
-      this.color = COLORS.green
-    }
   },
   watch: {
     loggedIn: async function (new_, old) {
@@ -109,13 +99,6 @@ export default {
       margin-right 1em
     svg
       margin-right 0.5em
-
-.dot
-  display inline-block
-  width 10px
-  height 10px
-  border-radius 100%
-  margin-right 2em
 
 @media (max-width: 700px)
   .topbar
