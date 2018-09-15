@@ -1,11 +1,14 @@
 import datetime
 import inspect
+import io
 import logging
 from typing import Optional
 
 import discord
+from discord.ext import commands
 from lifesaver.bot import Cog, Context, group
 from lifesaver.utils import human_delta
+from ruamel.yaml import YAML
 
 from dog.ext.gatekeeper import checks
 from dog.ext.gatekeeper.core import Block, Check, Report
@@ -35,6 +38,10 @@ GATEKEEPER_CHECKS = [
 
 
 class Gatekeeper(Cog):
+    def __init__(self, bot):
+        super().__init__(bot)
+        self.yaml = YAML(typ='safe')
+
     async def __local_check(self, ctx: Context):
         return ctx.guild and ctx.author.guild_permissions.ban_members
 
@@ -147,6 +154,28 @@ class Gatekeeper(Cog):
         and automatically kick those who don't fit a certain criteria. Only users who can ban can use it.
         This is very useful when your server is undergoing raids, unwanted attention, unwanted members, etc.
         """
+
+    @gatekeeper.command()
+    @commands.has_permissions(ban_members=True)
+    async def toggle(self, ctx: Context):
+        """Toggles Gatekeeper."""
+        settings = self.settings(ctx.guild)
+
+        if not settings:
+            await ctx.send("Gatekeeper is unconfigured.")
+
+        config = ctx.bot.guild_configs.get(ctx.guild)
+        config['gatekeeper']['enabled'] = not config['gatekeeper']['enabled']
+        with io.StringIO() as buf:
+            self.yaml.dump(config, buf)
+            await ctx.bot.guild_configs.write(ctx.guild, buf.getvalue())
+
+        if config['gatekeeper']['enabled']:
+            state = 'enabled'
+        else:
+            state = 'disabled'
+
+        await ctx.send(f'Gatekeeper is now {state}.')
 
     @gatekeeper.command()
     async def status(self, ctx: Context):
