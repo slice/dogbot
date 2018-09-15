@@ -4,7 +4,6 @@ import logging
 from typing import Optional
 
 import discord
-from discord import Embed, Member
 from lifesaver.bot import Cog, Context, group
 from lifesaver.utils import human_delta
 
@@ -30,7 +29,8 @@ def thing_is_check(thing) -> bool:
 
 # dir() the checks module to create a list of all checks on the fly
 GATEKEEPER_CHECKS = [
-    getattr(checks, check) for check in dir(checks) if thing_is_check(getattr(checks, check))
+    getattr(checks, check) for check in dir(checks)
+    if thing_is_check(getattr(checks, check))
 ]
 
 
@@ -38,61 +38,66 @@ class Gatekeeper(Cog):
     async def __local_check(self, ctx: Context):
         return ctx.guild and ctx.author.guild_permissions.ban_members
 
+    @property
+    def dashboard_link(self):
+        return self.bot.config.dashboard_link
+
     def settings(self, guild: discord.Guild):
+        """Fetch Gatekeeper settings for a guild."""
         config = self.bot.guild_configs.get(guild) or {}
         return config.get('gatekeeper') or {}
 
-    async def on_member_join(self, member: Member):
-        if not self.settings(member.guild).get('enabled', False):
-            return
-
+    async def report(self, member, *args, **kwargs) -> Optional[discord.Message]:
+        """Send a message to the broadcast channel for this guild."""
         settings = self.settings(member.guild)
 
-        async def report(*args, **kwargs) -> Optional[discord.Message]:
-            """Sends a message to the broadcast channel for this guild."""
+        try:
+            channel_id = settings.get('broadcast_channel')
+            broadcast_channel = self.bot.get_channel(channel_id)
+
+            if not broadcast_channel:
+                log.warning("Couldn't find broadcast channel for guild %d.", member.guild.id)
+                return None
+            elif broadcast_channel.guild != member.guild:
+                log.warning("Assigned broadcast channel wasn't here, ignoring.")
+                return None
+
+            return await broadcast_channel.send(*args, **kwargs)
+        except (TypeError, discord.Forbidden):
+            pass
+        return None
+
+    async def block(self, member: discord.Member, reason: str):
+        """Bounce a user from the guild."""
+        settings = self.settings(member.guild)
+
+        if 'bounce_message' in settings:
             try:
-                channel_id = settings.get('broadcast_channel')
-                broadcast_channel = self.bot.get_channel(channel_id)
-
-                if not broadcast_channel:
-                    log.warning("Couldn't find broadcast channel for guild %d.", member.guild.id)
-                    return None
-                elif broadcast_channel.guild != member.guild:
-                    log.warning("Assigned broadcast channel wasn't here, ignoring.")
-                    return None
-
-                return await broadcast_channel.send(*args, **kwargs)
-            except (TypeError, discord.Forbidden):
+                await member.send(settings['bounce_message'])
+            except discord.HTTPException:
                 pass
-            return None
 
-        async def block(reason: str):
-            """Bounces a user from this guild."""
+        try:
+            await member.kick(reason=f'Failed Gatekeeper check: {reason}')
+        except discord.Forbidden:
+            await self.report(member, f"\N{CROSS MARK} I couldn't kick {represent(member)}.")
+        else:
+            embed = discord.Embed(
+                color=discord.Color.red(),
+                title=f'Bounced {represent(member)}'
+            )
+            embed.add_field(
+                name='Account creation',
+                value=f'{human_delta(member.created_at)} ago\n{member.created_at}'
+            )
+            embed.add_field(name='Reason', value=reason)
+            embed.timestamp = datetime.datetime.utcnow()
+            embed.set_thumbnail(url=member.avatar_url)
 
-            if 'bounce_message' in settings:
-                try:
-                    await member.send(settings['bounce_message'])
-                except discord.HTTPException:
-                    pass
+            await self.report(member, embed=embed)
 
-            try:
-                await member.kick(reason=f'Gatekeeper check(s) failed ({reason})')
-            except discord.Forbidden:
-                await report(
-                    f"\N{CROSS MARK} Couldn't kick {represent(member)}, no permissions. You will have to kick them "
-                    "manually."
-                )
-            else:
-                # report
-                embed = Embed(color=discord.Color.red(), title=f'Bounced {represent(member)}')
-                embed.add_field(
-                    name='Account creation',
-                    value=f'{human_delta(member.created_at)} ago\n{member.created_at}'
-                )
-                embed.add_field(name='Reason', value=reason)
-                embed.timestamp = datetime.datetime.utcnow()
-                embed.set_thumbnail(url=member.avatar_url)
-                await report(embed=embed)
+    async def screen(self, member: discord.Member):
+        settings = self.settings(member.guild)
 
         enabled_checks = settings.get('checks', {})
         for check in GATEKEEPER_CHECKS:
@@ -102,20 +107,36 @@ class Gatekeeper(Cog):
             try:
                 await check().check(enabled_checks[check.key], member)
             except Block as block_exc:
-                await block(str(block_exc))
-                return
+                await self.block(member, str(block_exc))
+                return False
             except Report as report_exc:
-                await report(str(report_exc))
+                await self.report(member, str(report_exc))
 
-        # this person has passed all checks
-        embed = Embed(
+        return True
+
+    async def on_member_join(self, member: discord.Member):
+        await self.bot.wait_until_ready()
+
+        settings = self.settings(member.guild)
+
+        if not settings.get('enabled', False):
+            return
+
+        passthrough_users = settings.get('allowed_users', [])
+        passthrough = str(member) in passthrough_users or member.id in passthrough_users
+
+        if not passthrough and not await self.screen(member):
+            return
+
+        embed = discord.Embed(
             color=discord.Color.green(),
-            title=f'{represent(member)} joined',
-            description='This user has passed all Gatekeeper checks and has joined the server.'
+            title=f'{represent(member)} has joined',
+            description='This user has passed all Gatekeeper checks.'
         )
         embed.set_thumbnail(url=member.avatar_url)
         embed.timestamp = datetime.datetime.utcnow()
-        await report(embed=embed)
+
+        await self.report(member, embed=embed)
 
     @group(aliases=['gk'], hollow=True)
     async def gatekeeper(self, ctx: Context):
@@ -132,12 +153,19 @@ class Gatekeeper(Cog):
         """Views the current status of Gatekeeper."""
         enabled = self.settings(ctx.guild).get('enabled', False)
 
-        description = "I'm not screening member joins at the moment." if not enabled else "I'm screening member joins."
-        embed = Embed(
+        if enabled:
+            description = "Incoming members must pass Gatekeeper checks to join."
+        else:
+            description = "Anyone can join."
+
+        link = self.dashboard_link + f'#/guild/{ctx.guild.id}'
+        description += f' Use [the web dashboard]({link}) to configure gatekeeper.'
+
+        embed = discord.Embed(
             color=discord.Color.green()
             if not enabled else discord.Color.red(),
-            title='Gatekeeper is ' + ('active' if enabled else 'disabled') + '.',
-            description=description + '\nConfigure Gatekeeper through the web dashboard.'
+            title='Gatekeeper is ' + ('enabled' if enabled else 'disabled') + '.',
+            description=description
         )
 
         await ctx.send(embed=embed)

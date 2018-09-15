@@ -7,7 +7,7 @@ from dog.ext.gatekeeper.core import Block, Check, Report
 
 
 class BlockDefaultAvatarCheck(Check):
-    """A gatekeeper check that bounces users with a default avatar."""
+    """Bounce all users with default avatars."""
     key = 'block_default_avatar'
     description = 'Blocks all users with a default avatar.'
 
@@ -17,7 +17,7 @@ class BlockDefaultAvatarCheck(Check):
 
 
 class BlockBotsCheck(Check):
-    """A gatekeeper check that bounces all bots."""
+    """Bounce all bots."""
     key = 'block_bots'
     description = "Blocks all bots from joining."
 
@@ -27,7 +27,7 @@ class BlockBotsCheck(Check):
 
 
 class MinimumCreationTimeCheck(Check):
-    """A gatekeeper check that checks the minimum creation time of a user."""
+    """Enforce a minimum creation time."""
     key = 'minimum_creation_time'
     description = (
         "Blocks users that don't meet a \"minimum creation time\" check. Specify the amount of seconds "
@@ -46,7 +46,7 @@ class MinimumCreationTimeCheck(Check):
 
 
 class BlockAllCheck(Check):
-    """A gatekeeper check that bounces all users that attempt to join."""
+    """Bounce all users."""
     key = 'block_all'
     description = 'Blocks all users that try to join.'
 
@@ -55,6 +55,7 @@ class BlockAllCheck(Check):
 
 
 class UsernameRegexCheck(Check):
+    """Check usernames with regexes."""
     key = 'username_regex'
     description = 'Blocks all usernames that match a regex. Specify a regex.'
 
