@@ -44,12 +44,13 @@ class Info(Cog):
         await ctx.send(embed=embed)
 
     @profile.command(name='avatar')
-    async def profile_avatar(self, ctx: Context, user: HardMember):
+    async def profile_avatar(self, ctx: Context, user: HardMember = None):
         """Views the avatar of a user."""
+        user = user or ctx.author
         await ctx.send(user.avatar_url_as(format='png'))
 
     @command(aliases=['avatar_url'])
-    async def avatar(self, ctx: Context, user: HardMember):
+    async def avatar(self, ctx: Context, user: HardMember = None):
         """Views the avatar of a user."""
         await ctx.invoke(self.profile_avatar, user)
 
