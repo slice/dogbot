@@ -23,6 +23,7 @@ def timezone_is_concrete(timezone: str) -> bool:
 
 
 TWELVEHOUR_COUNTRIES = ['US', 'AU', 'CA', 'PH']
+UNKNOWN_LOCATION = '\U00002753 Unknown location. Examples: "Arizona", "London", "California"'
 
 
 class Time(Cog):
@@ -182,14 +183,19 @@ class Time(Cog):
         try:
             location = await self.geocoder.geocode(location)
             if location is None:
-                await ctx.send('\U00002753 Unknown location. Examples: "Arizona", "London", "California"')
+                await ctx.send(UNKNOWN_LOCATION)
                 return
 
             timezone = await self.geocoder.timezone(location.point)
+            if timezone is None:
+                await ctx.send(UNKNOWN_LOCATION)
+                return
         except geopy_errors.GeocoderQuotaExceeded:
             await ctx.send('\U0001f6b1 API quota exceeded, please try again later.')
+            return
         except geopy_errors.GeopyError as error:
             await ctx.send(f'\U00002753 Unable to resolve your location: `{error}`')
+            return
 
         await self.timezones.put(ctx.author.id, str(timezone))
 
