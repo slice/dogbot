@@ -14,16 +14,10 @@ from .converters import hour_minute, Timezone
 from .geocoder import Geocoder
 from .map import Map
 
-log = logging.getLogger(__name__)
-
-
-def timezone_is_concrete(timezone: str) -> bool:
-    tz = pytz.timezone(timezone)
-    return isinstance(tz, pytz.tzinfo.StaticTzInfo)
-
-
 TWELVEHOUR_COUNTRIES = ['US', 'AU', 'CA', 'PH']
 UNKNOWN_LOCATION = '\U00002753 Unknown location. Examples: "Arizona", "London", "California"'
+
+log = logging.getLogger(__name__)
 
 
 class Time(Cog):
