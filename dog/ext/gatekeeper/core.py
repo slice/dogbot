@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import discord
 
@@ -13,9 +13,17 @@ class Report(Exception):
 
 class Check:
     """A Gatekeeper check."""
-    key: str = None
+    key: Optional[str] = None
 
-    async def check(self, config_value: Any, member: discord.Member):
+    def __init__(self, cog, member: discord.Member):
+        self.cog = cog
+        self.member = member
+
+    @property
+    def guild(self) -> discord.Guild:
+        return self.member.guild
+
+    async def check(self, config_value: Any):
         raise NotImplementedError
 
 

@@ -1,8 +1,6 @@
 import datetime
 import re
 
-import discord
-
 from dog.ext.gatekeeper.core import Block, Check, Report
 
 
@@ -11,8 +9,8 @@ class BlockDefaultAvatarCheck(Check):
     key = 'block_default_avatar'
     description = 'Blocks all users with a default avatar.'
 
-    async def check(self, _, member: discord.Member):
-        if member.default_avatar_url == member.avatar_url:
+    async def check(self, _):
+        if self.member.default_avatar_url == self.member.avatar_url:
             raise Block('Has default avatar')
 
 
@@ -21,8 +19,8 @@ class BlockBotsCheck(Check):
     key = 'block_bots'
     description = "Blocks all bots from joining."
 
-    async def check(self, _, member: discord.Member):
-        if member.bot:
+    async def check(self, _):
+        if self.member.bot:
             raise Block('Blocking all bots')
 
 
@@ -34,15 +32,16 @@ class MinimumCreationTimeCheck(Check):
         "that an account has to exist for to be allowed to pass through."
     )
 
-    async def check(self, time, member: discord.Member):
+    async def check(self, time):
         try:
             minimum_required = int(time)
-            seconds_on_discord = (datetime.datetime.utcnow() - member.created_at).total_seconds()
-
-            if seconds_on_discord < minimum_required:
-                raise Block(f'Failed minimum creation time check ({seconds_on_discord} < {minimum_required}')
         except ValueError:
             raise Report('Invalid minimum creation time, must be a valid number.')
+
+        seconds_on_discord = (datetime.datetime.utcnow() - self.member.created_at).total_seconds()
+
+        if seconds_on_discord < minimum_required:
+            raise Block(f'Account too young ({seconds_on_discord} < {minimum_required}')
 
 
 class BlockAllCheck(Check):
@@ -50,7 +49,7 @@ class BlockAllCheck(Check):
     key = 'block_all'
     description = 'Blocks all users that try to join.'
 
-    async def check(self, _, member: discord.Member):
+    async def check(self, _):
         raise Block('Blocking all users')
 
 
@@ -59,11 +58,9 @@ class UsernameRegexCheck(Check):
     key = 'username_regex'
     description = 'Blocks all usernames that match a regex. Specify a regex.'
 
-    async def check(self, pattern: str, member: discord.Member):
+    async def check(self, pattern: str):
         try:
-            if re.search(pattern, member.name):
+            if re.search(pattern, self.member.name):
                 raise Block('Matched username regex')
         except re.error as err:
-            raise Report(
-                f"\N{CROSS MARK} `username_regex` was invalid: `{err}`, ignoring this check."
-            )
+            raise Report(f"`username_regex` was invalid: `{err}`")

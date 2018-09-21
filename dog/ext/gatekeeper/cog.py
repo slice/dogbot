@@ -112,7 +112,9 @@ class Gatekeeper(Cog):
                 continue
 
             try:
-                await check().check(enabled_checks[check.key], member)
+                parameter = enabled_checks[check.key]
+                check_instance = check(self, member)
+                await check_instance.check(parameter)
             except Block as block_exc:
                 await self.block(member, str(block_exc))
                 return False
