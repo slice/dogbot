@@ -1,6 +1,5 @@
-
-__all__ = ['gatekeeper_check', 'block_default_avatars', 'block_bots', 'minimum_creation_time', 'block_all',
-           'username_regex']
+__all__ = ['gatekeeper_check', 'block_default_avatars', 'block_bots',
+           'minimum_creation_time', 'block_all', 'username_regex']
 
 import datetime
 import inspect
