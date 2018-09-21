@@ -29,6 +29,7 @@ class Gatekeeper(Cog):
         if not ctx.author.guild_permissions.ban_members:
             raise commands.MissingPermissions('You can only manage Gatekeeper if you have the "Ban Members" '
                                               'permission.')
+        return True
 
     @property
     def dashboard_link(self):
