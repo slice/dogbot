@@ -1,5 +1,4 @@
 import datetime
-import inspect
 import io
 import logging
 from typing import Optional
@@ -11,30 +10,12 @@ from lifesaver.utils import human_delta
 from ruamel.yaml import YAML
 
 from dog.ext.gatekeeper import checks
-from dog.ext.gatekeeper.core import Block, Check, Report
+from dog.ext.gatekeeper.core import Block, Report
 from dog.formatting import represent
 
+CHECKS = list(map(checks.__dict__.get, checks.__all__))
+
 log = logging.getLogger(__name__)
-
-
-def thing_is_check(thing) -> bool:
-    # only care about classes
-    if not inspect.isclass(thing):
-        return False
-
-    # only look at subclasses of check
-    if not issubclass(thing, Check):
-        return False
-
-    # ignore the base class
-    return thing is not Check
-
-
-# dir() the checks module to create a list of all checks on the fly
-GATEKEEPER_CHECKS = [
-    getattr(checks, check) for check in dir(checks)
-    if thing_is_check(getattr(checks, check))
-]
 
 
 class Gatekeeper(Cog):
@@ -43,7 +24,11 @@ class Gatekeeper(Cog):
         self.yaml = YAML(typ='safe')
 
     async def __local_check(self, ctx: Context):
-        return ctx.guild and ctx.author.guild_permissions.ban_members
+        if not ctx.guild:
+            raise commands.NoPrivateMessage("Gatekeeper doesn't work in Direct Messages.")
+        if not ctx.author.guild_permissions.ban_members:
+            raise commands.MissingPermissions('You can only manage Gatekeeper if you have the "Ban Members" '
+                                              'permission.')
 
     @property
     def dashboard_link(self):
@@ -87,7 +72,7 @@ class Gatekeeper(Cog):
         try:
             await member.kick(reason=f'Failed Gatekeeper check: {reason}')
         except discord.Forbidden:
-            await self.report(member, f"\N{CROSS MARK} I couldn't kick {represent(member)}.")
+            await self.report(member, f"Failed to kick {represent(member)}.")
         else:
             embed = discord.Embed(
                 color=discord.Color.red(),
@@ -107,19 +92,43 @@ class Gatekeeper(Cog):
         settings = self.settings(member.guild)
 
         enabled_checks = settings.get('checks', {})
-        for check in GATEKEEPER_CHECKS:
-            if check.key not in enabled_checks:
+        for check in CHECKS:
+            name = check.__name__
+            options = enabled_checks.get(name)
+
+            # the check's name was not present in the dict of
+            # enabled checks, skip.
+            if options is None:
+                log.debug('%s: not present, skipping.', name)
                 continue
 
+            # if the options value is a dict, check if "enabled" is True (defaults to True).
+            if isinstance(options, dict):
+                if not options.get('enabled', True):
+                    log.debug('%s: disabled via options, skipping.', name)
+                    continue
+            # if the options value is a bool (deprecated behavior), check if it's True.
+            elif isinstance(options, bool):
+                if not options:
+                    log.debug('%s: false options, skipping.', name)
+                    continue
+
             try:
-                parameter = enabled_checks[check.key]
-                check_instance = check(self, member)
-                await check_instance.check(parameter)
-            except Block as block_exc:
-                await self.block(member, str(block_exc))
+                await check(member, options)
+            except Block as block_err:
+                log.debug('%s: blocking: %s', name, block_err)
+                await self.block(member, str(block_err))
                 return False
-            except Report as report_exc:
-                await self.report(member, str(report_exc))
+            except Report as report_err:
+                log.debug('%s: reporting: %s', name, report_err)
+                await self.report(member, str(report_err))
+                await self.block(
+                    member,
+                    ("Gatekeeper was incorrectly configured. I'm not sure what "
+                     "to do, so I'll just prevent this user from joining just "
+                     "in case.")
+                )
+                return False
 
         return True
 
@@ -158,7 +167,6 @@ class Gatekeeper(Cog):
         """
 
     @gatekeeper.command()
-    @commands.has_permissions(ban_members=True)
     async def toggle(self, ctx: Context):
         """Toggles Gatekeeper."""
         settings = self.settings(ctx.guild)

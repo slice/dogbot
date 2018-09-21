@@ -1,66 +1,91 @@
+
+__all__ = ['gatekeeper_check', 'block_default_avatars', 'block_bots', 'minimum_creation_time', 'block_all',
+           'username_regex']
+
 import datetime
+import inspect
+import functools
 import re
+import typing
 
-from dog.ext.gatekeeper.core import Block, Check, Report
+import discord
 
-
-class BlockDefaultAvatarCheck(Check):
-    """Bounce all users with default avatars."""
-    key = 'block_default_avatar'
-    description = 'Blocks all users with a default avatar.'
-
-    async def check(self, _):
-        if self.member.default_avatar_url == self.member.avatar_url:
-            raise Block('Has default avatar')
+from dog.ext.gatekeeper.core import Block, Report
 
 
-class BlockBotsCheck(Check):
-    """Bounce all bots."""
-    key = 'block_bots'
-    description = "Blocks all bots from joining."
-
-    async def check(self, _):
-        if self.member.bot:
-            raise Block('Blocking all bots')
+CheckOptions = typing.Dict[str, typing.Any]
 
 
-class MinimumCreationTimeCheck(Check):
-    """Enforce a minimum creation time."""
-    key = 'minimum_creation_time'
-    description = (
-        "Blocks users that don't meet a \"minimum creation time\" check. Specify the amount of seconds "
-        "that an account has to exist for to be allowed to pass through."
-    )
+def convert_options(check, parameters, options: CheckOptions) -> typing.List[typing.Any]:
+    params = []
 
-    async def check(self, time):
-        try:
-            minimum_required = int(time)
-        except ValueError:
-            raise Report('Invalid minimum creation time, must be a valid number.')
+    for name, param in parameters.items():
+        # do not attempt to convert the first parameter
+        if name == 'member':
+            continue
 
-        seconds_on_discord = (datetime.datetime.utcnow() - self.member.created_at).total_seconds()
+        value = options.get(name)
+        if value is None:
+            raise Report(f'`{check.__name__}` is missing the `{name}` option.')
 
-        if seconds_on_discord < minimum_required:
-            raise Block(f'Account too young ({seconds_on_discord} < {minimum_required}')
+        annotation = param.annotation
+        if annotation is inspect.Parameter.empty or isinstance(value, annotation):
+            # just add the param if we don't need to convert or if the value is
+            # already the desired type
+            params.append(value)
+        else:
+            # convert the value by calling the annotation
+            params.append(annotation(value))
 
-
-class BlockAllCheck(Check):
-    """Bounce all users."""
-    key = 'block_all'
-    description = 'Blocks all users that try to join.'
-
-    async def check(self, _):
-        raise Block('Blocking all users')
+    return params
 
 
-class UsernameRegexCheck(Check):
-    """Check usernames with regexes."""
-    key = 'username_regex'
-    description = 'Blocks all usernames that match a regex. Specify a regex.'
+def gatekeeper_check(func):
+    """Register a function as a Gatekeeper check."""
 
-    async def check(self, pattern: str):
-        try:
-            if re.search(pattern, self.member.name):
-                raise Block('Matched username regex')
-        except re.error as err:
-            raise Report(f"`username_regex` was invalid: `{err}`")
+    @functools.wraps(func)
+    async def wrapped(member: discord.Member, options: CheckOptions) -> None:
+        parameters = inspect.signature(func).parameters
+
+        # only pass the options dict to the function if it accepts it
+        if len(parameters) == 1:
+            await discord.utils.maybe_coroutine(func, member)
+        else:
+            converted_options = convert_options(func, parameters, options)
+            await discord.utils.maybe_coroutine(func, member, *converted_options)
+
+    return wrapped
+
+
+@gatekeeper_check
+def block_default_avatars(member: discord.Member):
+    if member.default_avatar_url == member.avatar_url:
+        raise Block('Has no avatar')
+
+
+@gatekeeper_check
+def block_bots(member: discord.Member):
+    if member.bot:
+        raise Block('Is a bot')
+
+
+@gatekeeper_check
+def minimum_creation_time(member: discord.Member, minimum_age: int):
+    age = (datetime.datetime.utcnow() - member.created_at).total_seconds()
+
+    if age < minimum_age:
+        raise Block(f'Account too young ({age} < {minimum_age})')
+
+
+@gatekeeper_check
+def block_all(_member: discord.Member):
+    raise Block('Blocking all users')
+
+
+@gatekeeper_check
+def username_regex(member: discord.Member, regex: str):
+    try:
+        if re.search(regex, member.name):
+            raise Block('Username matched regex')
+    except re.error as err:
+        raise Report(f"Invalid regex. (`{err}`)")
