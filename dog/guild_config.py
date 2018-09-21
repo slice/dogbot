@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 class GuildConfigManager:
     def __init__(self, bot):
         self.bot = bot
-        self.yaml = YAML(typ='safe')
+        self.yaml = YAML()
         self.persistent = AsyncJSONStorage('guild_configs.json', loop=bot.loop)
         self.parsed_cache = {}
 

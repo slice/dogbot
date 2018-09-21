@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 class Gatekeeper(Cog):
     def __init__(self, bot):
         super().__init__(bot)
-        self.yaml = YAML(typ='safe')
+        self.yaml = YAML()
 
     async def __local_check(self, ctx: Context):
         if not ctx.guild:
@@ -177,6 +177,7 @@ class Gatekeeper(Cog):
         config = ctx.bot.guild_configs.get(ctx.guild)
         config['gatekeeper']['enabled'] = not config['gatekeeper']['enabled']
         with io.StringIO() as buf:
+            self.yaml.indent(mapping=4, sequence=6, offset=4)
             self.yaml.dump(config, buf)
             await ctx.bot.guild_configs.write(ctx.guild, buf.getvalue())
 
