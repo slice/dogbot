@@ -25,10 +25,10 @@ class Gatekeeper(Cog):
 
     async def __local_check(self, ctx: Context):
         if not ctx.guild:
-            raise commands.NoPrivateMessage("Gatekeeper doesn't work in Direct Messages.")
+            raise commands.NoPrivateMessage()
         if not ctx.author.guild_permissions.ban_members:
-            raise commands.MissingPermissions('You can only manage Gatekeeper if you have the "Ban Members" '
-                                              'permission.')
+            raise commands.CheckFailure('You can only manage Gatekeeper if you have the "Ban Members" '
+                                        'permission.')
         return True
 
     @property
