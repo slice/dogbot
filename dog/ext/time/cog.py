@@ -8,6 +8,7 @@ from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
 from lifesaver.bot import Cog, Context, command, group
 from lifesaver.bot.storage import AsyncJSONStorage
+from lifesaver.utils.formatting import clean_mentions
 from geopy import exc as geopy_errors
 
 from .converters import hour_minute, Timezone
@@ -93,7 +94,8 @@ class Time(Cog):
             )
             return
 
-        await ctx.send(f'{who.display_name}: {formatted_time}')
+        display_name = clean_mentions(ctx.channel, who.display_name)
+        await ctx.send(f'{display_name}: {formatted_time}')
 
     @time.command(aliases=['sim'])
     async def diff(self, ctx: Context, timezone: Timezone, time: hour_minute = None):
