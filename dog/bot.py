@@ -1,3 +1,4 @@
+import asyncpg
 import logging
 
 import aiohttp
@@ -8,6 +9,7 @@ from lifesaver.bot.storage import AsyncJSONStorage
 from quart.logging import create_serving_logger
 from quart.serving import Server
 
+from dog.context import Context
 from dog.guild_config import GuildConfigManager
 from dog.web.server import app as webapp
 
@@ -16,11 +18,12 @@ log = logging.getLogger(__name__)
 
 class Dogbot(Bot):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, context_cls=Context, **kwargs)
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.load_all()
         self.blacklisted_storage = AsyncJSONStorage('blacklisted_users.json', loop=self.loop)
         self.guild_configs = GuildConfigManager(self)
+        self.pool = None
 
         webapp.bot = self
         webapp.secret_key = self.config.web['secret_key']
@@ -86,6 +89,13 @@ class Dogbot(Bot):
 
     def is_blacklisted(self, user: discord.User) -> bool:
         return user.id in self.blacklisted_storage
+
+    async def on_ready(self):
+        await super().on_ready()
+
+        log.info('connecting to postgres')
+        self.pool = await asyncpg.create_pool(**self.config.postgres)
+        log.info('connected to postgres')
 
     async def on_message(self, message: discord.Message):
         await self.wait_until_ready()
