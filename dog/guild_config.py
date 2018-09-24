@@ -52,7 +52,7 @@ class GuildConfigManager:
             # user#discrim, user id, role id
             if (str(user) in editors
                     or user.id in editors
-                    or any(role.id in editors for role in member.roles)):
+                    or (member is not None and any(role.id in editors for role in member.roles))):
                 return True
         elif isinstance(editors, int):  # a single id
             return user.id == editors
