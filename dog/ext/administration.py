@@ -35,7 +35,7 @@ class Administration(Cog):
     @command(hidden=True)
     @is_owner()
     async def unblacklist(self, ctx: Context, user: discord.User):
-        """Unblacklist someone from using the bot."""
+        """Unblacklists someone from using the bot."""
         try:
             await self.bot.blacklisted_storage.delete(user.id)
         except KeyError:
