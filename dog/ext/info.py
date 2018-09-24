@@ -26,29 +26,6 @@ class Info(Cog):
         embed.set_footer(text=f'Owned by {app_info.owner}', icon_url=app_info.owner.avatar_url)
         await ctx.send(embed=embed)
 
-    @group(aliases=['user_info', 'user', 'member_info', 'member'], invoke_without_command=True)
-    async def profile(self, ctx: Context, user: HardMember = None):
-        """Views information about a user."""
-        user = user or ctx.author
-
-        embed = discord.Embed(title=f'{user} ({user.id})')
-        embed.add_field(name='Account Creation', value=date(user.created_at))
-        embed.set_thumbnail(url=user.avatar_url)
-
-        if isinstance(user, discord.Member):
-            embed.add_field(name=f'Joined {ctx.guild.name}', value=date(user.joined_at), inline=False)
-
-        if user.bot:
-            embed.title = '<:bot:349717107124207617> ' + embed.title
-
-        await ctx.send(embed=embed)
-
-    @profile.command(name='avatar')
-    async def profile_avatar(self, ctx: Context, user: HardMember = None):
-        """Views the avatar of a user."""
-        user = user or ctx.author
-        await ctx.send(user.avatar_url_as(format='png'))
-
     @command(aliases=['avatar_url'])
     async def avatar(self, ctx: Context, user: HardMember = None):
         """Views the avatar of a user."""
