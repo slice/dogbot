@@ -18,11 +18,7 @@ EMOJI_NAME_REGEX = re.compile(r'<a?(:.+:)\d+>')
 class Utility(Cog):
     def __init__(self, bot):
         super().__init__(bot)
-        self.session = aiohttp.ClientSession(loop=bot.loop)
         self.gateway_lag = defaultdict(list)
-
-    def __unload(self):
-        self.loop.create_task(self.session.close())
 
     async def on_message(self, message: discord.Message):
         if not message.guild:
