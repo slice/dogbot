@@ -20,12 +20,12 @@ yarn-error.log*
 .mypy_cache
 
 # bot
-*.log
-config*.yml
-data
-.env
+/*.log
+/config*.yml
+/data
+/.env
 
-venv
+/venv
 .DS_Store
 
 # Byte-compiled / optimized / DLL files
