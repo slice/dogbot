@@ -17,7 +17,8 @@ export const schema = joi.compile(
       checks: joi.object(),
       bounce_message: joi.string().min(1),
       broadcast_channel: joi.number().label('broadcast channel id'),
-      allowed_users: users
+      allowed_users: users,
+      quiet: joi.boolean()
     }),
     measure_gateway_lag: joi.boolean(),
     disabled_cogs: joi.array().items(joi.string().label('cog name')),

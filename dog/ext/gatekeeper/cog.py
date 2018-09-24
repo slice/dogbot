@@ -147,6 +147,9 @@ class Gatekeeper(Cog):
         if not passthrough and not await self.screen(member):
             return
 
+        if settings.get('quiet', False):
+            return
+
         embed = discord.Embed(
             color=discord.Color.green(),
             title=f'{represent(member)} has joined',
