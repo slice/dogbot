@@ -6,17 +6,18 @@ import discord
 import pytz
 from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
-from lifesaver.bot import Cog, Context, command, group
+from lifesaver.bot import Cog, command, group
 from lifesaver.bot.storage import AsyncJSONStorage
 from lifesaver.utils.formatting import clean_mentions
 from geopy import exc as geopy_errors
 
+from dog.context import Context
 from .converters import hour_minute, Timezone
 from .geocoder import Geocoder
 from .map import Map
 
 TWELVEHOUR_COUNTRIES = ['US', 'AU', 'CA', 'PH']
-UNKNOWN_LOCATION = '\U00002753 Unknown location. Examples: "Arizona", "London", "California"'
+UNKNOWN_LOCATION = 'Unknown location. Examples: "Arizona", "London", and "California".'
 
 log = logging.getLogger(__name__)
 
@@ -80,17 +81,17 @@ class Time(Cog):
         who = who or ctx.author
 
         if self.bot.is_blacklisted(who):
-            await ctx.send(f"{who} can't use this bot.")
+            await ctx.send(f"{ctx.tick(False)} {who} can't use this bot.")
             return
 
         formatted_time = self.get_formatted_time_for(who)
         if not formatted_time:
             await ctx.send(
-                (f"\U00002753 You haven't set your timezone yet. Use `{ctx.prefix}time set <location>` to set it. "
-                 'Example locations: "London", "Arizona", "Rochester, NY".')
+                (f"{ctx.tick(False)} You haven't set your timezone yet. "
+                 f"Use `{ctx.prefix}time set <location>` to set it. ")
                 if who == ctx.author else
-                (f'\U00002753 {who.display_name} has not set their timezone. They can set their timezone with '
-                 f'`{ctx.prefix}time set`, like: `{ctx.prefix}time set London`.')
+                (f'{ctx.tick(False)} {who.display_name} has not set their timezone.'
+                 f'They can set it with `{ctx.prefix} time set <location>`.')
             )
             return
 
@@ -102,7 +103,8 @@ class Time(Cog):
         """View what time it is in another timezone compared to yours."""
         (source, other_tz) = timezone
         if not self.timezones.get(ctx.author.id):
-            await ctx.send(f"You don't have a timezone, so you can't use this. Set one with `{ctx.prefix}t set`.")
+            await ctx.send(f"{ctx.tick(False)} You don't have a timezone set, so you can't use this. Set one with "
+                           f"`{ctx.prefix}t set`.")
             return
 
         if time is None:
@@ -137,7 +139,9 @@ class Time(Cog):
         try:
             invoker_timezone = self.timezones.get(ctx.author.id)
             country = next(
-                country for (country, timezones) in pytz.country_timezones.items() if invoker_timezone in timezones
+                country
+                for (country, timezones) in pytz.country_timezones.items()
+                if invoker_timezone in timezones
             )
             twelve_hour = country in TWELVEHOUR_COUNTRIES
         except StopIteration:
@@ -167,7 +171,7 @@ class Time(Cog):
                 await self.timezones.delete(ctx.author.id)
             except KeyError:
                 pass
-            await ctx.send('Done.')
+            await ctx.send(f'{ctx.tick()} Done.')
         else:
             await ctx.send('Okay, cancelled.')
 
@@ -180,18 +184,18 @@ class Time(Cog):
         try:
             location = await self.geocoder.geocode(location)
             if location is None:
-                await ctx.send(UNKNOWN_LOCATION)
+                await ctx.send(f'{ctx.tick(False)} {UNKNOWN_LOCATION}')
                 return
 
             timezone = await self.geocoder.timezone(location.point)
             if timezone is None:
-                await ctx.send(UNKNOWN_LOCATION)
+                await ctx.send(f'{ctx.tick(False)} {UNKNOWN_LOCATION}')
                 return
         except geopy_errors.GeocoderQuotaExceeded:
-            await ctx.send('\U0001f6b1 API quota exceeded, please try again later.')
+            await ctx.send(f'{ctx.tick(False)} API quota exceeded, please try again later.')
             return
         except geopy_errors.GeopyError as error:
-            await ctx.send(f'\U00002753 Unable to resolve your location: `{error}`')
+            await ctx.send(f'{ctx.tick(False)} Unable to resolve your location: `{error}`')
             return
 
         await self.timezones.put(ctx.author.id, str(timezone))
@@ -205,5 +209,5 @@ class Time(Cog):
             greeting = 'Good afternoon!'
 
         await ctx.send(
-            f'\N{OK HAND SIGN} Your timezone is now set to {timezone}. {greeting}'
+            f'{ctx.tick()} Your timezone is now set to {timezone}. {greeting}'
         )
