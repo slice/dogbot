@@ -1,8 +1,13 @@
 version: '3.6'
 services:
-  bot:
-    build: .
-    ports:
-    - "8993:8993" # web
+  postgres:
+    image: "postgres:11-alpine"
     volumes:
-    - ./:/app
+    - "./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql"
+    - "./data/db:/var/lib/postgresql/data"
+  bot:
+    build: "."
+    ports:
+    - "8993:8993"
+    volumes:
+    - "./:/app"
