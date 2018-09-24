@@ -1,3 +1,5 @@
+import sys
+
 import asyncpg
 import logging
 
@@ -94,7 +96,11 @@ class Dogbot(Bot):
         await super().on_ready()
 
         log.info('connecting to postgres')
-        self.pool = await asyncpg.create_pool(**self.config.postgres)
+        try:
+            self.pool = await asyncpg.create_pool(**self.config.postgres)
+        except Exception:
+            log.exception('cannot connect to postgres')
+            sys.exit(1)
         log.info('connected to postgres')
 
     async def on_message(self, message: discord.Message):
