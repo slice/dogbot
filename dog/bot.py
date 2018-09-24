@@ -88,6 +88,9 @@ class Dogbot(Bot):
         return user.id in self.blacklisted_storage
 
     async def on_message(self, message: discord.Message):
+        await self.wait_until_ready()
+
         if self.is_blacklisted(message.author):
             return
+
         await super().on_message(message)
