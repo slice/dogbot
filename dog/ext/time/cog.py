@@ -95,7 +95,10 @@ class Time(Cog):
             )
             return
 
-        display_name = clean_mentions(ctx.channel, who.display_name)
+        if ctx.guild:
+            display_name = clean_mentions(ctx.channel, who.display_name)
+        else:
+            display_name = who.display_name
         await ctx.send(f'{display_name}: {formatted_time}')
 
     @time.command(aliases=['sim'])
