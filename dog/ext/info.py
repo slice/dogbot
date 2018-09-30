@@ -26,11 +26,6 @@ class Info(Cog):
         embed.set_footer(text=f'Owned by {app_info.owner}', icon_url=app_info.owner.avatar_url)
         await ctx.send(embed=embed)
 
-    @command(aliases=['avatar_url'])
-    async def avatar(self, ctx: Context, user: HardMember = None):
-        """Views the avatar of a user."""
-        await ctx.invoke(self.profile_avatar, user)
-
     @group(aliases=['guild', 'guild_info', 'server_info'], invoke_without_command=True)
     @guild_only()
     async def server(self, ctx: Context):

@@ -1,11 +1,9 @@
-import re
-
 import aiohttp
 import collections
 
 import discord
 from discord.ext import commands
-from lifesaver.bot import Cog, group
+from lifesaver.bot import Cog, command, group
 
 from dog.converters import HardMember
 from dog.ext.info import date
@@ -162,6 +160,11 @@ class Profile(Cog):
         """Views the avatar of a user."""
         user = user or ctx.author
         await ctx.send(user.avatar_url_as(format='png'))
+
+    @command(aliases=['avatar_url'])
+    async def avatar(self, ctx, user: HardMember = None):
+        """Views the avatar of a user."""
+        await ctx.invoke(self.profile_avatar, user)
 
 
 def setup(bot):
