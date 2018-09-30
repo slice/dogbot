@@ -10,4 +10,4 @@ except ModuleNotFoundError:
     pass
 
 setup_logging()
-Dogbot.with_config(config_cls=DogConfig).run()
+Dogbot(DogConfig.load('config.yml')).run()

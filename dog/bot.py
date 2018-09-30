@@ -1,6 +1,3 @@
-import sys
-
-import asyncpg
 import logging
 
 import aiohttp
@@ -25,7 +22,6 @@ class Dogbot(Bot):
         self.load_all()
         self.blacklisted_storage = AsyncJSONStorage('blacklisted_users.json', loop=self.loop)
         self.guild_configs = GuildConfigManager(self)
-        self.pool = None
 
         webapp.bot = self
         webapp.secret_key = self.config.web['secret_key']
@@ -91,17 +87,6 @@ class Dogbot(Bot):
 
     def is_blacklisted(self, user: discord.User) -> bool:
         return user.id in self.blacklisted_storage
-
-    async def on_ready(self):
-        await super().on_ready()
-
-        log.info('connecting to postgres')
-        try:
-            self.pool = await asyncpg.create_pool(**self.config.postgres)
-        except Exception:
-            log.exception('cannot connect to postgres')
-            sys.exit(1)
-        log.info('connected to postgres')
 
     async def on_message(self, message: discord.Message):
         await self.wait_until_ready()
