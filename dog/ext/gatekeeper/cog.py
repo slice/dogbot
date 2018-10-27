@@ -64,11 +64,13 @@ class Gatekeeper(Cog):
         """Bounce a user from the guild."""
         settings = self.settings(member.guild)
 
-        if 'bounce_message' in settings:
+        bounce_message = settings.get('bounce_message')
+        if bounce_message is not None:
             try:
-                await member.send(settings['bounce_message'])
+                await member.send(bounce_message)
             except discord.HTTPException:
-                pass
+                if settings.get('echo_dm_failures', False):
+                    await self.report(member, f'Failed to send bounce message to {represent(member)}.')
 
         try:
             await member.kick(reason=f'Failed Gatekeeper check: {reason}')
