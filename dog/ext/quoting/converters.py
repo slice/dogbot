@@ -5,8 +5,6 @@ import discord
 from discord.ext import commands
 from lifesaver.utils import clean_mentions
 
-from dog.ext.quoting.command import QuoteNotFound
-
 MESSAGE_SPECIFIER_RE = re.compile(r"(\d+)?(?:[:+](-?\d+))?")
 
 
@@ -42,38 +40,28 @@ class Specifier(namedtuple('Specifier', ['id', 'range'])):
 class QuoteName(commands.Converter):
     def __init__(
         self, *,
-        require_existance: bool = False,
-        require_nonexistance: bool = False,
-        force_consume: bool = False
+        must_exist: bool = False,
+        must_not_exist: bool = False,
     ):
         super().__init__()
-        self.require_existance = require_existance
-        self.require_nonexistance = require_nonexistance
-        self.force_consume = force_consume
+        self.must_exist = must_exist
+        self.must_not_exist = must_not_exist
 
     async def convert(self, ctx, argument):
-        cog = ctx.command.instance
-
-        quotes = cog.quotes(ctx.guild)
+        quotes = ctx.cog.quotes(ctx.guild)
 
         # scrub any mentions
         argument = clean_mentions(ctx.channel, argument)
 
         if argument not in quotes:
-            if self.require_existance:
+            if self.must_exist:
                 raise commands.BadArgument(f'Quote "{argument}" does not exist.')
 
-            if self.force_consume:
-                # this special exception is used to signal to the converter
-                # to reset the view position and use the next word for the name,
-                # instead of the entire view.
-                raise QuoteNotFound(argument)
-
-        if argument in quotes and self.require_nonexistance:
+        if argument in quotes and self.must_not_exist:
             raise commands.BadArgument(f'Quote "{argument}" already exists.')
 
         if len(argument) > 60:
-            raise commands.BadArgument('Too long. Maximum of 60 characters.')
+            raise commands.BadArgument('Too long. 60 characters maximum.')
 
         return argument
 

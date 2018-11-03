@@ -4,12 +4,10 @@ from random import choice
 
 import discord
 from discord.ext import commands
-from lifesaver.bot import Cog, command
-from lifesaver.bot.command import custom_group
+from lifesaver.bot import Cog, command, group
 from lifesaver.bot.storage import AsyncJSONStorage
 from lifesaver.utils import ListPaginator, human_delta, pluralize, truncate, clean_mentions
 
-from dog.ext.quoting.command import QuoteCommand
 from .converters import Messages, QuoteName
 from .utils import stringify_message
 
@@ -45,8 +43,9 @@ class Quoting(Cog):
 
         if not quotes:
             await ctx.send(
-                'There are no quotes in this server. '
-                f'Create some with `{ctx.prefix} quote`!'
+                'There are no quotes in this server. Create some with '
+                f'`{ctx.prefix}quote new`. For more information, see `{ctx.prefix}'
+                'help quote`.'
             )
             return
 
@@ -57,30 +56,29 @@ class Quoting(Cog):
 
         await ctx.send(name, embed=embed)
 
-    @custom_group(aliases=['q'], invoke_without_command=True, cls=QuoteCommand)
+    @group(aliases=['q'], invoke_without_command=True)
     @commands.guild_only()
-    async def quote(self, ctx, name: QuoteName(force_consume=True), *messages: Messages):
-        """
-        Creates a quote from multiple messages.
+    async def quote(self, ctx, *, name: QuoteName(must_exist=True)):
+        """Views a quote.
 
-        This command "takes a picture" of multiple messages and stores them
+        Quotes are essentially pictures of multiple messages and stores them
         in my database.
 
         You can specify multiple message IDs to store:
 
-            d?quote "my quote" 467753625024987136 467753572633673773 ...
+            d?quote new "my quote" 467753625024987136 467753572633673773 ...
 
         Alternatively, you can specify a message ID then a number of messages
         to store after that, like:
 
-            d?quote "my quote" 467753625024987136+5
+            d?quote new "my quote" 467753625024987136+5
 
         That would store message 467753625024987136 and the 5 messages after
         that. You can also combine them if you would like to simultaneously
         specify individual messages and groups of messages. Alternatively,
         you can select the last 5 messages like so:
 
-            d?quote "my quote" :-5
+            d?quote new "my quote" :-5
 
         The :n or +n (called the "range") will grab up to 50 messages both ways.
 
@@ -109,25 +107,28 @@ class Quoting(Cog):
             - All message content, all numbers of embeds, all attachment URLs
             - Channel ID and name, first message ID, guild ID
             - Creation timestamp
-            - Quote creator ID and name#discriminator
+            - Quote creator ID and username#discriminator
+        """
+        quotes = self.quotes(ctx.guild)
+        quote = quotes.get(name)
+
+        embed = embed_quote(quote)
+        await ctx.send(embed=embed)
+
+    @quote.command(aliases=['new'])
+    @commands.guild_only()
+    async def create(self, ctx, name: QuoteName(must_not_exist=True), *messages: Messages):
+        """Creates a quote.
+
+        See `d?help quote` for more information.
         """
         quotes = self.quotes(ctx.guild)
 
-        silent = False
-        if name.startswith('!'):
-            silent = True
+        silent = name.startswith('!')
+
+        if silent:
+            # Remove the !
             name = name[1:]
-
-        if not messages:
-            quote = quotes.get(name)
-
-            if not quote:
-                await ctx.send(f'Quote "{name}" does not exist.')
-                return
-
-            embed = embed_quote(quote)
-            await ctx.send(embed=embed)
-            return
 
         # the converter can return multiple messages if a range is specified
         quoted = []
@@ -136,10 +137,6 @@ class Quoting(Cog):
                 quoted += message
             else:
                 quoted.append(message)
-
-        if name in quotes:
-            await ctx.send(f'Quote "{name}" already exists.')
-            return
 
         strings = map(stringify_message, quoted)
         quote_content = '\n'.join(strings)
@@ -174,7 +171,7 @@ class Quoting(Cog):
     @quote.command()
     @commands.guild_only()
     async def list(self, ctx):
-        """Lists tags on this server."""
+        """Lists quotes on this server."""
         quotes = self.quotes(ctx.guild)
 
         if not quotes:
@@ -199,8 +196,8 @@ class Quoting(Cog):
     async def rename(
         self,
         ctx,
-        existing: QuoteName(require_existance=True),
-        new: QuoteName(require_nonexistance=True)
+        existing: QuoteName(must_exist=True),
+        new: QuoteName(must_not_exist=True)
     ):
         """Renames a quote."""
         quotes = self.quotes(ctx.guild)
@@ -214,7 +211,7 @@ class Quoting(Cog):
     @quote.command()
     @commands.guild_only()
     @commands.has_permissions(manage_messages=True)
-    async def delete(self, ctx, *, quote: QuoteName(require_existance=True)):
+    async def delete(self, ctx, *, quote: QuoteName(must_exist=True)):
         """Deletes a quote."""
         quotes = self.quotes(ctx.guild)
 
