@@ -49,7 +49,7 @@ class Dogbot(Bot):
             # to grab the cog name then check the configuration to avoid
             # dispatching if required
             ev_name = event.__qualname__
-            if guild and '.' in ev_name:
+            if ev_name.count('.') == 1 and guild and '.' in ev_name:
                 cog_name, method_name = ev_name.split('.')
                 if self.cog_is_disabled(guild, cog_name):
                     # log.debug('Dropping dispatch of %s to %s in %d -- cog disabled.', ev, ev_name, guild.id)
