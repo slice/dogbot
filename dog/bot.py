@@ -11,13 +11,14 @@ from quart.serving import Server
 from dog.context import Context
 from dog.guild_config import GuildConfigManager
 from dog.web.server import app as webapp
+from dog.helpformatter import HelpFormatter
 
 log = logging.getLogger(__name__)
 
 
 class Dogbot(Bot):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, context_cls=Context, **kwargs)
+        super().__init__(*args, context_cls=Context, formatter=HelpFormatter(), **kwargs)
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.load_all()
         self.blacklisted_storage = AsyncJSONStorage('blacklisted_users.json', loop=self.loop)
