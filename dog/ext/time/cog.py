@@ -150,7 +150,7 @@ class Time(Cog):
         except StopIteration:
             pass
 
-        map = Map(session=self.bot.session, twelve_hour=twelve_hour, loop=self.bot.loop)
+        map = Map(session=self.session, twelve_hour=twelve_hour, loop=self.bot.loop)
 
         for member in ctx.guild.members:
             tz = self.timezones.get(member.id)

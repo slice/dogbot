@@ -16,11 +16,11 @@ class Map:
     def __init__(self, *, session: aiohttp.ClientSession, twelve_hour: bool = False, loop):
         self.font = ImageFont.truetype('assets/SourceSansPro-Semibold.otf', size=64)
         self.tag_font = ImageFont.truetype('assets/SourceSansPro-Black.otf', size=14)
-        self.image = None
+
         self.session = session
         self.twelve_hour = twelve_hour
         self.loop = loop
-
+        self.image = None
         self.timezones = defaultdict(list)
 
     @property
@@ -138,4 +138,3 @@ class Map:
 
         del draw_faceplate
         del draw
-
