@@ -71,14 +71,30 @@ class Map:
         chunk_height = 300
         chunks_per_column = 3
 
-        # width: for every 3 chunks, introduce a new column
+        # the number of columns: for every 3 chunks, introduce a new column
         num_columns = ceil(len(time_chunks) / chunks_per_column)
+
+        # the width of the image: clamp down to 1 chunk wide
         image_width = int(max(num_columns * chunk_width, chunk_width)) + image_padding
 
-        # height: at most 3 chunks down
-        image_height = int(min(chunk_height * len(time_chunks), chunk_height * chunks_per_column)) + image_padding
+        # the height of the image: at most, 3 chunks down vertically
+        image_height = int(
+            min(
+                # if the number of time chunks is less than 3 chunks, we can
+                # make the image smaller
+                chunk_height * len(time_chunks),
+
+                # max out at 3 chunks per column
+                chunk_height * chunks_per_column
+            )
+        ) + image_padding
 
         self.image = Image.new('RGBA', (image_width, image_height), background_color)
+
+        # a faceplate must be used in order to draw nametags because ImageDraw
+        # can't draw transparent stuff on top of the existing pixels. so, we
+        # create a new image which is exactly the size of the original image,
+        # draw on that, then overlay it exactly on top later
         faceplate = Image.new('RGBA', self.image.size, (0, 0, 0, 0))
         draw = ImageDraw.Draw(self.image)
         draw_faceplate = ImageDraw.Draw(faceplate)
@@ -90,6 +106,8 @@ class Map:
         for (time, members) in self.timezones.items():
             offset = time_chunks.index(time)
 
+            # calculate the x and y coordinates of this chunk based on the
+            # offset of this timezone's presence in the list
             x_top = chunk_width * (offset // 3) + chunk_padding + image_padding
             y_top = chunk_height * (offset % 3) + chunk_padding + image_padding
 
@@ -105,14 +123,51 @@ class Map:
             )
             header_size = draw.textsize(time, font=self.font)
 
+            # the y coordinate for the avatar listing
             members_y_top = y_top + header_size[1]
-            avatar_width_total = avatar_size + (chunk_padding // 2)  # some margin
-            avatars_per_row = floor(chunk_width / avatar_width_total)
+
+            # the total size of an avatar with padding
+            avatar_size_total = avatar_size + (chunk_padding // 2)  # some margin
+
+            # how many avatars can fit into each row before having to wrap?
+            avatars_per_row = floor(chunk_width / avatar_size_total)
+            safe_width = avatars_per_row * avatar_size_total
+
+            # the height of the nametag displayed inside of avatars
             nametag_size = 15
 
+            # maximum number of rows of avatars that can fit in each chunk --
+            # calculated by seeing how many rows of avatars can fit in the total
+            # chunk height, along with the header
+            max_rows = floor((chunk_height - header_size[1]) / (avatar_size_total))
+
             for n, member in enumerate(members):
-                x = x_top + (avatar_width_total * (n % avatars_per_row))
-                y = members_y_top + (avatar_width_total * (n // avatars_per_row))
+                row = n // avatars_per_row
+                col = n % avatars_per_row
+
+                # start collapsing on the last row, not the row after the last
+                # row.
+                if row + 1 >= max_rows:
+                    # we have run out of rows! we now have to overlap avatars
+                    # horizontally on the last row.
+
+                    # calculate the amount of remaining avatars that still have
+                    # to be rendered on the last row
+                    leading_rows = max_rows - 1
+                    leading_avatars = leading_rows * avatars_per_row
+                    remaining = len(members[leading_avatars:])
+
+                    # calculate the overlap between each avatar necessary so
+                    # they can all fit into a single row. clamp down to the
+                    # normal size increments (avatar size and some margins)
+                    even_overlap = min(safe_width // remaining, avatar_size_total)
+
+                    x = x_top + (even_overlap * (n - leading_avatars))
+                    y = members_y_top + (avatar_size_total * leading_rows)
+                else:
+                    x = x_top + (avatar_size_total * col)
+                    y = members_y_top + (avatar_size_total * row)
+
                 await self.draw_member(member, (x, y), size=avatar_size, background=(45, 47, 52))
 
                 text = member.name
@@ -134,6 +189,7 @@ class Map:
                     font=self.tag_font
                 )
 
+        # apply the transparent faceplate on top of the image
         self.image.paste(faceplate, (0, 0), mask=faceplate)
 
         del draw_faceplate
