@@ -1,31 +1,26 @@
 import datetime
-import functools
 from collections import defaultdict
 from io import BytesIO
+from math import ceil, floor
+from pathlib import Path
 
 import aiohttp
 import discord
 import pytz
-from PIL import Image, ImageFont
+from PIL import Image, ImageFont, ImageDraw
 
-from .drawing import draw_rotated_text
+from dog.ext.time.drawing import draw_text_cropped
 
 
 class Map:
     def __init__(self, *, session: aiohttp.ClientSession, twelve_hour: bool = False, loop):
-        self.font = ImageFont.truetype('assets/SourceSansPro-Bold.otf', size=35)
-        self.image = Image.open('assets/timezone_map.png').convert('RGBA')
+        self.font = ImageFont.truetype('assets/SourceSansPro-Semibold.otf', size=64)
+        self.tag_font = ImageFont.truetype('assets/SourceSansPro-Black.otf', size=14)
+        self.image = None
         self.session = session
         self.twelve_hour = twelve_hour
         self.loop = loop
 
-        # defaultdict to keep track of users and their timezones.
-        #
-        # keys are a tuple: (time as pretty string, hour offset)
-        # values are a discord.Member
-        #
-        # this is because users can have the same time offset, but have different
-        # actual times because timezones are inconsistent. bleh.
         self.timezones = defaultdict(list)
 
     @property
@@ -39,27 +34,22 @@ class Map:
         self.image.close()
 
     def add_member(self, member: discord.Member, timezone: str):
+        """Add a member to the chart."""
         now = datetime.datetime.now(pytz.timezone(timezone))
-
-        # calculate the hour offset, not accounting for dst
-        offset = (now.utcoffset().total_seconds() - now.dst().total_seconds()) / 60 / 60
         formatted = now.strftime(self.format)
+        self.timezones[formatted].append(member)
 
-        self.timezones[(formatted, offset)].append(member)
-
-    async def draw_member(self, member: discord.Member, x, y):
+    async def draw_member(self, member: discord.Member, box, *, size: int, background):
         def target():
-            avatar = Image.open(fp=BytesIO(avatar_bytes)).convert('RGBA')
-            self.image.paste(avatar, box=(x, y), mask=avatar)
+            board = Image.new('RGBA', (size, size), background)
+            avatar = Image.open(fp=BytesIO(avatar_bytes)).convert('RGBA').resize((size, size), resample=Image.LANCZOS)
+            board.paste(avatar, (0, 0), mask=avatar)
+            self.image.paste(board, box=box, mask=board)
 
-        avatar_url = member.avatar_url_as(static_format='png', size=32)
+        avatar_url = member.avatar_url_as(static_format='png', size=size)
         async with self.session.get(avatar_url) as resp:
             avatar_bytes = await resp.read()
             await self.loop.run_in_executor(None, target)
-
-    async def draw_rotated_text(self, *args, **kwargs):
-        func = functools.partial(draw_rotated_text, *args, **kwargs)
-        return await self.loop.run_in_executor(None, func)
 
     async def render(self):
         def save():
@@ -72,28 +62,80 @@ class Map:
         return buffer
 
     async def draw(self):
-        # keep track of how far up we are for each hour offset, so there are no
-        # overlaps. (this is for each "pretty group")
-        offset_positions = defaultdict(int)
+        time_chunks = list(self.timezones.keys())
+        background_color = (49, 52, 58)
 
-        for (formatted, offset), members in self.timezones.items():
-            # x position based on hour, for appropriate positioning on the map
-            x = int((offset + 11) * 38.5 + 21)
+        image_padding = 50
+        chunk_padding = 20
+        chunk_width = 500
+        chunk_height = 300
+        chunks_per_column = 3
 
-            begin_y = offset_positions[str(offset)]
-            y = begin_y if begin_y != 0 else 480  # start at 480 pixels down if we don't have an offset already
+        # width: for every 3 chunks, introduce a new column
+        num_columns = ceil(len(time_chunks) / chunks_per_column)
+        image_width = int(max(num_columns * chunk_width, chunk_width)) + image_padding
 
-            for member in members:
-                await self.draw_member(member, x, y)
+        # height: at most 3 chunks down
+        image_height = int(min(chunk_height * len(time_chunks), chunk_height * chunks_per_column)) + image_padding
 
-                # move up the map (32 for avatar, 5 for some padding)
-                y -= 32 + 5
+        self.image = Image.new('RGBA', (image_width, image_height), background_color)
+        faceplate = Image.new('RGBA', self.image.size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(self.image)
+        draw_faceplate = ImageDraw.Draw(faceplate)
 
-            size = await self.draw_rotated_text(
-                self.image, 90, (x - 7, y + 30), formatted, fill=(0, 0, 0, 255),
+        font_height_offset = 20
+        font_width_offset = 5
+        avatar_size = 64
+
+        for (time, members) in self.timezones.items():
+            offset = time_chunks.index(time)
+
+            x_top = chunk_width * (offset // 3) + chunk_padding + image_padding
+            y_top = chunk_height * (offset % 3) + chunk_padding + image_padding
+
+            # draw the header of the chunk
+            draw.text(
+                (
+                    x_top - font_width_offset,
+                    y_top - font_height_offset,
+                ),
+                time,
+                fill=(255, 255, 255, 255),
                 font=self.font
             )
+            header_size = draw.textsize(time, font=self.font)
 
-            # register our offset (size[0] is text width)
-            # because it's rotated by 90 degrees, we use width instead of height
-            offset_positions[str(offset)] = y - size[0] - 30
+            members_y_top = y_top + header_size[1]
+            avatar_width_total = avatar_size + (chunk_padding // 2)  # some margin
+            avatars_per_row = floor(chunk_width / avatar_width_total)
+            nametag_size = 15
+
+            for n, member in enumerate(members):
+                x = x_top + (avatar_width_total * (n % avatars_per_row))
+                y = members_y_top + (avatar_width_total * (n // avatars_per_row))
+                await self.draw_member(member, (x, y), size=avatar_size, background=(45, 47, 52))
+
+                text = member.name
+
+                draw_faceplate.rectangle(
+                    (
+                        x, y + avatar_size - nametag_size - 1,
+                        x + avatar_size - 1, y + avatar_size - 1,
+                    ),
+                    fill=(0, 0, 0, 100)
+                )
+
+                draw_text_cropped(
+                    draw_faceplate,
+                    (x, y + avatar_size - nametag_size),
+                    (0, 0, avatar_size, nametag_size),
+                    text,
+                    fill=(255, 255, 255),
+                    font=self.tag_font
+                )
+
+        self.image.paste(faceplate, (0, 0), mask=faceplate)
+
+        del draw_faceplate
+        del draw
+

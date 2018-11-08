@@ -1,6 +1,25 @@
 from PIL import Image, ImageDraw
 
 
+def draw_text_cropped(draw, xy, crop, text, *, fill=(255, 255, 255), font=None):
+    ink, fill = draw._getink(fill)
+    if font is None:
+        font = draw.getfont()
+    if ink is None:
+        ink = fill
+    if ink is not None:
+        try:
+            mask, offset = font.getmask2(text, draw.fontmode)
+            xy = xy[0] + offset[0], xy[1] + offset[1]
+        except AttributeError:
+            try:
+                mask = font.getmask(text, draw.fontmode)
+            except TypeError:
+                mask = font.getmask(text)
+        mask = mask.crop(crop)
+        draw.draw.draw_bitmap(xy, mask, ink)
+
+
 def draw_rotated_text(image, angle, xy, text, fill, *args, **kwargs):
     """https://stackoverflow.com/a/45405131/2491753"""
     # get the size of our image

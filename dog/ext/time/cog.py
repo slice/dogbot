@@ -133,10 +133,10 @@ class Time(Cog):
             source
         ))
 
-    @time.command(typing=True)
+    @time.command(typing=True, aliases=['map', 'chart'])
     @cooldown(1, 5, BucketType.guild)
-    async def map(self, ctx: Context):
-        """Views a timezone map."""
+    async def table(self, ctx: Context):
+        """Views a timezone chart."""
 
         twelve_hour = False
         try:
