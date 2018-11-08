@@ -1,3 +1,5 @@
+__all__ = ['Map']
+
 import datetime
 from collections import defaultdict
 from io import BytesIO
