@@ -1,10 +1,12 @@
 __all__ = ['Map']
 
 import datetime
+import logging
 from collections import defaultdict
 from io import BytesIO
 from math import ceil, floor
 from pathlib import Path
+from urllib.parse import urlparse
 
 import aiohttp
 import discord
@@ -12,6 +14,8 @@ import pytz
 from PIL import Image, ImageFont, ImageDraw
 
 from dog.ext.time.drawing import draw_text_cropped
+
+log = logging.getLogger(__name__)
 
 
 class Map:
@@ -24,6 +28,9 @@ class Map:
         self.loop = loop
         self.image = None
         self.timezones = defaultdict(list)
+
+        self.cache = Path.cwd() / 'avatar_cache'
+        self.cache.mkdir(exist_ok=True)
 
     @property
     def format(self):
@@ -42,16 +49,28 @@ class Map:
         self.timezones[formatted].append(member)
 
     async def draw_member(self, member: discord.Member, box, *, size: int, background):
-        def target():
+        def target(avatar_bytes):
+            # overlay transparent avatars with a subtle background
             board = Image.new('RGBA', (size, size), background)
-            avatar = Image.open(fp=BytesIO(avatar_bytes)).convert('RGBA').resize((size, size), resample=Image.LANCZOS)
+            avatar = Image.open(fp=BytesIO(avatar_bytes))\
+                .convert('RGBA')\
+                .resize((size, size), resample=Image.LANCZOS)
             board.paste(avatar, (0, 0), mask=avatar)
             self.image.paste(board, box=box, mask=board)
 
-        avatar_url = member.avatar_url_as(static_format='png', size=size)
-        async with self.session.get(avatar_url) as resp:
-            avatar_bytes = await resp.read()
-            await self.loop.run_in_executor(None, target)
+        avatar_url = member.avatar_url_as(format='png', size=size)
+        filename = urlparse(avatar_url).path.split('/')[-1]
+        cached_file = self.cache / filename
+
+        if cached_file.is_file():
+            log.debug('Using cached file for %d: %s', member.id, cached_file)
+            await self.loop.run_in_executor(None, target, cached_file.read_bytes())
+        else:
+            log.debug('Fetching uncached file for %d: %s', member.id, cached_file)
+            async with self.session.get(avatar_url) as resp:
+                avatar_bytes = await resp.read()
+                cached_file.write_bytes(avatar_bytes)
+                await self.loop.run_in_executor(None, target, avatar_bytes)
 
     async def render(self):
         def save():
