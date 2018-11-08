@@ -8,7 +8,8 @@ from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
 from lifesaver.bot import Cog, command, group
 from lifesaver.bot.storage import AsyncJSONStorage
-from lifesaver.utils.formatting import clean_mentions
+from lifesaver.utils import clean_mentions
+from lifesaver.utils.timing import Timer
 from geopy import exc as geopy_errors
 
 from dog.context import Context
@@ -158,11 +159,12 @@ class Time(Cog):
                 continue
             map.add_member(member, tz)
 
-        await map.draw()
-        buffer = await map.render()
+        with Timer() as timer:
+            await map.draw()
+            buffer = await map.render()
 
         file = discord.File(fp=buffer, filename=f'map_{ctx.guild.id}.png')
-        await ctx.send(file=file)
+        await ctx.send(f'Rendered in {timer}.', file=file)
 
         map.close()
 
