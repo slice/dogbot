@@ -1,0 +1,19 @@
+.guild {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  .name {
+    font-size: 1.25rem;
+    margin-left: 1rem;
+    font-weight: bold;
+  }
+
+  .icon {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+    border-radius: 100%;
+  }
+}
