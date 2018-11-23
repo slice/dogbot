@@ -2,7 +2,7 @@
 
 #login {
   @include center;
-  min-height: calc(100vh - 2rem);
+  margin: 2rem 0;
 }
 
 #discord-login-link {
