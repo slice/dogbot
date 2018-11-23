@@ -1,16 +1,17 @@
 import React, { Component } from 'react'
+import { Link } from 'react-router-dom'
 
 import './Guilds.scss'
 import API from '../api'
 import Guild from './Guild'
 import { Guild as GuildT } from '../types'
 
-interface State {
+type State = {
   guilds: GuildT[] | null
 }
 
 export default class Guilds extends Component<{}, State> {
-  state = { guilds: null }
+  state: State = { guilds: null }
 
   async componentDidMount() {
     const guilds = await API.get<GuildT[]>('/api/guilds')
@@ -24,16 +25,18 @@ export default class Guilds extends Component<{}, State> {
 
     if (guilds == null) {
       content = <p>Loading servers...</p>
-      // @ts-ignore
     } else if (guilds.length !== 0) {
-      // @ts-ignore
       const guildNodes = guilds.map((guild: GuildT) => (
-        <Guild key={guild.id} guild={guild} />
+        <li>
+          <Link to={`/guild/${guild.id}`}>
+            <Guild key={guild.id} guild={guild} />
+          </Link>
+        </li>
       ))
       content = (
         <>
           <p>Click on a server below to edit its configuration:</p>
-          <div className="guild-list">{guildNodes}</div>
+          <ul className="guild-list">{guildNodes}</ul>
         </>
       )
     } else {

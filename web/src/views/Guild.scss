@@ -1,8 +1,10 @@
+@import '../styles/colors';
+
 .guild {
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  margin-bottom: 1rem;
+  padding: 1rem;
 
   .name {
     font-size: 1.25rem;
@@ -15,5 +17,11 @@
     height: 32px;
     object-fit: cover;
     border-radius: 100%;
+  }
+
+  &:hover {
+    border-radius: 0.15rem;
+    background: $light-gray;
+    cursor: pointer;
   }
 }
