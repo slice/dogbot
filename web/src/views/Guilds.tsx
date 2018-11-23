@@ -5,8 +5,12 @@ import API from '../api'
 import Guild from './Guild'
 import { Guild as GuildT } from '../types'
 
-export default class Guilds extends Component<{}, { guilds: GuildT[] }> {
-  state = { guilds: [] }
+interface State {
+  guilds: GuildT[] | null
+}
+
+export default class Guilds extends Component<{}, State> {
+  state = { guilds: null }
 
   async componentDidMount() {
     const guilds = await API.get<GuildT[]>('/api/guilds')
@@ -14,15 +18,22 @@ export default class Guilds extends Component<{}, { guilds: GuildT[] }> {
   }
 
   render() {
+    const { guilds } = this.state
+
     let content
-    if (this.state.guilds.length !== 0) {
-      const guilds = this.state.guilds.map((guild: GuildT) => (
+
+    if (guilds == null) {
+      content = <p>Loading servers...</p>
+      // @ts-ignore
+    } else if (guilds.length !== 0) {
+      // @ts-ignore
+      const guildNodes = guilds.map((guild: GuildT) => (
         <Guild key={guild.id} guild={guild} />
       ))
       content = (
         <>
           <p>Click on a server below to edit its configuration:</p>
-          <div className="guild-list">{guilds}</div>
+          <div className="guild-list">{guildNodes}</div>
         </>
       )
     } else {
