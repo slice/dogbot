@@ -27,9 +27,9 @@ export default class Guilds extends Component<{}, State> {
       content = <p>Loading servers...</p>
     } else if (guilds.length !== 0) {
       const guildNodes = guilds.map((guild: GuildT) => (
-        <li>
+        <li key={guild.id}>
           <Link to={`/guild/${guild.id}`}>
-            <Guild key={guild.id} guild={guild} />
+            <Guild guild={guild} />
           </Link>
         </li>
       ))
