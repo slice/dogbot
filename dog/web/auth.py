@@ -2,9 +2,7 @@ import random
 from urllib.parse import quote_plus
 
 import aiohttp
-from quart import Blueprint, g, jsonify as json, redirect, request, session, url_for
-
-from .decorators import ratelimit
+from quart import Blueprint, g, jsonify as json, redirect, request, session
 
 auth = Blueprint('auth', __name__)
 API_BASE = 'https://discordapp.com/api/v6'
@@ -60,14 +58,14 @@ async def auth_redirect():
     session['token'] = access_token
     user = await get_user(access_token)
     session['user'] = user
-    return redirect('/guilds#auth_bust')
+    return redirect('/guilds')
 
 
 @auth.route('/logout')
 def auth_logout():
     del session['token']
     del session['user']
-    return redirect('/#auth_bust')
+    return redirect('/')
 
 
 @auth.route('/login')
@@ -77,14 +75,16 @@ def auth_login():
     return redirect(url)
 
 
-@auth.route('/user')
-@ratelimit(4, 2)
-async def auth_user():
+@auth.route('/session/state')
+async def session_state():
     active = 'token' in session
     if not active:
-        return json({'active': False})
-    try:
-        user = await get_user(session['token'])
-        return json({'active': True, 'user': user})
-    except aiohttp.ClientResponseError:
-        return json({'active': False})
+        return json({
+            'authenticated': False,
+            'user': None,
+        })
+
+    return json({
+        'authenticated': True,
+        'user': session['user'],
+    })

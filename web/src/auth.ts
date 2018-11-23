@@ -11,7 +11,7 @@ export const AuthContext = React.createContext({
   user: null,
 })
 
-export const STORAGE_KEY = '_dogbot_authentication_state'
+export const STORAGE_KEY = 'authenticationState'
 
 export function store(state: AuthState) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state))

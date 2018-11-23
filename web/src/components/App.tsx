@@ -12,50 +12,45 @@ import { AuthContext, AuthState, load, store } from '../auth'
 
 const log = logFactory('auth')
 
-export default class App extends Component<{}, { auth: AuthState | null }> {
-  state = { auth: null }
+export default class App extends Component<
+  {},
+  { authState: AuthState | null }
+> {
+  state = { authState: null }
 
   async componentDidMount() {
-    const state = load()
+    const savedAuthState = load()
 
-    if (state == null || window.location.hash === '#auth_bust') {
-      if (window.location.hash !== '') {
-        // reset hash
-        window.history.replaceState({}, document.title, '.')
-      }
-
-      // no state was preserved
-      log('fetching authentication state...')
-      const newState = await this.fetchAuthState()
-      store(newState)
-    } else {
-      // auth state was preserved, restore.
-      log('loading authentication state...')
-      this.setState({ auth: state })
+    // Use the cached authentication state first, so we don't have to wait for
+    // network requests to finish in case the saved one was still valid.
+    //
+    // For example: if a logged in auth state has been saved (and we are in fact
+    // logged in), then this setState call will be accurate, and fetching the
+    // auth state later will have no effect because the values are the same.
+    // If a logged in auth state has been saved, but the session has become
+    // invalidated for whatever reason, we'll momentarily believe that we are
+    // logged in, but the upcoming network request will revoke that state.
+    //
+    // In other words, the second setState is used to invalidate sessions.
+    if (savedAuthState != null) {
+      this.setState({ authState: savedAuthState })
     }
+
+    const authState = await this.fetchAuthState()
+    this.setState({ authState })
+    store(authState)
   }
 
   async fetchAuthState() {
-    const response = await API.get<{ active: boolean; user: User }>(
-      '/auth/user'
-    )
-
-    log('/auth/user response:', response)
-
-    const authState: AuthState = {
-      authenticated: response.active,
-      user: response.user,
-    }
-
-    this.setState({ auth: authState })
-    return authState
+    const response = await API.get<AuthState>('/auth/session/state')
+    return response
   }
 
   render() {
     let routes
-    if (this.state.auth !== null) {
+    if (this.state.authState !== null) {
       routes = (
-        <AuthContext.Provider value={this.state.auth!}>
+        <AuthContext.Provider value={this.state.authState!}>
           <Router>
             <>
               <Route path="/login" exact component={Login} />
