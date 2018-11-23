@@ -1,5 +1,14 @@
 @import 'styles/colors';
 
+html,
+body,
+#root,
+#app-wrapper,
+#content {
+  width: 100%;
+  height: 100%;
+}
+
 body {
   margin: 0;
   padding: 0;

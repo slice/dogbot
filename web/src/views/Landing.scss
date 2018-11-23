@@ -1,12 +1,8 @@
 @import '../styles/colors';
 @import '../styles/mixins';
 
-#landing {
-  @include center;
-  min-height: calc(100vh - 2rem);
-}
-
 #landing header {
+  margin: 2rem 0;
   font-weight: bolder;
   font-size: 3rem;
   text-align: center;

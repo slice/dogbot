@@ -1,0 +1,20 @@
+@import '../styles/colors';
+
+nav {
+  padding: 1rem 2rem;
+  background: $gray;
+
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+
+  h1 {
+    font-size: 1rem;
+    margin: 0;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: inherit;
+  }
+}

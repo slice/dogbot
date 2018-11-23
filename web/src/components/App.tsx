@@ -3,12 +3,12 @@ import { BrowserRouter as Router, Route } from 'react-router-dom'
 
 import API from '../api'
 import logFactory from '../log'
-import { User } from '../types'
 import Guilds from '../views/Guilds'
 import Login from '../views/Login'
 import AuthRoute from './AuthRoute'
 import Landing from '../views/Landing'
 import { AuthContext, AuthState, load, store } from '../auth'
+import Nav from './Nav'
 
 const log = logFactory('auth')
 
@@ -33,11 +33,13 @@ export default class App extends Component<
     //
     // In other words, the second setState is used to invalidate sessions.
     if (savedAuthState != null) {
+      log('saved auth state:', savedAuthState)
       this.setState({ authState: savedAuthState })
     }
 
     const authState = await this.fetchAuthState()
     this.setState({ authState })
+    log('fresh auth state:', authState)
     store(authState)
   }
 
@@ -53,21 +55,25 @@ export default class App extends Component<
         <AuthContext.Provider value={this.state.authState!}>
           <Router>
             <>
-              <Route path="/login" exact component={Login} />
-              <Route path="/" exact component={Landing} />
-              <AuthRoute path="/guilds" exact component={Guilds} />
+              <Nav />
+
+              <div id="content">
+                <Route path="/login" exact component={Login} />
+                <Route path="/" exact component={Landing} />
+                <AuthRoute path="/guilds" exact component={Guilds} />
+              </div>
             </>
           </Router>
         </AuthContext.Provider>
       )
     } else {
-      routes = <p>Loading...</p>
+      routes = (
+        <div id="content">
+          <p>Loading...</p>
+        </div>
+      )
     }
 
-    return (
-      <div id="app-wrapper">
-        <div id="content">{routes}</div>
-      </div>
-    )
+    return <div id="router-wrapper">{routes}</div>
   }
 }

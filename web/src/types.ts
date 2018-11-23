@@ -7,6 +7,12 @@ export interface User {
   username: string
 }
 
+export interface Status {
+  ready: boolean
+  ping: number
+  guilds: number
+}
+
 export interface Guild {
   icon_url: string
   id: string
