@@ -6,9 +6,9 @@ import './Login.scss'
 export default function Login() {
   return (
     <div id="login">
-      <p>Before you can do that, you have to login:</p>
+      <p>Before you can do that, you have to login to prove your identity:</p>
 
-      <a href="/auth/login" id="discord-login-link">
+      <a href="/auth/session/new" id="discord-login-link">
         <img
           alt="Login with Discord"
           title="Login with Discord"

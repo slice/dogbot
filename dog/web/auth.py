@@ -61,14 +61,14 @@ async def auth_redirect():
     return redirect('/guilds')
 
 
-@auth.route('/logout')
+@auth.route('/session/delete')
 def auth_logout():
     del session['token']
     del session['user']
     return redirect('/')
 
 
-@auth.route('/login')
+@auth.route('/session/new')
 def auth_login():
     state, url = redirect_url()
     session['oauth_state'] = state
