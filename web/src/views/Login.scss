@@ -1,0 +1,19 @@
+@import '../styles/mixins';
+
+#login {
+  @include center;
+  min-height: calc(100vh - 2rem);
+}
+
+#discord-login-link {
+  display: block;
+  margin: 1rem 0 0;
+  border: solid 1px #ccc;
+  border-radius: 0.15rem;
+  width: 25rem;
+  padding: 1rem;
+
+  img {
+    display: block;
+  }
+}
