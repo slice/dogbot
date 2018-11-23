@@ -60,14 +60,14 @@ async def auth_redirect():
     session['token'] = access_token
     user = await get_user(access_token)
     session['user'] = user
-    return redirect(url_for('dashboard'))
+    return redirect('/guilds#auth_bust')
 
 
 @auth.route('/logout')
 def auth_logout():
     del session['token']
     del session['user']
-    return redirect(url_for('dashboard'))
+    return redirect('/#auth_bust')
 
 
 @auth.route('/login')

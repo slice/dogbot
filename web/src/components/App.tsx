@@ -18,15 +18,19 @@ export default class App extends Component<{}, { auth: AuthState | null }> {
   async componentDidMount() {
     const state = load()
 
-    if (state == null) {
-      // no state was preserved.
-      log('no auth state was preserved. fetching...')
+    if (state == null || window.location.hash === '#auth_bust') {
+      if (window.location.hash !== '') {
+        // reset hash
+        window.history.replaceState({}, document.title, '.')
+      }
+
+      // no state was preserved
+      log('fetching authentication state...')
       const newState = await this.fetchAuthState()
-      log('going to preserve...')
       store(newState)
     } else {
       // auth state was preserved, restore.
-      log('auth state was preserved, loading.')
+      log('loading authentication state...')
       this.setState({ auth: state })
     }
   }
