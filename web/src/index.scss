@@ -1,9 +1,11 @@
+@import 'styles/colors';
+
 body {
   margin: 0;
   padding: 0;
 
-  color: #333;
-  background: white;
+  color: $text-fg;
+  background: $text-bg;
 
   font-size: 16px;
   line-height: 1.5;
