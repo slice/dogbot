@@ -10,7 +10,7 @@ yaml = YAML(typ='safe')
 def inflate_guild(g):
     return {
         "id": str(g.id), "name": g.name, "members": g.member_count,
-        "owner": {"id": g.owner.id, "tag": str(g.owner)},
+        "owner": {"id": str(g.owner.id), "tag": str(g.owner)},
         "icon_url": g.icon_url_as(format='png', size=64)
     }
 
