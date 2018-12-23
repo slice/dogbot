@@ -1,5 +1,6 @@
 git+https://github.com/Rapptz/discord.py@rewrite
 git+https://github.com/slice/lifesaver
+git+https://github.com/Gorialis/jishaku
 
 asyncpg==0.17.0
 pytz==2018.3
