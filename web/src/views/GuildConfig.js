@@ -1,7 +1,9 @@
 import React, { Component } from 'react'
+import 'styled-components/macro'
 
 import './GuildConfig.scss'
 import API from '../api'
+import Notice from '../components/Notice'
 import Button from '../components/Button'
 import GuildIcon from '../components/GuildIcon'
 import ConfigEditor from '../components/ConfigEditor'
@@ -10,6 +12,7 @@ export default class GuildConfig extends Component {
   state = {
     guild: null,
     error: null,
+    saved: null,
     config: '',
   }
 
@@ -34,16 +37,24 @@ export default class GuildConfig extends Component {
   }
 
   handleSaveClick = async () => {
-    await API.patch(`/api/guild/${this.guildId}/config`, {
-      body: this.state.config,
-    })
+    try {
+      await API.patch(`/api/guild/${this.guildId}/config`, {
+        body: this.state.config,
+      })
+    } catch (error) {
+      const { message } = error
+      this.setState({ error: message })
+      return
+    }
+
+    this.setState({ saved: true, error: null })
   }
 
   render() {
-    const { guild, config, error } = this.state
+    const { guild, config, error, saved } = this.state
 
-    if (error != null) {
-      return <p>{error.toString()}</p>
+    if (error != null && guild == null) {
+      return <Notice mood="danger">{error.toString()}</Notice>
     }
 
     if (guild == null) {
@@ -56,6 +67,13 @@ export default class GuildConfig extends Component {
           <GuildIcon guild={guild} />
           {guild.name}
         </h2>
+
+        {error != null ? (
+          <Notice mood="danger">{error.toString()}</Notice>
+        ) : null}
+
+        {saved != null ? <Notice mood="success">Saved.</Notice> : null}
+
         <div className="guild-config">
           <ConfigEditor
             value={config}
@@ -66,7 +84,9 @@ export default class GuildConfig extends Component {
             setOptions={{ tabSize: 2, showFoldWidgets: false }}
           />
 
-          <Button onClick={this.handleSaveClick}>Save</Button>
+          <Button onClick={this.handleSaveClick} css="margin-top: 1rem">
+            Save
+          </Button>
         </div>
       </div>
     )

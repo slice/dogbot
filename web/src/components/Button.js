@@ -1,9 +1,17 @@
-import React from 'react'
-import classnames from 'classnames'
+import styled from 'styled-components'
 
-import './Button.scss'
+const Button = styled.button`
+  font-size: 1.5rem;
+  border: 0;
+  background: var(--primary);
+  color: var(--text-bg);
+  border-radius: 0.15rem;
+  padding: 0.5em 1em;
+  cursor: pointer;
 
-export default function Button({ className: providedClassName, ...props }) {
-  const className = classnames('button', providedClassName)
-  return <button type="button" className={className} {...props} />
-}
+  &:active {
+    outline: none;
+  }
+`
+
+export default Button

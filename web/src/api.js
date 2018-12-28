@@ -1,6 +1,5 @@
 export default class API {
   static async request(method, route, options) {
-    console.log('a')
     const resp = await window.fetch(route, {
       credentials: 'include',
       method,
@@ -8,7 +7,13 @@ export default class API {
     })
 
     if (!resp.ok) {
-      throw new Error(`HTTP ${resp.status} (${resp.statusText})`)
+      try {
+        var { message } = await resp.json()
+      } catch (err) {
+        throw new Error(`HTTP ${resp.status} (${resp.statusText})`)
+      }
+
+      throw new Error(message)
     }
 
     try {

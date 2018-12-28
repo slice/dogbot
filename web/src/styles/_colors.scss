@@ -4,3 +4,11 @@ $light-gray: hsl(0, 0%, 95%);
 
 $text-bg: white;
 $text-fg: #333;
+
+:root {
+  --primary: #{$primary};
+  --gray: #{$gray};
+  --light-gray: #{$light-gray};
+  --text-bg: #{$text-bg};
+  --text-fg: #{$text-fg};
+}
