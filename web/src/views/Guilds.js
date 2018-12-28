@@ -11,7 +11,7 @@ export default class Guilds extends Component {
   }
 
   async componentDidMount() {
-    const guilds = await API.get('/api/guilds')
+    const guilds = await API.get('/api/guild/@available')
     this.setState({ guilds })
   }
 

@@ -24,22 +24,32 @@ def api_ping():
     })
 
 
-@api.route('/guild/<int:guild_id>/config', methods=['GET', 'PATCH'])
+@api.route('/guild/<int:guild_id>', methods=['GET'])
 @require_auth
-async def api_guild_config(guild_id):
-    if g.bot.get_guild(guild_id) is None:
+async def api_guild(guild_id):
+    guild = g.bot.get_guild(guild_id)
+
+    if guild is None or not g.bot.guild_configs.can_edit(g.user, guild_id):
         return json({
             'error': True,
             'message': 'Unknown guild.',
             'code': 'UNKNOWN_GUILD',
-        }), 400
+        }), 404
 
-    if not g.bot.guild_configs.can_edit(g.user, guild_id):
+    return json(inflate_guild(guild))
+
+
+@api.route('/guild/<int:guild_id>/config', methods=['GET', 'PATCH'])
+@require_auth
+async def api_guild_config(guild_id):
+    guild = g.bot.get_guild(guild_id)
+
+    if guild is None or not g.bot.guild_configs.can_edit(g.user, guild_id):
         return json({
             'error': True,
-            'message': 'You are unable to edit this guild.',
-            'code': 'CONFIG_FORBIDDEN',
-        }), 401
+            'message': 'Unknown guild.',
+            'code': 'UNKNOWN_GUILD',
+        }), 404
 
     if request.method == 'PATCH':
         text = await request.get_data(raw=False)
@@ -67,7 +77,7 @@ async def api_guild_config(guild_id):
     return json({"guild_id": guild_id, "config": config})
 
 
-@api.route('/guilds')
+@api.route('/guild/@available')
 @require_auth
 def api_guilds():
     guilds = [
