@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 
 import './Guilds.scss'
 import API from '../api'
-import Guild from './Guild'
+import Guild from '../components/Guild'
 
 export default class Guilds extends Component {
   state = {
@@ -25,7 +25,7 @@ export default class Guilds extends Component {
     } else if (guilds.length !== 0) {
       const guildNodes = guilds.map((guild) => (
         <li key={guild.id}>
-          <Link to={`/guild/${guild.id}`}>
+          <Link to={`/guilds/${guild.id}`}>
             <Guild guild={guild} />
           </Link>
         </li>
