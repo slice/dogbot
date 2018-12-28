@@ -7,15 +7,12 @@ import Guilds from '../views/Guilds'
 import Login from '../views/Login'
 import AuthRoute from './AuthRoute'
 import Landing from '../views/Landing'
-import { AuthContext, AuthState, load, store } from '../auth'
+import { AuthContext, load, store } from '../auth'
 import Nav from './Nav'
 
 const log = logFactory('auth')
 
-export default class App extends Component<
-  {},
-  { authState: AuthState | null }
-> {
+export default class App extends Component {
   state = { authState: null }
 
   async componentDidMount() {
@@ -44,15 +41,24 @@ export default class App extends Component<
   }
 
   async fetchAuthState() {
-    const response = await API.get<AuthState>('/auth/session/state')
+    const response = await API.get('/auth/session/state')
     return response
   }
 
   render() {
-    let routes
-    if (this.state.authState !== null) {
-      routes = (
-        <AuthContext.Provider value={this.state.authState!}>
+    if (this.state.authState == null) {
+      return (
+        <div id="router-wrapper">
+          <div id="content">
+            <p>Loading...</p>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div id="router-wrapper">
+        <AuthContext.Provider value={this.state.authState}>
           <Router>
             <>
               <Nav />
@@ -65,15 +71,7 @@ export default class App extends Component<
             </>
           </Router>
         </AuthContext.Provider>
-      )
-    } else {
-      routes = (
-        <div id="content">
-          <p>Loading...</p>
-        </div>
-      )
-    }
-
-    return <div id="router-wrapper">{routes}</div>
+      </div>
+    )
   }
 }

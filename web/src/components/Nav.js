@@ -1,48 +1,23 @@
 import React, { Component } from 'react'
 
 import './Nav.scss'
-import { Status } from '../types'
 import API from '../api'
 import { Link } from 'react-router-dom'
 
-type State = {
-  status: Status | null
+const ConnectionStatus = {
+  CONNECTING: { text: 'Connecting...', color: 'hsl(40, 100%, 30%)' },
+  CONNECTED: { text: 'Connected!', color: 'hsl(130, 100%, 30%)' },
+  DISCONNECTED: { text: 'Disconnected.', color: 'hsl(345, 100%, 30%)' },
 }
 
-enum ConnectionStatus {
-  CONNECTING,
-  CONNECTED,
-  DISCONNECTED,
-}
-
-function statusToText(status: ConnectionStatus): string {
-  switch (status) {
-    case ConnectionStatus.CONNECTING:
-      return 'connecting...'
-    case ConnectionStatus.CONNECTED:
-      return 'connected'
-    case ConnectionStatus.DISCONNECTED:
-      return 'disconnected?'
+export default class Nav extends Component {
+  state = {
+    status: null,
   }
-}
-
-function statusToColor(status: ConnectionStatus): string {
-  switch (status) {
-    case ConnectionStatus.CONNECTING:
-      return 'hsl(40, 100%, 30%)'
-    case ConnectionStatus.CONNECTED:
-      return 'hsl(130, 100%, 30%)'
-    case ConnectionStatus.DISCONNECTED:
-      return 'hsl(345, 100%, 30%)'
-  }
-}
-
-export default class Nav extends Component<{}, State> {
-  state: State = { status: null }
 
   async componentDidMount() {
     try {
-      const status = await API.get<Status>('/api/status')
+      const status = await API.get('/api/status')
       this.setState({ status })
     } catch (err) {
       this.disconnected()
@@ -53,7 +28,7 @@ export default class Nav extends Component<{}, State> {
     this.setState({ status: { ready: false, ping: -1, guilds: 0 } })
   }
 
-  status(): ConnectionStatus {
+  status() {
     if (this.state.status == null) {
       return ConnectionStatus.CONNECTING
     } else if (this.state.status) {
@@ -67,7 +42,7 @@ export default class Nav extends Component<{}, State> {
     const status = this.status()
     let statusText
 
-    if (status === ConnectionStatus.CONNECTED) {
+    if (status.text === ConnectionStatus.CONNECTED.text) {
       statusText = (
         <div
           id="status-text"
@@ -82,11 +57,11 @@ export default class Nav extends Component<{}, State> {
             animationPlayState: 'playing',
           }}
         >
-          {`${statusToText(status)} (${this.state.status!.guilds} servers)`}
+          {`${status.text} (${this.state.status.guilds} servers)`}
         </div>
       )
     } else {
-      statusText = <div id="status-text">{statusToText(status)}</div>
+      statusText = <div id="status-text">{status.text}</div>
     }
 
     return (
@@ -95,10 +70,7 @@ export default class Nav extends Component<{}, State> {
           <Link to="/">dogbot</Link>
         </h1>
         <div id="status">
-          <div
-            id="status-circle"
-            style={{ backgroundColor: statusToColor(status) }}
-          />
+          <div id="status-circle" style={{ backgroundColor: status.color }} />
           {statusText}
         </div>
       </nav>

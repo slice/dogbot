@@ -1,4 +1,4 @@
-const log = (tag: string) => (...stuff: any[]) => {
+const log = (tag) => (...stuff) => {
   console.log(
     `%cdog%c [${tag}]%c`,
     'font-weight: bold; color: green;',

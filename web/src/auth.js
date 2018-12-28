@@ -1,10 +1,4 @@
 import React from 'react'
-import { User } from './types'
-
-export interface AuthState {
-  authenticated: boolean
-  user: User | null
-}
 
 export const AuthContext = React.createContext({
   authenticated: false,
@@ -13,11 +7,11 @@ export const AuthContext = React.createContext({
 
 export const STORAGE_KEY = 'authenticationState'
 
-export function store(state: AuthState) {
+export function store(state) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
 }
 
-export function load(): AuthState | null {
+export function load() {
   const serialized = localStorage.getItem(STORAGE_KEY)
   if (serialized == null) {
     return null
