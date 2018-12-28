@@ -3,6 +3,7 @@ import 'styled-components/macro'
 
 import './GuildConfig.scss'
 import API from '../api'
+import ShrinkableText from '../components/ShrinkableText'
 import Notice from '../components/Notice'
 import Button from '../components/Button'
 import GuildIcon from '../components/GuildIcon'
@@ -65,7 +66,7 @@ export default class GuildConfig extends Component {
       <div className="guild-detail">
         <h2>
           <GuildIcon guild={guild} />
-          {guild.name}
+          <ShrinkableText>{guild.name}</ShrinkableText>
         </h2>
 
         {error != null ? (
