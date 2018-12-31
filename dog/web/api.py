@@ -77,7 +77,7 @@ async def api_guild_config(guild_id):
     return json({"guild_id": guild_id, "config": config})
 
 
-@api.route('/guild/@available')
+@api.route('/guilds')
 @require_auth
 def api_guilds():
     guilds = [
