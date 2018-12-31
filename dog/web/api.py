@@ -63,10 +63,12 @@ async def api_guild_config(guild_id):
                 "code": "INVALID_YAML"
             }), 400
 
-        if type(yml) is not dict:  # bare words become strings which break stuff
+        # of course, it's possible for a singular, basic scalar value to be
+        # passed in
+        if not isinstance(yml, dict):
             return json({
                 "error": True,
-                "message": "Configuration is not a dict.",
+                "message": "Configuration is not a dictionary (mapping).",
                 "code": "INVALID_CONFIG",
             }), 400
 
