@@ -13,6 +13,10 @@
     font-weight: bold;
   }
 
+  .guild-icon {
+    flex-shrink: 0;
+  }
+
   &:hover {
     border-radius: 0.15rem;
     background: $light-gray;
