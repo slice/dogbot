@@ -82,8 +82,8 @@ async def api_guild_config(guild_id):
 @api.route('/guilds')
 @require_auth
 def api_guilds():
-    guilds = [
+    guilds = sorted([
         inflate_guild(guild) for guild in g.bot.guilds
         if g.bot.guild_configs.can_edit(g.user, guild)
-    ]
+    ], key=lambda guild: guild['id'])
     return json(guilds)
