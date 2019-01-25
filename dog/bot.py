@@ -5,8 +5,8 @@ import asyncio
 import discord
 from lifesaver.bot import Bot
 from lifesaver.bot.storage import AsyncJSONStorage
-from quart.logging import create_serving_logger
-from quart.serving import Server
+from hypercorn.config import Config as HypercornConfig
+from hypercorn.asyncio import serve
 
 from dog.context import Context
 from dog.guild_config import GuildConfigManager
@@ -80,11 +80,15 @@ class Dogbot(Bot):
         await super().close()
 
     def boot_server(self):
-        self.loop.create_task(self.loop.create_server(
-            lambda: Server(webapp, self.loop, create_serving_logger(), "%(h)s %(r)s %(s)s %(b)s %(D)s",
-                           keep_alive_timeout=5),
-            host='0.0.0.0', port=8993, ssl=None
-        ))
+        """Boot the HTTP server."""
+        log.info('booting http server')
+
+        task = serve(webapp, HypercornConfig.from_mapping({
+            "bind": ["0.0.0.0:8993"],
+            "access_log_target": "-",
+        }))
+
+        self.loop.create_task(task)
 
     def is_blacklisted(self, user: discord.User) -> bool:
         return user.id in self.blacklisted_storage

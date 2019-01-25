@@ -1,10 +1,13 @@
-git+https://github.com/Rapptz/discord.py@rewrite
-git+https://github.com/slice/lifesaver
-git+https://github.com/Gorialis/jishaku
+discord.py @ git+https://github.com/Rapptz/discord.py.git@rewrite
+lifesaver @ git+https://github.com/slice/lifesaver.git
 
-asyncpg==0.17.0
+quart==0.7.2
+hypercorn==0.5.0
+h11~=0.8.1
+wsproto==0.13.0
+
+asyncpg
 pytz==2018.3
 geopy
-quart==0.6.3
 uvloop
 Pillow

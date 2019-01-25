@@ -1,4 +1,4 @@
-FROM gorialis/discord.py:alpine-full
+FROM gorialis/discord.py:3.7-alpine-full
 
 WORKDIR /app
 COPY requirements.txt ./
