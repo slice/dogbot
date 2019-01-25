@@ -1,5 +1,5 @@
 discord.py @ git+https://github.com/Rapptz/discord.py.git@rewrite
-lifesaver @ git+https://github.com/slice/lifesaver.git
+discord.py-lifesaver @ git+https://github.com/slice/lifesaver.git
 
 quart==0.7.2
 hypercorn==0.5.0
