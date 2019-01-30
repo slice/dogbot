@@ -10,9 +10,11 @@ from dog.ext.info import date
 
 VERIFY_INSTRUCTIONS = """
 
+You need to prove your identity!
 If you are using Mastodon, you can add a profile metadata field with a value being `{user}` or your user ID: `{user.id}`
-
 Alternatively, you can put either value anywhere in your bio.
+
+Once you have linked your account, you can remove it from your profile.
 """
 
 
