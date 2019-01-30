@@ -99,7 +99,7 @@ class Profile(Cog):
             finger = await self.session.get(
                 f'https://{acct.instance}/.well-known/webfinger',
                 params={'resource': f'acct:{acct}'},
-                headers={'Accept': ''},
+                headers={'Accept': 'application/json'},
             )
             finger.raise_for_status()
         except aiohttp.ClientError:
