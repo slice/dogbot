@@ -110,7 +110,7 @@ class Profile(Cog):
 
         def find_link(*, type: str, rel: str):
             return discord.utils.find(
-                lambda link: link['type'] == type and link['rel'] == rel,
+                lambda link: link.get('type') == type and link.get('rel') == rel,
                 finger.get('links', []),
             )
 
