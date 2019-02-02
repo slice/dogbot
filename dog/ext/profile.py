@@ -69,7 +69,7 @@ class Profile(Cog):
         embed.add_field(name='Account Creation', value=date(user.created_at))
         embed.set_thumbnail(url=user.avatar_url)
 
-        if isinstance(user, discord.Member):
+        if ctx.guild is not None:
             embed.add_field(name=f'Joined {ctx.guild.name}', value=date(user.joined_at), inline=False)
 
         if user.bot:
