@@ -186,22 +186,33 @@ class Time(Cog):
         """Sets your current timezone from location."""
 
         timezone = None
-        try:
-            location = await self.geocoder.geocode(location)
-            if location is None:
-                await ctx.send(f'{ctx.tick(False)} {UNKNOWN_LOCATION}')
-                return
 
-            timezone = await self.geocoder.timezone(location.point)
-            if timezone is None:
-                await ctx.send(f'{ctx.tick(False)} {UNKNOWN_LOCATION}')
+        if location in pytz.all_timezones:
+            # If a valid timezone code is supplied, simply use the timezone
+            # code. This won't account for all cases, but it should suffice.
+            # Most users should be using more specific locations (NOT timezone
+            # codes) anyways.
+            timezone = location
+        else:
+            # Geolocate the timezone code.
+            # Resolves a human readable location description (like "Turkey")
+            # into its timezone code (like "Europe/Istanbul").
+            try:
+                location = await self.geocoder.geocode(location)
+                if location is None:
+                    await ctx.send(f'{ctx.tick(False)} {UNKNOWN_LOCATION}')
+                    return
+
+                timezone = await self.geocoder.timezone(location.point)
+                if timezone is None:
+                    await ctx.send(f'{ctx.tick(False)} {UNKNOWN_LOCATION}')
+                    return
+            except geopy_errors.GeocoderQuotaExceeded:
+                await ctx.send(f"{ctx.tick(False)} I can't locate you. Please try again later.")
                 return
-        except geopy_errors.GeocoderQuotaExceeded:
-            await ctx.send(f'{ctx.tick(False)} API quota exceeded, please try again later.')
-            return
-        except geopy_errors.GeopyError as error:
-            await ctx.send(f'{ctx.tick(False)} Unable to resolve your location: `{error}`')
-            return
+            except geopy_errors.GeopyError as error:
+                await ctx.send(f"{ctx.tick(False)} I can't find your location: `{error}`")
+                return
 
         await self.timezones.put(ctx.author.id, str(timezone))
 
@@ -213,6 +224,4 @@ class Time(Cog):
         elif 13 <= time.hour < 19:
             greeting = 'Good afternoon!'
 
-        await ctx.send(
-            f'{ctx.tick()} Your timezone is now set to {timezone}. {greeting}'
-        )
+        await ctx.send(f'{ctx.tick()} Your timezone is now set to `{timezone}`. {greeting}')
