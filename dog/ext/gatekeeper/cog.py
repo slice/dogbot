@@ -1,4 +1,5 @@
 import contextlib
+import copy
 import datetime
 import io
 import logging
@@ -180,11 +181,15 @@ class Gatekeeper(Cog):
     @contextlib.asynccontextmanager
     async def edit_config(self, guild: discord.Guild):
         config = self.bot.guild_configs.get(guild) or {}
-        yield config['gatekeeper']
+        copied_gatekeeper_config = copy.deepcopy(config['gatekeeper'])
+        yield copied_gatekeeper_config
 
         with io.StringIO() as buffer:
             self.yaml.indent(mapping=4, sequence=6, offset=4)
-            self.yaml.dump(config, buffer)
+            self.yaml.dump({
+                **config,
+                'gatekeeper': copied_gatekeeper_config,
+            }, buffer)
             await self.bot.guild_configs.write(guild, buffer.getvalue())
 
     async def on_member_join(self, member: discord.Member):
