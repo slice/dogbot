@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import io
 import logging
@@ -163,9 +164,19 @@ class Gatekeeper(Cog):
         return self.bot.config.dashboard_link
 
     def settings(self, guild: discord.Guild):
-        """Fetch Gatekeeper settings for a guild."""
+        """Return Gatekeeper settings for a guild."""
         config = self.bot.guild_configs.get(guild) or {}
-        return config.get('gatekeeper') or {}
+        return config.get('gatekeeper', {})
+
+    @contextlib.asynccontextmanager
+    async def edit_config(self, guild: discord.Guild):
+        config = self.bot.guild_configs.get(guild) or {}
+        yield config['gatekeeper']
+
+        with io.StringIO() as buffer:
+            self.yaml.indent(mapping=4, sequence=6, offset=4)
+            self.yaml.dump(config, buffer)
+            await self.bot.guild_configs.write(guild, buffer.getvalue())
 
     async def on_member_join(self, member: discord.Member):
         await self.bot.wait_until_ready()
@@ -221,14 +232,10 @@ class Gatekeeper(Cog):
             await ctx.send("Gatekeeper is unconfigured.")
             return
 
-        config = ctx.bot.guild_configs.get(ctx.guild)
-        config['gatekeeper']['enabled'] = not config['gatekeeper']['enabled']
-        with io.StringIO() as buf:
-            self.yaml.indent(mapping=4, sequence=6, offset=4)
-            self.yaml.dump(config, buf)
-            await ctx.bot.guild_configs.write(ctx.guild, buf.getvalue())
+        async with self.edit_config(ctx.guild) as config:
+            config['enabled'] = not config['enabled']
 
-        if config['gatekeeper']['enabled']:
+        if config['enabled']:
             state = 'enabled'
         else:
             state = 'disabled'
