@@ -14,7 +14,7 @@ from dog.ext.gatekeeper import checks
 from dog.ext.gatekeeper.core import Block, Report
 from dog.formatting import represent
 
-CHECKS = list(map(checks.__dict__.get, checks.__all__))
+CHECKS = [getattr(checks, name) for name in checks.__all__]
 
 log = logging.getLogger(__name__)
 
