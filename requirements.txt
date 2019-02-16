@@ -1,9 +1,9 @@
 git+https://github.com/Rapptz/discord.py@rewrite
 git+https://github.com/slice/lifesaver
 
+quart==0.8.1
 asyncpg==0.17.0
 pytz==2018.3
 geopy
-quart==0.6.3
 uvloop
 Pillow
