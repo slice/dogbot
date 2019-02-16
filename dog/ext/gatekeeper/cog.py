@@ -19,6 +19,15 @@ CHECKS = [getattr(checks, name) for name in checks.__all__]
 log = logging.getLogger(__name__)
 
 
+def require_configuration():
+    def predicate(ctx):
+        if ctx.cog.settings(ctx.guild) == {}:
+            raise commands.CheckFailure('Gatekeeper must be configured to use this command.')
+        return True
+
+    return commands.check(predicate)
+
+
 class Keeper:
     """A class that gatekeeps members from guilds."""
     def __init__(self, guild: discord.Guild, settings, *, bot) -> None:
@@ -224,13 +233,10 @@ class Gatekeeper(Cog):
         """
 
     @gatekeeper.command()
+    @require_configuration()
     async def toggle(self, ctx: Context):
         """Toggles Gatekeeper."""
         settings = self.settings(ctx.guild)
-
-        if not settings:
-            await ctx.send("Gatekeeper is unconfigured.")
-            return
 
         async with self.edit_config(ctx.guild) as config:
             config['enabled'] = not config['enabled']
@@ -243,6 +249,7 @@ class Gatekeeper(Cog):
         await ctx.send(f'Gatekeeper is now {state}.')
 
     @gatekeeper.command()
+    @require_configuration()
     async def status(self, ctx: Context):
         """Views the current status of Gatekeeper."""
         enabled = self.settings(ctx.guild).get('enabled', False)
