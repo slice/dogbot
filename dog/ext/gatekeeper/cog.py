@@ -193,6 +193,10 @@ class Gatekeeper(Cog):
             title=f'{represent(member)} has joined',
             description='This user has passed all Gatekeeper checks.'
         )
+
+        if is_overridden:
+            embed.description = 'This user has been specifically allowed into this server.'
+
         embed.set_thumbnail(url=member.avatar_url)
         embed.timestamp = datetime.datetime.utcnow()
 
