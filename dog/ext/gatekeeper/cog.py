@@ -175,13 +175,15 @@ class Gatekeeper(Cog):
         if not settings.get('enabled', False):
             return
 
+        keeper = Keeper(member.guild, settings, bot=self.bot)
+
         overridden = settings.get('allowed_users', [])
         is_overridden = str(member) in overridden or member.id in overridden
 
-        keeper = Keeper(member.guild, settings, bot=self.bot)
-        is_allowed = await keeper.check(member)
-        if not is_overridden and not is_allowed:
-            return
+        if not is_overridden:
+            is_allowed = await keeper.check(member)
+            if not is_allowed:
+                return
 
         if settings.get('quiet', False):
             return
