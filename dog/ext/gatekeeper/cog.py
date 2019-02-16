@@ -237,12 +237,28 @@ class Gatekeeper(Cog):
         This is very useful when your server is undergoing raids, unwanted attention, unwanted members, etc.
         """
 
-    @gatekeeper.command()
+    @gatekeeper.command(name='enable', aliases=['on'])
     @require_configuration()
-    async def toggle(self, ctx: Context):
-        """Toggles Gatekeeper."""
-        settings = self.settings(ctx.guild)
+    async def command_enable(self, ctx: Context):
+        """Enables Gatekeeper."""
+        async with self.edit_config(ctx.guild) as config:
+            config['enabled'] = True
 
+        await ctx.send(f'{ctx.tick()} Enabled Gatekeeper.')
+
+    @gatekeeper.command(name='disable', aliases=['off'])
+    @require_configuration()
+    async def command_disable(self, ctx: Context):
+        """Disables Gatekeeper."""
+        async with self.edit_config(ctx.guild) as config:
+            config['enabled'] = False
+
+        await ctx.send(f'{ctx.tick()} Disabled Gatekeeper.')
+
+    @gatekeeper.command(name='toggle', aliases=['flip'])
+    @require_configuration()
+    async def command_toggle(self, ctx: Context):
+        """Toggles Gatekeeper."""
         async with self.edit_config(ctx.guild) as config:
             config['enabled'] = not config['enabled']
 
@@ -253,9 +269,9 @@ class Gatekeeper(Cog):
 
         await ctx.send(f'{ctx.tick()} Gatekeeper is now {state}.')
 
-    @gatekeeper.command()
+    @gatekeeper.command(name='status')
     @require_configuration()
-    async def status(self, ctx: Context):
+    async def command_status(self, ctx: Context):
         """Views the current status of Gatekeeper."""
         enabled = self.settings(ctx.guild).get('enabled', False)
 
