@@ -42,9 +42,13 @@ class Dogbot(Bot):
         self.blacklisted_storage = AsyncJSONStorage('blacklisted_users.json', loop=self.loop)
         self.guild_configs = GuildConfigManager(self)
 
-        # webapp setup
+        # webapp (quart) setup
+        webapp.config.from_mapping(self.config.web['app'])
         webapp.bot = self
-        webapp.secret_key = self.config.web['secret_key']
+        self.webapp = webapp
+
+        # http server (hypercorn) setup
+        self.http_server_config = hypercorn.Config.from_mapping(self.config.web['http'])
         self.http_server = None
         self.loop.create_task(self._boot_http_server())
 
@@ -103,10 +107,7 @@ class Dogbot(Bot):
 
     async def _boot_http_server(self):
         log.info('creating http server')
-        config = hypercorn.Config.from_mapping({
-            'bind': ['0.0.0.0:8993'],
-        })
-        server = await _boot_hypercorn(webapp, config, loop=self.loop)
+        server = await _boot_hypercorn(self.webapp, self.http_server_config, loop=self.loop)
         log.debug('created server: %r', server)
 
     def is_blacklisted(self, user: discord.User) -> bool:
