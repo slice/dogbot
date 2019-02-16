@@ -219,6 +219,7 @@ class Gatekeeper(Cog):
 
         if not settings:
             await ctx.send("Gatekeeper is unconfigured.")
+            return
 
         config = ctx.bot.guild_configs.get(ctx.guild)
         config['gatekeeper']['enabled'] = not config['gatekeeper']['enabled']
