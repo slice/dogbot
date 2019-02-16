@@ -281,13 +281,17 @@ class Gatekeeper(Cog):
             description = 'Anyone can join.'
 
         link = f'{self.dashboard_link}#/guild/{ctx.guild.id}'
-        description += f' Use [the web dashboard]({link}) to configure gatekeeper.'
+        description += f'\n\nUse [the web dashboard]({link}) to configure gatekeeper.'
+
+        if enabled:
+            color = discord.Color.green()
+        else:
+            color = discord.Color.red()
 
         embed = discord.Embed(
-            color=discord.Color.green()
-            if not enabled else discord.Color.red(),
-            title='Gatekeeper is ' + ('enabled' if enabled else 'disabled') + '.',
-            description=description
+            color=color,
+            title=f'Gatekeeper is {"on" if enabled else "off"}.',
+            description=description,
         )
 
         await ctx.send(embed=embed)
