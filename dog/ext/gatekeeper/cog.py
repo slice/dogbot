@@ -246,7 +246,7 @@ class Gatekeeper(Cog):
         else:
             state = 'disabled'
 
-        await ctx.send(f'Gatekeeper is now {state}.')
+        await ctx.send(f'{ctx.tick()} Gatekeeper is now {state}.')
 
     @gatekeeper.command()
     @require_configuration()
