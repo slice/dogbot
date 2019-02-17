@@ -1,16 +1,21 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <link rel="icon" type="image/png" href="<%= webpackConfig.output.publicPath %>dog.png">
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.png" />
     <title>dogbot</title>
+    <script>
+      if (localStorage.dogTheme === 'dark') {
+        document.write('<style>body { background: #222; color: #ccc; }</style>')
+      }
+    </script>
   </head>
   <body>
-    <noscript>
-      <strong>enable javascript</strong>
-    </noscript>
-    <div id="app"></div>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
   </body>
 </html>

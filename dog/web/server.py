@@ -13,11 +13,6 @@ def assign_globals():
     g.bot = app.bot
 
 
-@app.route('/')
-def dashboard():
-    return '...'
-
-
 app.register_blueprint(api, url_prefix='/api')
 app.register_blueprint(auth, url_prefix='/auth')
 app.register_blueprint(quotes, url_prefix='/api/quotes')

@@ -3,10 +3,10 @@ import logging
 import aiohttp
 import asyncio
 import discord
+import hypercorn
+from hypercorn.asyncio.run import Server
 from lifesaver.bot import Bot
 from lifesaver.bot.storage import AsyncJSONStorage
-from hypercorn.config import Config as HypercornConfig
-from hypercorn.asyncio import serve
 
 from dog.context import Context
 from dog.guild_config import GuildConfigManager
@@ -14,6 +14,24 @@ from dog.web.server import app as webapp
 from dog.helpformatter import HelpFormatter
 
 log = logging.getLogger(__name__)
+
+
+async def _boot_hypercorn(app, config, *, loop):
+    """Manually creates a Hypercorn server.
+
+    Hypercorn's facilities for running a server on an already existing loop
+    modify the loop in ways that make it impossible to use CTRL-C to kill the
+    bot for some reason. Hypercorn does this by silently catching
+    KeyboardInterrupts and setting signal handlers on the event loop, but this
+    fails to work for some reason.
+    """
+    socket = config.create_sockets()
+    server = await loop.create_server(
+        lambda: Server(app, loop, config),
+        backlog=config.backlog,
+        sock=socket[0],
+    )
+    return server
 
 
 class Dogbot(Bot):
@@ -24,9 +42,15 @@ class Dogbot(Bot):
         self.blacklisted_storage = AsyncJSONStorage('blacklisted_users.json', loop=self.loop)
         self.guild_configs = GuildConfigManager(self)
 
+        # webapp (quart) setup
+        webapp.config.from_mapping(self.config.web['app'])
         webapp.bot = self
-        webapp.secret_key = self.config.web['secret_key']
-        self.boot_server()
+        self.webapp = webapp
+
+        # http server (hypercorn) setup
+        self.http_server_config = hypercorn.Config.from_mapping(self.config.web['http'])
+        self.http_server = None
+        self.loop.create_task(self._boot_http_server())
 
     def dispatch(self, event_name, *args, **kwargs):
         """Modified version of the vanilla dispatch to fit disabled_cogs."""
@@ -64,8 +88,8 @@ class Dogbot(Bot):
         if config:
             disabled_cogs = config.get('disabled_cogs', [])
             return cog_name in disabled_cogs
-        else:
-            return False
+
+        return False
 
     async def can_run(self, ctx, **kwargs):
         cog_name = type(ctx.command.instance).__name__
@@ -77,18 +101,14 @@ class Dogbot(Bot):
     async def close(self):
         log.info('bot is exiting')
         await self.session.close()
+        self.http_server.close()
+        await self.http_server.wait_closed()
         await super().close()
 
-    def boot_server(self):
-        """Boot the HTTP server."""
-        log.info('booting http server')
-
-        task = serve(webapp, HypercornConfig.from_mapping({
-            "bind": ["0.0.0.0:8993"],
-            "access_log_target": "-",
-        }))
-
-        self.loop.create_task(task)
+    async def _boot_http_server(self):
+        log.info('creating http server')
+        server = await _boot_hypercorn(self.webapp, self.http_server_config, loop=self.loop)
+        log.debug('created server: %r', server)
 
     def is_blacklisted(self, user: discord.User) -> bool:
         return user.id in self.blacklisted_storage

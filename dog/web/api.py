@@ -24,22 +24,32 @@ def api_ping():
     })
 
 
-@api.route('/guild/<int:guild_id>/config', methods=['GET', 'PATCH'])
+@api.route('/guild/<int:guild_id>', methods=['GET'])
 @require_auth
-async def api_guild_config(guild_id):
-    if g.bot.get_guild(guild_id) is None:
+async def api_guild(guild_id):
+    guild = g.bot.get_guild(guild_id)
+
+    if guild is None or not g.bot.guild_configs.can_edit(g.user, guild_id):
         return json({
             'error': True,
             'message': 'Unknown guild.',
             'code': 'UNKNOWN_GUILD',
-        }), 400
+        }), 404
 
-    if not g.bot.guild_configs.can_edit(g.user, guild_id):
+    return json(inflate_guild(guild))
+
+
+@api.route('/guild/<int:guild_id>/config', methods=['GET', 'PATCH'])
+@require_auth
+async def api_guild_config(guild_id):
+    guild = g.bot.get_guild(guild_id)
+
+    if guild is None or not g.bot.guild_configs.can_edit(g.user, guild_id):
         return json({
             'error': True,
-            'message': 'You are unable to edit this guild.',
-            'code': 'CONFIG_FORBIDDEN',
-        }), 401
+            'message': 'Unknown guild.',
+            'code': 'UNKNOWN_GUILD',
+        }), 404
 
     if request.method == 'PATCH':
         text = await request.get_data(raw=False)
@@ -49,14 +59,16 @@ async def api_guild_config(guild_id):
         except YAMLError as err:
             return json({
                 "error": True,
-                "message": f"Invalid YAML ({err!r}).",
+                "message": f"Invalid YAML ({err}).",
                 "code": "INVALID_YAML"
             }), 400
 
-        if type(yml) is not dict:  # bare words become strings which break stuff
+        # of course, it's possible for a singular, basic scalar value to be
+        # passed in
+        if yml is not None and not isinstance(yml, dict):
             return json({
                 "error": True,
-                "message": "Configuration is not a dict.",
+                "message": "Configuration is not a dictionary (mapping).",
                 "code": "INVALID_CONFIG",
             }), 400
 
@@ -70,8 +82,8 @@ async def api_guild_config(guild_id):
 @api.route('/guilds')
 @require_auth
 def api_guilds():
-    guilds = [
+    guilds = sorted([
         inflate_guild(guild) for guild in g.bot.guilds
         if g.bot.guild_configs.can_edit(g.user, guild)
-    ]
+    ], key=lambda guild: guild['id'])
     return json(guilds)
