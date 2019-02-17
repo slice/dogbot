@@ -61,30 +61,25 @@ async def auth_redirect():
     return redirect('/guilds')
 
 
-@auth.route('/session/delete')
+@auth.route('/logout')
 def auth_logout():
-    del session['token']
-    del session['user']
+    if 'token' in session:
+        del session['token']
+        del session['user']
     return redirect('/')
 
 
-@auth.route('/session/new')
+@auth.route('/login')
 def auth_login():
     state, url = redirect_url()
     session['oauth_state'] = state
     return redirect(url)
 
 
-@auth.route('/session/state')
-async def session_state():
+@auth.route('/profile')
+async def auth_profile():
     active = 'token' in session
     if not active:
-        return json({
-            'authenticated': False,
-            'user': None,
-        })
+        return json(None)
 
-    return json({
-        'authenticated': True,
-        'user': session['user'],
-    })
+    return json(session['user'])

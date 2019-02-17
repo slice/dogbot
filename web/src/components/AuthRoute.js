@@ -6,8 +6,8 @@ import { AuthContext } from '../auth'
 export default function AuthRoute({ component: Component, ...routeProps }) {
   const render = (props) => (
     <AuthContext.Consumer>
-      {(value) =>
-        value.authenticated ? (
+      {(user) =>
+        user != null ? (
           <Component {...props} />
         ) : (
           <Redirect to={{ pathname: '/login' }} />

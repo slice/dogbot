@@ -12,7 +12,7 @@ import AuthRoute from './AuthRoute'
 import Guilds from '../views/Guilds'
 import Login from '../views/Login'
 import GuildConfig from '../views/GuildConfig'
-import { AuthContext, load, store } from '../auth'
+import { AuthContext } from '../auth'
 import Nav from './Nav'
 
 const log = logFactory('auth')
@@ -21,37 +21,22 @@ export default class App extends Component {
   state = { authState: null }
 
   async componentDidMount() {
-    const savedAuthState = load()
+    const user = await this.fetchUser()
+    this.setState({ authState: { user } })
 
-    // Use the cached authentication state first, so we don't have to wait for
-    // network requests to finish in case the saved one was still valid.
-    //
-    // For example: if a logged in auth state has been saved (and we are in fact
-    // logged in), then this setState call will be accurate, and fetching the
-    // auth state later will have no effect because the values are the same.
-    // If a logged in auth state has been saved, but the session has become
-    // invalidated for whatever reason, we'll momentarily believe that we are
-    // logged in, but the upcoming network request will revoke that state.
-    //
-    // In other words, the second setState is used to invalidate sessions.
-    if (savedAuthState != null) {
-      log('saved auth state:', savedAuthState)
-      this.setState({ authState: savedAuthState })
+    if (user != null) {
+      log(`logged in as ${user.username}#${user.discriminator} (${user.id})`)
     }
-
-    const authState = await this.fetchAuthState()
-    this.setState({ authState })
-    log('fresh auth state:', authState)
-    store(authState)
   }
 
-  async fetchAuthState() {
-    const response = await API.get('/auth/session/state')
-    return response
+  async fetchUser() {
+    return await API.get('/auth/profile')
   }
 
   render() {
-    if (this.state.authState == null) {
+    const { authState } = this.state
+
+    if (authState == null) {
       return (
         <div id="router-wrapper">
           <div id="content">
@@ -63,7 +48,7 @@ export default class App extends Component {
 
     return (
       <div id="router-wrapper">
-        <AuthContext.Provider value={this.state.authState}>
+        <AuthContext.Provider value={authState.user || null}>
           <Router>
             <>
               <Nav />

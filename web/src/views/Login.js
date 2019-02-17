@@ -8,7 +8,7 @@ export default function Login() {
     <div id="login">
       <p>Login with Discord:</p>
 
-      <a href="/auth/session/new" id="discord-login-link">
+      <a href="/auth/login" id="discord-login-link">
         <img
           alt="Login with Discord"
           title="Login with Discord"
