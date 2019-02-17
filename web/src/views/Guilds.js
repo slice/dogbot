@@ -3,25 +3,33 @@ import { Link } from 'react-router-dom'
 
 import './Guilds.scss'
 import API from '../api'
+import Notice from '../components/Notice'
 import Guild from '../components/Guild'
 
 export default class Guilds extends Component {
   state = {
     guilds: null,
+    error: null,
   }
 
   async componentDidMount() {
-    const guilds = await API.get('/api/guilds')
-    this.setState({ guilds })
+    try {
+      const guilds = await API.get('/api/guilds')
+      this.setState({ guilds })
+    } catch (error) {
+      this.setState({ error })
+    }
   }
 
   render() {
-    const { guilds } = this.state
+    const { guilds, error } = this.state
 
     let content
 
     if (guilds == null) {
       content = <p>Loading servers...</p>
+    } else if (error != null) {
+      content = <Notice mood="danger">Failed to load servers: {error}</Notice>
     } else if (guilds.length !== 0) {
       const guildNodes = guilds.map((guild) => (
         <li key={guild.id}>
