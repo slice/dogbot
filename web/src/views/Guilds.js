@@ -51,12 +51,7 @@ export default class Guilds extends Component {
         </li>
       ))
 
-      content = (
-        <>
-          <p>Click on a server below to edit its configuration:</p>
-          <GuildList>{guildNodes}</GuildList>
-        </>
-      )
+      content = <GuildList>{guildNodes}</GuildList>
     } else {
       content = <p>No servers.</p>
     }
