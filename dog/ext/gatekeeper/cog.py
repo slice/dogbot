@@ -280,7 +280,7 @@ class Gatekeeper(Cog):
         else:
             description = 'Anyone can join.'
 
-        link = f'{self.dashboard_link}#/guild/{ctx.guild.id}'
+        link = f'{self.dashboard_link}/guilds/{ctx.guild.id}'
         description += f'\n\nUse [the web dashboard]({link}) to configure gatekeeper.'
 
         if enabled:
