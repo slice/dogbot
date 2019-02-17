@@ -1,7 +1,13 @@
+@import '../styles/colors';
+
 .guild-icon {
   flex-shrink: 0;
   width: 32px;
   height: 32px;
-  object-fit: cover;
   border-radius: 100%;
+  object-fit: cover;
+
+  &.placeholder {
+    background: darken($gray, 10%);
+  }
 }
