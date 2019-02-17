@@ -65,7 +65,7 @@ async def api_guild_config(guild_id):
 
         # of course, it's possible for a singular, basic scalar value to be
         # passed in
-        if not isinstance(yml, dict):
+        if yml is not None and not isinstance(yml, dict):
             return json({
                 "error": True,
                 "message": "Configuration is not a dictionary (mapping).",
