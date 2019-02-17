@@ -1,8 +1,20 @@
 import React, { Component } from 'react'
+import { Link } from 'react-router-dom'
+import styled from 'styled-components'
+import { FaSignOutAlt } from 'react-icons/fa'
 
 import './Nav.scss'
 import API from '../api'
-import { Link } from 'react-router-dom'
+
+const Links = styled.div`
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+
+  svg {
+    margin-right: 0.5em;
+  }
+`
 
 const ConnectionStatus = {
   CONNECTING: { text: 'Connecting...', color: 'hsl(40, 100%, 30%)' },
@@ -73,6 +85,10 @@ export default class Nav extends Component {
           <div id="status-circle" style={{ backgroundColor: status.color }} />
           {statusText}
         </div>
+        <Links>
+          <FaSignOutAlt />
+          <a href="/auth/logout">Logout</a>
+        </Links>
       </nav>
     )
   }
