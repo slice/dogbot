@@ -1,10 +1,14 @@
 import React, { Component } from 'react'
-import { BrowserRouter as Router, Route } from 'react-router-dom'
+import {
+  BrowserRouter as Router,
+  Route,
+  Switch,
+  Redirect,
+} from 'react-router-dom'
 
 import API from '../api'
 import logFactory from '../log'
 import AuthRoute from './AuthRoute'
-import Landing from '../views/Landing'
 import Guilds from '../views/Guilds'
 import Login from '../views/Login'
 import GuildConfig from '../views/GuildConfig'
@@ -65,10 +69,12 @@ export default class App extends Component {
               <Nav />
 
               <div id="content">
-                <Route path="/login" exact component={Login} />
-                <Route path="/" exact component={Landing} />
-                <AuthRoute path="/guilds" exact component={Guilds} />
-                <AuthRoute path="/guilds/:id" exact component={GuildConfig} />
+                <Switch>
+                  <Redirect from="/" to="/guilds" exact />
+                  <Route path="/login" exact component={Login} />
+                  <AuthRoute path="/guilds" exact component={Guilds} />
+                  <AuthRoute path="/guilds/:id" exact component={GuildConfig} />
+                </Switch>
               </div>
             </>
           </Router>
