@@ -58,9 +58,7 @@ export default class App extends Component {
     if (authState == null) {
       return (
         <div id="router-wrapper">
-          <div id="content">
-            <p>Loading...</p>
-          </div>
+          <div id="content">Loading...</div>
         </div>
       )
     }
