@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import 'styled-components/macro'
 
 import './GuildConfig.scss'
+import validate from '../schema'
 import API from '../api'
 import ShrinkableText from '../components/ShrinkableText'
 import Notice from '../components/Notice'
@@ -13,10 +14,17 @@ function isMac() {
   return navigator.userAgent.includes('Macintosh')
 }
 
+function prettifyValidationError(message) {
+  const unwantedMessage =
+    '\n If "null" is intended as an empty value be sure to mark the schema as `.nullable()`'
+  return message.replace(unwantedMessage, '').replace('ValidationError: ', '')
+}
+
 export default class GuildConfig extends Component {
   state = {
     guild: null,
     error: null,
+    lint: null,
     saved: false,
     config: '',
   }
@@ -50,8 +58,15 @@ export default class GuildConfig extends Component {
     }
   }
 
-  handleConfigChange = (config) => {
+  handleConfigChange = async (config) => {
     this.setState({ config, saved: false })
+
+    try {
+      await validate(config)
+      this.setState({ lint: null })
+    } catch (error) {
+      this.setState({ lint: prettifyValidationError(error.toString()) })
+    }
   }
 
   handleSaveClick = () => {
@@ -59,6 +74,11 @@ export default class GuildConfig extends Component {
   }
 
   async save() {
+    if (this.state.lint != null) {
+      // prevent saving if there are errors in the config
+      return
+    }
+
     try {
       await API.patch(`/api/guild/${this.guildId}/config`, {
         body: this.state.config,
@@ -73,7 +93,7 @@ export default class GuildConfig extends Component {
   }
 
   render() {
-    const { guild, config, error, saved } = this.state
+    const { guild, config, error, lint, saved } = this.state
 
     if (error != null && guild == null) {
       return <Notice mood="danger">Couldn't load server: {error}</Notice>
@@ -94,6 +114,10 @@ export default class GuildConfig extends Component {
           <Notice mood="danger">Couldn't save: {error}</Notice>
         ) : null}
 
+        {lint != null ? (
+          <Notice mood="danger">Invalid config: {lint.toString()}</Notice>
+        ) : null}
+
         {saved ? <Notice mood="success">Saved.</Notice> : null}
 
         <div className="guild-config">
@@ -106,7 +130,11 @@ export default class GuildConfig extends Component {
             setOptions={{ tabSize: 2, showFoldWidgets: false }}
           />
 
-          <Button onClick={this.handleSaveClick} css="margin-top: 1rem">
+          <Button
+            onClick={this.handleSaveClick}
+            css="margin-top: 1rem"
+            disabled={lint != null}
+          >
             Save
           </Button>
 
