@@ -31,7 +31,7 @@ export default class Nav extends Component {
     try {
       const status = await API.get('/api/status')
       this.setState({ status })
-    } catch (err) {
+    } catch (error) {
       this.disconnected()
     }
   }

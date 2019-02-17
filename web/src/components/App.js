@@ -21,8 +21,12 @@ export default class App extends Component {
   state = { authState: null }
 
   async componentDidMount() {
-    const user = await this.fetchUser()
-    this.setState({ authState: { user } })
+    try {
+      var user = await this.fetchUser()
+      this.setState({ authState: { user } })
+    } catch (error) {
+      this.setState({ authState: { user: null } })
+    }
 
     if (user != null) {
       log(`logged in as ${user.username}#${user.discriminator} (${user.id})`)
