@@ -144,7 +144,7 @@ export default class GuildConfig extends Component {
             showPrintMargin={false}
             editorProps={{ $blockScrolling: true }}
             setOptions={{
-              tabSize: 2,
+              tabSize: 4,
               showFoldWidgets: false,
               fontFamily: monospace,
             }}
