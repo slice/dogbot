@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { Link } from 'react-router-dom'
 import styled from 'styled-components'
-import { FaSignOutAlt } from 'react-icons/fa'
+import { FaSignOutAlt, FaGithub } from 'react-icons/fa'
 
 import './Nav.scss'
 import API from '../api'
@@ -9,7 +9,12 @@ import API from '../api'
 const Links = styled.div`
   margin-left: auto;
   display: flex;
-  align-items: center;
+
+  a {
+    margin-left: 2em;
+    display: flex;
+    align-items: center;
+  }
 
   svg {
     margin-right: 0.5em;
@@ -86,8 +91,16 @@ export default class Nav extends Component {
           {statusText}
         </div>
         <Links>
-          <FaSignOutAlt />
-          <a href="/auth/logout">Logout</a>
+          <a
+            href="https://github.com/slice/dogbot"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <FaGithub /> Source Code
+          </a>
+          <a href="/auth/logout">
+            <FaSignOutAlt /> Logout
+          </a>
         </Links>
       </nav>
     )
