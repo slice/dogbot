@@ -9,6 +9,10 @@ import Button from '../components/Button'
 import GuildIcon from '../components/GuildIcon'
 import ConfigEditor from '../components/ConfigEditor'
 
+function isMac() {
+  return navigator.userAgent.includes('Macintosh')
+}
+
 export default class GuildConfig extends Component {
   state = {
     guild: null,
@@ -31,13 +35,30 @@ export default class GuildConfig extends Component {
     }
 
     this.setState({ guild, config: config || '' })
+    window.addEventListener('keydown', this.handleKeydown)
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('keydown', this.handleKeydown)
+  }
+
+  handleKeydown = (event) => {
+    const modifierHeld = isMac() ? event.metaKey : event.ctrlKey
+    if (modifierHeld && event.key === 's') {
+      this.save()
+      event.preventDefault()
+    }
   }
 
   handleConfigChange = (config) => {
     this.setState({ config })
   }
 
-  handleSaveClick = async () => {
+  handleSaveClick = () => {
+    this.save()
+  }
+
+  async save() {
     try {
       await API.patch(`/api/guild/${this.guildId}/config`, {
         body: this.state.config,
@@ -88,6 +109,10 @@ export default class GuildConfig extends Component {
           <Button onClick={this.handleSaveClick} css="margin-top: 1rem">
             Save
           </Button>
+
+          <small css="display: block; margin-top: 1rem; opacity: 0.5;">
+            You can also press {isMac() ? '⌘' : 'CTRL+'}S to save.
+          </small>
         </div>
       </div>
     )
