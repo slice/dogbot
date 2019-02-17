@@ -16,6 +16,7 @@ export const themes = {
       default: 'hsl(270, 100%, 75%)',
       danger: 'hsl(0, 100%, 75%)',
       success: 'hsl(120, 100%, 75%)',
+      warning: 'hsl(50, 100%, 75%)',
     },
   },
   dark: {
@@ -28,6 +29,7 @@ export const themes = {
       default: 'hsl(270, 20%, 30%)',
       danger: 'hsl(0, 20%, 30%)',
       success: 'hsl(120, 20%, 30%)',
+      warning: 'hsl(50, 20%, 30%)',
     },
   },
 }

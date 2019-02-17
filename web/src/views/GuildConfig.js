@@ -19,7 +19,10 @@ function isMac() {
 function prettifyValidationError(message) {
   const unwantedMessage =
     '\n If "null" is intended as an empty value be sure to mark the schema as `.nullable()`'
-  return message.replace(unwantedMessage, '').replace('ValidationError: ', '')
+  return message
+    .replace(unwantedMessage, '')
+    .replace('ValidationError: ', 'Invalid config: ')
+    .replace('YAMLException: ', 'Invalid YAML: ')
 }
 
 const StyledGuildConfig = styled.div`
@@ -127,14 +130,10 @@ export default class GuildConfig extends Component {
         </h2>
 
         {error != null ? (
-          <Notice mood="danger">Couldn't save: {error}</Notice>
+          <Notice mood="danger">Can't save: {error}</Notice>
         ) : null}
-
-        {lint != null ? (
-          <Notice mood="danger">Invalid config: {lint.toString()}</Notice>
-        ) : null}
-
         {saved ? <Notice mood="success">Saved.</Notice> : null}
+        {lint != null ? <Notice mood="warning">{lint}</Notice> : null}
 
         <div className="guild-config">
           <ConfigEditor
