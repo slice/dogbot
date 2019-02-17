@@ -21,7 +21,7 @@ import Nav from './Nav'
 const log = logFactory('auth')
 
 export default class App extends Component {
-  state = { authState: null, theme: themes.light }
+  state = { authState: null, theme: themes[localStorage.dogTheme || 'light'] }
 
   async componentDidMount() {
     try {
@@ -46,7 +46,8 @@ export default class App extends Component {
         theme: state.theme.name === 'dark' ? themes.light : themes.dark,
       }),
       () => {
-        document.body.className = this.state.theme.name
+        const { name } = this.state.theme
+        localStorage.dogTheme = name
       }
     )
   }
