@@ -5,11 +5,12 @@ import 'styled-components/macro'
 import { monospace } from '../theming'
 import validate from '../schema'
 import API from '../api'
-import ShrinkableText from '../components/ShrinkableText'
-import Notice from '../components/Notice'
 import Button from '../components/Button'
-import { GuildIcon } from '../components/Icon'
 import ConfigEditor from '../components/ConfigEditor'
+import { GuildIcon } from '../components/Icon'
+import Loading, { Pulser } from '../components/Loading'
+import Notice from '../components/Notice'
+import ShrinkableText from '../components/ShrinkableText'
 
 function isMac() {
   return navigator.userAgent.includes('Macintosh')
@@ -38,6 +39,7 @@ export default class GuildConfig extends Component {
     error: null,
     lint: null,
     saved: false,
+    saving: false,
     config: '',
   }
 
@@ -86,10 +88,12 @@ export default class GuildConfig extends Component {
   }
 
   async save() {
-    if (this.state.lint != null) {
-      // prevent saving if there are errors in the config
+    if (this.state.lint != null || this.state.saving) {
+      // prevent saving if there are errors in the config or we're already saving
       return
     }
+
+    this.setState({ saving: true })
 
     try {
       await API.patch(`/api/guild/${this.guildId}/config`, {
@@ -97,22 +101,22 @@ export default class GuildConfig extends Component {
       })
     } catch (error) {
       const { message } = error
-      this.setState({ error: message })
+      this.setState({ error: message, saving: false })
       return
     }
 
-    this.setState({ saved: true, error: null })
+    this.setState({ saved: true, error: null, saving: false })
   }
 
   render() {
-    const { guild, config, error, lint, saved } = this.state
+    const { guild, config, error, lint, saved, saving } = this.state
 
     if (error != null && guild == null) {
       return <Notice mood="danger">Couldn't load server: {error}</Notice>
     }
 
     if (guild == null) {
-      return <p>Loading...</p>
+      return <Loading />
     }
 
     return (
@@ -146,15 +150,18 @@ export default class GuildConfig extends Component {
             }}
           />
 
-          <Button
-            onClick={this.handleSaveClick}
-            css="margin-top: 1rem"
-            disabled={lint != null}
-          >
-            Save
-          </Button>
+          <div css="display: flex; align-items: center; margin: 1rem 0">
+            <Button
+              onClick={this.handleSaveClick}
+              disabled={lint != null || saving}
+            >
+              Save
+            </Button>
 
-          <small css="display: block; margin-top: 1rem; opacity: 0.5;">
+            {saving ? <Pulser css="margin-left: 1rem" /> : null}
+          </div>
+
+          <small css="display: block; opacity: 0.5;">
             You can also press {isMac() ? '⌘' : 'CTRL+'}S to save.
           </small>
         </div>

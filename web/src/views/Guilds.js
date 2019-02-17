@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 import API from '../api'
 import Notice from '../components/Notice'
 import Guild from '../components/Guild'
+import Loading from '../components/Loading'
 
 const GuildList = styled.ul`
   list-style-type: none;
@@ -39,7 +40,7 @@ export default class Guilds extends Component {
     let content
 
     if (guilds == null) {
-      content = <p>Loading servers...</p>
+      content = <Loading />
     } else if (error != null) {
       content = <Notice mood="danger">Failed to load servers: {error}</Notice>
     } else if (guilds.length !== 0) {

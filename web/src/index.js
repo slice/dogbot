@@ -45,6 +45,10 @@ export const GlobalStyle = createGlobalStyle`
     max-width: 850px;
     padding: 1rem 2rem 2rem 2rem;
     margin: 0 auto;
+
+    h1:first-child, h2:first-child {
+      margin: 1rem 0;
+    }
   }
 `
 
