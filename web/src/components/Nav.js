@@ -1,10 +1,13 @@
 import React, { Component } from 'react'
+import 'styled-components/macro'
 import { Link } from 'react-router-dom'
 import styled from 'styled-components'
 import { FaSignOutAlt, FaGithub } from 'react-icons/fa'
 
 import './Nav.scss'
+import User from './User'
 import API from '../api'
+import { WhenLoggedIn } from '../auth'
 
 const Links = styled.div`
   margin-left: auto;
@@ -89,6 +92,9 @@ export default class Nav extends Component {
         <div id="status">
           <div id="status-circle" style={{ backgroundColor: status.color }} />
           {statusText}
+          <WhenLoggedIn>
+            {(user) => <User css="margin-left: 0.5em;" user={user} />}
+          </WhenLoggedIn>
         </div>
         <Links>
           <a
@@ -98,9 +104,11 @@ export default class Nav extends Component {
           >
             <FaGithub /> Source Code
           </a>
-          <a href="/auth/logout">
-            <FaSignOutAlt /> Logout
-          </a>
+          <WhenLoggedIn>
+            <a href="/auth/logout">
+              <FaSignOutAlt /> Logout
+            </a>
+          </WhenLoggedIn>
         </Links>
       </nav>
     )
