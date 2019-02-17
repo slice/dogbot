@@ -76,7 +76,7 @@ export default class GuildConfig extends Component {
     const { guild, config, error, saved } = this.state
 
     if (error != null && guild == null) {
-      return <Notice mood="danger">{error.toString()}</Notice>
+      return <Notice mood="danger">Couldn't load server: {error}</Notice>
     }
 
     if (guild == null) {
@@ -91,7 +91,7 @@ export default class GuildConfig extends Component {
         </h2>
 
         {error != null ? (
-          <Notice mood="danger">{error.toString()}</Notice>
+          <Notice mood="danger">Couldn't save: {error}</Notice>
         ) : null}
 
         {saved ? <Notice mood="success">Saved.</Notice> : null}
