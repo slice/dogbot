@@ -1,7 +1,8 @@
 import React, { Component } from 'react'
+import styled from 'styled-components'
 import 'styled-components/macro'
 
-import './GuildConfig.scss'
+import { monospace } from '../theming'
 import validate from '../schema'
 import API from '../api'
 import ShrinkableText from '../components/ShrinkableText'
@@ -19,6 +20,17 @@ function prettifyValidationError(message) {
     '\n If "null" is intended as an empty value be sure to mark the schema as `.nullable()`'
   return message.replace(unwantedMessage, '').replace('ValidationError: ', '')
 }
+
+const StyledGuildConfig = styled.div`
+  h2 {
+    display: flex;
+    align-items: center;
+
+    .icon {
+      margin-right: 1rem;
+    }
+  }
+`
 
 export default class GuildConfig extends Component {
   state = {
@@ -104,7 +116,7 @@ export default class GuildConfig extends Component {
     }
 
     return (
-      <div className="guild-detail">
+      <StyledGuildConfig>
         <h2>
           <GuildIcon guild={guild} />
           <ShrinkableText>{guild.name}</ShrinkableText>
@@ -127,7 +139,11 @@ export default class GuildConfig extends Component {
             fontSize={18}
             showPrintMargin={false}
             editorProps={{ $blockScrolling: true }}
-            setOptions={{ tabSize: 2, showFoldWidgets: false }}
+            setOptions={{
+              tabSize: 2,
+              showFoldWidgets: false,
+              fontFamily: monospace,
+            }}
           />
 
           <Button
@@ -142,7 +158,7 @@ export default class GuildConfig extends Component {
             You can also press {isMac() ? '⌘' : 'CTRL+'}S to save.
           </small>
         </div>
-      </div>
+      </StyledGuildConfig>
     )
   }
 }

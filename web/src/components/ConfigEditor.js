@@ -1,10 +1,27 @@
 import React from 'react'
+import styled from 'styled-components'
+import { lighten } from 'polished'
 import AceEditor from 'react-ace'
 import 'brace/mode/yaml'
+import 'brace/theme/twilight'
 import 'brace/theme/dawn'
 
-import './ConfigEditor.scss'
+const StyledAceEditor = styled(AceEditor).attrs((props) => ({
+  theme: props.theme.name === 'dark' ? 'twilight' : 'dawn',
+  _theme: props.theme,
+}))`
+  width: 100% !important;
+
+  &.ace-twilight {
+    background-color: ${(props) => lighten(0.03, props._theme.bg)} !important;
+
+    .ace_gutter {
+      background-color: ${(props) => lighten(0.05, props._theme.bg)} !important;
+      color: ${(props) => props._theme.fg} !important;
+    }
+  }
+`
 
 export default function ConfigEditor(props) {
-  return <AceEditor mode="yaml" theme="dawn" name="config-editor" {...props} />
+  return <StyledAceEditor mode="yaml" name="config-editor" {...props} />
 }

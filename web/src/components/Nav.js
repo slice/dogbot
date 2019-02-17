@@ -1,10 +1,10 @@
 import React, { Component } from 'react'
 import 'styled-components/macro'
 import { Link } from 'react-router-dom'
-import styled from 'styled-components'
-import { FaSignOutAlt, FaGithub } from 'react-icons/fa'
+import styled, { keyframes } from 'styled-components'
+import { FaSignOutAlt, FaGithub, FaLightbulb } from 'react-icons/fa'
 
-import './Nav.scss'
+import { adjust } from '../theming'
 import User from './User'
 import API from '../api'
 import { WhenLoggedIn } from '../auth'
@@ -12,6 +12,7 @@ import { WhenLoggedIn } from '../auth'
 const Links = styled.div`
   margin-left: auto;
   display: flex;
+  align-items: center;
 
   a {
     margin-left: 2em;
@@ -19,18 +20,78 @@ const Links = styled.div`
     align-items: center;
   }
 
+  button {
+    display: flex;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+    cursor: pointer;
+    color: inherit;
+  }
+
   svg {
     margin-right: 0.5em;
   }
 `
 
+const statusTextHide = keyframes`
+  from {
+    width: 100%;
+  }
+
+  to {
+    width: 0;
+  }
+`
+
 const StyledNav = styled.nav`
+  padding: 1rem 2rem;
+
+  background: ${(props) => adjust(0.05, props.theme.bg)};
+
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+
+  h1 {
+    font-size: 1rem;
+    margin: 0 1rem 0 0;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: inherit;
+  }
+
+  #status {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+
+    #status-circle {
+      width: 0.75rem;
+      height: 0.75rem;
+      flex-shrink: 0;
+      display: inline-block;
+      border-radius: 100%;
+      margin-right: 0.5rem;
+    }
+
+    #status-text {
+      white-space: nowrap;
+      overflow: hidden;
+    }
+  }
+
   @media (max-width: 700px) {
     svg {
       margin-right: 0 !important;
     }
 
-    .link-text, .username, #status-text {
+    .link-text,
+    .username,
+    #status-text {
       display: none;
     }
   }
@@ -71,6 +132,7 @@ export default class Nav extends Component {
   }
 
   render() {
+    const { onToggleLights } = this.props
     const status = this.status()
     let statusText
 
@@ -78,8 +140,10 @@ export default class Nav extends Component {
       statusText = (
         <div
           id="status-text"
+          css={`
+            animation-name: ${statusTextHide};
+          `}
           style={{
-            animationName: 'status-text-hide',
             animationDuration: '0.25s',
             animationDelay: '1s',
             animationTimingFunction: 'ease-in-out',
@@ -109,6 +173,9 @@ export default class Nav extends Component {
           </WhenLoggedIn>
         </div>
         <Links>
+          <button type="button" onClick={onToggleLights}>
+            <FaLightbulb /> <span className="link-text">Lights</span>
+          </button>
           <a
             href="https://github.com/slice/dogbot"
             target="_blank"

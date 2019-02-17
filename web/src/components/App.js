@@ -6,6 +6,9 @@ import {
   Redirect,
 } from 'react-router-dom'
 
+import { GlobalStyle } from '..'
+import { themes } from '../theming'
+import { ThemeProvider } from 'styled-components'
 import API from '../api'
 import logFactory from '../log'
 import AuthRoute from './AuthRoute'
@@ -18,7 +21,7 @@ import Nav from './Nav'
 const log = logFactory('auth')
 
 export default class App extends Component {
-  state = { authState: null }
+  state = { authState: null, theme: themes.light }
 
   async componentDidMount() {
     try {
@@ -37,8 +40,19 @@ export default class App extends Component {
     return await API.get('/auth/profile')
   }
 
+  handleToggleLights = () => {
+    this.setState(
+      (state) => ({
+        theme: state.theme.name === 'dark' ? themes.light : themes.dark,
+      }),
+      () => {
+        document.body.className = this.state.theme.name
+      }
+    )
+  }
+
   render() {
-    const { authState } = this.state
+    const { authState, theme } = this.state
 
     if (authState == null) {
       return (
@@ -54,18 +68,25 @@ export default class App extends Component {
       <div id="router-wrapper">
         <AuthContext.Provider value={authState.user || null}>
           <Router>
-            <>
-              <Nav />
+            <ThemeProvider theme={theme}>
+              <>
+                <GlobalStyle />
+                <Nav onToggleLights={this.handleToggleLights} />
 
-              <div id="content">
-                <Switch>
-                  <Redirect from="/" to="/guilds" exact />
-                  <Route path="/login" exact component={Login} />
-                  <AuthRoute path="/guilds" exact component={Guilds} />
-                  <AuthRoute path="/guilds/:id" exact component={GuildConfig} />
-                </Switch>
-              </div>
-            </>
+                <div id="content">
+                  <Switch>
+                    <Redirect from="/" to="/guilds" exact />
+                    <Route path="/login" exact component={Login} />
+                    <AuthRoute path="/guilds" exact component={Guilds} />
+                    <AuthRoute
+                      path="/guilds/:id"
+                      exact
+                      component={GuildConfig}
+                    />
+                  </Switch>
+                </div>
+              </>
+            </ThemeProvider>
           </Router>
         </AuthContext.Provider>
       </div>

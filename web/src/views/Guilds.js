@@ -1,11 +1,22 @@
 import React, { Component } from 'react'
+import styled from 'styled-components'
 import 'styled-components/macro'
 import { Link } from 'react-router-dom'
 
-import './Guilds.scss'
 import API from '../api'
 import Notice from '../components/Notice'
 import Guild from '../components/Guild'
+
+const GuildList = styled.ul`
+  list-style-type: none;
+  padding: 0;
+  margin: 1rem 0;
+
+  li a {
+    color: inherit;
+    text-decoration: inherit;
+  }
+`
 
 export default class Guilds extends Component {
   state = {
@@ -43,7 +54,7 @@ export default class Guilds extends Component {
       content = (
         <>
           <p>Click on a server below to edit its configuration:</p>
-          <ul className="guild-list">{guildNodes}</ul>
+          <GuildList>{guildNodes}</GuildList>
         </>
       )
     } else {
