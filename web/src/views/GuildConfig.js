@@ -17,7 +17,7 @@ export default class GuildConfig extends Component {
   state = {
     guild: null,
     error: null,
-    saved: null,
+    saved: false,
     config: '',
   }
 
@@ -51,7 +51,7 @@ export default class GuildConfig extends Component {
   }
 
   handleConfigChange = (config) => {
-    this.setState({ config })
+    this.setState({ config, saved: false })
   }
 
   handleSaveClick = () => {
@@ -94,7 +94,7 @@ export default class GuildConfig extends Component {
           <Notice mood="danger">{error.toString()}</Notice>
         ) : null}
 
-        {saved != null ? <Notice mood="success">Saved.</Notice> : null}
+        {saved ? <Notice mood="success">Saved.</Notice> : null}
 
         <div className="guild-config">
           <ConfigEditor
