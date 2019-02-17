@@ -6,7 +6,7 @@ import API from '../api'
 import ShrinkableText from '../components/ShrinkableText'
 import Notice from '../components/Notice'
 import Button from '../components/Button'
-import GuildIcon from '../components/GuildIcon'
+import { GuildIcon } from '../components/Icon'
 import ConfigEditor from '../components/ConfigEditor'
 
 function isMac() {

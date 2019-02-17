@@ -2,7 +2,7 @@ import React from 'react'
 
 import './Guild.scss'
 import ShrinkableText from './ShrinkableText'
-import GuildIcon from './GuildIcon'
+import { GuildIcon } from './Icon'
 
 export default function Guild({ guild }) {
   return (
