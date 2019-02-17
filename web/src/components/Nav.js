@@ -24,6 +24,18 @@ const Links = styled.div`
   }
 `
 
+const StyledNav = styled.nav`
+  @media (max-width: 700px) {
+    svg {
+      margin-right: 0 !important;
+    }
+
+    .link-text, .username, #status-text {
+      display: none;
+    }
+  }
+`
+
 const ConnectionStatus = {
   CONNECTING: { text: 'Connecting...', color: 'hsl(40, 100%, 30%)' },
   CONNECTED: { text: 'Connected!', color: 'hsl(130, 100%, 30%)' },
@@ -85,7 +97,7 @@ export default class Nav extends Component {
     }
 
     return (
-      <nav>
+      <StyledNav>
         <h1>
           <Link to="/">dogbot</Link>
         </h1>
@@ -102,15 +114,15 @@ export default class Nav extends Component {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <FaGithub /> Source Code
+            <FaGithub /> <span className="link-text">Source Code</span>
           </a>
           <WhenLoggedIn>
             <a href="/auth/logout">
-              <FaSignOutAlt /> Logout
+              <FaSignOutAlt /> <span className="link-text">Logout</span>
             </a>
           </WhenLoggedIn>
         </Links>
-      </nav>
+      </StyledNav>
     )
   }
 }

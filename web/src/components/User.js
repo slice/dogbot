@@ -28,7 +28,7 @@ export default function User({ user, className }) {
   return (
     <StyledUser className={className}>
       {icon}
-      <Name>
+      <Name className="username">
         {user.username}#{user.discriminator}
       </Name>
     </StyledUser>
