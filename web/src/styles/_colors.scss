@@ -1,9 +1,9 @@
-$primary: hsl(200, 100%, 60%);
+$primary: hsl(270, 100%, 70%);
 $gray: hsl(0, 0%, 92%);
 $light-gray: hsl(0, 0%, 95%);
 
-$text-bg: white;
-$text-fg: #333;
+$text-bg: #fff;
+$text-fg: #222;
 
 :root {
   --primary: #{$primary};
