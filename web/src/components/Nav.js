@@ -43,7 +43,7 @@ export default class Nav extends Component {
   status() {
     if (this.state.status == null) {
       return ConnectionStatus.CONNECTING
-    } else if (this.state.status) {
+    } else if (this.state.status.ready) {
       return ConnectionStatus.CONNECTED
     } else {
       return ConnectionStatus.DISCONNECTED
