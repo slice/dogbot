@@ -63,12 +63,19 @@ async def api_guild_config(guild_id):
                 "code": "INVALID_YAML"
             }), 400
 
+        if not g.bot.guild_configs.can_edit(g.user, guild_id, with_config=yml):
+            return json({
+                "error": True,
+                "message": "This configuration will lock you out. Make sure to add yourself as an editor.",
+                "code": "SELF_LOCKOUT",
+            }), 403
+
         # of course, it's possible for a singular, basic scalar value to be
         # passed in
         if yml is not None and not isinstance(yml, dict):
             return json({
                 "error": True,
-                "message": "Configuration is not a dictionary (mapping).",
+                "message": "This configuration isn't a mapping.",
                 "code": "INVALID_CONFIG",
             }), 400
 
