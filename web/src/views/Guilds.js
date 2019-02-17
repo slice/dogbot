@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import 'styled-components/macro'
 import { Link } from 'react-router-dom'
 
 import './Guilds.scss'
@@ -33,7 +34,7 @@ export default class Guilds extends Component {
     } else if (guilds.length !== 0) {
       const guildNodes = guilds.map((guild) => (
         <li key={guild.id}>
-          <Link to={`/guilds/${guild.id}`}>
+          <Link to={`/guilds/${guild.id}`} css="display: block">
             <Guild guild={guild} />
           </Link>
         </li>

@@ -10,7 +10,18 @@ const Button = styled.button`
   cursor: pointer;
 
   &:active {
+    background: var(--focus-darker);
     outline: none;
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 5px var(--focus);
+  }
+
+  &[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `
 

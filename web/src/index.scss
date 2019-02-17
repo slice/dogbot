@@ -28,6 +28,10 @@ code {
     monospace;
 }
 
+:focus {
+  outline: $focus auto 4px;
+}
+
 *,
 *:before,
 *:after {

@@ -5,8 +5,13 @@ $light-gray: hsl(0, 0%, 95%);
 $text-bg: #fff;
 $text-fg: #333;
 
+$focus-darker: darken($primary, 5%);
+$focus: lighten($primary, 15%);
+
 :root {
   --primary: #{$primary};
+  --focus-darker: #{$focus-darker};
+  --focus: #{$focus};
   --gray: #{$gray};
   --light-gray: #{$light-gray};
   --text-bg: #{$text-bg};
