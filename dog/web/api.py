@@ -59,7 +59,7 @@ async def api_guild_config(guild_id):
         except YAMLError as err:
             return json({
                 "error": True,
-                "message": f"Invalid YAML ({err!r}).",
+                "message": f"Invalid YAML ({err}).",
                 "code": "INVALID_YAML"
             }), 400
 
