@@ -84,7 +84,7 @@ const StyledNav = styled.nav`
     }
   }
 
-  @media (max-width: 700px) {
+  @media (max-width: 800px) {
     svg {
       margin-right: 0 !important;
     }
@@ -153,7 +153,7 @@ export default class Nav extends Component {
             animationPlayState: 'playing',
           }}
         >
-          {`${status.text} (${this.state.status.guilds} servers)`}
+          {status.text}
         </div>
       )
     } else {
