@@ -73,6 +73,14 @@ class GuildConfigManager:
     async def write(self, guild, config: str):
         await self.persistent.put(into_str_id(guild), config)
 
+        if not isinstance(guild, discord.Guild):
+            guild = self.bot.get_guild(guild)
+
+        if guild is not None:
+            parsed_config = self.get(guild)
+            log.debug('dispatching guild_config_edit for %d (%r)', guild.id, parsed_config)
+            self.bot.dispatch('guild_config_edit', guild, parsed_config)
+
     def get(self, guild, *, yaml: bool = False):
         config = self.persistent.get(into_str_id(guild))
         if config is None:
