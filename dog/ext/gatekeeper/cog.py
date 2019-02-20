@@ -3,19 +3,15 @@ import copy
 import datetime
 import io
 import logging
-from typing import Optional
 
 import discord
 from discord.ext import commands
 from lifesaver.bot import Cog, Context, group
-from lifesaver.utils import human_delta
 from ruamel.yaml import YAML
 
-from dog.ext.gatekeeper import checks
-from dog.ext.gatekeeper.core import Block, Report
 from dog.formatting import represent
+from .keeper import Keeper
 
-CHECKS = [getattr(checks, name) for name in checks.__all__]
 
 log = logging.getLogger(__name__)
 
@@ -27,129 +23,6 @@ def require_configuration():
         return True
 
     return commands.check(predicate)
-
-
-class Keeper:
-    """A class that gatekeeps members from guilds."""
-    def __init__(self, guild: discord.Guild, settings, *, bot) -> None:
-        self.bot = bot
-        self.guild = guild
-        self.settings = settings
-
-    @property
-    def broadcast_channel(self) -> discord.TextChannel:
-        """Return the broadcast channel for the associated guild."""
-        channel_id = self.settings.get('broadcast_channel')
-        if channel_id is None:
-            return None
-
-        channel = self.bot.get_channel(channel_id)
-        if not isinstance(channel, discord.TextChannel):
-            return None
-
-        return channel
-
-    @property
-    def bounce_message(self):
-        """Return the configured bounce message."""
-        return self.settings.get('bounce_message')
-
-    async def send_bounce_message(self, member: discord.Member):
-        bounce_message = self.bounce_message
-
-        if bounce_message is None:
-            return
-
-        try:
-            await member.send(bounce_message)
-        except discord.HTTPException:
-            if self.settings.get('echo_dm_failures', False):
-                await self.report(
-                    member,
-                    f'Failed to send bounce message to {represent(member)}.',
-                )
-
-    async def report(self, member: discord.Member, *args, **kwargs) -> Optional[discord.Message]:
-        """Send a message to the designated broadcast channel of a guild."""
-        channel = self.broadcast_channel
-
-        if not channel:
-            log.warning('no broadcast channel for %d, cannot report', self.guild.id)
-            return None
-
-        if channel.guild != member.guild:
-            log.warning('broadcast channel is somewhere else, ignoring')
-            return None
-
-        try:
-            return await channel.send(*args, **kwargs)
-        except discord.Forbidden:
-            return None
-
-    async def block(self, member: discord.Member, reason: str):
-        """Bounce a user from the guild."""
-        await self.send_bounce_message(member)
-
-        try:
-            await member.kick(reason=f'Failed Gatekeeper check. {reason}')
-        except discord.HTTPException as error:
-            await self.report(
-                member,
-                f"Failed to kick {represent(member)}: `{error}`",
-            )
-        else:
-            embed = discord.Embed(
-                color=discord.Color.red(),
-                title=f'Bounced {represent(member)}',
-            )
-
-            embed.add_field(
-                name='Account Creation',
-                value=f'{human_delta(member.created_at)} ago\n{member.created_at}'
-            )
-
-            embed.description = reason
-            embed.timestamp = datetime.datetime.utcnow()
-            embed.set_thumbnail(url=member.avatar_url)
-
-            await self.report(member, embed=embed)
-
-    async def check(self, member: discord.Member):
-        """Check a member and bounce them if necessary."""
-        enabled_checks = self.settings.get('checks', {})
-
-        for check in CHECKS:
-            name = check.__name__
-            check_options = enabled_checks.get(name)
-
-            # check not present
-            if check_options is None:
-                continue
-
-            if isinstance(check_options, dict):
-                if not check_options.get('enabled', True):
-                    continue
-            elif isinstance(check_options, bool):
-                if not check_options:
-                    continue
-
-            try:
-                await check(member, check_options)
-            except Block as block:
-                await self.block(member, str(block))
-                return False
-            except Report as report:
-                # something went wrong
-                await self.report(member, str(report))
-                await self.block(
-                    member,
-                    ("Gatekeeper was incorrectly configured. I'm not sure what "
-                     "to do, so I'll just prevent this user from joining just "
-                     "in case.")
-                )
-                return False
-
-        return True
 
 
 class Gatekeeper(Cog):

@@ -9,7 +9,7 @@ import typing
 
 import discord
 
-from dog.ext.gatekeeper.core import Block, Report
+from .core import Bounce, Report
 
 
 CheckOptions = typing.Dict[str, typing.Any]
@@ -59,13 +59,13 @@ def gatekeeper_check(func):
 @gatekeeper_check
 def block_default_avatars(member: discord.Member):
     if member.default_avatar_url == member.avatar_url:
-        raise Block('Has no avatar')
+        raise Bounce('Has no avatar')
 
 
 @gatekeeper_check
 def block_bots(member: discord.Member):
     if member.bot:
-        raise Block('Is a bot')
+        raise Bounce('Is a bot')
 
 
 @gatekeeper_check
@@ -73,18 +73,18 @@ def minimum_creation_time(member: discord.Member, minimum_age: int):
     age = (datetime.datetime.utcnow() - member.created_at).total_seconds()
 
     if age < minimum_age:
-        raise Block(f'Account too young ({age} < {minimum_age})')
+        raise Bounce(f'Account too young ({age} < {minimum_age})')
 
 
 @gatekeeper_check
 def block_all(_member: discord.Member):
-    raise Block('Blocking all users')
+    raise Bounce('Blocking all users')
 
 
 @gatekeeper_check
 def username_regex(member: discord.Member, regex: str):
     try:
         if re.search(regex, member.name):
-            raise Block('Username matched regex')
+            raise Bounce('Username matched regex')
     except re.error as err:
         raise Report(f"Invalid regex. (`{err}`)")

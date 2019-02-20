@@ -1,10 +1,10 @@
 class GatekeeperException(RuntimeError):
-    pass
+    """An exception thrown during Gatekeeper processes."""
 
 
 class Report(GatekeeperException):
-    """An exception that immediately sends text to the broadcasting channel."""
+    """An exception that stops processing and sends text to the broadcasting channel."""
 
 
-class Block(GatekeeperException):
-    """An exception that blocks a user from joining a guild."""
+class Bounce(GatekeeperException):
+    """An exception that prevents a user from joining a guild."""

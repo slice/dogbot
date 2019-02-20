@@ -1,4 +1,4 @@
-from dog.ext.gatekeeper.cog import Gatekeeper
+from .cog import Gatekeeper
 
 
 def setup(bot):
