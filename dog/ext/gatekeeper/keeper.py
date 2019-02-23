@@ -20,16 +20,16 @@ I'm not sure what to do, so just to be safe, I'm going to prevent this user from
 class Keeper:
     """A class that gatekeeps users from guilds by processing checks."""
 
-    def __init__(self, guild: discord.Guild, settings, *, bot) -> None:
+    def __init__(self, guild: discord.Guild, config, *, bot) -> None:
         self.bot = bot
         self.guild = guild
-        self.settings = settings
+        self.config = config
         self.log = logging.getLogger(f'{__name__}.{guild.id}')
 
     @property
     def broadcast_channel(self) -> discord.TextChannel:
         """Return the broadcast channel for the associated guild."""
-        channel_id = self.settings.get('broadcast_channel')
+        channel_id = self.config.get('broadcast_channel')
         if channel_id is None:
             return None
 
@@ -42,7 +42,7 @@ class Keeper:
     @property
     def bounce_message(self):
         """Return the configured bounce message."""
-        return self.settings.get('bounce_message')
+        return self.config.get('bounce_message')
 
     async def send_bounce_message(self, member: discord.Member):
         """Send a bounce message to a member."""
@@ -54,7 +54,7 @@ class Keeper:
         try:
             await member.send(bounce_message)
         except discord.HTTPException:
-            if self.settings.get('echo_dm_failures', False):
+            if self.config.get('echo_dm_failures', False):
                 await self.report(
                     member,
                     f'Failed to send bounce message to {represent(member)}.',
@@ -109,7 +109,7 @@ class Keeper:
     async def check(self, member: discord.Member):
         """Check a member and bounce them if necessary."""
         self.log.debug('%d: gatekeeping! (created_at=%s)', member.id, member.created_at)
-        enabled_checks = self.settings.get('checks', {})
+        enabled_checks = self.config.get('checks', {})
 
         for check in CHECKS:
             check_name = check.__name__

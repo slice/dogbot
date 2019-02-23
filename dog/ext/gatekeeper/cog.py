@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 
 def require_configuration():
     def predicate(ctx):
-        if ctx.cog.settings(ctx.guild) == {}:
+        if ctx.cog.gatekeeper_config(ctx.guild) == {}:
             raise commands.CheckFailure('Gatekeeper must be configured to use this command.')
         return True
 
@@ -29,6 +29,7 @@ class Gatekeeper(Cog):
     def __init__(self, bot):
         super().__init__(bot)
         self.yaml = YAML()
+        self.keepers = {}
 
     async def __local_check(self, ctx: Context):
         if not ctx.guild:
@@ -46,10 +47,36 @@ class Gatekeeper(Cog):
     def dashboard_link(self):
         return self.bot.config.dashboard_link
 
-    def settings(self, guild: discord.Guild):
-        """Return Gatekeeper settings for a guild."""
+    def gatekeeper_config(self, guild: discord.Guild):
+        """Return Gatekeeper gatekeeper_config for a guild."""
         config = self.bot.guild_configs.get(guild) or {}
         return config.get('gatekeeper', {})
+
+    def keeper(self, guild: discord.Guild) -> Keeper:
+        """Return a long-lived Keeper instance for a guild.
+
+        The Keeper instance is preserved in memory to contain state and other
+        associated information.
+        """
+        alive_keeper = self.keepers.get(guild.id)
+
+        if alive_keeper is not None:
+            return alive_keeper
+
+        # create a new keeper instance for the guild
+        config = self.gatekeeper_config(guild)
+        log.debug('creating a new keeper for guild %d (config=%r)', guild.id, config)
+        keeper = Keeper(guild, config, bot=self.bot)
+        self.keepers[guild.id] = keeper
+        return keeper
+
+    async def on_guild_config_edit(self, guild: discord.Guild, config):
+        if guild.id not in self.keepers:
+            log.debug('received config edit for keeperless guild %d', guild.id)
+            return
+
+        log.debug('updating keeper config for guild %d', guild.id)
+        self.keepers[guild.id].config = config.get('gatekeeper', {})
 
     @contextlib.asynccontextmanager
     async def edit_config(self, guild: discord.Guild):
@@ -68,22 +95,27 @@ class Gatekeeper(Cog):
     async def on_member_join(self, member: discord.Member):
         await self.bot.wait_until_ready()
 
-        settings = self.settings(member.guild)
+        config = self.gatekeeper_config(member.guild)
 
-        if not settings.get('enabled', False):
+        if not config.get('enabled', False):
             return
 
-        keeper = Keeper(member.guild, settings, bot=self.bot)
+        # fetch the keeper instance for this guild, which manages gatekeeping,
+        # check processing, and all of that good stuff.
+        keeper = self.keeper(member.guild)
 
-        overridden = settings.get('allowed_users', [])
-        is_overridden = str(member) in overridden or member.id in overridden
+        overridden = config.get('allowed_users', [])
+        is_whitelisted = str(member) in overridden or member.id in overridden
 
-        if not is_overridden:
+        if not is_whitelisted:
+            # this function will do the reporting for us if the user fails any
+            # checks.
             is_allowed = await keeper.check(member)
+
             if not is_allowed:
                 return
 
-        if settings.get('quiet', False):
+        if config.get('quiet', False):
             return
 
         embed = discord.Embed(
@@ -92,7 +124,7 @@ class Gatekeeper(Cog):
             description='This user has passed all Gatekeeper checks.'
         )
 
-        if is_overridden:
+        if is_whitelisted:
             embed.description = 'This user has been specifically allowed into this server.'
 
         embed.set_thumbnail(url=member.avatar_url)
@@ -135,10 +167,7 @@ class Gatekeeper(Cog):
         async with self.edit_config(ctx.guild) as config:
             config['enabled'] = not config['enabled']
 
-        if config['enabled']:
-            state = 'enabled'
-        else:
-            state = 'disabled'
+        state = 'enabled' if config['enabled'] else 'disabled'
 
         await ctx.send(f'{ctx.tick()} Gatekeeper is now {state}.')
 
@@ -146,7 +175,7 @@ class Gatekeeper(Cog):
     @require_configuration()
     async def command_status(self, ctx: Context):
         """Views the current status of Gatekeeper."""
-        enabled = self.settings(ctx.guild).get('enabled', False)
+        enabled = self.gatekeeper_config(ctx.guild).get('enabled', False)
 
         if enabled:
             description = 'Incoming members must pass Gatekeeper checks to join.'
