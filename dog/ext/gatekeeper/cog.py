@@ -142,6 +142,22 @@ class Gatekeeper(Cog):
         This is very useful when your server is undergoing raids, unwanted attention, unwanted members, etc.
         """
 
+    @gatekeeper.command(name='lockdown', aliases=['ld'])
+    @require_configuration()
+    async def command_lockdown(self, ctx: Context, *, enabled: bool = True):
+        """Enables block_all.
+
+        You can also provide "on" or "off" to the command to manually enable
+        or disable the check as desired.
+        """
+        async with self.edit_config(ctx.guild) as config:
+            checks = config.get('checks', {})
+            checks['block_all'] = {'enabled': enabled}
+            config['checks'] = checks
+
+        status = 'enabled' if enabled else 'disabled'
+        await ctx.send(f'{ctx.tick()} `block_all` is now {status}.')
+
     @gatekeeper.command(name='enable', aliases=['on'])
     @require_configuration()
     async def command_enable(self, ctx: Context):
