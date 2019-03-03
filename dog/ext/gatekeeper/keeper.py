@@ -378,9 +378,10 @@ class Keeper:
         # prevent this list from growing too large
         # TODO: we should just check if the join ratelimiter has expired and
         #       empty the list if so
-        if len(self.recent_joins) >= self.join_ratelimiter.rate + 5:
-            self.recent_joins.pop(0)
-        self.recent_joins.append(member)
+        if self.join_ratelimiter:
+            if len(self.recent_joins) >= self.join_ratelimiter.rate + 5:
+                self.recent_joins.pop(0)
+            self.recent_joins.append(member)
 
         self.log.debug('%d: passed all checks', member.id)
         return True
