@@ -5,10 +5,10 @@ import typing
 import discord
 from lifesaver.utils.timing import Ratelimiter
 from dog.formatting import represent
-from . import checks
+from . import checks as checks_module
 from .core import CheckFailure, Ban, Bounce, Report, create_embed
 
-ALL_CHECKS = [getattr(checks, name) for name in checks.__all__]
+ALL_CHECKS = [getattr(checks_module, name) for name in checks_module.__all__]
 
 INCORRECTLY_CONFIGURED = """Gatekeeper was configured incorrectly!
 
@@ -18,6 +18,19 @@ Threshold = collections.namedtuple('Threshold', 'rate per')
 
 
 def parse_threshold(threshold: str) -> Threshold:
+    """Parses a threshold specifier string into a Threshold namedtuple
+    containing ``rate`` and ``per`` fields.
+
+    Raises
+    ------
+    TypeError
+        If the threshold specifier string was invalid.
+
+    Example
+    -------
+    >>> parse_threshold("5/10")
+    Threshold(rate=5, per=10)
+    """
     try:
         rate, per = threshold.split('/')
         if '' in (rate, per):
@@ -28,12 +41,24 @@ def parse_threshold(threshold: str) -> Threshold:
 
 
 class Keeper:
-    """A class that gatekeeps users from guilds by processing checks."""
+    """A class that gatekeeps users from guilds by processing checks and
+    ratelimits on users.
+
+    Each :class:`discord.Guild` should have its own persistent Keeper instance.
+    This class tracks some state in order to handle ratelimits and take
+    associated action.
+
+    The Gatekeeper cog automatically handles Keeper creation. Keepers are also
+    stored in its state. Keepers hold the Gatekeeper configuration
+    (NOT the entire guild configuration). Whenever a guild configuration is
+    updated, the Gatekeeper cog updates the configuration for that guild's
+    Keeper instance (if it has one).
+    """
 
     def __init__(self, guild: discord.Guild, config, *, bot) -> None:
         self.bot = bot
         self.guild = guild
-        self.log = logging.getLogger(f'{__name__}.{guild.id}')
+        self.log = logging.getLogger(f'{__name__}[{guild.id}]')
 
         self.config = None
         self.ban_ratelimiter = None
@@ -78,13 +103,11 @@ class Keeper:
 
     async def send_bounce_message(self, member: discord.Member):
         """Send a bounce message to a member."""
-        bounce_message = self.bounce_message
-
-        if bounce_message is None:
+        if self.bounce_message is None:
             return
 
         try:
-            await member.send(bounce_message)
+            await member.send(self.bounce_message)
         except discord.HTTPException:
             if self.config.get('echo_dm_failures', False):
                 await self.report(f'Failed to send bounce message to {represent(member)}.')
@@ -110,7 +133,12 @@ class Keeper:
         except discord.HTTPException as error:
             self.log.warning('unable to send message to %r: %r', channel, error)
 
-    async def _ban_reverse_prompt(self, message, banned):
+    async def _ban_reverse_prompt(self, message: discord.Message, banned: discord.Member):
+        """Shows a reaction prompt to reverse a ban.
+
+        This is only called on ban notice messages to let moderators reverse an
+        automatic ban.
+        """
         unban_emoji = self.bot.emoji('gatekeeper.unban')
         await message.add_reaction(unban_emoji)
 
@@ -130,12 +158,13 @@ class Keeper:
             await self.report(f'The ban of {represent(banned)} was reversed by {represent(user)}.')
 
     async def ban(self, member: discord.Member, reason: str):
-        """Bans a user from the guild.
+        """Ban a user from the guild.
 
         An embed with the provided ban reason will be reported to the guild's
         broadcast channel.
         """
         try:
+            # cya nerd
             await member.ban(delete_message_days=0, reason=f'Gatekeeper: {reason}')
         except discord.HTTPException as error:
             self.log.debug('failed to ban %d: %r', member.id, error)
@@ -168,6 +197,11 @@ class Keeper:
             await self.report(embed=embed)
 
     async def _perform_checks(self, member: discord.Member, checks):
+        """Perform a list of checks on a member.
+
+        When calling this method, make sure to handle any thrown Report, Ban,
+        and Bounce exceptions.
+        """
         for check in ALL_CHECKS:
             check_name = check.__name__
             check_options = checks.get(check_name)
@@ -195,12 +229,15 @@ class Keeper:
                 raise error from None
 
     async def check(self, member: discord.Member):
-        """Check a member and bounce or ban them if necessary."""
+        """Perform checks on a member and bounce or ban them if necessary.
+
+        Ratelimits (thresholds) are also checked in this method.
+        """
         self.log.debug('%d: gatekeeping! (created_at=%s)', member.id, member.created_at)
 
         if self.ban_ratelimiter and self.ban_ratelimiter.is_rate_limited(member.id):
             # user is joining too fast!
-            self.log.debug('%d: is joining too fast, banning', member.id)
+            self.log.debug('%d: is joining too quickly, banning', member.id)
             await self.ban(member, 'Joining too quickly')
             return False
 
