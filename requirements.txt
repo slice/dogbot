@@ -1,9 +1,0 @@
-discord.py @ git+https://github.com/Rapptz/discord.py.git@rewrite
-discord.py-lifesaver @ git+https://github.com/slice/lifesaver.git
-
-quart==0.8.1
-asyncpg==0.17.0
-pytz==2018.3
-geopy
-uvloop
-Pillow
