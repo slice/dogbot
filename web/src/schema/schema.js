@@ -12,6 +12,12 @@ const defs = {
   // a discord id (snowflake)
   id: number().min(1),
 
+  // user-specified thresholds
+  threshold: string().matches(
+    /\d+\/\d+/,
+    '${path} is not a valid threshold (rate/per)' // eslint-disable-line
+  ),
+
   // a user id or discord tag
   user: lazy((value) =>
     typeof value === 'string'
@@ -32,6 +38,7 @@ export default object({
   editors: array(defs.user),
   gatekeeper: object({
     enabled: bool(),
+    ban_threshold: defs.threshold,
     checks: object({
       block_default_avatars: defs.check,
       block_bots: defs.check,

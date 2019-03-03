@@ -1,20 +1,30 @@
 import collections
-import datetime
 import logging
 import typing
 
 import discord
-
-from lifesaver.utils import human_delta
+from lifesaver.utils.timing import Ratelimiter
 from dog.formatting import represent
 from . import checks
-from .core import Bounce, Report
+from .core import Ban, Bounce, Report, create_embed
 
 CHECKS = [getattr(checks, name) for name in checks.__all__]
 
 INCORRECTLY_CONFIGURED = """Gatekeeper was configured incorrectly!
 
 I'm not sure what to do, so just to be safe, I'm going to prevent this user from joining."""
+
+Threshold = collections.namedtuple('Threshold', 'rate per')
+
+
+def parse_threshold(threshold: str) -> Threshold:
+    try:
+        rate, per = threshold.split('/')
+        if '' in (rate, per):
+            raise TypeError('Invalid threshold syntax')
+        return Threshold(rate=int(rate), per=float(per))
+    except ValueError:
+        return TypeError('Invalid threshold syntax')
 
 
 class Keeper:
@@ -23,8 +33,30 @@ class Keeper:
     def __init__(self, guild: discord.Guild, config, *, bot) -> None:
         self.bot = bot
         self.guild = guild
-        self.config = config
         self.log = logging.getLogger(f'{__name__}.{guild.id}')
+
+        self.config = None
+        self.ban_ratelimiter = None
+        self.update_config(config)
+
+    def __repr__(self):
+        return f'<Keeper guild={self.guild!r}>'
+
+    def _setup_ratelimiter(self, config_key, ratelimiter_attr):
+        """Set up a Ratelimiter attribute on this Keeper from a threshold
+        specified in the config with a special syntax ("rate/per").
+        """
+        try:
+            threshold = parse_threshold(self.config[config_key])
+            ratelimiter = Ratelimiter(threshold.rate, threshold.per)
+            setattr(self, ratelimiter_attr, ratelimiter)
+        except (KeyError, ValueError):
+            setattr(self, ratelimiter_attr, None)
+
+    def update_config(self, config):
+        """Update this Keeper to use a new config."""
+        self.config = config
+        self._setup_ratelimiter('ban_threshold', 'ban_ratelimiter')
 
     @property
     def broadcast_channel(self) -> discord.TextChannel:
@@ -55,12 +87,9 @@ class Keeper:
             await member.send(bounce_message)
         except discord.HTTPException:
             if self.config.get('echo_dm_failures', False):
-                await self.report(
-                    member,
-                    f'Failed to send bounce message to {represent(member)}.',
-                )
+                await self.report(f'Failed to send bounce message to {represent(member)}.')
 
-    async def report(self, member: discord.Member, *args, **kwargs) -> typing.Optional[discord.Message]:
+    async def report(self, *args, **kwargs) -> typing.Optional[discord.Message]:
         """Send a message to the designated broadcast channel of a guild.
 
         If the bot doesn't have permission to send to the channel, the error
@@ -69,22 +98,39 @@ class Keeper:
         channel = self.broadcast_channel
 
         if not channel:
-            self.log.warning('no broadcast channel for %d, cannot report', self.guild.id)
+            self.log.warning('no broadcast channel, cannot report')
             return
 
-        if channel.guild != member.guild:
+        if channel.guild != self.guild:
             self.log.warning('broadcast channel is somewhere else, ignoring')
             return
 
         try:
             return await channel.send(*args, **kwargs)
-        except discord.Forbidden:
-            return
+        except discord.HTTPException as error:
+            self.log.warning('unable to send message to %r: %r', channel, error)
+
+    async def ban(self, member: discord.Member, reason: str):
+        """Bans a user from the guild.
+
+        An embed with the provided ban reason will be reported to the guild's
+        broadcast channel.
+        """
+        try:
+            await member.ban(delete_message_days=0, reason=f'Gatekeeper: {reason}')
+        except discord.HTTPException as error:
+            self.log.debug('failed to ban %d: %r', member.id, error)
+            await self.report(f'Failed to ban {represent(member)}: `{error}`')
+        else:
+            embed = create_embed(
+                member, color=discord.Color.purple(),
+                title=f'Banned {represent(member)}', reason=reason)
+            await self.report(embed=embed)
 
     async def bounce(self, member: discord.Member, reason: str):
         """Kick ("bounce") a user from the guild.
 
-        An embed with the provided reason will be reported to the guild's
+        An embed with the provided bounce reason will be reported to the guild's
         broadcast channel.
         """
         await self.send_bounce_message(member)
@@ -93,23 +139,23 @@ class Keeper:
             await member.kick(reason=f'Gatekeeper: {reason}')
         except discord.HTTPException as error:
             self.log.debug('failed to kick %d: %r', member.id, error)
-            await self.report(member, f"Failed to kick {represent(member)}: `{error}`")
+            await self.report(f'Failed to kick {represent(member)}: `{error}`')
         else:
-            embed = discord.Embed(color=discord.Color.red(), title=f'Bounced {represent(member)}')
-
-            embed.add_field(name='Account Creation',
-                            value=f'{human_delta(member.created_at)} ago\n{member.created_at}')
-
-            embed.description = reason
-            embed.timestamp = datetime.datetime.utcnow()
-            embed.set_thumbnail(url=member.avatar_url)
-
-            await self.report(member, embed=embed)
+            embed = create_embed(
+                member, color=discord.Color.red(),
+                title=f'Bounced {represent(member)}', reason=reason)
+            await self.report(embed=embed)
 
     async def check(self, member: discord.Member):
-        """Check a member and bounce them if necessary."""
+        """Check a member and bounce or ban them if necessary."""
         self.log.debug('%d: gatekeeping! (created_at=%s)', member.id, member.created_at)
         enabled_checks = self.config.get('checks', {})
+
+        if self.ban_ratelimiter and self.ban_ratelimiter.is_rate_limited(member.id):
+            # user is joining too fast!
+            self.log.debug('%d: is joining too fast, banning', member.id)
+            await self.ban(member, 'Joining too quickly')
+            return False
 
         for check in CHECKS:
             check_name = check.__name__
@@ -131,6 +177,10 @@ class Keeper:
 
             try:
                 await check(member, check_options)
+            except Ban as ban:
+                self.log.debug('%d: banning (err=%r)', member.id, ban)
+                await self.ban(member, str(ban))
+                return False
             except Bounce as bounce:
                 self.log.debug('%d: failed to pass "%s" (err=%r)', member.id, check_name, bounce)
                 await self.bounce(member, str(bounce))
@@ -138,7 +188,7 @@ class Keeper:
             except Report as report:
                 # something went wrong
                 self.log.debug('error in config: %r', report)
-                await self.report(member, str(report))
+                await self.report(str(report))
                 await self.bounce(member, INCORRECTLY_CONFIGURED)
                 return False
 

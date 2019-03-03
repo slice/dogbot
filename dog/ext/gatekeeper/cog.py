@@ -76,7 +76,7 @@ class Gatekeeper(Cog):
             return
 
         log.debug('updating keeper config for guild %d', guild.id)
-        self.keepers[guild.id].config = config.get('gatekeeper', {})
+        self.keepers[guild.id].update_config(config.get('gatekeeper', {}))
 
     @contextlib.asynccontextmanager
     async def edit_config(self, guild: discord.Guild):
@@ -130,7 +130,7 @@ class Gatekeeper(Cog):
         embed.set_thumbnail(url=member.avatar_url)
         embed.timestamp = datetime.datetime.utcnow()
 
-        await keeper.report(member, embed=embed)
+        await keeper.report(embed=embed)
 
     @group(aliases=['gk'], hollow=True)
     async def gatekeeper(self, ctx: Context):
