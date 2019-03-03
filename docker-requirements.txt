@@ -1,5 +1,6 @@
 discord.py-lifesaver @ git+https://github.com/slice/lifesaver.git
-discord.py @ git+https://github.com/Rapptz/discord.py.git@rewrite#3f06f247c039a23948e7bb0014ea31db533b4ba2
+jishaku @ git+https://github.com/Gorialis/jishaku.git@a6653b771d2ab7f5368cc0edec5f8033499edfb3
+discord.py @ git+https://github.com/Rapptz/discord.py.git@3f06f247c039a23948e7bb0014ea31db533b4ba2
 
 quart==0.8.1
 pytz==2018.3
