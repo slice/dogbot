@@ -63,28 +63,26 @@ class Keeper:
         self.guild = guild
         self.log = logging.getLogger(f'{__name__}[{guild.id}]')
 
+        #: A list of recent :class:`discord.Member`s that have joined. This list
+        #: is used to keep track of users joining so that during a burst of
+        #: joins (like in a raid), everyone who joined is removed instead of the
+        #: single user that ended up triggering the ratelimit.
+        self.recent_joins = []
+
         self.config = None
-        self.ban_ratelimiter = None
+
+        #: A ratelimiter for each user. Addresses users repeatedly joining after
+        #: being bounced by Gatekeeper.
+        self.unique_join_ratelimiter = None
+
+        #: A ratelimiter for all users. Addresses large amounts of users joining
+        #: at a time (like in raids).
+        self.join_ratelimiter = None
+
         self.update_config(config)
 
     def __repr__(self):
         return f'<Keeper guild={self.guild!r}>'
-
-    def _setup_ratelimiter(self, config_key, ratelimiter_attr):
-        """Set up a Ratelimiter attribute on this Keeper from a threshold
-        specified in the config with a special syntax ("rate/per").
-        """
-        try:
-            threshold = parse_threshold(self.config[config_key])
-            ratelimiter = Ratelimiter(threshold.rate, threshold.per)
-            setattr(self, ratelimiter_attr, ratelimiter)
-        except (KeyError, ValueError):
-            setattr(self, ratelimiter_attr, None)
-
-    def update_config(self, config):
-        """Update this Keeper to use a new config."""
-        self.config = config
-        self._setup_ratelimiter('ban_threshold', 'ban_ratelimiter')
 
     @property
     def broadcast_channel(self) -> discord.TextChannel:
@@ -103,6 +101,102 @@ class Keeper:
     def bounce_message(self):
         """Return the configured bounce message."""
         return self.config.get('bounce_message')
+
+    def _make_ratelimiter(self, threshold: str) -> Ratelimiter:
+        """Set up a Ratelimiter attribute on this Keeper from a threshold
+        specified in the config with a special syntax ("rate/per").
+        """
+        threshold = parse_threshold(threshold)
+        return Ratelimiter(threshold.rate, threshold.per)
+
+    def _update_ratelimiter(self, threshold: str, attribute_name: str, *, after_update=None):
+        """Updates/creates a Ratelimiter attribute on self from a threshold specifier string.
+
+        The Ratelimiter is created from the provided threshold specifier string,
+        and the attribute given by ``attribute_name`` on self is updated with
+        the newly created Ratelimiter. If the Ratelimiter hasn't changed, then
+        the old one will be used.
+
+        If the threshold specifier string contains invalid syntax or is None,
+        the ratelimiter attribute is disabled.
+        """
+        try:
+            old_ratelimiter = getattr(self, attribute_name)
+            new_ratelimiter = self._make_ratelimiter(threshold)
+
+            if old_ratelimiter != new_ratelimiter:
+                setattr(self, attribute_name, new_ratelimiter)
+                self.log.debug('_update_ratelimiter: replacing stale ratelimiter %s', attribute_name)
+
+                if after_update:
+                    after_update(old_ratelimiter, new_ratelimiter)
+            else:
+                self.log.debug('_update_ratelimiter: not stale, using old %s', attribute_name)
+        except TypeError:
+            self.log.debug('_update_ratelimiter: invalid %s, disabling', attribute_name)
+            setattr(self, attribute_name, None)
+
+    def update_config(self, config):
+        """Update this Keeper to use a new config."""
+        self.config = config
+
+        # this method can be indirectly called by _lockdown. it edits the config
+        # which in turn makes the Gatekeeper cog call this method. so, we need
+        # to make sure that our ratelimits don't reset!
+        #
+        # the special _update_ratelimiter doesn't reset ratelimits if the new
+        # config doesn't change that ratelimit.
+
+        self._update_ratelimiter(config.get('ban_threshold'), 'unique_join_ratelimiter')
+
+        def remove_unneeded_joins(old, new):
+            if old is None:
+                # join_ratelimiter is being created for the first time
+                return
+
+            if new.rate < old.rate:
+                num_outside = old.rate - new.rate
+                self.log.debug('update_config: removing %d outside tracked joins', num_outside)
+                del self.recent_joins[:num_outside]
+
+        auto_lockdown = config.get('auto_lockdown', {})
+        auto_lockdown_threshold = auto_lockdown.get('threshold')
+
+        self._update_ratelimiter(
+            auto_lockdown_threshold, 'join_ratelimiter', after_update=remove_unneeded_joins)
+
+    async def _lockdown(self):
+        """Enable the block_all check for this guild and send a warning report."""
+        gatekeeper_cog = self.bot.get_cog('Gatekeeper')
+        async with gatekeeper_cog.edit_config(self.guild) as config:
+            config['checks'] = {
+                **config.get('checks', {}),
+                'block_all': {'enabled': True}
+            }
+
+        # TODO: have this be reported in a separate channel, with a ping!
+        await self.report(
+            'Users are joining too quickly. `block_all` has automatically been enabled.')
+
+    async def _auto_lockdown(self, triggering_member):
+        """Start the auto lockdown procedure."""
+        # triggering_member is the user that joined that ended up causing the
+        # ratelimiter to go off. now we have to remove this user...
+        await self.bounce(triggering_member, 'Users are joining too quickly')
+
+        # ...and the rest of the users who were part of the join burst now have
+        # to go!
+        accompanying = self.recent_joins[-self.join_ratelimiter.rate:]
+
+        if accompanying:
+            for member in accompanying:
+                await self.bounce(member, 'Users are joining too quickly')
+
+        # empty out the recent joins list
+        self.recent_joins = []
+
+        # now prevent anyone else from joining with a lockout
+        await self._lockdown()
 
     async def send_bounce_message(self, member: discord.Member):
         """Send a bounce message to a member."""
@@ -238,7 +332,7 @@ class Keeper:
         """
         self.log.debug('%d: gatekeeping! (created_at=%s)', member.id, member.created_at)
 
-        if self.ban_ratelimiter and self.ban_ratelimiter.is_rate_limited(member.id):
+        if self.unique_join_ratelimiter and self.unique_join_ratelimiter.is_rate_limited(member.id):
             # user is joining too fast!
             self.log.debug('%d: is joining too quickly, banning', member.id)
             await self.ban(member, 'Joining too quickly')
@@ -277,6 +371,19 @@ class Keeper:
         except Report as report:
             await handle_misconfiguration(report)
             return False
+
+        if self.join_ratelimiter and self.join_ratelimiter.is_rate_limited(True):
+            # users are joining too fast!
+            self.log.debug('users are joining too quickly')
+            await self._auto_lockdown(member)
+            return False
+
+        # prevent this list from growing too large
+        # TODO: we should just check if the join ratelimiter has expired and
+        #       empty the list if so
+        if len(self.recent_joins) >= self.join_ratelimiter.rate + 5:
+            self.recent_joins.pop(0)
+        self.recent_joins.append(member)
 
         self.log.debug('%d: passed all checks', member.id)
         return True

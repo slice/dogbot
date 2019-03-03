@@ -57,6 +57,9 @@ export default object({
     ban_threshold: defs.threshold,
     bannable_checks: defs.checks,
     checks: defs.checks,
+    auto_lockdown: object({
+      threshold: defs.threshold,
+    }).noUnknown(),
     bounce_message: string(),
     allowed_users: array(defs.user),
     broadcast_channel: defs.id,
