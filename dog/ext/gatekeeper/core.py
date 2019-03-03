@@ -9,17 +9,27 @@ class GatekeeperException(RuntimeError):
     """An exception thrown during Gatekeeper processes."""
 
 
+class CheckFailure(GatekeeperException):
+    """An exception thrown due to a check failing to pass."""
+
+    #: The name of the check that failed to pass.
+    check_name = None
+
+    #: The check function that failed to pass.
+    check = None
+
+
 class Report(GatekeeperException):
     """A Gatekeeper exception that immediately halts all processing and sends
     the specified text to the broadcasting channel.
     """
 
 
-class Bounce(GatekeeperException):
+class Bounce(CheckFailure):
     """A Gatekeeper exception that will prevent a user from joining a guild when raised."""
 
 
-class Ban(GatekeeperException):
+class Ban(CheckFailure):
     """A Gatekeeper exception that will ban a user from the guild when raised."""
 
 

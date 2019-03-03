@@ -6,9 +6,9 @@ import discord
 from lifesaver.utils.timing import Ratelimiter
 from dog.formatting import represent
 from . import checks
-from .core import Ban, Bounce, Report, create_embed
+from .core import CheckFailure, Ban, Bounce, Report, create_embed
 
-CHECKS = [getattr(checks, name) for name in checks.__all__]
+ALL_CHECKS = [getattr(checks, name) for name in checks.__all__]
 
 INCORRECTLY_CONFIGURED = """Gatekeeper was configured incorrectly!
 
@@ -167,20 +167,10 @@ class Keeper:
                 title=f'Bounced {represent(member)}', reason=reason)
             await self.report(embed=embed)
 
-    async def check(self, member: discord.Member):
-        """Check a member and bounce or ban them if necessary."""
-        self.log.debug('%d: gatekeeping! (created_at=%s)', member.id, member.created_at)
-        enabled_checks = self.config.get('checks', {})
-
-        if self.ban_ratelimiter and self.ban_ratelimiter.is_rate_limited(member.id):
-            # user is joining too fast!
-            self.log.debug('%d: is joining too fast, banning', member.id)
-            await self.ban(member, 'Joining too quickly')
-            return False
-
-        for check in CHECKS:
+    async def _perform_checks(self, member: discord.Member, checks):
+        for check in ALL_CHECKS:
             check_name = check.__name__
-            check_options = enabled_checks.get(check_name)
+            check_options = checks.get(check_name)
 
             # check isn't present in the config
             if check_options is None:
@@ -198,20 +188,55 @@ class Keeper:
 
             try:
                 await check(member, check_options)
-            except Ban as ban:
-                self.log.debug('%d: banning (err=%r)', member.id, ban)
-                await self.ban(member, str(ban))
-                return False
-            except Bounce as bounce:
-                self.log.debug('%d: failed to pass "%s" (err=%r)', member.id, check_name, bounce)
-                await self.bounce(member, str(bounce))
-                return False
-            except Report as report:
-                # something went wrong
-                self.log.debug('error in config: %r', report)
-                await self.report(str(report))
-                await self.bounce(member, INCORRECTLY_CONFIGURED)
-                return False
+            except CheckFailure as error:
+                # inject check details into the error
+                error.check_name = check_name
+                error.check = check
+                raise error from None
+
+    async def check(self, member: discord.Member):
+        """Check a member and bounce or ban them if necessary."""
+        self.log.debug('%d: gatekeeping! (created_at=%s)', member.id, member.created_at)
+
+        if self.ban_ratelimiter and self.ban_ratelimiter.is_rate_limited(member.id):
+            # user is joining too fast!
+            self.log.debug('%d: is joining too fast, banning', member.id)
+            await self.ban(member, 'Joining too quickly')
+            return False
+
+        async def handle_misconfiguration(report):
+            self.log.debug('error in config: %r', report)
+            await self.report(str(report))
+            await self.bounce(member, INCORRECTLY_CONFIGURED)
+
+        # perform bannable checks
+        try:
+            bannable_checks = self.config.get('bannable_checks', {})
+            await self._perform_checks(member, bannable_checks)
+        except CheckFailure as error:
+            self.log.debug('%d: banning, failed to pass bannable checks (failed "%s", err=%r)',
+                           member.id, error.check_name, error)
+            await self.ban(member, str(error))
+            return False
+        except Report as report:
+            await handle_misconfiguration(report)
+            return False
+
+        # perform regular checks
+        try:
+            enabled_checks = self.config.get('checks', {})
+            await self._perform_checks(member, enabled_checks)
+        except Ban as ban:
+            self.log.debug('%d: banning (err=%r)', member.id, ban)
+            await self.ban(member, str(ban))
+            return False
+        except Bounce as bounce:
+            self.log.debug('%d: failed to pass "%s" (err=%r)', member.id, bounce.check_name, bounce)
+            await self.bounce(member, str(bounce))
+            return False
+        except Report as report:
+            await handle_misconfiguration(report)
+            return False
 
         self.log.debug('%d: passed all checks', member.id)
         return True

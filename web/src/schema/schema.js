@@ -12,6 +12,11 @@ const defs = {
   // a discord id (snowflake)
   id: number().min(1),
 
+  // a basic gatekeeper check
+  check: object({
+    enabled: bool().required(),
+  }).noUnknown(),
+
   // user-specified thresholds
   threshold: string().matches(
     /\d+\/\d+/,
@@ -25,35 +30,33 @@ const defs = {
       : defs.id.label('user ID')
   ),
 
-  // a basic gatekeeper check
-  check: object({
-    enabled: bool().required(),
-  }).noUnknown(),
-
   // a shortlink name
   shortlinks: ['mastodon', 'pep', 'keybase', 'osu'],
 }
+
+defs.checks = object({
+  block_default_avatars: defs.check,
+  block_bots: defs.check,
+  block_all: defs.check,
+  minimum_creation_time: defs.check.shape({
+    minimum_age: number()
+      .min(0)
+      .required(),
+  }),
+  username_regex: defs.check.shape({
+    regex: string()
+      .min(0)
+      .required(),
+  }),
+}).noUnknown()
 
 export default object({
   editors: array(defs.user),
   gatekeeper: object({
     enabled: bool(),
     ban_threshold: defs.threshold,
-    checks: object({
-      block_default_avatars: defs.check,
-      block_bots: defs.check,
-      block_all: defs.check,
-      minimum_creation_time: defs.check.shape({
-        minimum_age: number()
-          .min(0)
-          .required(),
-      }),
-      username_regex: defs.check.shape({
-        regex: string()
-          .min(0)
-          .required(),
-      }),
-    }).noUnknown(),
+    bannable_checks: defs.checks,
+    checks: defs.checks,
     bounce_message: string(),
     allowed_users: array(defs.user),
     broadcast_channel: defs.id,
