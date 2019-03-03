@@ -17,27 +17,30 @@ I'm not sure what to do, so just to be safe, I'm going to prevent this user from
 Threshold = collections.namedtuple('Threshold', 'rate per')
 
 
-def parse_threshold(threshold: str) -> Threshold:
+def parse_threshold(threshold: typing.Optional[str]) -> Threshold:
     """Parses a threshold specifier string into a Threshold namedtuple
     containing ``rate`` and ``per`` fields.
 
     Raises
     ------
     TypeError
-        If the threshold specifier string was invalid.
+        If the threshold specifier string was invalid or None.
 
     Example
     -------
     >>> parse_threshold("5/10")
     Threshold(rate=5, per=10)
     """
+    if threshold is None:
+        raise TypeError('Threshold was None')
+
     try:
         rate, per = threshold.split('/')
         if '' in (rate, per):
             raise TypeError('Invalid threshold syntax')
         return Threshold(rate=int(rate), per=float(per))
     except ValueError:
-        return TypeError('Invalid threshold syntax')
+        raise TypeError('Invalid threshold syntax')
 
 
 class Keeper:
