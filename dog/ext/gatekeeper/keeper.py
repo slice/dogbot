@@ -103,9 +103,7 @@ class Keeper:
         return self.config.get('bounce_message')
 
     def _make_ratelimiter(self, threshold: str) -> Ratelimiter:
-        """Set up a Ratelimiter attribute on this Keeper from a threshold
-        specified in the config with a special syntax ("rate/per").
-        """
+        """Create a Ratelimiter object from a threshold specifier string."""
         threshold = parse_threshold(threshold)
         return Ratelimiter(threshold.rate, threshold.per)
 
@@ -174,7 +172,7 @@ class Keeper:
                 'block_all': {'enabled': True}
             }
 
-        # TODO: have this be reported in a separate channel, with a ping!
+        # TODO: have this be reported in a separate channel, with a mod ping!
         await self.report(
             'Users are joining too quickly. `block_all` has automatically been enabled.')
 
@@ -184,8 +182,7 @@ class Keeper:
         # ratelimiter to go off. now we have to remove this user...
         await self.bounce(triggering_member, 'Users are joining too quickly')
 
-        # ...and the rest of the users who were part of the join burst now have
-        # to go!
+        # ...and the rest of the users who were part of the join burst!
         accompanying = self.recent_joins[-self.join_ratelimiter.rate:]
 
         if accompanying:
@@ -195,7 +192,7 @@ class Keeper:
         # empty out the recent joins list
         self.recent_joins = []
 
-        # now prevent anyone else from joining with a lockout
+        # now prevent anyone else from joining by enabling block_all
         await self._lockdown()
 
     async def send_bounce_message(self, member: discord.Member):
