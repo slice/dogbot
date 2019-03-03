@@ -110,6 +110,25 @@ class Keeper:
         except discord.HTTPException as error:
             self.log.warning('unable to send message to %r: %r', channel, error)
 
+    async def _ban_reverse_prompt(self, message, banned):
+        unban_emoji = self.bot.emoji('gatekeeper.unban')
+        await message.add_reaction(unban_emoji)
+
+        def check(reaction, member):
+            if not isinstance(member, discord.Member) or member.bot:
+                return False
+            can_ban = member.guild_permissions.ban_members
+            return reaction.message.id == message.id and reaction.emoji == unban_emoji and can_ban
+
+        _reaction, user = await self.bot.wait_for('reaction_add', check=check)
+
+        try:
+            await banned.unban(reason=f'Gatekeeper: Ban was reversed by {represent(user)}')
+        except discord.HTTPException as error:
+            await self.report(f'Cannot reverse the ban of {represent(banned)}: `{error}`')
+        else:
+            await self.report(f'The ban of {represent(banned)} was reversed by {represent(user)}.')
+
     async def ban(self, member: discord.Member, reason: str):
         """Bans a user from the guild.
 
@@ -125,7 +144,9 @@ class Keeper:
             embed = create_embed(
                 member, color=discord.Color.purple(),
                 title=f'Banned {represent(member)}', reason=reason)
-            await self.report(embed=embed)
+            message = await self.report(embed=embed)
+            # in case mods wants to reverse the ban, present a reaction prompt
+            self.bot.loop.create_task(self._ban_reverse_prompt(message, member))
 
     async def bounce(self, member: discord.Member, reason: str):
         """Kick ("bounce") a user from the guild.
