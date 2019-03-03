@@ -32,7 +32,7 @@ def parse_threshold(threshold: typing.Optional[str]) -> Threshold:
     Threshold(rate=5, per=10)
     """
     if threshold is None:
-        raise TypeError('Threshold was None')
+        raise TypeError('Threshold specifier string cannot be None')
 
     try:
         rate, per = threshold.split('/')
