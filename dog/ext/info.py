@@ -13,7 +13,7 @@ def date(date) -> str:
 
 
 class Info(Cog):
-    """A cog that provides information about various entidties like guilds or members."""
+    """A cog that provides information about various entities like guilds or members."""
 
     @command(aliases=['about'])
     async def info(self, ctx: Context):

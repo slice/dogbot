@@ -135,6 +135,7 @@ class Currency(Cog):
         super().__init__(bot)
         self.manager = CurrencyManager('currency.json', bot=bot)
 
+    @Cog.listener()
     async def on_message(self, msg: discord.Message):
         if not msg.guild or msg.author.bot or self.bot.is_blacklisted(msg.author):
             return

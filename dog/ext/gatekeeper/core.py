@@ -5,6 +5,7 @@ import datetime
 import discord
 from lifesaver.utils import human_delta
 
+
 class GatekeeperException(RuntimeError):
     """An exception thrown during Gatekeeper processes."""
 

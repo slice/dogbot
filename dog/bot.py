@@ -92,7 +92,7 @@ class Dogbot(Bot):
         return False
 
     async def can_run(self, ctx, **kwargs):
-        cog_name = type(ctx.command.instance).__name__
+        cog_name = type(ctx.command.cog).__name__
         if ctx.guild and self.cog_is_disabled(ctx.guild, cog_name):
             return False
 

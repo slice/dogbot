@@ -29,6 +29,7 @@ class Mod(Cog):
         else:
             await ctx.send(f'\N{OK HAND SIGN} Banned {represent(target)}.')
 
+    @Cog.listener()
     async def on_message(self, message):
         if not message.guild or message.author.bot:
             return

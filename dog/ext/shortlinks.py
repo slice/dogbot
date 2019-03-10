@@ -1,7 +1,6 @@
 import re
 
 import discord
-
 from lifesaver.bot import Cog
 
 STOP_WORDS = {
@@ -80,9 +79,7 @@ SHORTLINKS = {
 
 
 class Shortlinks(Cog):
-    def __init__(self, bot, *args, **kwargs):
-        super().__init__(bot, *args, **kwargs)
-
+    @Cog.listener()
     async def on_message(self, msg):
         if not msg.guild or msg.author.bot:
             return

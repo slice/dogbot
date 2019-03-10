@@ -20,6 +20,7 @@ class Utility(Cog):
         super().__init__(bot)
         self.gateway_lag = defaultdict(list)
 
+    @Cog.listener()
     async def on_message(self, message: discord.Message):
         if not message.guild:
             return

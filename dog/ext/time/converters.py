@@ -6,7 +6,7 @@ from discord.ext import commands
 
 class Timezone(commands.Converter):
     async def convert(self, ctx, argument):
-        cog = ctx.command.instance
+        cog = ctx.command.cog
 
         try:
             member = await commands.MemberConverter().convert(ctx, argument)

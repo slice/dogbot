@@ -70,6 +70,7 @@ class Gatekeeper(Cog):
         self.keepers[guild.id] = keeper
         return keeper
 
+    @Cog.listener()
     async def on_guild_config_edit(self, guild: discord.Guild, config):
         if guild.id not in self.keepers:
             log.debug('received config edit for keeperless guild %d', guild.id)
@@ -92,6 +93,7 @@ class Gatekeeper(Cog):
             }, buffer)
             await self.bot.guild_configs.write(guild, buffer.getvalue())
 
+    @Cog.listener()
     async def on_member_join(self, member: discord.Member):
         await self.bot.wait_until_ready()
 
