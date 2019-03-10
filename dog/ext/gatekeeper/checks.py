@@ -86,9 +86,11 @@ def block_all(_member: discord.Member):
 
 
 @gatekeeper_check
-def username_regex(member: discord.Member, *, regex: str):
+def username_regex(member: discord.Member, *, regex: str, case_sensitive: bool = True):
+    flags = 0 if case_sensitive else re.I
+
     try:
-        if re.search(regex, member.name):
+        if re.search(regex, member.name, flags):
             raise Bounce('Username matched regex')
     except re.error as err:
         raise Report(f"Invalid regex. (`{err}`)")

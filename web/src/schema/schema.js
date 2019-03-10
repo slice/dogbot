@@ -47,6 +47,7 @@ defs.checks = object({
     regex: string()
       .min(0)
       .required(),
+    case_sensitive: bool(),
   }),
 }).noUnknown()
 
