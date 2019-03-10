@@ -75,6 +75,12 @@ class Utility(Cog):
         try:
             async with self.session.get('http://shibe.online/api/shibes?count=1&urls=true') as resp:
                 data = await resp.json()
+
+            if ctx.can_send_embeds:
+                embed = discord.Embed()
+                embed.set_image(url=data[0])
+                await ctx.send(embed=embed)
+            else:
                 await ctx.send(data[0])
         except aiohttp.ClientError:
             await ctx.send('Failed to grab a shibe. \N{DOG FACE}')
