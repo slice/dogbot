@@ -5,38 +5,42 @@ import datetime
 import inspect
 import functools
 import re
-import typing
+from typing import Dict, List, Any
 
 import discord
 
 from .core import Bounce, Report
 
 
-CheckOptions = typing.Dict[str, typing.Any]
+CheckOptions = Dict[str, Any]
 
 
-def convert_options(check, parameters, options: CheckOptions) -> typing.List[typing.Any]:
-    params = []
+def convert_options(check, parameters, options: CheckOptions) -> List[Any]:
+    converted = {}
 
-    for name, param in parameters.items():
+    for index, (name, param) in enumerate(parameters.items()):
         # do not attempt to convert the first parameter
-        if name == 'member':
+        if index == 0:
             continue
 
-        value = options.get(name)
-        if value is None:
+        try:
+            value = options[name]
+        except KeyError:
+            if param.default is not inspect.Parameter.empty:
+                # this parameter is optional, continue
+                continue
             raise Report(f'`{check.__name__}` is missing the `{name}` option.')
 
         annotation = param.annotation
         if annotation is inspect.Parameter.empty or isinstance(value, annotation):
             # just add the param if we don't need to convert or if the value is
             # already the desired type
-            params.append(value)
+            converted[name] = value
         else:
             # convert the value by calling the annotation
-            params.append(annotation(value))
+            converted[name] = annotation(value)
 
-    return params
+    return converted
 
 
 def gatekeeper_check(func):
@@ -51,7 +55,7 @@ def gatekeeper_check(func):
             await discord.utils.maybe_coroutine(func, member)
         else:
             converted_options = convert_options(func, parameters, options)
-            await discord.utils.maybe_coroutine(func, member, *converted_options)
+            await discord.utils.maybe_coroutine(func, member, **converted_options)
 
     return wrapped
 
@@ -69,7 +73,7 @@ def block_bots(member: discord.Member):
 
 
 @gatekeeper_check
-def minimum_creation_time(member: discord.Member, minimum_age: int):
+def minimum_creation_time(member: discord.Member, *, minimum_age: int):
     age = (datetime.datetime.utcnow() - member.created_at).total_seconds()
 
     if age < minimum_age:
@@ -82,7 +86,7 @@ def block_all(_member: discord.Member):
 
 
 @gatekeeper_check
-def username_regex(member: discord.Member, regex: str):
+def username_regex(member: discord.Member, *, regex: str):
     try:
         if re.search(regex, member.name):
             raise Bounce('Username matched regex')
