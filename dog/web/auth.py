@@ -1,4 +1,4 @@
-import random
+import secrets
 from urllib.parse import quote_plus
 from typing import Tuple
 
@@ -11,7 +11,7 @@ API_BASE = 'https://discordapp.com/api/v6'
 
 def redirect_url() -> Tuple[str, str]:
     """Generate a redirect URL, returning the state and URL."""
-    state = hex(random.getrandbits(256))[2:]
+    state = secrets.token_hex(64)
 
     client_id = g.bot.config.oauth['client_id']
     redirect_uri = g.bot.config.oauth['redirect_uri']
