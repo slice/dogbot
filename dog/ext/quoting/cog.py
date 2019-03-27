@@ -142,10 +142,7 @@ class Quoting(Cog):
         quote_content = '\n'.join(strings)
 
         if len(quote_content) > 2048:
-            over_limit = pluralize(
-                with_quantity=True,
-                character=len(quote_content) - 2048
-            )
+            over_limit = pluralize(character=len(quote_content) - 2048)
 
             if not await ctx.confirm(
                 'Quote is quite large...',

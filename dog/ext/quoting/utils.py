@@ -14,6 +14,6 @@ def stringify_message(message: discord.Message) -> str:
         content += f' {" ".join(urls)}'
 
     if message.embeds:
-        content += f' ({pluralize(with_quantity=True, embed=len(message.embeds))})'
+        content += f' ({pluralize(embed=len(message.embeds))})'
 
     return f'<{message.author.name}> {content}'
