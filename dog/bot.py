@@ -41,7 +41,6 @@ class Dogbot(Bot):
             help_command=HelpCommand(dm_help=cfg.dm_help), **kwargs)
 
         self.session = aiohttp.ClientSession(loop=self.loop)
-        self.load_all()
         self.blacklisted_storage = AsyncJSONStorage('blacklisted_users.json', loop=self.loop)
         self.guild_configs = GuildConfigManager(self)
 
