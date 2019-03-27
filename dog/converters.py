@@ -1,5 +1,5 @@
 import re
-from typing import Optional, Tuple, Union
+from typing import Optional
 
 import discord
 from discord import PartialEmoji
@@ -8,78 +8,112 @@ from discord.ext.commands import Converter, MemberConverter
 from lifesaver.bot import Context
 from lifesaver.utils import history_reducer
 
-EMOJI_REGEX = re.compile(r'<(a?):([a-zA-Z0-9\_]+):([0-9]+)>$')
-EMOJI_URL_REGEX = re.compile(r'https://cdn\.discordapp\.com/emojis/([0-9]+).(png|gif)')
+EMOJI_REGEX = re.compile(r"""
+    # A Discord emoji, as represented in raw message content.
+
+    <
+        # Animation flag
+        (?P<animated>a?)
+        :
+
+        # Emoji name
+        (?P<name>\w+)
+        :
+
+        # Emoji ID
+        (?P<id>\d+)
+    >
+""", re.VERBOSE)
+
+EMOJI_URL_REGEX = re.compile(r"""
+    # A Discord emoji URL.
+
+    # The standard part of the URL
+    https?://
+    cdn\.discordapp\.com
+    /emojis/
+
+    # Emoji ID
+    (?P<id>\d+)
+
+    # File extension
+    \.
+    (?P<extension>png|gif)
+""", re.VERBOSE)
 
 
 class EmojiStealer(Converter):
-    async def convert(self, ctx: Context, argument: str) -> Tuple[int, Union[None, str]]:
-        # emoji id was provided
-        if argument.isdigit():
-            return PartialEmoji(id=int(argument), name=None, animated=False)
+    """A versatile converter intended to convert into :class:`discord.PartialEmoji`.
 
-        # convert from a url grabbed from "copy link" context menu item when right-clicking on ane moji
-        url_match = EMOJI_URL_REGEX.match(argument)
-        if url_match:
-            return PartialEmoji(
-                id=int(url_match.group(1)),
-                name=None,
-                animated=url_match.group(2) == 'gif'
-            )
+    The argument can be an emoji (as used normally), an emoji ID, or an emoji
+    URL. If the string "recent" is passed, then the converter will scan for
+    recently used custom emoji in the current channel to resolve. If there are
+    multiple, the user is interactively prompted for selection.
+    """
 
-        # convert an actual emoji
-        try:
-            await commands.PartialEmojiConverter().convert(ctx, argument)
-        except commands.BadArgument:
-            pass
-
-        def _reducer(msg: discord.Message) -> Optional[PartialEmoji]:
-            # search the message for custom emoji
+    @staticmethod
+    async def recent(ctx: Context) -> PartialEmoji:
+        def reducer(msg: discord.Message) -> Optional[PartialEmoji]:
             match = EMOJI_REGEX.search(msg.content)
 
             if not match:
                 return None
 
-            emoji_id = int(match.group(3))
+            emoji_id = int(match.group('id'))
 
-            # check if the emoji is in the guild itself
+            # If the emoji used is already in the guild, ignore.
             if emoji_id in {emoji.id for emoji in ctx.guild.emojis}:
                 return None
 
             return PartialEmoji(
-                animated=bool(match.group(1)),
-                name=match.group(2),
-                id=emoji_id
+                animated=bool(match.group('animated')),
+                name=match.group('name'),
+                id=emoji_id,
             )
 
-        # recently used custom emoji?
+        results = await history_reducer(ctx, reducer, ignore_duplicates=True, limit=10)
+
+        if not results:
+            raise commands.BadArgument('No stealable custom emoji were found.')
+
+        if len(results) > 1:
+            result = await ctx.pick_from_list(results)
+        else:
+            result = results[0]
+
+        return result
+
+    async def convert(self, ctx: Context, argument: str) -> PartialEmoji:
+        # Convert an emoji ID.
+        if argument.isdigit():
+            return PartialEmoji(id=int(argument), name=None, animated=False)
+
+        # Convert from an emoji URL.
+        url_match = EMOJI_URL_REGEX.match(argument)
+        if url_match:
+            return PartialEmoji(
+                id=int(url_match.group('id')),
+                name=None,
+                animated=url_match.group('extension') == 'png',
+            )
+
+        # Convert an actual emoji.
+        try:
+            return await commands.PartialEmojiConverter().convert(ctx, argument)
+        except commands.BadArgument:
+            pass
+
+        # Scan recently used custom emoji.
         if argument == 'recent':
-            custom_emoji = await history_reducer(
-                ctx, _reducer, ignore_duplicates=True, limit=50
-            )
-
-            if not custom_emoji:
-                raise commands.BadArgument(
-                    "No recently used custom emoji (that aren't already in this server) were found."
-                )
-
-            if len(custom_emoji) > 1:
-                # more than one custom emoji, pick from list
-                to_steal = await ctx.pick_from_list(custom_emoji)
-            else:
-                # just one emoji, unwrap the list
-                to_steal = custom_emoji[0]
-
-            return to_steal
+            return await self.recent(ctx)
 
         raise commands.BadArgument(
-            'No emoji provided. Provide an emoji ID, emoji, or "recent" to scan the channel for '
-            'recently used custom emoji.'
-        )
+            'Invalid emoji. You can use an actual emoji or an emoji ID or URL. '
+            'You can also specify `recent` to select a recently used emoji.')
 
 
-class UserIDs(Converter):
-    """Converts user mentions or IDs to ID objects."""
+class UserID(Converter):
+    """A converter that converts members to IDs."""
 
     async def convert(self, ctx: Context, argument: str):
         try:
@@ -89,44 +123,45 @@ class UserIDs(Converter):
             pass
 
         if not argument.isdigit():
-            raise commands.BadArgument('Invalid ID.')
+            raise commands.BadArgument('Invalid user ID.')
 
         return int(argument)
 
 
 class HardMember(Converter):
-    """A MemberConverter that falls back to a ``get_user_info`` call."""
+    """A MemberConverter that falls back to fetching the user's information
+    using the Discord API.
+
+    The fallback will only be used if an ID was passed.
+    """
 
     async def convert(self, ctx: Context, argument: str):
         try:
-            member = await MemberConverter().convert(ctx, argument)
-            return member
+            return await MemberConverter().convert(ctx, argument)
         except commands.BadArgument:
             pass
 
         if not argument.isdigit():
-            raise commands.BadArgument('Member not found. Try specifying an ID.')
-
-        argument_as_id = int(argument)
+            raise commands.BadArgument('Member not found. Try specifying a user ID.')
 
         try:
-            user = await ctx.bot.get_user_info(argument_as_id)
-            return user
+            return await ctx.bot.fetch_user(int(argument))
         except discord.NotFound:
             raise commands.BadArgument('User not found.')
-        except discord.HTTPException as exception:
-            raise commands.BadArgument(f'Failed to get user information: `{exception}`')
+        except discord.HTTPException as error:
+            raise commands.BadArgument(f'Failed to fetch user information: `{error}`')
 
 
 class SoftMember(Converter):
-    """A MemberConverter that falls back to a :class:`discord.Object` when an ID is provided and they weren't found."""
+    """A MemberConverter that falls back to a :class:`discord.Object` of the
+    ID when provided.
+    """
 
     async def convert(self, ctx: Context, argument: str):
         try:
-            member = await MemberConverter().convert(ctx, argument)
-            return member
+            return await MemberConverter().convert(ctx, argument)
         except commands.BadArgument:
             if argument.isdigit():
-                return discord.Object(id=int(argument))
-            else:
-                raise commands.BadArgument('Member not found')
+                return discord.Object(int(argument))
+
+            raise commands.BadArgument('Member not found. Try specifying a user ID.')

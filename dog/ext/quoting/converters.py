@@ -97,7 +97,7 @@ class Messages(commands.Converter):
                 rev = reversed(history[1:])
                 return list(rev)
 
-            message = await ctx.get_message(spec.id)
+            message = await ctx.fetch_message(spec.id)
 
             if spec.range:
                 # relative to the specified message id, get the message and

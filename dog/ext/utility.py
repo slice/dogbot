@@ -7,14 +7,14 @@ from discord.ext import commands
 from lifesaver.bot import Cog, Context, command
 from lifesaver.utils import history_reducer
 
-from dog.converters import EmojiStealer, UserIDs
+from dog.converters import EmojiStealer, UserID
 
 EMOJI_NAME_REGEX = re.compile(r'<a?(:.+:)\d+>')
 
 
 class Utility(Cog):
     @command(aliases=['ginv', 'invite'])
-    async def inv(self, ctx: Context, *ids: UserIDs):
+    async def inv(self, ctx: Context, *ids: UserID):
         """Generates bot invites."""
         if not ids:
             ids = (self.bot.user.id,)
@@ -76,20 +76,21 @@ class Utility(Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(manage_emojis=True, read_message_history=True)
     @commands.has_permissions(manage_emojis=True)
-    async def steal_emoji(self, ctx: Context, emoji: EmojiStealer, *, name=None):
+    async def steal_emoji(self, ctx: Context, emoji: EmojiStealer, name=None):
         """Steals an emoji."""
         # the converter can return none when cancelled.
         if not emoji:
             return
 
-        emoji_url = f'https://cdn.discordapp.com/emojis/{emoji.id}.png'
+        extension = 'gif' if emoji.animated else 'png'
+        emoji_url = f'https://cdn.discordapp.com/emojis/{emoji.id}.{extension}'
 
         if not emoji.name and not name:
-            await ctx.send('No name was provided nor found.')
+            await ctx.send('The name of the emoji could not be resolved. Please specify one.')
             return
 
         name = emoji.name or name.strip(':')
-        msg = await ctx.send('Downloading...')
+        msg = await ctx.send(ctx.emoji('loading'))
 
         try:
             async with ctx.bot.session.get(emoji_url) as resp:
