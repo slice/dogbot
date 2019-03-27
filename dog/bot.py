@@ -8,10 +8,10 @@ from hypercorn.asyncio.run import Server
 from lifesaver.bot import Bot
 from lifesaver.bot.storage import AsyncJSONStorage
 
-from dog.context import Context
-from dog.guild_config import GuildConfigManager
 from dog.web.server import app as webapp
-from dog.helpformatter import HelpFormatter
+from .context import Context
+from .guild_config import GuildConfigManager
+from .help import HelpCommand
 
 log = logging.getLogger(__name__)
 
@@ -35,8 +35,11 @@ async def _boot_hypercorn(app, config, *, loop):
 
 
 class Dogbot(Bot):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, context_cls=Context, formatter=HelpFormatter(), **kwargs)
+    def __init__(self, cfg, **kwargs):
+        super().__init__(
+            cfg, context_cls=Context,
+            help_command=HelpCommand(dm_help=cfg.dm_help), **kwargs)
+
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.load_all()
         self.blacklisted_storage = AsyncJSONStorage('blacklisted_users.json', loop=self.loop)
