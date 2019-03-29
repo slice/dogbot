@@ -12,7 +12,6 @@ from lifesaver.utils import clean_mentions
 from lifesaver.utils.timing import Timer
 from geopy import exc as geopy_errors
 
-from dog.context import Context
 from .converters import hour_minute, Timezone
 from .geocoder import Geocoder
 from .map import Map
@@ -58,7 +57,7 @@ class Time(Cog):
         return time.strftime(time_format if hm else ('%B %d, %Y  ' + time_format))
 
     @command(aliases=['st'])
-    async def sleepytime(self, ctx: Context, *, awaken_time: hour_minute):
+    async def sleepytime(self, ctx, *, awaken_time: hour_minute):
         """Calculates the time you should go to sleep at night."""
 
         cycle_length = datetime.timedelta(seconds=90 * 60)
@@ -77,7 +76,7 @@ class Time(Cog):
         )
 
     @group(invoke_without_command=True, aliases=['t'])
-    async def time(self, ctx: Context, *, who: discord.Member = None):
+    async def time(self, ctx, *, who: discord.Member = None):
         """Views the time for another user."""
         who = who or ctx.author
 
@@ -103,7 +102,7 @@ class Time(Cog):
         await ctx.send(f'{display_name}: {formatted_time}')
 
     @time.command(aliases=['sim'])
-    async def diff(self, ctx: Context, timezone: Timezone, time: hour_minute = None):
+    async def diff(self, ctx, timezone: Timezone, time: hour_minute = None):
         """View what time it is in another timezone compared to yours."""
         (source, other_tz) = timezone
         if not self.timezones.get(ctx.author.id):
@@ -136,7 +135,7 @@ class Time(Cog):
 
     @time.command(typing=True, aliases=['map', 'chart'])
     @cooldown(1, 5, BucketType.guild)
-    async def table(self, ctx: Context):
+    async def table(self, ctx):
         """Views a timezone chart."""
 
         twelve_hour = False
@@ -169,7 +168,7 @@ class Time(Cog):
         map.close()
 
     @time.command(name='reset')
-    async def time_reset(self, ctx: Context):
+    async def time_reset(self, ctx):
         """Resets your timezone."""
         if await ctx.confirm(title='Are you sure?', message='Your timezone will be removed.'):
             try:
@@ -182,7 +181,7 @@ class Time(Cog):
 
     @time.command(name='set', typing=True)
     @cooldown(1, 3, BucketType.user)
-    async def time_set(self, ctx: Context, *, location: commands.clean_content):
+    async def time_set(self, ctx, *, location: commands.clean_content):
         """Sets your current timezone from location."""
 
         timezone = None
