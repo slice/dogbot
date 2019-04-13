@@ -58,7 +58,7 @@ class Map:
             board.paste(avatar, (0, 0), mask=avatar)
             self.image.paste(board, box=box, mask=board)
 
-        avatar_url = member.avatar_url_as(format='png', size=size)
+        avatar_url = str(member.avatar_url_as(format='png', size=size))
         filename = urlparse(avatar_url).path.split('/')[-1]
         cached_file = self.cache / filename
 

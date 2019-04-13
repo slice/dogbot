@@ -62,7 +62,7 @@ def gatekeeper_check(func):
 
 @gatekeeper_check
 def block_default_avatars(member: discord.Member):
-    if member.default_avatar_url == member.avatar_url:
+    if member.avatar is None:
         raise Bounce('Has no avatar')
 
 
