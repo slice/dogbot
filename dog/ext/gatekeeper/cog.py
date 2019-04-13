@@ -49,7 +49,7 @@ class Gatekeeper(Cog):
 
     def gatekeeper_config(self, guild: discord.Guild):
         """Return Gatekeeper gatekeeper_config for a guild."""
-        config = self.bot.guild_configs.get(guild) or {}
+        config = self.bot.guild_configs.get(guild, {})
         return config.get('gatekeeper', {})
 
     def keeper(self, guild: discord.Guild) -> Keeper:
@@ -81,7 +81,7 @@ class Gatekeeper(Cog):
 
     @contextlib.asynccontextmanager
     async def edit_config(self, guild: discord.Guild):
-        config = self.bot.guild_configs.get(guild) or {}
+        config = self.bot.guild_configs.get(guild, {})
         copied_gatekeeper_config = copy.deepcopy(config['gatekeeper'])
         yield copied_gatekeeper_config
 

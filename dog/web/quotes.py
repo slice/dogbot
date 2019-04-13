@@ -18,7 +18,7 @@ def get_quotes(guild):
 
 
 def guild_exposes_quotes(guild) -> bool:
-    config = g.bot.guild_configs.get(guild) or {}
+    config = g.bot.guild_configs.get(guild, {})
     return config.get('publish_quotes', False)
 
 

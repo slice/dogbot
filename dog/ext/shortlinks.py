@@ -84,7 +84,7 @@ class Shortlinks(Cog):
         if not msg.guild or msg.author.bot:
             return
 
-        config = self.bot.guild_configs.get(msg.guild) or {}
+        config = self.bot.guild_configs.get(msg.guild, {})
         shortlinks_config = config.get('shortlinks', {})
         if not shortlinks_config.get('enabled', False):
             return

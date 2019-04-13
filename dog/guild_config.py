@@ -1,37 +1,55 @@
+__all__ = ['GuildConfigManager']
+
 import logging
+from typing import Optional, Union, TypeVar
 
 import discord
-from lifesaver.bot.storage import AsyncJSONStorage
 from ruamel.yaml import YAML, YAMLError
+from lifesaver.bot.storage import AsyncJSONStorage
 
+T = TypeVar('T')
+GuildOrGuildID = Union[discord.Guild, int]
 log = logging.getLogger(__name__)
 
 
-def into_str_id(obj) -> str:
+def into_str_id(entity: Union[discord.Guild, int]) -> str:
     """Ensures that an object is a string of an ID."""
-    if isinstance(obj, discord.Guild):
-        return str(obj.id)  # unwrap ID from guild object
-    return str(obj)  # just the ID was passed, probably.
+    if isinstance(entity, discord.Guild):
+        return str(entity.id)
+    return str(entity)
 
 
 class GuildConfigManager:
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
         self.yaml = YAML()
         self.persistent = AsyncJSONStorage('guild_configs.json', loop=bot.loop)
         self.parsed_cache = {}
 
-    def can_edit(self, user: discord.User, guild, *, with_config=None) -> bool:
+    def resolve_guild(self, guild_or_id: GuildOrGuildID) -> Optional[discord.Guild]:
+        if isinstance(guild_or_id, int):
+            guild = self.bot.get_guild(guild_or_id)
+            return guild
+        return guild_or_id
+
+    def can_edit(self, user: discord.User, guild: GuildOrGuildID, *, with_config: dict = None) -> bool:
         """Return whether a user can edit a guild's config.
 
-        This function also accepts a ``with_config`` parameter, which will be
-        used instead of the guild's current config. This is useful if you want
-        to test whether a certain config will lock an editor out.
+        Parameters
+        ----------
+        user
+            The user to check.
+        guild
+            A :class:`discord.Guild` object or an ID of a guild to use the
+            configuration of.
+        with_config
+            The configuration to use instead of the guild's configuration. This
+            is useful for testing whether a specific config can lock a user
+            out or not.
         """
-        if isinstance(guild, int):
-            guild = self.bot.get_guild(guild)
-            if not guild:
-                return False
+        guild = self.resolve_guild(guild)
+        if not guild:
+            return False
 
         # owners can always edit the guild's configuration
         if guild.owner == user:
@@ -40,70 +58,91 @@ class GuildConfigManager:
         config = with_config or self.get(guild)
         member = guild.get_member(user.id)
 
-        # special exception:
-        #
-        # if there is no config for this guild, let people who can ban edit the
-        # config. this is useful for quicker setup.
+        # if there's no config, let people who can ban members edit the config.
+        # this is useful for expediting setup.
         if config is None:
-            if member is not None and member.guild_permissions.ban_members:
-                return True
-            return False
+            return member is not None and member.guild_permissions.ban_members
 
         editors = config.get('editors', [])
 
+        # a list of "user targets" to check against for this specific user
+        # (the usual code path)
         if isinstance(editors, list):
-            is_allowed = any([
-                # name#discriminator in editors
-                str(user) in editors,
+            return (
+                # name#discriminator
+                str(user) in editors
 
-                # user id in editors
-                user.id in editors,
+                # user id
+                or user.id in editors
 
-                # role id in editors
-                member is not None and any(role.id in editors for role in member.roles),
-            ])
+                # role id
+                or (member is not None and any(role.id in editors for role in member.roles))
+            )
 
-            return is_allowed
-
+        # a singular id
         if isinstance(editors, int):
             return user.id == editors
 
         return False
 
-    async def write(self, guild, config: str):
+    async def write(self, guild: GuildOrGuildID, config: str) -> None:
+        """Write the configuration of a guild.
+
+        This will dispatch ``guild_config_edit``.
+
+        Parameters
+        ----------
+        guild
+            A :class:`discord.Guild` object or an ID of a guild to write the
+            configuration to.
+        config
+            The raw configuration text in YAML.
+        """
         await self.persistent.put(into_str_id(guild), config)
 
-        if not isinstance(guild, discord.Guild):
-            guild = self.bot.get_guild(guild)
+        guild = self.resolve_guild(guild)
 
         if guild is not None:
             parsed_config = self.get(guild)
             log.debug('dispatching guild_config_edit for %d (%r)', guild.id, parsed_config)
             self.bot.dispatch('guild_config_edit', guild, parsed_config)
 
-    def get(self, guild, *, yaml: bool = False):
-        config = self.persistent.get(into_str_id(guild))
-        if config is None:
-            return None
+    def get(self, guild: GuildOrGuildID, default: T = None, *, yaml: bool = False) -> Union[dict, str, T]:
+        """Return the configuration of a guild.
 
+        Parameters
+        ----------
+        guild
+            A :class:`discord.Guild` object or an ID of a guild to fetch the
+            configuration of.
+        default
+            The value to return if the guild provided has no configuration.
+        yaml
+            Return raw configuration text rather than the parsed configuration.
+        """
+        config = self.persistent.get(into_str_id(guild))
+
+        if config is None:
+            return default
+
+        # return the configuration text without parsing
         if yaml:
-            # return the configuration as-is, without parsing
             return config
 
-        # use the parsed version if applicable
+        # use the parsed version in cache if available
         if config in self.parsed_cache:
             return self.parsed_cache[config]
 
         try:
             result = self.yaml.load(config)
-            self.parsed_cache[config] = result  # cache
+            self.parsed_cache[config] = result
             return result
         except YAMLError:
             log.warning('Invalid YAML config (%s): %s', into_str_id(guild), config)
-            return None
+            return default
 
-    def __getitem__(self, guild):
-        config = self.get(into_str_id(guild))
+    def __getitem__(self, guild: GuildOrGuildID) -> str:
+        config = self.get(guild)
         if not config:
             raise KeyError(into_str_id(guild))
         return config
