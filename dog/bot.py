@@ -18,11 +18,9 @@ log = logging.getLogger(__name__)
 async def _boot_hypercorn(app, config, *, loop):
     """Manually creates a Hypercorn server.
 
-    Hypercorn's facilities for running a server on an already existing loop
-    modify the loop in ways that make it impossible to use CTRL-C to kill the
-    bot for some reason. Hypercorn does this by silently catching
-    KeyboardInterrupts and setting signal handlers on the event loop, but this
-    fails to work for some reason.
+    We don't use Hypercorn's functions for server creation because it involves
+    modifying the loop in undesirable ways. It also silently devours all
+    KeyboardInterrupt exceptions.
     """
     socket = config.create_sockets()
     server = await loop.create_server(
@@ -107,8 +105,8 @@ class Dogbot(Bot):
 
     async def _boot_http_server(self):
         log.info('creating http server')
-        server = await _boot_hypercorn(self.webapp, self.http_server_config, loop=self.loop)
-        log.debug('created server: %r', server)
+        self.http_server = await _boot_hypercorn(self.webapp, self.http_server_config, loop=self.loop)
+        log.debug('created server: %r', self.http_server)
 
     def is_blacklisted(self, user: discord.User) -> bool:
         return user.id in self.blacklisted_storage
