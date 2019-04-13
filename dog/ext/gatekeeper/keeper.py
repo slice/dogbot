@@ -192,8 +192,16 @@ class Keeper:
         # empty out the recent joins list
         self.recent_joins = []
 
+        checks = self.config.get('checks', {})
+        block_all_check = checks.get('block_all', {})
+        is_blocking_all = block_all_check.get('enabled', False)
+
         # now prevent anyone else from joining by enabling block_all
-        await self._lockdown()
+        if not is_blocking_all:
+            self.log.debug('performing automatic lockdown')
+            await self._lockdown()
+        else:
+            self.log.debug('already blocking all, skipping lockdown')
 
     async def send_bounce_message(self, member: discord.Member):
         """Send a bounce message to a member."""
