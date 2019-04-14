@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import copy
 import datetime
@@ -7,10 +8,12 @@ import logging
 import discord
 from discord.ext import commands
 from lifesaver.bot import Cog, Context, group
+from lifesaver.utils import pluralize
 from ruamel.yaml import YAML
 
 from dog.formatting import represent
 from .keeper import Keeper
+from .converters import UserReference
 
 
 log = logging.getLogger(__name__)
@@ -18,7 +21,7 @@ log = logging.getLogger(__name__)
 
 def require_configuration():
     def predicate(ctx):
-        if ctx.cog.gatekeeper_config(ctx.guild) == {}:
+        if not ctx.cog.gatekeeper_config(ctx.guild):
             raise commands.CheckFailure('Gatekeeper must be configured to use this command.')
         return True
 
@@ -93,6 +96,23 @@ class Gatekeeper(Cog):
             }, buffer)
             await self.bot.guild_configs.write(guild, buffer.getvalue())
 
+    def is_being_allowed(self, guild: discord.Guild, user) -> bool:
+        """Return whether a user is being specifically allowed."""
+        return user in self.gatekeeper_config(guild).get('allowed_users', [])
+
+    async def allow_user(self, guild: discord.Guild, user):
+        """Allow a user to bypass checks in a guild."""
+        async with self.edit_config(guild) as config:
+            allowed_users = config.get('allowed_users', [])
+            # have to do manual replacement in case we get []
+            config['allowed_users'] = allowed_users + [user]
+
+    async def disallow_user(self, guild: discord.Guild, user):
+        """Disallow a user to bypass checks in a guild."""
+        async with self.edit_config(guild) as config:
+            allowed_users = config.get('allowed_users', [])
+            allowed_users.remove(user)
+
     @Cog.listener()
     async def on_member_join(self, member: discord.Member):
         await self.bot.wait_until_ready()
@@ -143,6 +163,53 @@ class Gatekeeper(Cog):
         and automatically kick those who don't fit a certain criteria. Only users who can ban can use it.
         This is very useful when your server is undergoing raids, unwanted attention, unwanted members, etc.
         """
+
+    @gatekeeper.command(name='disallow', aliases=['deallow', 'unallow', 'unwhitelist'])
+    @require_configuration()
+    async def command_disallow(self, ctx: Context, *, user: UserReference):
+        """Remove a user from the allowed users list."""
+        try:
+            await self.disallow_user(ctx.guild, user)
+        except ValueError:
+            await ctx.send(f"{ctx.tick(False)} That user isn't being allowed.")
+        else:
+            await ctx.send(f'{ctx.tick()} Disallowed `{user}`.')
+
+    @gatekeeper.group(name='allow', aliases=['whitelist'], invoke_without_command=True)
+    @require_configuration()
+    async def group_allow(self, ctx: Context, *, user: UserReference):
+        """Add a user to the allowed users list.
+
+        This will add the user to the allowed_users key in the configuration,
+        allowing them to bypass checks.
+        """
+        if self.is_being_allowed(ctx.guild, user):
+            await ctx.send(f'{ctx.tick(False)} That user is already being allowed.')
+            return
+
+        await self.allow_user(ctx.guild, user)
+        await ctx.send(f'{ctx.tick()} Allowed `{user}`.')
+
+    @group_allow.command(name='temp')
+    @require_configuration()
+    async def command_allow_temp(self, ctx: Context, duration: int, *, user: UserReference):
+        """Temporarily allows a user to join for n minutes."""
+        if duration > 60 * 24:
+            raise commands.BadArgument('The maximum time is 1 day.')
+        if duration < 1:
+            raise commands.BadArgument('Invalid duration.')
+
+        await self.allow_user(ctx.guild, user)
+        minutes = pluralize(minute=duration)
+        await ctx.send(f'{ctx.tick()} Temporarily allowing `{user}` for {minutes}.')
+
+        await asyncio.sleep(duration * 60)
+
+        try:
+            await self.disallow_user(ctx.guild, user)
+        except ValueError:
+            # was manually removed from allowed_users... by an admin?
+            pass
 
     @gatekeeper.command(name='lockdown', aliases=['ld'])
     @require_configuration()
