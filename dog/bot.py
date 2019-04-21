@@ -26,7 +26,7 @@ async def _boot_hypercorn(app, config, *, loop):
     server = await loop.create_server(
         lambda: Server(app, loop, config),
         backlog=config.backlog,
-        sock=socket[0],
+        sock=socket.insecure_sockets[0],
     )
     return server
 
