@@ -34,15 +34,12 @@ class Gatekeeper(lifesaver.Cog):
         self.yaml = YAML()
         self.keepers = {}
 
-    async def __local_check(self, ctx: lifesaver.Context):
+    async def cog_check(self, ctx: lifesaver.Context):
         if not ctx.guild:
             raise commands.NoPrivateMessage()
 
-        if not ctx.author.guild_permissions.ban_members:
-            raise commands.CheckFailure(
-                'You can only manage Gatekeeper if you have the "Ban Members" '
-                'permission.'
-            )
+        if not ctx.bot.guild_configs.can_edit(ctx.author, ctx.guild):
+            raise commands.CheckFailure("You aren't allowed to manage Gatekeeper.")
 
         return True
 
