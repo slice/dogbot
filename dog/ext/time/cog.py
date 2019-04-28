@@ -3,10 +3,10 @@ import logging
 from typing import Optional
 
 import discord
+import lifesaver
 import pytz
 from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
-from lifesaver.bot import Cog, command, group
 from lifesaver.bot.storage import AsyncJSONStorage
 from lifesaver.utils import clean_mentions
 from lifesaver.utils.timing import Timer
@@ -22,7 +22,7 @@ UNKNOWN_LOCATION = 'Unknown location. Examples: "Arizona", "London", and "Califo
 log = logging.getLogger(__name__)
 
 
-class Time(Cog):
+class Time(lifesaver.Cog):
     def __init__(self, bot):
         super().__init__(bot)
         self.geocoder = Geocoder(bot=bot, loop=bot.loop)
@@ -56,7 +56,7 @@ class Time(Cog):
         time_format = '%H:%M' if time.hour < 12 and shorten else '%H:%M (%I:%M %p)'
         return time.strftime(time_format if hm else ('%B %d, %Y  ' + time_format))
 
-    @command(aliases=['st'])
+    @lifesaver.command(aliases=['st'])
     async def sleepytime(self, ctx, *, awaken_time: hour_minute):
         """Calculates the time you should go to sleep at night."""
 
@@ -75,7 +75,7 @@ class Time(Cog):
             f'try falling sleep at these times: {", ".join(formatted)}'
         )
 
-    @group(invoke_without_command=True, aliases=['t'])
+    @lifesaver.group(invoke_without_command=True, aliases=['t'])
     async def time(self, ctx, *, who: discord.Member = None):
         """Views the time for another user."""
         who = who or ctx.author

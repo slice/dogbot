@@ -2,10 +2,9 @@ import re
 from typing import Optional
 
 import discord
+import lifesaver
 from discord import PartialEmoji
 from discord.ext import commands
-from discord.ext.commands import Converter, MemberConverter
-from lifesaver.bot import Context
 from lifesaver.utils import history_reducer
 
 EMOJI_REGEX = re.compile(r"""
@@ -42,7 +41,7 @@ EMOJI_URL_REGEX = re.compile(r"""
 """, re.VERBOSE)
 
 
-class EmojiStealer(Converter):
+class EmojiStealer(commands.Converter):
     """A versatile converter intended to convert into :class:`discord.PartialEmoji`.
 
     The argument can be an emoji (as used normally), an emoji ID, or an emoji
@@ -52,7 +51,7 @@ class EmojiStealer(Converter):
     """
 
     @staticmethod
-    async def recent(ctx: Context) -> PartialEmoji:
+    async def recent(ctx: lifesaver.Context) -> PartialEmoji:
         def reducer(msg: discord.Message) -> Optional[PartialEmoji]:
             match = EMOJI_REGEX.search(msg.content)
 
@@ -83,7 +82,7 @@ class EmojiStealer(Converter):
 
         return result
 
-    async def convert(self, ctx: Context, argument: str) -> PartialEmoji:
+    async def convert(self, ctx: lifesaver.Context, argument: str) -> PartialEmoji:
         # Convert an emoji ID.
         if argument.isdigit():
             return PartialEmoji(id=int(argument), name=None, animated=False)
@@ -112,12 +111,12 @@ class EmojiStealer(Converter):
             'You can also specify `recent` to select a recently used emoji.')
 
 
-class UserID(Converter):
+class UserID(commands.Converter):
     """A converter that converts members to IDs."""
 
-    async def convert(self, ctx: Context, argument: str):
+    async def convert(self, ctx: lifesaver.Context, argument: str):
         try:
-            member = await MemberConverter().convert(ctx, argument)
+            member = await commands.MemberConverter().convert(ctx, argument)
             return member.id
         except commands.BadArgument:
             pass
@@ -128,16 +127,16 @@ class UserID(Converter):
         return int(argument)
 
 
-class HardMember(Converter):
+class HardMember(commands.Converter):
     """A MemberConverter that falls back to fetching the user's information
     using the Discord API.
 
     The fallback will only be used if an ID was passed.
     """
 
-    async def convert(self, ctx: Context, argument: str):
+    async def convert(self, ctx: lifesaver.Context, argument: str):
         try:
-            return await MemberConverter().convert(ctx, argument)
+            return await commands.MemberConverter().convert(ctx, argument)
         except commands.BadArgument:
             pass
 
@@ -152,14 +151,14 @@ class HardMember(Converter):
             raise commands.BadArgument(f'Failed to fetch user information: `{error}`')
 
 
-class SoftMember(Converter):
+class SoftMember(commands.Converter):
     """A MemberConverter that falls back to a :class:`discord.Object` of the
     ID when provided.
     """
 
-    async def convert(self, ctx: Context, argument: str):
+    async def convert(self, ctx: lifesaver.Context, argument: str):
         try:
-            return await MemberConverter().convert(ctx, argument)
+            return await commands.MemberConverter().convert(ctx, argument)
         except commands.BadArgument:
             if argument.isdigit():
                 return discord.Object(int(argument))

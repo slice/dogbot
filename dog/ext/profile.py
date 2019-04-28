@@ -2,8 +2,8 @@ import aiohttp
 import collections
 
 import discord
+import lifesaver
 from discord.ext import commands
-from lifesaver.bot import Cog, command, group
 
 from dog.converters import HardMember
 from dog.ext.info import date
@@ -51,7 +51,7 @@ def verify_actor(actor, user: discord.User):
     return links_user(actor.get('summary', ''))
 
 
-class Profile(Cog):
+class Profile(lifesaver.Cog):
     def __init__(self, bot):
         super().__init__(bot)
 
@@ -59,7 +59,7 @@ class Profile(Cog):
             'User-Agent': 'dogbot/0.0.0 (https://github.com/slice)'
         }
 
-    @group(aliases=['whois'], invoke_without_command=True)
+    @lifesaver.group(aliases=['whois'], invoke_without_command=True)
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def profile(self, ctx, user: HardMember = None):
         """Views information about a user."""
@@ -163,7 +163,7 @@ class Profile(Cog):
         user = user or ctx.author
         await ctx.send(user.avatar_url_as(format='png'))
 
-    @command(aliases=['avatar_url'])
+    @lifesaver.command(aliases=['avatar_url'])
     async def avatar(self, ctx, user: HardMember = None):
         """Views the avatar of a user."""
         await ctx.invoke(self.profile_avatar, user)

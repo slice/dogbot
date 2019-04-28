@@ -1,8 +1,8 @@
 from textwrap import dedent
 
 import discord
-from discord.ext.commands import guild_only
-from lifesaver.bot import Cog, Context, command, group
+import lifesaver
+from discord.ext import commands
 from lifesaver.utils import human_delta
 
 from dog.converters import HardMember
@@ -12,11 +12,11 @@ def date(date) -> str:
     return f'{date}\n{human_delta(date)} ago'
 
 
-class Info(Cog):
+class Info(lifesaver.Cog):
     """A cog that provides information about various entities like guilds or members."""
 
-    @command(aliases=['about'])
-    async def info(self, ctx: Context):
+    @lifesaver.command(aliases=['about'])
+    async def info(self, ctx: lifesaver.Context):
         """Information about me."""
         app_info = await ctx.bot.application_info()
         embed = discord.Embed(color=discord.Color.green())
@@ -26,9 +26,9 @@ class Info(Cog):
         embed.set_footer(text=f'Owned by {app_info.owner}', icon_url=app_info.owner.avatar_url)
         await ctx.send(embed=embed)
 
-    @group(aliases=['guild', 'guild_info', 'server_info'], invoke_without_command=True)
-    @guild_only()
-    async def server(self, ctx: Context):
+    @lifesaver.group(aliases=['guild', 'guild_info', 'server_info'], invoke_without_command=True)
+    @commands.guild_only()
+    async def server(self, ctx: lifesaver.Context):
         """Views information about this server."""
         embed = discord.Embed(title=ctx.guild.name)
         embed.set_thumbnail(url=ctx.guild.icon_url)
@@ -52,8 +52,8 @@ class Info(Cog):
         await ctx.send(embed=embed)
 
     @server.command(aliases=['icon_url'])
-    @guild_only()
-    async def icon(self, ctx: Context):
+    @commands.guild_only()
+    async def icon(self, ctx: lifesaver.Context):
         """Sends this server's icon."""
         if not ctx.guild.icon_url:
             await ctx.send('No server icon.')

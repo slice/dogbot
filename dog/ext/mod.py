@@ -1,25 +1,31 @@
 import discord
-from discord.ext.commands import bot_has_permissions, guild_only, has_permissions
-from lifesaver.bot import Cog, Context, command
+import lifesaver
+from discord.ext import commands
 from lifesaver.utils import clean_mentions, escape_backticks
 from lifesaver.utils.timing import Ratelimiter
 
 from dog.converters import SoftMember
 from dog.formatting import represent
+from dog.utils import chained_decorators
+
+def guild_action(**perms):
+    return chained_decorators([
+        commands.guild_only(),
+        commands.bot_has_permissions(**perms),
+        commands.has_permissions(**perms),
+    ])
 
 
-class Mod(Cog):
+class Mod(lifesaver.Cog):
     """Moderation-related commands."""
 
     def __init__(self, bot):
         super().__init__(bot)
         self.auto_cooldown = Ratelimiter(1, 3)
 
-    @command()
-    @guild_only()
-    @bot_has_permissions(ban_members=True)
-    @has_permissions(ban_members=True)
-    async def ban(self, ctx: Context, target: SoftMember, *, reason):
+    @lifesaver.command()
+    @guild_action(ban_members=True)
+    async def ban(self, ctx: lifesaver.Context, target: SoftMember, *, reason):
         """Bans someone."""
         try:
             reason = f'Banned by {represent(ctx.author)}: {reason or "No reason."}'
@@ -29,7 +35,7 @@ class Mod(Cog):
         else:
             await ctx.send(f'\N{OK HAND SIGN} Banned {represent(target)}.')
 
-    @Cog.listener()
+    @lifesaver.Cog.listener()
     async def on_message(self, message):
         if not message.guild or message.author.bot:
             return
@@ -49,11 +55,9 @@ class Mod(Cog):
                 except discord.HTTPException:
                     pass
 
-    @command()
-    @guild_only()
-    @bot_has_permissions(manage_roles=True)
-    @has_permissions(manage_roles=True)
-    async def vanity(self, ctx: Context, name, color: discord.Color = None, *targets: discord.Member):
+    @lifesaver.command()
+    @guild_action(manage_roles=True)
+    async def vanity(self, ctx: lifesaver.Context, name, color: discord.Color = None, *targets: discord.Member):
         """Creates a vanity role."""
         try:
             role = await ctx.guild.create_role(
@@ -84,11 +88,9 @@ class Mod(Cog):
 
         await ctx.send_pages()
 
-    @command()
-    @guild_only()
-    @bot_has_permissions(ban_members=True)
-    @has_permissions(ban_members=True)
-    async def softban(self, ctx: Context, target: discord.Member, *, reason):
+    @lifesaver.command()
+    @guild_action(ban_members=True)
+    async def softban(self, ctx: lifesaver.Context, target: discord.Member, *, reason):
         """Bans then immediately unbans someone."""
         try:
             reason = f'Softbanned by {represent(ctx.author)}: {reason or "No reason."}'
@@ -99,21 +101,17 @@ class Mod(Cog):
         else:
             await ctx.send(f'\N{OK HAND SIGN} Softbanned {represent(target)}.')
 
-    @command()
-    @guild_only()
-    @bot_has_permissions(manage_roles=True)
-    @has_permissions(manage_roles=True)
-    async def block(self, ctx: Context, *, target: discord.Member):
+    @lifesaver.command()
+    @guild_action(manage_roles=True)
+    async def block(self, ctx: lifesaver.Context, *, target: discord.Member):
         """Blocks someone from this channel."""
         reason = f'Blocked by {represent(ctx.author)}.'
         await ctx.channel.set_permissions(target, read_messages=False, reason=reason)
         await ctx.send(f'\N{OK HAND SIGN} Blocked {represent(target)}.')
 
-    @command()
-    @guild_only()
-    @bot_has_permissions(manage_roles=True)
-    @has_permissions(manage_roles=True)
-    async def unblock(self, ctx: Context, *, target: discord.Member):
+    @lifesaver.command()
+    @guild_action(manage_roles=True)
+    async def unblock(self, ctx: lifesaver.Context, *, target: discord.Member):
         """Unblocks someone from this channel."""
         reason = f'Unblocked by {represent(ctx.author)}.'
         overwrite = ctx.channel.overwrites_for(target)

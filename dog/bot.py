@@ -4,8 +4,8 @@ import logging
 import aiohttp
 import discord
 import hypercorn
+import lifesaver
 from hypercorn.asyncio.run import Server
-from lifesaver.bot import Bot
 from lifesaver.bot.storage import AsyncJSONStorage
 
 from dog.web.server import app as webapp
@@ -31,7 +31,7 @@ async def _boot_hypercorn(app, config, *, loop):
     return server
 
 
-class Dogbot(Bot):
+class Dogbot(lifesaver.Bot):
     def __init__(self, cfg, **kwargs):
         super().__init__(
             cfg, help_command=HelpCommand(dm_help=cfg.dm_help), **kwargs)

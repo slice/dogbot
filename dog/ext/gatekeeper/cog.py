@@ -6,8 +6,8 @@ import io
 import logging
 
 import discord
+import lifesaver
 from discord.ext import commands
-from lifesaver.bot import Cog, Context, group
 from lifesaver.utils import pluralize
 from ruamel.yaml import YAML
 
@@ -28,13 +28,13 @@ def require_configuration():
     return commands.check(predicate)
 
 
-class Gatekeeper(Cog):
+class Gatekeeper(lifesaver.Cog):
     def __init__(self, bot):
         super().__init__(bot)
         self.yaml = YAML()
         self.keepers = {}
 
-    async def __local_check(self, ctx: Context):
+    async def __local_check(self, ctx: lifesaver.Context):
         if not ctx.guild:
             raise commands.NoPrivateMessage()
 
@@ -73,7 +73,7 @@ class Gatekeeper(Cog):
         self.keepers[guild.id] = keeper
         return keeper
 
-    @Cog.listener()
+    @lifesaver.Cog.listener()
     async def on_guild_config_edit(self, guild: discord.Guild, config):
         if guild.id not in self.keepers:
             log.debug('received config edit for keeperless guild %d', guild.id)
@@ -113,7 +113,7 @@ class Gatekeeper(Cog):
             allowed_users = config.get('allowed_users', [])
             allowed_users.remove(user)
 
-    @Cog.listener()
+    @lifesaver.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         await self.bot.wait_until_ready()
 
@@ -154,8 +154,8 @@ class Gatekeeper(Cog):
 
         await keeper.report(embed=embed)
 
-    @group(aliases=['gk'], hollow=True)
-    async def gatekeeper(self, ctx: Context):
+    @lifesaver.group(aliases=['gk'], hollow=True)
+    async def gatekeeper(self, ctx: lifesaver.Context):
         """
         Manages Gatekeeper.
 
@@ -166,7 +166,7 @@ class Gatekeeper(Cog):
 
     @gatekeeper.command(name='disallow', aliases=['deallow', 'unallow', 'unwhitelist'])
     @require_configuration()
-    async def command_disallow(self, ctx: Context, *, user: UserReference):
+    async def command_disallow(self, ctx: lifesaver.Context, *, user: UserReference):
         """Remove a user from the allowed users list."""
         try:
             await self.disallow_user(ctx.guild, user)
@@ -177,7 +177,7 @@ class Gatekeeper(Cog):
 
     @gatekeeper.group(name='allow', aliases=['whitelist'], invoke_without_command=True)
     @require_configuration()
-    async def group_allow(self, ctx: Context, *, user: UserReference):
+    async def group_allow(self, ctx: lifesaver.Context, *, user: UserReference):
         """Add a user to the allowed users list.
 
         This will add the user to the allowed_users key in the configuration,
@@ -192,7 +192,7 @@ class Gatekeeper(Cog):
 
     @group_allow.command(name='temp')
     @require_configuration()
-    async def command_allow_temp(self, ctx: Context, duration: int, *, user: UserReference):
+    async def command_allow_temp(self, ctx: lifesaver.Context, duration: int, *, user: UserReference):
         """Temporarily allows a user to join for n minutes."""
         if duration > 60 * 24:
             raise commands.BadArgument('The maximum time is 1 day.')
@@ -213,7 +213,7 @@ class Gatekeeper(Cog):
 
     @gatekeeper.command(name='lockdown', aliases=['ld'])
     @require_configuration()
-    async def command_lockdown(self, ctx: Context, *, enabled: bool = True):
+    async def command_lockdown(self, ctx: lifesaver.Context, *, enabled: bool = True):
         """Enables block_all.
 
         You can also provide "on" or "off" to the command to manually enable
@@ -229,7 +229,7 @@ class Gatekeeper(Cog):
 
     @gatekeeper.command(name='enable', aliases=['on'])
     @require_configuration()
-    async def command_enable(self, ctx: Context):
+    async def command_enable(self, ctx: lifesaver.Context):
         """Enables Gatekeeper."""
         async with self.edit_config(ctx.guild) as config:
             config['enabled'] = True
@@ -238,7 +238,7 @@ class Gatekeeper(Cog):
 
     @gatekeeper.command(name='disable', aliases=['off'])
     @require_configuration()
-    async def command_disable(self, ctx: Context):
+    async def command_disable(self, ctx: lifesaver.Context):
         """Disables Gatekeeper."""
         async with self.edit_config(ctx.guild) as config:
             config['enabled'] = False
@@ -247,7 +247,7 @@ class Gatekeeper(Cog):
 
     @gatekeeper.command(name='toggle', aliases=['flip'])
     @require_configuration()
-    async def command_toggle(self, ctx: Context):
+    async def command_toggle(self, ctx: lifesaver.Context):
         """Toggles Gatekeeper."""
         async with self.edit_config(ctx.guild) as config:
             config['enabled'] = not config['enabled']
@@ -258,7 +258,7 @@ class Gatekeeper(Cog):
 
     @gatekeeper.command(name='status')
     @require_configuration()
-    async def command_status(self, ctx: Context):
+    async def command_status(self, ctx: lifesaver.Context):
         """Views the current status of Gatekeeper."""
         enabled = self.gatekeeper_config(ctx.guild).get('enabled', False)
 

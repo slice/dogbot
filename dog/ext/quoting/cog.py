@@ -4,7 +4,7 @@ from random import choice
 
 import discord
 from discord.ext import commands
-from lifesaver.bot import Cog, command, group
+import lifesaver
 from lifesaver.bot.storage import AsyncJSONStorage
 from lifesaver.utils import ListPaginator, human_delta, pluralize, truncate, clean_mentions
 
@@ -27,7 +27,7 @@ def embed_quote(quote) -> discord.Embed:
     return embed
 
 
-class Quoting(Cog):
+class Quoting(lifesaver.Cog):
     def __init__(self, bot, *args, **kwargs):
         super().__init__(bot, *args, **kwargs)
         self.storage = AsyncJSONStorage('quotes.json', loop=bot.loop)
@@ -35,7 +35,7 @@ class Quoting(Cog):
     def quotes(self, guild: discord.Guild):
         return self.storage.get(str(guild.id), {})
 
-    @command(aliases=['rq'])
+    @lifesaver.command(aliases=['rq'])
     @commands.guild_only()
     async def random_quote(self, ctx):
         """Shows a random quote."""
@@ -56,7 +56,7 @@ class Quoting(Cog):
 
         await ctx.send(name, embed=embed)
 
-    @group(aliases=['q'], invoke_without_command=True)
+    @lifesaver.group(aliases=['q'], invoke_without_command=True)
     @commands.guild_only()
     async def quote(self, ctx, *, name: QuoteName(must_exist=True)):
         """Views a quote.

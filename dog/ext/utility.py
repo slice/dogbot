@@ -3,8 +3,8 @@ import re
 
 import aiohttp
 import discord
+import lifesaver
 from discord.ext import commands
-from lifesaver.bot import Cog, Context, command
 from lifesaver.utils import history_reducer
 
 from dog.converters import EmojiStealer, UserID
@@ -12,9 +12,9 @@ from dog.converters import EmojiStealer, UserID
 EMOJI_NAME_REGEX = re.compile(r'<a?(:.+:)\d+>')
 
 
-class Utility(Cog):
-    @command(aliases=['ginv', 'invite'])
-    async def inv(self, ctx: Context, *ids: UserID):
+class Utility(lifesaver.Cog):
+    @lifesaver.command(aliases=['ginv', 'invite'])
+    async def inv(self, ctx: lifesaver.Context, *ids: UserID):
         """Generates bot invites."""
         if not ids:
             ids = (self.bot.user.id,)
@@ -22,8 +22,8 @@ class Utility(Cog):
         urls = '\n'.join(f'<{discord.utils.oauth_url(bot_id)}>' for bot_id in ids)
         await ctx.send(urls)
 
-    @command(aliases=['shiba', 'dog'], typing=True)
-    async def shibe(self, ctx: Context):
+    @lifesaver.command(aliases=['shiba', 'dog'], typing=True)
+    async def shibe(self, ctx: lifesaver.Context):
         """Sends a random shibe picture."""
         try:
             async with self.session.get('http://shibe.online/api/shibes?count=1&urls=true') as resp:
@@ -38,8 +38,8 @@ class Utility(Cog):
         except aiohttp.ClientError:
             await ctx.send('Failed to grab a shibe. \N{DOG FACE}')
 
-    @command(aliases=['choose'])
-    async def pick(self, ctx: Context, *choices: commands.clean_content):
+    @lifesaver.command(aliases=['choose'])
+    async def pick(self, ctx: lifesaver.Context, *choices: commands.clean_content):
         """Pick from a list of choices."""
         if not choices:
             await ctx.send('Send some choices.')
@@ -52,10 +52,10 @@ class Utility(Cog):
         result = random.choice(choices)
         await ctx.send(result)
 
-    @command()
+    @lifesaver.command()
     @commands.guild_only()
     @commands.bot_has_permissions(read_message_history=True)
-    async def emojinames(self, ctx: Context):
+    async def emojinames(self, ctx: lifesaver.Context):
         """Shows the names of recent custom emoji used.
 
         Useful for mobile users.
@@ -72,11 +72,11 @@ class Utility(Cog):
             formatted = ', '.join(f'`{name}`' for name in emoji_names)
             await ctx.send(formatted)
 
-    @command()
+    @lifesaver.command()
     @commands.guild_only()
     @commands.bot_has_permissions(manage_emojis=True, read_message_history=True)
     @commands.has_permissions(manage_emojis=True)
-    async def steal_emoji(self, ctx: Context, emoji: EmojiStealer, name=None):
+    async def steal_emoji(self, ctx: lifesaver.Context, emoji: EmojiStealer, name=None):
         """Steals an emoji."""
         # the converter can return none when cancelled.
         if not emoji:

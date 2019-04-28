@@ -4,10 +4,9 @@ from itertools import islice
 from typing import Any, Dict, List
 
 import discord
+import lifesaver
 from discord import User
 from discord.ext import commands
-from discord.ext.commands import BadArgument, BucketType, CheckFailure, MemberConverter, cooldown, is_owner
-from lifesaver.bot import Cog, Context, command
 from lifesaver.bot.storage import AsyncJSONStorage
 from lifesaver.utils.formatting import Table, codeblock, human_delta
 
@@ -37,10 +36,10 @@ def currency(string: str) -> float:
     try:
         result = float(string)
         if result == float('inf') or result <= 0:
-            raise BadArgument('Invalid amount.')
+            raise commands.BadArgument('Invalid amount.')
         return result
     except ValueError:
-        raise BadArgument('Invalid number.')
+        raise commands.BadArgument('Invalid number.')
 
 
 def _wallet_mirror(key):
@@ -79,8 +78,8 @@ class Wallet:
         await self.manager.storage.delete(self.user.id)
 
     @classmethod
-    async def convert(cls, ctx: Context, argument: str):
-        user = await MemberConverter().convert(ctx, argument)
+    async def convert(cls, ctx: lifesaver.Context, argument: str):
+        user = await commands.MemberConverter().convert(ctx, argument)
         cog: 'Currency' = ctx.cog
         if not cog.manager.has_wallet(user):
             raise BadArgument(f"{user} doesn't have a wallet. They can create one by sending `{ctx.prefix}register`.")
@@ -123,19 +122,19 @@ def invoker_has_wallet():
     def predicate(ctx):
         cog: Currency = ctx.cog
         if not cog.manager.has_wallet(ctx.author):
-            raise CheckFailure(f"You don't have a wallet! You can create one by sending `{ctx.prefix}register`.")
+            raise commands.CheckFailure(f"You don't have a wallet! You can create one by sending `{ctx.prefix}register`.")
         ctx.wallet = cog.manager.get_wallet(ctx.author)
         return True
 
     return commands.check(predicate)
 
 
-class Currency(Cog):
+class Currency(lifesaver.Cog):
     def __init__(self, bot):
         super().__init__(bot)
         self.manager = CurrencyManager('currency.json', bot=bot)
 
-    @Cog.listener()
+    @lifesaver.Cog.listener()
     async def on_message(self, msg: discord.Message):
         if not msg.guild or msg.author.bot or self.bot.is_blacklisted(msg.author):
             return
@@ -148,17 +147,17 @@ class Currency(Cog):
             wallet.add_passive(0.3)
             await wallet.commit()
 
-    @command(hidden=True)
-    @is_owner()
-    async def write(self, ctx: Context, target: Wallet, amount: float):
+    @lifesaver.command(hidden=True)
+    @commands.is_owner()
+    async def write(self, ctx: lifesaver.Context, target: Wallet, amount: float):
         """Sets someone's balance."""
         target.balance = amount
         await target.commit()
         await ctx.ok()
 
-    @command(aliases=['transfer'])
+    @lifesaver.command(aliases=['transfer'])
     @invoker_has_wallet()
-    async def send(self, ctx: Context, target: Wallet, amount: currency):
+    async def send(self, ctx: lifesaver.Context, target: Wallet, amount: currency):
         """Sends currency to someone else."""
         if target.user == ctx.author:
             await ctx.send("You cannot send money to yourself.")
@@ -175,8 +174,8 @@ class Currency(Cog):
 
         await ctx.send("Transaction completed.")
 
-    @command()
-    async def register(self, ctx: Context):
+    @lifesaver.command()
+    async def register(self, ctx: lifesaver.Context):
         """Creates a wallet."""
         if self.manager.has_wallet(ctx.author):
             await ctx.send("You already have a wallet.")
@@ -184,19 +183,19 @@ class Currency(Cog):
         await self.manager.register(ctx.author)
         await ctx.ok()
 
-    @command(hidden=True)
-    @is_owner()
+    @lifesaver.command(hidden=True)
+    @commands.is_owner()
     @invoker_has_wallet()
-    async def bail(self, ctx: Context, *, target: Wallet = None):
+    async def bail(self, ctx: lifesaver.Context, *, target: Wallet = None):
         """Busts someone out of jail."""
         wallet = target or ctx.wallet
         wallet.last_stole = None
         await wallet.commit()
         await ctx.send(f'\N{CHAINS} {"You are" if wallet.user == ctx.author else f"{target.user} is"} free to go.')
 
-    @command()
+    @lifesaver.command()
     @invoker_has_wallet()
-    async def steal(self, ctx: Context, target: Wallet, amount: currency):
+    async def steal(self, ctx: lifesaver.Context, target: Wallet, amount: currency):
         """
         Steals from someone.
 
@@ -270,9 +269,9 @@ class Currency(Cog):
 
         await ctx.send(f'{message}\n\n{results}')
 
-    @command()
+    @lifesaver.command()
     @invoker_has_wallet()
-    async def donate(self, ctx: Context, amount: currency):
+    async def donate(self, ctx: lifesaver.Context, amount: currency):
         """
         Donates some currency.
 
@@ -295,10 +294,10 @@ class Currency(Cog):
             f'(up by {truncate_float(percent_increase * 100)}%).'
         )
 
-    @command(aliases=['slots'])
-    @cooldown(1, 3, BucketType.user)
+    @lifesaver.command(aliases=['slots'])
+    @commands.cooldown(1, 3, commands.BucketType.user)
     @invoker_has_wallet()
-    async def spin(self, ctx: Context):
+    async def spin(self, ctx: lifesaver.Context):
         """Gamble your life away."""
         fee = 0.5
 
@@ -337,9 +336,9 @@ class Currency(Cog):
         ctx.wallet.balance += net
         await ctx.wallet.commit()
 
-    @command()
+    @lifesaver.command()
     @invoker_has_wallet()
-    async def delete(self, ctx: Context):
+    async def delete(self, ctx: lifesaver.Context):
         """Deletes your wallet."""
         if not await ctx.confirm(title='Are you sure?',
                                  message=f'All of your {CURRENCY_NAME_PLURAL} will be lost forever.',
@@ -349,15 +348,15 @@ class Currency(Cog):
         await ctx.wallet.delete()
         await ctx.ok()
 
-    @command(hidden=True)
-    @is_owner()
-    async def smash(self, ctx: Context, target: Wallet):
+    @lifesaver.command(hidden=True)
+    @commands.is_owner()
+    async def smash(self, ctx: lifesaver.Context, target: Wallet):
         """Delete someone else's wallet."""
         await target.delete()
         await ctx.ok()
 
-    @command()
-    async def top(self, ctx: Context):
+    @lifesaver.command()
+    async def top(self, ctx: lifesaver.Context):
         """Views the top users."""
         table = Table('User', 'Balance', 'Chance')
         for wallet in islice(self.manager.top(), 10):
@@ -366,9 +365,9 @@ class Currency(Cog):
         table = await table.render(loop=self.bot.loop)
         await ctx.send(codeblock(table))
 
-    @command()
+    @lifesaver.command()
     @invoker_has_wallet()
-    async def wallet(self, ctx: Context, *, target: Wallet = None):
+    async def wallet(self, ctx: lifesaver.Context, *, target: Wallet = None):
         """Views your current wallet balance."""
         wallet = target or ctx.wallet
         chance = f"{wallet.passive_chance * 100}%"
