@@ -95,7 +95,9 @@ class Block(ModAction):
     verb = ActionVerb(present='block', past='blocked')
 
     async def perform_on_user(self, user, *, reason):
-        await self.ctx.channel.set_permissions(user, read_messages=False, reason=reason)
+        overwrite = self.ctx.channel.overwrites_for(user)
+        overwrite.read_messages = False
+        await self.ctx.channel.set_permissions(user, overwrite=overwrite, reason=reason)
 
 
 class Unblock(ModAction):
