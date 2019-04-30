@@ -119,6 +119,7 @@ class Unblock(ModAction):
 
 def mod_action_command(action: Type[ModAction], *, args=None, help: str = None, **perms):
     """Generate a command that performs a :class:`ModAction`."""
+    args = args or {}
     help = help or f'{action.verb.present.capitalize()} users.'
 
     @lifesaver.command(name=action.verb.present, help=help)
