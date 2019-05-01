@@ -122,7 +122,7 @@ class GuildConfigManager:
         """
         config = self.persistent.get(into_str_id(guild))
 
-        if config is None:
+        if not config:  # handles both None and empty string
             return default
 
         # return the configuration text without parsing
