@@ -13,8 +13,8 @@ def redirect_url() -> Tuple[str, str]:
     """Generate a redirect URL, returning the state and URL."""
     state = secrets.token_hex(64)
 
-    client_id = g.bot.config.oauth['client_id']
-    redirect_uri = g.bot.config.oauth['redirect_uri']
+    client_id = g.bot.config.oauth.client_id
+    redirect_uri = g.bot.config.oauth.redirect_uri
 
     url = (
         f'https://discordapp.com/oauth2/authorize'
@@ -40,10 +40,10 @@ async def fetch_access_token(code: str, *, refresh: bool = False) -> str:
     ENDPOINT = f'{API_BASE}/oauth2/token'
 
     data = {
-        'client_id': str(g.bot.config.oauth['client_id']),
-        'client_secret': g.bot.config.oauth['client_secret'],
+        'client_id': str(g.bot.config.oauth.client_id),
+        'client_secret': g.bot.config.oauth.client_secret,
         'grant_type': 'authorization_code',
-        'redirect_uri': g.bot.config.oauth['redirect_uri'],
+        'redirect_uri': g.bot.config.oauth.redirect_uri,
     }
 
     if refresh:

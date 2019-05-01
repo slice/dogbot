@@ -41,12 +41,12 @@ class Dogbot(lifesaver.Bot):
         self.guild_configs = GuildConfigManager(self)
 
         # webapp (quart) setup
-        webapp.config.from_mapping(self.config.web['app'])
+        webapp.config.from_mapping(self.config.web.app)
         webapp.bot = self
         self.webapp = webapp
 
         # http server (hypercorn) setup
-        self.http_server_config = hypercorn.Config.from_mapping(self.config.web['http'])
+        self.http_server_config = hypercorn.Config.from_mapping(self.config.web.http)
         self.http_server = None
         self.loop.create_task(self._boot_http_server())
 
@@ -99,6 +99,7 @@ class Dogbot(lifesaver.Bot):
     async def close(self):
         log.info('bot is exiting')
         await self.session.close()
+        log.info('closing web server')
         self.http_server.close()
         await self.http_server.wait_closed()
         await super().close()
@@ -106,7 +107,7 @@ class Dogbot(lifesaver.Bot):
     async def _boot_http_server(self):
         log.info('creating http server')
         self.http_server = await _boot_hypercorn(self.webapp, self.http_server_config, loop=self.loop)
-        log.debug('created server: %r', self.http_server)
+        log.info('created server: %r', self.http_server)
 
     def is_blacklisted(self, user: discord.User) -> bool:
         return user.id in self.blacklisted_storage

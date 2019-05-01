@@ -8,7 +8,7 @@ from dog.bot import Dogbot
 
 class Geocoder:
     def __init__(self, *, bot: Dogbot, loop: asyncio.AbstractEventLoop):
-        self.client = GoogleV3(api_key=bot.config.api_keys['google_maps'])
+        self.client = GoogleV3(api_key=bot.config.api_keys.google_maps)
         self.bot = bot
         self.loop = loop
 
