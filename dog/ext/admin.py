@@ -1,9 +1,49 @@
+from typing import Optional
+
 import discord
 import lifesaver
 from discord.ext import commands
+from lifesaver.utils.formatting import pluralize
 
 
-class Administration(lifesaver.Cog):
+def format_guild(guild: discord.Guild) -> str:
+    members = pluralize(member=len(guild.members))
+    message = f'{guild.name} (`{guild.id}`, {members}, owned by {guild.owner} (`{guild.owner.id}`))'
+    return discord.utils.escape_mentions(message)
+
+
+class AdminMonitoringConfig(lifesaver.config.Config):
+    guild_traffic: int
+
+
+class AdminConfig(lifesaver.config.Config):
+    monitoring_channels: AdminMonitoringConfig
+
+
+@lifesaver.Cog.with_config(AdminConfig)
+class Admin(lifesaver.Cog):
+    def monitoring_channel(self, name: str) -> Optional[discord.TextChannel]:
+        channel_id = getattr(self.config.monitoring_channels, name)
+        return self.bot.get_channel(channel_id)
+
+    @lifesaver.Cog.listener()
+    async def on_guild_remove(self, guild: discord.Guild):
+        channel = self.monitoring_channel('guild_traffic')
+        if not channel:
+            return
+
+        message = f'\N{large red circle} {format_guild(guild)}'
+        await channel.send(message)
+
+    @lifesaver.Cog.listener()
+    async def on_guild_join(self, guild: discord.Guild):
+        channel = self.monitoring_channel('guild_traffic')
+        if not channel:
+            return
+
+        message = f'\N{large blue circle} {format_guild(guild)}'
+        await channel.send(message)
+
     @lifesaver.group(hidden=True, invoke_without_command=True)
     @commands.is_owner()
     async def blacklist(self, ctx: lifesaver.Context, user: discord.User, *, reason=None):
@@ -44,4 +84,4 @@ class Administration(lifesaver.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Administration(bot))
+    bot.add_cog(Admin(bot))
