@@ -93,7 +93,7 @@ class Utility(lifesaver.Cog):
         msg = await ctx.send(ctx.emoji('loading'))
 
         try:
-            async with ctx.bot.session.get(emoji_url) as resp:
+            async with self.session.get(emoji_url, raise_for_status=True) as resp:
                 data = await resp.read()
                 emoji = await ctx.guild.create_custom_emoji(name=name, image=data)
 

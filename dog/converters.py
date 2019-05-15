@@ -28,7 +28,7 @@ EMOJI_URL_REGEX = re.compile(r"""
     # A Discord emoji URL.
 
     # The standard part of the URL
-    https?://
+    ^https?://
     cdn\.discordapp\.com
     /emojis/
 
@@ -88,7 +88,7 @@ class EmojiStealer(commands.Converter):
             return PartialEmoji(id=int(argument), name=None, animated=False)
 
         # Convert from an emoji URL.
-        url_match = EMOJI_URL_REGEX.match(argument)
+        url_match = EMOJI_URL_REGEX.search(argument)
         if url_match:
             return PartialEmoji(
                 id=int(url_match.group('id')),
