@@ -3,13 +3,7 @@
   [
     {
       "path": ".",
-      "folder_exclude_patterns": ["avatar_cache", "db", "data"]
-    }
-  ],
-  "build_systems": [
-    {
-      "name": "Run",
-      "shell_cmd": "python3 -m lifesaver.cli"
+      "folder_exclude_patterns": ["avatar_cache", "data"]
     }
   ]
 }
