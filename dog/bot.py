@@ -108,8 +108,11 @@ class Dogbot(lifesaver.Bot):
 
     async def _boot_http_server(self):
         log.info('creating http server')
-        self.http_server = await _boot_hypercorn(self.webapp, self.http_server_config, loop=self.loop)
-        log.info('created server: %r', self.http_server)
+        try:
+            self.http_server = await _boot_hypercorn(self.webapp, self.http_server_config, loop=self.loop)
+            log.info('created server: %r', self.http_server)
+        except Exception:
+            log.exception('failed to create server')
 
     def is_blacklisted(self, user: discord.User) -> bool:
         return user.id in self.blacklisted_storage
