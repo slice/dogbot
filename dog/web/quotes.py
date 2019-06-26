@@ -1,6 +1,7 @@
 import functools
 
-from quart import Blueprint, g, jsonify as json
+from quart import Blueprint, g
+from quart import jsonify as json
 
 from .decorators import guild_resolver
 

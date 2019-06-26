@@ -1,6 +1,5 @@
 import discord
-
-from lifesaver.utils.formatting import pluralize, clean_mentions
+from lifesaver.utils.formatting import clean_mentions, pluralize
 
 __all__ = ['stringify_message']
 

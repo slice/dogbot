@@ -1,6 +1,6 @@
-import aiohttp
 import collections
 
+import aiohttp
 import discord
 import lifesaver
 from discord.ext import commands

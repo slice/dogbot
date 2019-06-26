@@ -1,9 +1,11 @@
 import secrets
-from urllib.parse import quote_plus
 from typing import Tuple
+from urllib.parse import quote_plus
 
 import aiohttp
-from quart import Blueprint, g, jsonify as json, redirect, request, session
+from quart import Blueprint, g
+from quart import jsonify as json
+from quart import redirect, request, session
 
 auth = Blueprint('auth', __name__)
 API_BASE = 'https://discordapp.com/api/v6'

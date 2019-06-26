@@ -9,6 +9,7 @@ from hypercorn.asyncio.run import Server
 from lifesaver.bot.storage import AsyncJSONStorage
 
 from dog.web.server import app as webapp
+
 from .guild_config import GuildConfigManager
 from .help import HelpCommand
 

@@ -2,15 +2,14 @@ __all__ = ['gatekeeper_check', 'block_default_avatars', 'block_bots',
            'minimum_creation_time', 'block_all', 'username_regex']
 
 import datetime
-import inspect
 import functools
+import inspect
 import re
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 import discord
 
 from .core import Bounce, Report
-
 
 CheckOptions = Dict[str, Any]
 

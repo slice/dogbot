@@ -1,5 +1,5 @@
 import collections
-from typing import Optional, List, Tuple, Type
+from typing import List, Optional, Tuple, Type
 
 import discord
 import lifesaver
@@ -10,6 +10,7 @@ from lifesaver.utils.timing import Ratelimiter
 from dog.converters import SoftMember
 from dog.formatting import represent
 from dog.utils import chained_decorators
+
 
 def guild_action(**perms):
     return chained_decorators([

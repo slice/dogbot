@@ -3,10 +3,11 @@ import time
 from random import choice
 
 import discord
-from discord.ext import commands
 import lifesaver
+from discord.ext import commands
 from lifesaver.bot.storage import AsyncJSONStorage
-from lifesaver.utils import ListPaginator, human_delta, pluralize, truncate, clean_mentions
+from lifesaver.utils import (ListPaginator, clean_mentions, human_delta,
+                             pluralize, truncate)
 
 from .converters import Messages, QuoteName
 from .utils import stringify_message

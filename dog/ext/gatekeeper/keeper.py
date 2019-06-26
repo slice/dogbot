@@ -4,9 +4,11 @@ import typing
 
 import discord
 from lifesaver.utils.timing import Ratelimiter
+
 from dog.formatting import represent
+
 from . import checks as checks_module
-from .core import CheckFailure, Ban, Bounce, Report, create_embed
+from .core import Ban, Bounce, CheckFailure, Report, create_embed
 
 ALL_CHECKS = [getattr(checks_module, name) for name in checks_module.__all__]
 

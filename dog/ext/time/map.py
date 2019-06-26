@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 import aiohttp
 import discord
 import pytz
-from PIL import Image, ImageFont, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 from dog.ext.time.drawing import draw_text_cropped
 

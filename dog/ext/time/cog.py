@@ -7,12 +7,12 @@ import lifesaver
 import pytz
 from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
+from geopy import exc as geopy_errors
 from lifesaver.bot.storage import AsyncJSONStorage
 from lifesaver.utils import clean_mentions
 from lifesaver.utils.timing import Timer
-from geopy import exc as geopy_errors
 
-from .converters import hour_minute, Timezone
+from .converters import Timezone, hour_minute
 from .geocoder import Geocoder
 from .map import Map
 

@@ -12,9 +12,9 @@ from lifesaver.utils import pluralize
 from ruamel.yaml import YAML
 
 from dog.formatting import represent
-from .keeper import Keeper
-from .converters import UserReference
 
+from .converters import UserReference
+from .keeper import Keeper
 
 log = logging.getLogger(__name__)
 

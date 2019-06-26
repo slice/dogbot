@@ -1,6 +1,7 @@
 discord.py-lifesaver @ git+https://github.com/slice/lifesaver.git
 jishaku @ git+https://github.com/Gorialis/jishaku.git
 
+asyncpg
 quart==0.8.1
 pytz==2018.3
 geopy

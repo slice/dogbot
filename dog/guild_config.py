@@ -1,11 +1,11 @@
 __all__ = ['GuildConfigManager']
 
 import logging
-from typing import Optional, Union, TypeVar
+from typing import Optional, TypeVar, Union
 
 import discord
-from ruamel.yaml import YAML, YAMLError
 from lifesaver.bot.storage import AsyncJSONStorage
+from ruamel.yaml import YAML, YAMLError
 
 T = TypeVar('T')
 GuildOrGuildID = Union[discord.Guild, int]

@@ -1,4 +1,6 @@
-from quart import Blueprint, g, jsonify as json, request
+from quart import Blueprint, g
+from quart import jsonify as json
+from quart import request
 from ruamel.yaml import YAML, YAMLError
 
 from .decorators import require_auth
