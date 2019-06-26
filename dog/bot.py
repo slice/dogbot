@@ -101,8 +101,9 @@ class Dogbot(lifesaver.Bot):
         log.info('bot is exiting')
         await self.session.close()
         log.info('closing web server')
-        self.http_server.close()
-        await self.http_server.wait_closed()
+        if self.http_server:
+            self.http_server.close()
+            await self.http_server.wait_closed()
         await super().close()
 
     async def _boot_http_server(self):
