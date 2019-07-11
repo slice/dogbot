@@ -1,11 +1,11 @@
+import functools
 import re
-from typing import Optional
+from typing import Set
 
 import discord
 import lifesaver
 from discord import PartialEmoji
 from discord.ext import commands
-from lifesaver.utils import history_reducer
 
 EMOJI_REGEX = re.compile(r"""
     # A Discord emoji, as represented in raw message content.
@@ -52,33 +52,39 @@ class EmojiStealer(commands.Converter):
 
     @staticmethod
     async def recent(ctx: lifesaver.Context) -> PartialEmoji:
-        def reducer(msg: discord.Message) -> Optional[PartialEmoji]:
+        def formatter(emoji: PartialEmoji, index: int) -> str:
+            return f'{index + 1}. `:{emoji.name}:`'
+
+        def reducer(emoji: Set[PartialEmoji], msg: discord.Message) -> Set[PartialEmoji]:
             match = EMOJI_REGEX.search(msg.content)
 
             if not match:
-                return None
+                return emoji
 
             emoji_id = int(match.group('id'))
 
             # If the emoji used is already in the guild, ignore.
-            if emoji_id in {emoji.id for emoji in ctx.guild.emojis}:
-                return None
+            if discord.utils.get(ctx.guild.emojis, id=emoji_id):
+                return emoji
 
-            return PartialEmoji(
+            new_emoji = PartialEmoji(
                 animated=bool(match.group('animated')),
                 name=match.group('name'),
                 id=emoji_id,
             )
 
-        results = await history_reducer(ctx, reducer, ignore_duplicates=True, limit=10)
+            return emoji | set([new_emoji])
+
+        messages = await ctx.history(limit=50).flatten()
+        results: Set[PartialEmoji] = functools.reduce(reducer, messages, set())
 
         if not results:
             raise commands.BadArgument('No stealable custom emoji were found.')
 
         if len(results) > 1:
-            result = await ctx.pick_from_list(results)
+            result = await ctx.pick_from_list(results, formatter=formatter)
         else:
-            result = results[0]
+            result = list(results)[0]
 
         return result
 

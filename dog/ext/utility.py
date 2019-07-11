@@ -1,11 +1,12 @@
+import functools
 import random
 import re
+from typing import Set
 
 import aiohttp
 import discord
 import lifesaver
 from discord.ext import commands
-from lifesaver.utils import history_reducer
 
 from dog.converters import EmojiStealer, UserID
 
@@ -61,15 +62,17 @@ class Utility(lifesaver.Cog):
         Useful for mobile users.
         """
 
-        def reducer(message):
-            return EMOJI_NAME_REGEX.findall(message.content)
+        def reducer(emoji: Set[str], message: discord.Message):
+            names = EMOJI_NAME_REGEX.findall(message.content)
+            return emoji | set(names)
 
-        emoji_names = await history_reducer(ctx, reducer, ignore_duplicates=True, limit=50)
+        messages = await ctx.history(limit=50).flatten()
+        names: Set[str] = functools.reduce(reducer, messages, set())
 
-        if not emoji_names:
+        if not names:
             await ctx.send('No recently used custom emoji were found.')
         else:
-            formatted = ', '.join(f'`{name}`' for name in emoji_names)
+            formatted = ', '.join(f'`{name}`' for name in names)
             await ctx.send(formatted)
 
     @lifesaver.command(aliases=['se'])
