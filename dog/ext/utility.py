@@ -52,7 +52,7 @@ class Utility(lifesaver.Cog):
         result = random.choice(choices)
         await ctx.send(result)
 
-    @lifesaver.command()
+    @lifesaver.command(aliases=['en'])
     @commands.guild_only()
     @commands.bot_has_permissions(read_message_history=True)
     async def emojinames(self, ctx: lifesaver.Context):
@@ -72,7 +72,7 @@ class Utility(lifesaver.Cog):
             formatted = ', '.join(f'`{name}`' for name in emoji_names)
             await ctx.send(formatted)
 
-    @lifesaver.command()
+    @lifesaver.command(aliases=['se'])
     @commands.guild_only()
     @commands.bot_has_permissions(manage_emojis=True, read_message_history=True)
     @commands.has_permissions(manage_emojis=True)
