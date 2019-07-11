@@ -9,7 +9,7 @@ from lifesaver.utils import history_reducer
 
 from dog.converters import EmojiStealer, UserID
 
-EMOJI_NAME_REGEX = re.compile(r'<a?(:.+:)\d+>')
+EMOJI_NAME_REGEX = re.compile(r'<a?(:\w{2,32}:)\d{15,}>')
 
 
 class Utility(lifesaver.Cog):
