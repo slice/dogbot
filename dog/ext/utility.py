@@ -36,7 +36,7 @@ class Utility(lifesaver.Cog):
             else:
                 await ctx.send(data[0])
         except aiohttp.ClientError:
-            await ctx.send('Failed to grab a shibe. \N{DOG FACE}')
+            await ctx.send(f'{ctx.tick(False)} Failed to grab a shibe. Try again later.')
 
     @lifesaver.command(aliases=['choose'])
     async def pick(self, ctx: lifesaver.Context, *choices: commands.clean_content):
