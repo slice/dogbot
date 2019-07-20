@@ -32,10 +32,10 @@ class Time(lifesaver.Cog):
         timezone = self.timezones.get(user.id)
         if raw:
             return timezone
-        else:
-            if not timezone:
-                return None
-            return pytz.timezone(timezone)
+
+        if not timezone:
+            return None
+        return pytz.timezone(timezone)
 
     def get_time_for(self, user: discord.User) -> Optional[datetime.datetime]:
         timezone = self.get_timezone_for(user, raw=False)
