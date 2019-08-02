@@ -52,9 +52,9 @@ class Time(lifesaver.Cog):
         return self.format_time(time)
 
     def format_time(self, time: datetime.datetime, *, shorten: bool = True, hm: bool = False) -> str:
-        # omit the 12-hour representation before noon as it is redundant (both are essentially the same)
+        # omit the 12-hour representation before noon as it is redundant
         time_format = '%H:%M' if time.hour < 12 and shorten else '%H:%M (%I:%M %p)'
-        return time.strftime(time_format if hm else ('%B %d, %Y  ' + time_format))
+        return time.strftime(time_format if hm else '%B %d  ' + time_format)
 
     @lifesaver.command(aliases=['st'])
     async def sleepytime(self, ctx, *, awaken_time: hour_minute):
