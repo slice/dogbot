@@ -5,9 +5,11 @@ services:
     volumes:
     - "./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql"
     - "./data/db:/var/lib/postgresql/data"
+    restart: unless-stopped
   bot:
     build: "."
     ports:
     - "8993:8993"
     volumes:
     - "./:/app"
+    restart: unless-stopped
