@@ -7,3 +7,6 @@ quart==0.8.1
 pytz==2018.3
 geopy
 Pillow
+
+# https://github.com/iterative/dvc/issues/2334#issuecomment-515787803
+ruamel.yaml<0.16
