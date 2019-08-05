@@ -1,6 +1,6 @@
 import functools
 import re
-from typing import Set
+from typing import List, Set
 
 import discord
 import lifesaver
@@ -76,7 +76,7 @@ class EmojiStealer(commands.Converter):
             return emoji | set([new_emoji])
 
         messages = await ctx.history(limit=50).flatten()
-        results: Set[PartialEmoji] = functools.reduce(reducer, messages, set())
+        results: List[PartialEmoji] = list(functools.reduce(reducer, messages, set()))
 
         if not results:
             raise commands.BadArgument('No stealable custom emoji were found.')
