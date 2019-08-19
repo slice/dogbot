@@ -184,8 +184,18 @@ class Keeper:
         # ratelimiter to go off. now we have to remove this user...
         await self.bounce(triggering_member, 'Users are joining too quickly')
 
-        # ...and the rest of the users who were part of the join burst!
-        accompanying = self.recent_joins[-self.join_ratelimiter.rate:]
+        # ...and the rest of the users who were part of the join burst.
+        #
+        # we explicitly filter out the triggering member because if they joined
+        # more than once to trigger the ratelimit, they would appear in this
+        # list.
+        accompanying = [
+            member for member in self.recent_joins[-self.join_ratelimiter.rate:]
+            if member != triggering_member
+        ]
+
+        self.log.debug('_auto_lockdown: triggering_member: %r', triggering_member)
+        self.log.debug('_auto_lockdown: accompanying: %r', accompanying)
 
         if accompanying:
             for member in accompanying:
