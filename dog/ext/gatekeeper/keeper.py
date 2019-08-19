@@ -13,9 +13,10 @@ from .threshold import Threshold
 
 ALL_CHECKS = [getattr(checks_module, name) for name in checks_module.__all__]
 
-INCORRECTLY_CONFIGURED = """Gatekeeper was configured incorrectly!
+INCORRECTLY_CONFIGURED_STRING = """**Gatekeeper was configured incorrectly!**
 
-I'm not sure what to do, so just to be safe, I'm going to prevent this user from joining."""
+I'm not sure what to do, so I'm going to prevent this user from joining just to
+be safe."""
 
 
 class Keeper:
@@ -338,7 +339,7 @@ class Keeper:
         async def handle_misconfiguration(report):
             self.log.debug('error in config: %r', report)
             await self.report(str(report))
-            await self.bounce(member, INCORRECTLY_CONFIGURED)
+            await self.bounce(member, INCORRECTLY_CONFIGURED_STRING)
 
         # perform bannable checks
         try:
