@@ -43,17 +43,18 @@ class Keeper:
         #: is used to keep track of users joining so that during a burst of
         #: joins (like in a raid), everyone who joined is removed instead of the
         #: single user that ended up triggering the ratelimit.
-        self.recent_joins = []
+        self.recent_joins: T.List[discord.Member] = []
 
-        self.config = None
+        #: The Gatekeeper config (the ``gatekeeper`` key of the guild config).
+        self.config: T.Optional[T.Dict] = None
 
-        #: A ratelimiter for each user. Addresses users repeatedly joining after
+        #: A ratelimiter for each user. Combats users repeatedly joining after
         #: being bounced by Gatekeeper.
-        self.unique_join_ratelimiter = None
+        self.unique_join_ratelimiter: T.Optional[Ratelimiter] = None
 
-        #: A ratelimiter for all users. Addresses large amounts of users joining
+        #: A ratelimiter for all users. Combats large amounts of users joining
         #: at a time (like in raids).
-        self.join_ratelimiter = None
+        self.join_ratelimiter: T.Optional[Ratelimiter] = None
 
         self.update_config(config)
 
