@@ -86,7 +86,7 @@ class Profile(lifesaver.Cog):
 
         await ctx.send(embed=embed)
 
-    @profile.command(name='link_ap', hidden=True)
+    @profile.command(name='link_ap', hidden=True, enabled=False)
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def profile_link_ap(self, ctx, acct: MastodonUsername):
         """Links an ActivityPub actor to your profile.
