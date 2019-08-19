@@ -1,6 +1,6 @@
 import collections
 import logging
-import typing
+import typing as T
 
 import discord
 from lifesaver.utils.timing import Ratelimiter
@@ -9,40 +9,13 @@ from dog.formatting import represent
 
 from . import checks as checks_module
 from .core import Ban, Bounce, CheckFailure, Report, create_embed
+from .threshold import Threshold
 
 ALL_CHECKS = [getattr(checks_module, name) for name in checks_module.__all__]
 
 INCORRECTLY_CONFIGURED = """Gatekeeper was configured incorrectly!
 
 I'm not sure what to do, so just to be safe, I'm going to prevent this user from joining."""
-
-Threshold = collections.namedtuple('Threshold', 'rate per')
-
-
-def parse_threshold(threshold: typing.Optional[str]) -> Threshold:
-    """Parses a threshold specifier string into a Threshold namedtuple
-    containing ``rate`` and ``per`` fields.
-
-    Raises
-    ------
-    TypeError
-        If the threshold specifier string was invalid or None.
-
-    Example
-    -------
-    >>> parse_threshold("5/10")
-    Threshold(rate=5, per=10)
-    """
-    if threshold is None:
-        raise TypeError('Threshold specifier string cannot be None')
-
-    try:
-        rate, per = threshold.split('/')
-        if '' in (rate, per):
-            raise TypeError('Invalid threshold syntax')
-        return Threshold(rate=int(rate), per=float(per))
-    except ValueError:
-        raise TypeError('Invalid threshold syntax')
 
 
 class Keeper:
@@ -104,25 +77,32 @@ class Keeper:
         """Return the configured bounce message."""
         return self.config.get('bounce_message')
 
-    def _make_ratelimiter(self, threshold: str) -> Ratelimiter:
-        """Create a Ratelimiter object from a threshold specifier string."""
-        threshold = parse_threshold(threshold)
-        return Ratelimiter(threshold.rate, threshold.per)
+    def _update_ratelimiter(
+        self,
+        threshold: T.Optional[str],
+        attribute_name: str,
+        *,
+        after_update: T.Callable[[Ratelimiter, Ratelimiter], None] = None
+    ):
+        """Update/create a :class:`Ratelimiter` attribute on ``self`` using a
+        threshold string and attribute name.
 
-    def _update_ratelimiter(self, threshold: str, attribute_name: str, *, after_update=None):
-        """Updates/creates a Ratelimiter attribute on self from a threshold specifier string.
+        The :class:`Ratelimiter` is created from the provided threshold string.
+        ``self`` is updated using the given ``attribute_name``. If the
+        ratelimiter hasn't changed, then the old one will be kept.
 
-        The Ratelimiter is created from the provided threshold specifier string,
-        and the attribute given by ``attribute_name`` on self is updated with
-        the newly created Ratelimiter. If the Ratelimiter hasn't changed, then
-        the old one will be used.
-
-        If the threshold specifier string contains invalid syntax or is None,
-        the ratelimiter attribute is disabled.
+        If the threshold string contains invalid syntax or is ``None``,
+        the ratelimiter attribute becomes disabled.
         """
+
         try:
+            if threshold is None:
+                raise TypeError
+
             old_ratelimiter = getattr(self, attribute_name)
-            new_ratelimiter = self._make_ratelimiter(threshold)
+
+            threshold = Threshold.from_string(threshold)
+            new_ratelimiter = Ratelimiter(threshold.rate, threshold.per)
 
             if old_ratelimiter != new_ratelimiter:
                 setattr(self, attribute_name, new_ratelimiter)
@@ -226,7 +206,7 @@ class Keeper:
             if self.config.get('echo_dm_failures', False):
                 await self.report(f'Failed to send bounce message to {represent(member)}.')
 
-    async def report(self, *args, **kwargs) -> typing.Optional[discord.Message]:
+    async def report(self, *args, **kwargs) -> T.Optional[discord.Message]:
         """Send a message to the designated broadcast channel of a guild.
 
         If the bot doesn't have permission to send to the channel, the error
