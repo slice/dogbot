@@ -161,7 +161,7 @@ class Profile(lifesaver.Cog):
     async def profile_avatar(self, ctx, user: HardMember = None):
         """Views the avatar of a user."""
         user = user or ctx.author
-        await ctx.send(user.avatar_url_as(format='png'))
+        await ctx.send(user.avatar_url_as(static_format='png'))
 
     @lifesaver.command(aliases=['avatar_url'])
     async def avatar(self, ctx, user: HardMember = None):
