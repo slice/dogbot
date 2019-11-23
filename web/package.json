@@ -6,15 +6,15 @@
   "dependencies": {
     "brace": "^0.11.1",
     "js-yaml": "^3.13.1",
-    "polished": "^3.4.1",
-    "react": "^16.8.6",
+    "polished": "^3.4.2",
+    "react": "^16.12.0",
     "react-ace": "^6.6.0",
-    "react-dom": "^16.8.6",
-    "react-icons": "^3.7.0",
+    "react-dom": "^16.12.0",
+    "react-icons": "^3.8.0",
     "react-router-dom": "^4.3.1",
-    "react-scripts": "^3.0.1",
-    "styled-components": "^4.3.2",
-    "yup": "^0.26.10"
+    "react-scripts": "3.2.0",
+    "styled-components": "^4.4.1",
+    "yup": "^0.27.0"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -26,9 +26,9 @@
     "extends": "react-app"
   },
   "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not ie <= 11",
-    "not op_mini all"
+    "last 3 chrome version",
+    "last 3 chromeandroid version",
+    "last 3 ff version",
+    "last 3 ios version"
   ]
 }
