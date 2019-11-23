@@ -331,7 +331,7 @@ class Keeper:
         """
         self.log.debug('%d: gatekeeping! (created_at=%s)', member.id, member.created_at)
 
-        if self.unique_join_ratelimiter and self.unique_join_ratelimiter.is_rate_limited(member.id):
+        if self.unique_join_ratelimiter and self.unique_join_ratelimiter.hit(member.id):
             # user is joining too fast!
             self.log.debug('%d: is joining too quickly, banning', member.id)
             await self.ban(member, 'Joining too quickly')
@@ -371,7 +371,7 @@ class Keeper:
             await handle_misconfiguration(report)
             return False
 
-        if self.join_ratelimiter and self.join_ratelimiter.is_rate_limited(True):
+        if self.join_ratelimiter and self.join_ratelimiter.hit():
             # users are joining too fast!
             self.log.debug('users are joining too quickly')
             await self._auto_lockdown(member)
