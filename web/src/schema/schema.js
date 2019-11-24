@@ -55,7 +55,11 @@ export default object({
   editors: array(defs.user),
   gatekeeper: object({
     enabled: bool(),
+
     ban_threshold: defs.threshold,
+    ban_threshold_auto_unban: bool(),
+    ban_threshold_auto_unban_after: number(),
+
     bannable_checks: defs.checks,
     checks: defs.checks,
     auto_lockdown: object({

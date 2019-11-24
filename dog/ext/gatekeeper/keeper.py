@@ -1,3 +1,4 @@
+import asyncio
 import collections
 import logging
 import typing as T
@@ -324,7 +325,41 @@ class Keeper:
                 error.check = check
                 raise error from None
 
-    async def check(self, member: discord.Member):
+    async def _unique_joining_too_quickly_ban(self, member: discord.Member):
+        self.log.debug('%d: is joining too quickly, banning', member.id)
+        await self.ban(member, 'Joining too quickly')
+
+        if not self.config.get('ban_threshold_auto_unban', True):
+            return
+
+        async def automatic_unban_task():
+            ban_period = self.config.get('ban_threshold_auto_unban_after', 300)
+            await asyncio.sleep(ban_period)
+
+            try:
+                await member.guild.fetch_ban(member)
+            except discord.HTTPException:
+                # already unbanned, or can't unban anymore
+                return
+
+            try:
+                await member.unban(
+                    reason=f'Gatekeeper: Automatically unbanned after {ban_period} second(s) (was joining too quickly)'
+                )
+            except discord.HTTPException as error:
+                await self.report(
+                    f'Failed to automatically unban {represent(member)} after '
+                    f'{ban_period} second(s) for joining too quickly: `{error}`'
+                )
+            else:
+                await self.report(
+                    f'Automatically unbanned {represent(member)} '
+                    f'after {ban_period} second(s) for joining too quickly.'
+                )
+
+        self.bot.loop.create_task(automatic_unban_task())
+
+    async def check(self, member: discord.Member) -> bool:
         """Perform checks on a member and bounce or ban them if necessary.
 
         Ratelimits (thresholds) are also checked in this method.
@@ -333,8 +368,7 @@ class Keeper:
 
         if self.unique_join_ratelimiter and self.unique_join_ratelimiter.hit(member.id):
             # user is joining too fast!
-            self.log.debug('%d: is joining too quickly, banning', member.id)
-            await self.ban(member, 'Joining too quickly')
+            await self._unique_joining_too_quickly_ban(member)
             return False
 
         async def handle_misconfiguration(report):
