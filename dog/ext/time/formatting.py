@@ -11,7 +11,7 @@ POSTSCRIPTS: T.Dict[Matcher, T.Union[str, T.List[str]]] = {
     # new year's day
     (1, 1, 0, range(31)): "\N{face with party horn and party hat} \N{party popper}",
     # first day of the month
-    (None, 1, 0, range(11)): "\N{spiral calendar pad}\N{variation selector-16}",
+    (None, 1, None, None): "\N{spiral calendar pad}\N{variation selector-16}",
     # halloween
     (10, 31, None, None): "\N{jack-o-lantern}",
     # valentine's day
