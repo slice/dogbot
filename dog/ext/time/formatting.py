@@ -9,7 +9,7 @@ Matcher = T.Tuple[MatcherValue, MatcherValue, MatcherValue, MatcherValue]
 
 POSTSCRIPTS: T.Dict[Matcher, T.Union[str, T.List[str]]] = {
     # new year's day
-    (1, 1, 0, range(11)): "\N{face with party horn and party hat} \N{party popper}",
+    (1, 1, 0, range(31)): "\N{face with party horn and party hat} \N{party popper}",
     # first day of the month
     (None, 1, 0, range(11)): "\N{spiral calendar pad}\N{variation selector-16}",
     # halloween
