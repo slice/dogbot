@@ -12,6 +12,7 @@ from lifesaver.bot.storage import AsyncJSONStorage
 from lifesaver.utils import clean_mentions
 from lifesaver.utils.timing import Timer
 
+from .formatting import format_dt
 from .converters import Timezone, hour_minute
 from .geocoder import Geocoder
 from .map import Map
@@ -49,12 +50,7 @@ class Time(lifesaver.Cog):
         if not time:
             return None
 
-        return self.format_time(time)
-
-    def format_time(self, time: datetime.datetime, *, shorten: bool = True, hm: bool = False) -> str:
-        # omit the 12-hour representation before noon as it is redundant
-        time_format = '%H:%M' if time.hour < 12 and shorten else '%H:%M (%I:%M %p)'
-        return time.strftime(time_format if hm else '%B %d  ' + time_format)
+        return format_dt(time)
 
     @lifesaver.command(aliases=['st'])
     async def sleepytime(self, ctx, *, awaken_time: hour_minute):
@@ -127,8 +123,8 @@ class Time(lifesaver.Cog):
         await ctx.send(fmt.format(
             abs(hour_difference),
             source,
-            self.format_time(our_time, hm=True),
-            self.format_time(their_time, hm=True),
+            format_dt(our_time, time_only=True),
+            format_dt(their_time, time_only=True),
             possessive_source,
             source
         ))
