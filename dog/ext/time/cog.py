@@ -90,7 +90,7 @@ class Time(lifesaver.Cog):
                 (f"{ctx.tick(False)} You haven't set your timezone yet. "
                  f"Use `{ctx.prefix}time set <location>` to set it. ")
                 if who == ctx.author else
-                (f'{ctx.tick(False)} {who.display_name} has not set their timezone.'
+                (f"{ctx.tick(False)} {who.display_name} hasn't set their timezone yet. "
                  f'They can set it with `{ctx.prefix}time set <location>`.')
             )
             return
