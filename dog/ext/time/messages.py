@@ -33,3 +33,21 @@ TIMEZONE_SAVED = (
 )
 
 QUOTA_EXCEEDED = "Can't resolve that location right now. Please try again later."
+
+HARD_OFFSET_WARNING = (
+    "You are manually specifying a UTC offset. If your region uses daylight "
+    "savings time, I won't be able to reflect clock changes when `{prefix}t` "
+    "is used."
+)
+
+DEPRECATED_TIMEZONE = (
+    "That timezone is too broad, vague, or ambiguous. "
+    "In order for me to handle daylight saving time correctly, please provide "
+    "a narrower timezone instead of a three-letter timezone code.\n\n"
+    + TIME_SET_EXAMPLE
+)
+
+DIFFERENCE = (
+    "You and {source} are **{difference}** hours away from each other.\n\n"
+    "When it's {our_time} for you it would be {their_time} {possessive} {source}."
+)

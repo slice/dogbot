@@ -9,8 +9,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import aiohttp
+import dateutil.tz
 import discord
-import pytz
 from PIL import Image, ImageDraw, ImageFont
 
 from dog.ext.time.drawing import draw_text_cropped
@@ -46,7 +46,7 @@ class Map:
 
     def add_member(self, member: discord.Member, timezone: str):
         """Add a member to the chart."""
-        now = datetime.datetime.now(pytz.timezone(timezone))
+        now = datetime.datetime.now(tz=dateutil.tz.gettz(timezone))
         formatted = now.strftime(self.format)
         self.timezones[formatted].append(member)
 

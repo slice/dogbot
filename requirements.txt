@@ -5,7 +5,7 @@ jishaku @ git+https://github.com/Gorialis/jishaku.git
 asyncpg
 hypercorn==0.6.0
 quart==0.8.1
-pytz==2018.3
+python-dateutil
 geopy
 Pillow
 ruamel.yaml
