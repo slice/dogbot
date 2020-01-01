@@ -114,9 +114,12 @@ class Time(lifesaver.Cog):
         formatted_time = self.get_formatted_time_for(who)
         if not formatted_time:
             await ctx.send(
-                NO_AUTHOR_TIMEZONE.format(prefix=ctx.prefix)
-                if who == ctx.author
-                else NO_TARGET_TIMEZONE.format(other=who, prefix=ctx.prefix)
+                f"{ctx.tick(False)} "
+                + (
+                    NO_AUTHOR_TIMEZONE.format(prefix=ctx.prefix)
+                    if who == ctx.author
+                    else NO_TARGET_TIMEZONE.format(other=who, prefix=ctx.prefix)
+                )
             )
             return
 
@@ -132,7 +135,10 @@ class Time(lifesaver.Cog):
         (source, other_tz) = timezone
 
         if not self.timezones.get(ctx.author.id):
-            await ctx.send(NO_TIMEZONE_SO_NO_COMMAND.format(prefix=ctx.prefix))
+            await ctx.send(
+                f"{ctx.tick(False)} "
+                + NO_TIMEZONE_SO_NO_COMMAND.format(prefix=ctx.prefix)
+            )
             return
 
         if time is not None:
