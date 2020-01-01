@@ -10,24 +10,26 @@ from discord.ext import commands
 
 from dog.converters import EmojiStealer, UserID
 
-EMOJI_NAME_REGEX = re.compile(r'<a?(:\w{2,32}:)\d{15,}>')
+EMOJI_NAME_REGEX = re.compile(r"<a?(:\w{2,32}:)\d{15,}>")
 
 
 class Utility(lifesaver.Cog):
-    @lifesaver.command(aliases=['ginv', 'invite'])
+    @lifesaver.command(aliases=["ginv", "invite"])
     async def inv(self, ctx: lifesaver.Context, *ids: UserID):
         """Generates bot invites."""
         if not ids:
             ids = (self.bot.user.id,)
 
-        urls = '\n'.join(f'<{discord.utils.oauth_url(bot_id)}>' for bot_id in ids)
+        urls = "\n".join(f"<{discord.utils.oauth_url(bot_id)}>" for bot_id in ids)
         await ctx.send(urls)
 
-    @lifesaver.command(aliases=['shiba', 'dog'], typing=True)
+    @lifesaver.command(aliases=["shiba", "dog"], typing=True)
     async def shibe(self, ctx: lifesaver.Context):
         """Sends a random shibe picture."""
         try:
-            async with self.session.get('http://shibe.online/api/shibes?count=1&urls=true') as resp:
+            async with self.session.get(
+                "http://shibe.online/api/shibes?count=1&urls=true"
+            ) as resp:
                 data = await resp.json()
 
             if ctx.can_send_embeds:
@@ -37,23 +39,25 @@ class Utility(lifesaver.Cog):
             else:
                 await ctx.send(data[0])
         except aiohttp.ClientError:
-            await ctx.send(f'{ctx.tick(False)} Failed to grab a shibe. Try again later.')
+            await ctx.send(
+                f"{ctx.tick(False)} Failed to grab a shibe. Try again later."
+            )
 
-    @lifesaver.command(aliases=['choose'])
+    @lifesaver.command(aliases=["choose"])
     async def pick(self, ctx: lifesaver.Context, *choices: commands.clean_content):
         """Pick from a list of choices."""
         if not choices:
-            await ctx.send('Send some choices.')
+            await ctx.send("Send some choices.")
             return
 
         if len(set(choices)) == 1:
-            await ctx.send('Invalid choices.')
+            await ctx.send("Invalid choices.")
             return
 
         result = random.choice(choices)
         await ctx.send(result)
 
-    @lifesaver.command(aliases=['en'])
+    @lifesaver.command(aliases=["en"])
     @commands.guild_only()
     @commands.bot_has_permissions(read_message_history=True)
     async def emojinames(self, ctx: lifesaver.Context):
@@ -70,12 +74,12 @@ class Utility(lifesaver.Cog):
         names: Set[str] = functools.reduce(reducer, messages, set())
 
         if not names:
-            await ctx.send('No recently used custom emoji were found.')
+            await ctx.send("No recently used custom emoji were found.")
         else:
-            formatted = ', '.join(f'`{name}`' for name in names)
+            formatted = ", ".join(f"`{name}`" for name in names)
             await ctx.send(formatted)
 
-    @lifesaver.command(aliases=['se'])
+    @lifesaver.command(aliases=["se"])
     @commands.guild_only()
     @commands.bot_has_permissions(manage_emojis=True, read_message_history=True)
     @commands.has_permissions(manage_emojis=True)
@@ -85,15 +89,17 @@ class Utility(lifesaver.Cog):
         if not emoji:
             return
 
-        extension = 'gif' if emoji.animated else 'png'
-        emoji_url = f'https://cdn.discordapp.com/emojis/{emoji.id}.{extension}'
+        extension = "gif" if emoji.animated else "png"
+        emoji_url = f"https://cdn.discordapp.com/emojis/{emoji.id}.{extension}"
 
         if not emoji.name and not name:
-            await ctx.send('The name of the emoji could not be resolved. Please specify one.')
+            await ctx.send(
+                "The name of the emoji could not be resolved. Please specify one."
+            )
             return
 
-        name = emoji.name or name.strip(':')
-        msg = await ctx.send(ctx.emoji('loading'))
+        name = emoji.name or name.strip(":")
+        msg = await ctx.send(ctx.emoji("loading"))
 
         try:
             async with self.session.get(emoji_url, raise_for_status=True) as resp:
@@ -106,9 +112,9 @@ class Utility(lifesaver.Cog):
                 except discord.HTTPException:
                     await ctx.ok()
         except aiohttp.ClientError:
-            await msg.edit(content='Failed to download the emoji.')
+            await msg.edit(content="Failed to download the emoji.")
         except discord.HTTPException as exc:
-            await msg.edit(content=f'Failed to upload the emoji: {exc}')
+            await msg.edit(content=f"Failed to upload the emoji: {exc}")
 
 
 def setup(bot):

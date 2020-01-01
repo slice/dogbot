@@ -1,4 +1,4 @@
-__all__ = ['GuildConfigManager']
+__all__ = ["GuildConfigManager"]
 
 import logging
 from typing import Optional, TypeVar, Union
@@ -7,7 +7,7 @@ import discord
 from lifesaver.bot.storage import AsyncJSONStorage
 from ruamel.yaml import YAML, YAMLError
 
-T = TypeVar('T')
+T = TypeVar("T")
 GuildOrGuildID = Union[discord.Guild, int]
 log = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class GuildConfigManager:
     def __init__(self, bot) -> None:
         self.bot = bot
         self.yaml = YAML()
-        self.persistent = AsyncJSONStorage('guild_configs.json', loop=bot.loop)
+        self.persistent = AsyncJSONStorage("guild_configs.json", loop=bot.loop)
         self.parsed_cache = {}
 
     def resolve_guild(self, guild_or_id: GuildOrGuildID) -> Optional[discord.Guild]:
@@ -32,7 +32,9 @@ class GuildConfigManager:
             return guild
         return guild_or_id
 
-    def can_edit(self, user: discord.User, guild: GuildOrGuildID, *, with_config: dict = None) -> bool:
+    def can_edit(
+        self, user: discord.User, guild: GuildOrGuildID, *, with_config: dict = None
+    ) -> bool:
         """Return whether a user can edit a guild's config.
 
         Parameters
@@ -63,7 +65,7 @@ class GuildConfigManager:
         if config is None:
             return member is not None and member.guild_permissions.ban_members
 
-        editors = config.get('editors', [])
+        editors = config.get("editors", [])
 
         # a list of "user targets" to check against for this specific user
         # (the usual code path)
@@ -71,12 +73,13 @@ class GuildConfigManager:
             return (
                 # name#discriminator
                 str(user) in editors
-
                 # user id
                 or user.id in editors
-
                 # role id
-                or (member is not None and any(role.id in editors for role in member.roles))
+                or (
+                    member is not None
+                    and any(role.id in editors for role in member.roles)
+                )
             )
 
         # a singular id
@@ -104,10 +107,14 @@ class GuildConfigManager:
 
         if guild is not None:
             parsed_config = self.get(guild)
-            log.debug('dispatching guild_config_edit for %d (%r)', guild.id, parsed_config)
-            self.bot.dispatch('guild_config_edit', guild, parsed_config)
+            log.debug(
+                "dispatching guild_config_edit for %d (%r)", guild.id, parsed_config
+            )
+            self.bot.dispatch("guild_config_edit", guild, parsed_config)
 
-    def get(self, guild: GuildOrGuildID, default: T = None, *, yaml: bool = False) -> Union[dict, str, T]:
+    def get(
+        self, guild: GuildOrGuildID, default: T = None, *, yaml: bool = False
+    ) -> Union[dict, str, T]:
         """Return the configuration of a guild.
 
         Parameters
@@ -138,7 +145,7 @@ class GuildConfigManager:
             self.parsed_cache[config] = result
             return result
         except YAMLError:
-            log.warning('Invalid YAML config (%s): %s', into_str_id(guild), config)
+            log.warning("Invalid YAML config (%s): %s", into_str_id(guild), config)
             return default
 
     def __getitem__(self, guild: GuildOrGuildID) -> str:

@@ -5,8 +5,8 @@ from ruamel.yaml import YAML, YAMLError
 
 from .decorators import require_auth
 
-api = Blueprint('api', __name__)
-yaml = YAML(typ='safe')
+api = Blueprint("api", __name__)
+yaml = YAML(typ="safe")
 
 
 def inflate_guild(g):
@@ -14,77 +14,89 @@ def inflate_guild(g):
         "id": str(g.id),
         "name": g.name,
         "members": g.member_count,
-        "owner": {
-            "id": str(g.owner.id),
-            "tag": str(g.owner)
-        },
-        "icon_url": str(g.icon_url_as(format='png', size=64)),
+        "owner": {"id": str(g.owner.id), "tag": str(g.owner)},
+        "icon_url": str(g.icon_url_as(format="png", size=64)),
     }
 
 
-@api.route('/status')
+@api.route("/status")
 def api_ping():
-    return json({
-        'ready': g.bot.is_ready(),
-        'ping': g.bot.latency,
-        'guilds': len(g.bot.guilds)
-    })
+    return json(
+        {"ready": g.bot.is_ready(), "ping": g.bot.latency, "guilds": len(g.bot.guilds)}
+    )
 
 
-@api.route('/guild/<int:guild_id>', methods=['GET'])
+@api.route("/guild/<int:guild_id>", methods=["GET"])
 @require_auth
 async def api_guild(guild_id):
     guild = g.bot.get_guild(guild_id)
 
     if guild is None or not g.bot.guild_configs.can_edit(g.user, guild_id):
-        return json({
-            'error': True,
-            'message': 'Unknown guild.',
-            'code': 'UNKNOWN_GUILD',
-        }), 404
+        return (
+            json(
+                {"error": True, "message": "Unknown guild.", "code": "UNKNOWN_GUILD",}
+            ),
+            404,
+        )
 
     return json(inflate_guild(guild))
 
 
-@api.route('/guild/<int:guild_id>/config', methods=['GET', 'PATCH'])
+@api.route("/guild/<int:guild_id>/config", methods=["GET", "PATCH"])
 @require_auth
 async def api_guild_config(guild_id):
     guild = g.bot.get_guild(guild_id)
 
     if guild is None or not g.bot.guild_configs.can_edit(g.user, guild_id):
-        return json({
-            'error': True,
-            'message': 'Unknown guild.',
-            'code': 'UNKNOWN_GUILD',
-        }), 404
+        return (
+            json(
+                {"error": True, "message": "Unknown guild.", "code": "UNKNOWN_GUILD",}
+            ),
+            404,
+        )
 
-    if request.method == 'PATCH':
+    if request.method == "PATCH":
         text = await request.get_data(raw=False)
 
         try:
             yml = yaml.load(text)
         except YAMLError as err:
-            return json({
-                "error": True,
-                "message": f"Invalid YAML ({err}).",
-                "code": "INVALID_YAML"
-            }), 400
+            return (
+                json(
+                    {
+                        "error": True,
+                        "message": f"Invalid YAML ({err}).",
+                        "code": "INVALID_YAML",
+                    }
+                ),
+                400,
+            )
 
         if not g.bot.guild_configs.can_edit(g.user, guild_id, with_config=yml):
-            return json({
-                "error": True,
-                "message": "This configuration will lock you out. Make sure to add yourself as an editor.",
-                "code": "SELF_LOCKOUT",
-            }), 403
+            return (
+                json(
+                    {
+                        "error": True,
+                        "message": "This configuration will lock you out. Make sure to add yourself as an editor.",
+                        "code": "SELF_LOCKOUT",
+                    }
+                ),
+                403,
+            )
 
         # of course, it's possible for a singular, basic scalar value to be
         # passed in
         if yml is not None and not isinstance(yml, dict):
-            return json({
-                "error": True,
-                "message": "This configuration isn't a mapping.",
-                "code": "INVALID_CONFIG",
-            }), 400
+            return (
+                json(
+                    {
+                        "error": True,
+                        "message": "This configuration isn't a mapping.",
+                        "code": "INVALID_CONFIG",
+                    }
+                ),
+                400,
+            )
 
         await g.bot.guild_configs.write(guild_id, text)
         return json({"success": True})
@@ -93,11 +105,15 @@ async def api_guild_config(guild_id):
     return json({"guild_id": guild_id, "config": config})
 
 
-@api.route('/guilds')
+@api.route("/guilds")
 @require_auth
 def api_guilds():
-    guilds = sorted([
-        inflate_guild(guild) for guild in g.bot.guilds
-        if g.bot.guild_configs.can_edit(g.user, guild)
-    ], key=lambda guild: guild['id'])
+    guilds = sorted(
+        [
+            inflate_guild(guild)
+            for guild in g.bot.guilds
+            if g.bot.guild_configs.can_edit(g.user, guild)
+        ],
+        key=lambda guild: guild["id"],
+    )
     return json(guilds)

@@ -6,24 +6,29 @@ import discord
 import lifesaver
 from discord.ext import commands
 from lifesaver.bot.storage import AsyncJSONStorage
-from lifesaver.utils import (ListPaginator, clean_mentions, human_delta,
-                             pluralize, truncate)
+from lifesaver.utils import (
+    ListPaginator,
+    clean_mentions,
+    human_delta,
+    pluralize,
+    truncate,
+)
 
 from .converters import Messages, QuoteName
 from .utils import stringify_message
 
-__all__ = ['Quoting']
+__all__ = ["Quoting"]
 
 
 def embed_quote(quote) -> discord.Embed:
     embed = discord.Embed()
-    embed.description = quote['content']
-    embed.add_field(name='Jump', value=quote['jump_url'], inline=False)
+    embed.description = quote["content"]
+    embed.add_field(name="Jump", value=quote["jump_url"], inline=False)
 
-    creator = quote['created_by']['tag']
-    channel = quote['created_in']['name']
-    ago = human_delta(datetime.datetime.utcfromtimestamp(quote['created']))
-    embed.set_footer(text=f'Created by {creator} in #{channel} {ago} ago')
+    creator = quote["created_by"]["tag"]
+    channel = quote["created_in"]["name"]
+    ago = human_delta(datetime.datetime.utcfromtimestamp(quote["created"]))
+    embed.set_footer(text=f"Created by {creator} in #{channel} {ago} ago")
 
     return embed
 
@@ -31,12 +36,12 @@ def embed_quote(quote) -> discord.Embed:
 class Quoting(lifesaver.Cog):
     def __init__(self, bot, *args, **kwargs):
         super().__init__(bot, *args, **kwargs)
-        self.storage = AsyncJSONStorage('quotes.json', loop=bot.loop)
+        self.storage = AsyncJSONStorage("quotes.json", loop=bot.loop)
 
     def quotes(self, guild: discord.Guild):
         return self.storage.get(str(guild.id), {})
 
-    @lifesaver.command(aliases=['rq'])
+    @lifesaver.command(aliases=["rq"])
     @commands.guild_only()
     async def random_quote(self, ctx):
         """Shows a random quote."""
@@ -44,9 +49,9 @@ class Quoting(lifesaver.Cog):
 
         if not quotes:
             await ctx.send(
-                'There are no quotes in this server. Create some with '
-                f'`{ctx.prefix}quote new`. For more information, see `{ctx.prefix}'
-                'help quote`.'
+                "There are no quotes in this server. Create some with "
+                f"`{ctx.prefix}quote new`. For more information, see `{ctx.prefix}"
+                "help quote`."
             )
             return
 
@@ -57,7 +62,7 @@ class Quoting(lifesaver.Cog):
 
         await ctx.send(name, embed=embed)
 
-    @lifesaver.group(aliases=['q'], invoke_without_command=True)
+    @lifesaver.group(aliases=["q"], invoke_without_command=True)
     @commands.guild_only()
     async def quote(self, ctx, *, name: QuoteName(must_exist=True)):
         """Views a quote.
@@ -116,16 +121,18 @@ class Quoting(lifesaver.Cog):
         embed = embed_quote(quote)
         await ctx.send(embed=embed)
 
-    @quote.command(aliases=['new'])
+    @quote.command(aliases=["new"])
     @commands.guild_only()
-    async def create(self, ctx, name: QuoteName(must_not_exist=True), *messages: Messages):
+    async def create(
+        self, ctx, name: QuoteName(must_not_exist=True), *messages: Messages
+    ):
         """Creates a quote.
 
         See `d?help quote` for more information.
         """
         quotes = self.quotes(ctx.guild)
 
-        silent = name.startswith('!')
+        silent = name.startswith("!")
 
         if silent:
             # Remove the !
@@ -140,31 +147,35 @@ class Quoting(lifesaver.Cog):
                 quoted.append(message)
 
         strings = map(stringify_message, quoted)
-        quote_content = '\n'.join(strings)
+        quote_content = "\n".join(strings)
 
         if len(quote_content) > 2048:
             over_limit = pluralize(character=len(quote_content) - 2048)
 
             if not await ctx.confirm(
-                'Quote is quite large...',
-                (f'This quote is pretty big. ({over_limit} over limit.) '
-                 'It will be truncated to 2048 characters. Continue?'),
+                "Quote is quite large...",
+                (
+                    f"This quote is pretty big. ({over_limit} over limit.) "
+                    "It will be truncated to 2048 characters. Continue?"
+                ),
             ):
                 return
 
         quote = quotes[name] = {
-            'content': truncate(quote_content, 2048),
-            'jump_url': quoted[0].jump_url,
-            'created': time.time(),
-            'created_by': {'id': ctx.author.id, 'tag': str(ctx.author)},
-            'created_in': {'id': ctx.channel.id, 'name': ctx.channel.name},
-            'guild': {'id': ctx.guild.id},
+            "content": truncate(quote_content, 2048),
+            "jump_url": quoted[0].jump_url,
+            "created": time.time(),
+            "created_by": {"id": ctx.author.id, "tag": str(ctx.author)},
+            "created_in": {"id": ctx.channel.id, "name": ctx.channel.name},
+            "guild": {"id": ctx.guild.id},
         }
 
         await self.storage.put(str(ctx.guild.id), quotes)
 
         embed = embed_quote(quote)
-        await (ctx.author if silent else ctx).send(f'Created quote "{name}".', embed=embed)
+        await (ctx.author if silent else ctx).send(
+            f'Created quote "{name}".', embed=embed
+        )
 
     @quote.command()
     @commands.guild_only()
@@ -173,18 +184,18 @@ class Quoting(lifesaver.Cog):
         quotes = self.quotes(ctx.guild)
 
         if not quotes:
-            await ctx.send('No quotes exist for this server.')
+            await ctx.send("No quotes exist for this server.")
             return
 
-        tag_names = [
-            clean_mentions(ctx.channel, name)
-            for name in quotes.keys()
-        ]
+        tag_names = [clean_mentions(ctx.channel, name) for name in quotes.keys()]
 
         paginator = ListPaginator(
             tag_names,
-            ctx.author, ctx.channel,
-            title='All quotes', per_page=20, bot=ctx.bot,
+            ctx.author,
+            ctx.channel,
+            title="All quotes",
+            per_page=20,
+            bot=ctx.bot,
         )
         await paginator.create()
 
@@ -195,7 +206,7 @@ class Quoting(lifesaver.Cog):
         self,
         ctx,
         existing: QuoteName(must_exist=True),
-        new: QuoteName(must_not_exist=True)
+        new: QuoteName(must_not_exist=True),
     ):
         """Renames a quote."""
         quotes = self.quotes(ctx.guild)

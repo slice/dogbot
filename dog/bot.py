@@ -34,11 +34,12 @@ async def _boot_hypercorn(app, config, *, loop):
 
 class Dogbot(lifesaver.Bot):
     def __init__(self, cfg, **kwargs):
-        super().__init__(
-            cfg, help_command=HelpCommand(dm_help=cfg.dm_help), **kwargs)
+        super().__init__(cfg, help_command=HelpCommand(dm_help=cfg.dm_help), **kwargs)
 
         self.session = aiohttp.ClientSession(loop=self.loop)
-        self.blacklisted_storage = AsyncJSONStorage('blacklisted_users.json', loop=self.loop)
+        self.blacklisted_storage = AsyncJSONStorage(
+            "blacklisted_users.json", loop=self.loop
+        )
         self.guild_configs = GuildConfigManager(self)
 
         # webapp (quart) setup
@@ -55,14 +56,14 @@ class Dogbot(lifesaver.Bot):
         """Modified version of the vanilla dispatch to fit disabled_cogs."""
         discord.Client.dispatch(self, event_name, *args, **kwargs)
 
-        ev = 'on_' + event_name
+        ev = "on_" + event_name
         guild = None
 
         # yup, this can't go wrong at all
         # extract the guild from A.guild or A if it's already a guild, with A
         # being the first arg
         first_arg = args[0] if args else None
-        if hasattr(first_arg, 'guild') and isinstance(first_arg.guild, discord.Guild):
+        if hasattr(first_arg, "guild") and isinstance(first_arg.guild, discord.Guild):
             guild = first_arg.guild
         elif isinstance(first_arg, discord.Guild):
             guild = first_arg
@@ -73,8 +74,8 @@ class Dogbot(lifesaver.Bot):
             # to grab the cog name then check the configuration to avoid
             # dispatching if required
             ev_name = event.__qualname__
-            if ev_name.count('.') == 1 and guild and '.' in ev_name:
-                cog_name, method_name = ev_name.split('.')
+            if ev_name.count(".") == 1 and guild and "." in ev_name:
+                cog_name, method_name = ev_name.split(".")
                 if self.cog_is_disabled(guild, cog_name):
                     # log.debug('Dropping dispatch of %s to %s in %d -- cog disabled.', ev, ev_name, guild.id)
                     continue
@@ -85,7 +86,7 @@ class Dogbot(lifesaver.Bot):
     def cog_is_disabled(self, guild: discord.Guild, cog_name: str) -> bool:
         config = self.guild_configs.get(guild)
         if config:
-            disabled_cogs = config.get('disabled_cogs', [])
+            disabled_cogs = config.get("disabled_cogs", [])
             return cog_name in disabled_cogs
 
         return False
@@ -98,21 +99,23 @@ class Dogbot(lifesaver.Bot):
         return await super().can_run(ctx, **kwargs)
 
     async def close(self):
-        log.info('bot is exiting')
+        log.info("bot is exiting")
         await self.session.close()
-        log.info('closing web server')
+        log.info("closing web server")
         if self.http_server:
             self.http_server.close()
             await self.http_server.wait_closed()
         await super().close()
 
     async def _boot_http_server(self):
-        log.info('creating http server')
+        log.info("creating http server")
         try:
-            self.http_server = await _boot_hypercorn(self.webapp, self.http_server_config, loop=self.loop)
-            log.info('created server: %r', self.http_server)
+            self.http_server = await _boot_hypercorn(
+                self.webapp, self.http_server_config, loop=self.loop
+            )
+            log.info("created server: %r", self.http_server)
         except Exception:
-            log.exception('failed to create server')
+            log.exception("failed to create server")
 
     def is_blacklisted(self, user: discord.User) -> bool:
         return user.id in self.blacklisted_storage

@@ -7,7 +7,8 @@ import lifesaver
 from discord import PartialEmoji
 from discord.ext import commands
 
-EMOJI_REGEX = re.compile(r"""
+EMOJI_REGEX = re.compile(
+    r"""
     # A Discord emoji, as represented in raw message content.
 
     <
@@ -22,9 +23,12 @@ EMOJI_REGEX = re.compile(r"""
         # Emoji ID
         (?P<id>\d+)
     >
-""", re.VERBOSE)
+""",
+    re.VERBOSE,
+)
 
-EMOJI_URL_REGEX = re.compile(r"""
+EMOJI_URL_REGEX = re.compile(
+    r"""
     # A Discord emoji URL.
 
     # The standard part of the URL
@@ -38,7 +42,9 @@ EMOJI_URL_REGEX = re.compile(r"""
     # File extension
     \.
     (?P<extension>png|gif)
-""", re.VERBOSE)
+""",
+    re.VERBOSE,
+)
 
 
 class EmojiStealer(commands.Converter):
@@ -53,23 +59,25 @@ class EmojiStealer(commands.Converter):
     @staticmethod
     async def recent(ctx: lifesaver.Context) -> PartialEmoji:
         def formatter(emoji: PartialEmoji, index: int) -> str:
-            return f'{index + 1}. `:{emoji.name}:`'
+            return f"{index + 1}. `:{emoji.name}:`"
 
-        def reducer(emoji: Set[PartialEmoji], msg: discord.Message) -> Set[PartialEmoji]:
+        def reducer(
+            emoji: Set[PartialEmoji], msg: discord.Message
+        ) -> Set[PartialEmoji]:
             match = EMOJI_REGEX.search(msg.content)
 
             if not match:
                 return emoji
 
-            emoji_id = int(match.group('id'))
+            emoji_id = int(match.group("id"))
 
             # If the emoji used is already in the guild, ignore.
             if discord.utils.get(ctx.guild.emojis, id=emoji_id):
                 return emoji
 
             new_emoji = PartialEmoji(
-                animated=bool(match.group('animated')),
-                name=match.group('name'),
+                animated=bool(match.group("animated")),
+                name=match.group("name"),
                 id=emoji_id,
             )
 
@@ -79,7 +87,7 @@ class EmojiStealer(commands.Converter):
         results: List[PartialEmoji] = list(functools.reduce(reducer, messages, set()))
 
         if not results:
-            raise commands.BadArgument('No stealable custom emoji were found.')
+            raise commands.BadArgument("No stealable custom emoji were found.")
 
         if len(results) > 1:
             result = await ctx.pick_from_list(results, formatter=formatter)
@@ -97,9 +105,9 @@ class EmojiStealer(commands.Converter):
         url_match = EMOJI_URL_REGEX.search(argument)
         if url_match:
             return PartialEmoji(
-                id=int(url_match.group('id')),
+                id=int(url_match.group("id")),
                 name=None,
-                animated=url_match.group('extension') == 'png',
+                animated=url_match.group("extension") == "png",
             )
 
         # Convert an actual emoji.
@@ -109,9 +117,10 @@ class EmojiStealer(commands.Converter):
             pass
 
         # Scan recently used custom emoji.
-        if argument == 'recent':
+        if argument == "recent":
             return await self.recent(ctx)
 
         raise commands.BadArgument(
-            'Invalid emoji. You can use an actual emoji or an emoji ID or URL. '
-            'You can also specify `recent` to select a recently used emoji.')
+            "Invalid emoji. You can use an actual emoji or an emoji ID or URL. "
+            "You can also specify `recent` to select a recently used emoji."
+        )

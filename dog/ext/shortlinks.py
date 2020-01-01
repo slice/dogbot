@@ -4,22 +4,21 @@ import discord
 import lifesaver
 
 STOP_WORDS = {
-    '[no-link]',
-    '[no-links]',
-    '[nolink]',
-    '[nolinks]',
-
-    '[no-shortlink]',
-    '[no-shortlinks]',
-    '[noshortlink]',
-    '[noshortlinks]',
+    "[no-link]",
+    "[no-links]",
+    "[nolink]",
+    "[nolinks]",
+    "[no-shortlink]",
+    "[no-shortlinks]",
+    "[noshortlink]",
+    "[noshortlinks]",
 }
 
 
 class Shortlink:
     CONVERTERS = {
-        'int': int,
-        'float': float,
+        "int": int,
+        "float": float,
     }
 
     def __init__(self, pattern, fmt, *, call_format: bool = False):
@@ -30,10 +29,10 @@ class Shortlink:
     def convert_groups(self, dct):
         converted = {}
         for name, value in dct.items():
-            if '__' not in name:
+            if "__" not in name:
                 converted[name] = value
                 continue
-            name, converter = name.split('__')
+            name, converter = name.split("__")
             converted[name] = self.CONVERTERS[converter](value)
         return converted
 
@@ -48,32 +47,22 @@ class Shortlink:
         if not matches:
             return []
 
-        return [
-            self.expand_match(match)
-            for match in matches
-        ]
+        return [self.expand_match(match) for match in matches]
 
 
 SHORTLINKS = {
     "mastodon": Shortlink(
-        r'@(?P<username>\w+)@(?P<instance>\w{2,}\.[a-z]{2,10})',
-        'https://\\g<instance>/@\\g<username>',
+        r"@(?P<username>\w+)@(?P<instance>\w{2,}\.[a-z]{2,10})",
+        "https://\\g<instance>/@\\g<username>",
     ),
-
     "pep": Shortlink(
-        r'PEP#(?P<pep__int>\d{1,4})',
-        'https://www.python.org/dev/peps/pep-{pep:04}',
+        r"PEP#(?P<pep__int>\d{1,4})",
+        "https://www.python.org/dev/peps/pep-{pep:04}",
         call_format=True,
     ),
-
-    "keybase": Shortlink(
-        r'kb/(?P<username>\w+)',
-        'https://keybase.io/\\g<username>',
-    ),
-
+    "keybase": Shortlink(r"kb/(?P<username>\w+)", "https://keybase.io/\\g<username>",),
     "osu": Shortlink(
-        r'osu/(?P<username>\w+)',
-        'https://osu.ppy.sh/users/\\g<username>',
+        r"osu/(?P<username>\w+)", "https://osu.ppy.sh/users/\\g<username>",
     ),
 }
 
@@ -85,11 +74,11 @@ class Shortlinks(lifesaver.Cog):
             return
 
         config = self.bot.guild_configs.get(msg.guild, {})
-        shortlinks_config = config.get('shortlinks', {})
-        if not shortlinks_config.get('enabled', False):
+        shortlinks_config = config.get("shortlinks", {})
+        if not shortlinks_config.get("enabled", False):
             return
-        whitelist = shortlinks_config.get('whitelist', [])
-        blacklist = shortlinks_config.get('blacklist', [])
+        whitelist = shortlinks_config.get("whitelist", [])
+        blacklist = shortlinks_config.get("blacklist", [])
 
         if any(text in msg.content for text in STOP_WORDS):
             return
@@ -104,7 +93,7 @@ class Shortlinks(lifesaver.Cog):
             return
 
         try:
-            await msg.channel.send('\n'.join(expanded))
+            await msg.channel.send("\n".join(expanded))
         except discord.HTTPException:
             pass
 

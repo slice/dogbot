@@ -8,7 +8,7 @@ from lifesaver.utils import clean_mentions
 MESSAGE_SPECIFIER_RE = re.compile(r"(\d+)?(?:[:+](-?\d+))?")
 
 
-class Specifier(namedtuple('Specifier', ['id', 'range'])):
+class Specifier(namedtuple("Specifier", ["id", "range"])):
     range_limit = 50
 
     @classmethod
@@ -23,10 +23,7 @@ class Specifier(namedtuple('Specifier', ['id', 'range'])):
         def convert(string):
             return None if string is None else int(string)
 
-        return cls(
-            id=convert(message_id),
-            range=convert(m_range),
-        )
+        return cls(id=convert(message_id), range=convert(m_range),)
 
     @property
     def relative(self):
@@ -39,9 +36,7 @@ class Specifier(namedtuple('Specifier', ['id', 'range'])):
 
 class QuoteName(commands.Converter):
     def __init__(
-        self, *,
-        must_exist: bool = False,
-        must_not_exist: bool = False,
+        self, *, must_exist: bool = False, must_not_exist: bool = False,
     ):
         super().__init__()
         self.must_exist = must_exist
@@ -61,7 +56,7 @@ class QuoteName(commands.Converter):
             raise commands.BadArgument(f'Quote "{argument}" already exists.')
 
         if len(argument) > 60:
-            raise commands.BadArgument('Too long. 60 characters maximum.')
+            raise commands.BadArgument("Too long. 60 characters maximum.")
 
         return argument
 
@@ -74,19 +69,19 @@ class Messages(commands.Converter):
 
         if not spec:
             raise commands.BadArgument(
-                f'Invalid message ID. See `{ctx.prefix}help quote`.'
+                f"Invalid message ID. See `{ctx.prefix}help quote`."
             )
 
         if spec.range:
             if spec.over_limit:
                 raise commands.BadArgument(
-                    f'Ranges can only target up to {Specifier.range_limit} messages.'
+                    f"Ranges can only target up to {Specifier.range_limit} messages."
                 )
 
             if not spec.relative and spec.range < 1:
-                raise commands.BadArgument('Range should be greater than 1.')
+                raise commands.BadArgument("Range should be greater than 1.")
             elif spec.relative and spec.range > -1:
-                raise commands.BadArgument('Range should be less than -1.')
+                raise commands.BadArgument("Range should be less than -1.")
 
         try:
             if spec.relative:
@@ -103,13 +98,12 @@ class Messages(commands.Converter):
                 # relative to the specified message id, get the message and
                 # n messages after
                 after_messages = await ctx.history(
-                    after=discord.Object(id=spec.id),
-                    limit=spec.range,
+                    after=discord.Object(id=spec.id), limit=spec.range,
                 ).flatten()
                 return [message] + after_messages
 
             return message
         except discord.NotFound as error:
-            raise commands.BadArgument(f'Not found: {error}')
+            raise commands.BadArgument(f"Not found: {error}")
         except discord.HTTPException as error:
-            raise commands.BadArgument(f'Failed to get message(s): {error}')
+            raise commands.BadArgument(f"Failed to get message(s): {error}")

@@ -6,6 +6,7 @@ from discord.ext import commands
 
 from .emoji_stealer import EmojiStealer
 
+
 class UserID(commands.Converter):
     """A converter that converts members to IDs."""
 
@@ -17,7 +18,7 @@ class UserID(commands.Converter):
             pass
 
         if not argument.isdigit():
-            raise commands.BadArgument('Invalid user ID.')
+            raise commands.BadArgument("Invalid user ID.")
 
         return int(argument)
 
@@ -36,14 +37,14 @@ class HardMember(commands.Converter):
             pass
 
         if not argument.isdigit():
-            raise commands.BadArgument('Member not found. Try specifying a user ID.')
+            raise commands.BadArgument("Member not found. Try specifying a user ID.")
 
         try:
             return await ctx.bot.fetch_user(int(argument))
         except discord.NotFound:
-            raise commands.BadArgument('User not found.')
+            raise commands.BadArgument("User not found.")
         except discord.HTTPException as error:
-            raise commands.BadArgument(f'Failed to fetch user information: `{error}`')
+            raise commands.BadArgument(f"Failed to fetch user information: `{error}`")
 
 
 class SoftMember(commands.Converter):
@@ -58,4 +59,4 @@ class SoftMember(commands.Converter):
             if argument.isdigit():
                 return discord.Object(int(argument))
 
-            raise commands.BadArgument('Member not found. Try specifying a user ID.')
+            raise commands.BadArgument("Member not found. Try specifying a user ID.")

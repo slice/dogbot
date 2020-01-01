@@ -1,4 +1,4 @@
-__all__ = ['Map']
+__all__ = ["Map"]
 
 import datetime
 import logging
@@ -19,9 +19,11 @@ log = logging.getLogger(__name__)
 
 
 class Map:
-    def __init__(self, *, session: aiohttp.ClientSession, twelve_hour: bool = False, loop):
-        self.font = ImageFont.truetype('assets/SourceSansPro-Semibold.otf', size=64)
-        self.tag_font = ImageFont.truetype('assets/SourceSansPro-Black.otf', size=14)
+    def __init__(
+        self, *, session: aiohttp.ClientSession, twelve_hour: bool = False, loop
+    ):
+        self.font = ImageFont.truetype("assets/SourceSansPro-Semibold.otf", size=64)
+        self.tag_font = ImageFont.truetype("assets/SourceSansPro-Black.otf", size=14)
 
         self.session = session
         self.twelve_hour = twelve_hour
@@ -29,15 +31,15 @@ class Map:
         self.image = None
         self.timezones = defaultdict(list)
 
-        self.cache = Path.cwd() / 'avatar_cache'
+        self.cache = Path.cwd() / "avatar_cache"
         self.cache.mkdir(exist_ok=True)
 
     @property
     def format(self):
         if self.twelve_hour:
-            return '%I:%M %p'
+            return "%I:%M %p"
         else:
-            return '%H:%M'
+            return "%H:%M"
 
     def close(self):
         self.image.close()
@@ -51,22 +53,24 @@ class Map:
     async def draw_member(self, member: discord.Member, box, *, size: int, background):
         def target(avatar_bytes):
             # overlay transparent avatars with a subtle background
-            board = Image.new('RGBA', (size, size), background)
-            avatar = Image.open(fp=BytesIO(avatar_bytes))\
-                .convert('RGBA')\
+            board = Image.new("RGBA", (size, size), background)
+            avatar = (
+                Image.open(fp=BytesIO(avatar_bytes))
+                .convert("RGBA")
                 .resize((size, size), resample=Image.LANCZOS)
+            )
             board.paste(avatar, (0, 0), mask=avatar)
             self.image.paste(board, box=box, mask=board)
 
-        avatar_url = str(member.avatar_url_as(format='png', size=size))
-        filename = urlparse(avatar_url).path.split('/')[-1]
+        avatar_url = str(member.avatar_url_as(format="png", size=size))
+        filename = urlparse(avatar_url).path.split("/")[-1]
         cached_file = self.cache / filename
 
         if cached_file.is_file():
-            log.debug('Using cached file for %d: %s', member.id, cached_file)
+            log.debug("Using cached file for %d: %s", member.id, cached_file)
             await self.loop.run_in_executor(None, target, cached_file.read_bytes())
         else:
-            log.debug('Fetching uncached file for %d: %s', member.id, cached_file)
+            log.debug("Fetching uncached file for %d: %s", member.id, cached_file)
             async with self.session.get(avatar_url) as resp:
                 avatar_bytes = await resp.read()
                 cached_file.write_bytes(avatar_bytes)
@@ -75,7 +79,7 @@ class Map:
     async def render(self):
         def save():
             buffer = BytesIO()
-            self.image.save(buffer, format='png')
+            self.image.save(buffer, format="png")
             buffer.seek(0)  # go back to beginning
             return buffer
 
@@ -99,24 +103,26 @@ class Map:
         image_width = int(max(num_columns * chunk_width, chunk_width)) + image_padding
 
         # the height of the image: at most, 3 chunks down vertically
-        image_height = int(
-            min(
-                # if the number of time chunks is less than 3 chunks, we can
-                # make the image smaller
-                chunk_height * len(time_chunks),
-
-                # max out at 3 chunks per column
-                chunk_height * chunks_per_column
+        image_height = (
+            int(
+                min(
+                    # if the number of time chunks is less than 3 chunks, we can
+                    # make the image smaller
+                    chunk_height * len(time_chunks),
+                    # max out at 3 chunks per column
+                    chunk_height * chunks_per_column,
+                )
             )
-        ) + image_padding
+            + image_padding
+        )
 
-        self.image = Image.new('RGBA', (image_width, image_height), background_color)
+        self.image = Image.new("RGBA", (image_width, image_height), background_color)
 
         # a faceplate must be used in order to draw nametags because ImageDraw
         # can't draw transparent stuff on top of the existing pixels. so, we
         # create a new image which is exactly the size of the original image,
         # draw on that, then overlay it exactly on top later
-        faceplate = Image.new('RGBA', self.image.size, (0, 0, 0, 0))
+        faceplate = Image.new("RGBA", self.image.size, (0, 0, 0, 0))
         draw = ImageDraw.Draw(self.image)
         draw_faceplate = ImageDraw.Draw(faceplate)
 
@@ -134,13 +140,10 @@ class Map:
 
             # draw the header of the chunk
             draw.text(
-                (
-                    x_top - font_width_offset,
-                    y_top - font_height_offset,
-                ),
+                (x_top - font_width_offset, y_top - font_height_offset,),
                 time,
                 fill=(255, 255, 255, 255),
-                font=self.font
+                font=self.font,
             )
             header_size = draw.textsize(time, font=self.font)
 
@@ -189,16 +192,20 @@ class Map:
                     x = x_top + (avatar_size_total * col)
                     y = members_y_top + (avatar_size_total * row)
 
-                await self.draw_member(member, (x, y), size=avatar_size, background=(45, 47, 52))
+                await self.draw_member(
+                    member, (x, y), size=avatar_size, background=(45, 47, 52)
+                )
 
                 text = member.name
 
                 draw_faceplate.rectangle(
                     (
-                        x, y + avatar_size - nametag_size - 1,
-                        x + avatar_size - 1, y + avatar_size - 1,
+                        x,
+                        y + avatar_size - nametag_size - 1,
+                        x + avatar_size - 1,
+                        y + avatar_size - 1,
                     ),
-                    fill=(0, 0, 0, 100)
+                    fill=(0, 0, 0, 100),
                 )
 
                 draw_text_cropped(
@@ -207,7 +214,7 @@ class Map:
                     (0, 0, avatar_size, nametag_size),
                     text,
                     fill=(255, 255, 255),
-                    font=self.tag_font
+                    font=self.tag_font,
                 )
 
         # apply the transparent faceplate on top of the image

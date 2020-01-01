@@ -1,10 +1,10 @@
-__all__ = ['UserReference']
+__all__ = ["UserReference"]
 
 import re
 
 from discord.ext import commands
 
-DISCORDTAG_REGEX = re.compile(r'.{2,32}#\d{4}')
+DISCORDTAG_REGEX = re.compile(r".{2,32}#\d{4}")
 
 
 class UserReference(commands.Converter):
@@ -15,4 +15,4 @@ class UserReference(commands.Converter):
         if DISCORDTAG_REGEX.match(arg) is not None:
             return arg
 
-        raise commands.BadArgument('Invalid user. Specify an ID or DiscordTag.')
+        raise commands.BadArgument("Invalid user. Specify an ID or DiscordTag.")

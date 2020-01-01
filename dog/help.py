@@ -7,6 +7,6 @@ class HelpCommand(commands.DefaultHelpCommand):
         invite = self.context.bot.config.server_invite
 
         if self.get_destination() == self.context.author:
-            return f'Join the server: {invite}\n{ending_note}'
+            return f"Join the server: {invite}\n{ending_note}"
 
         return ending_note

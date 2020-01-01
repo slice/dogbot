@@ -28,7 +28,7 @@ def draw_rotated_text(image, angle, xy, text, fill, *args, **kwargs):
 
     # build a transparency mask large enough to hold the text
     mask_size = (max_dim * 2, max_dim * 2)
-    mask = Image.new('L', mask_size, 0)
+    mask = Image.new("L", mask_size, 0)
 
     # add text to mask
     draw = ImageDraw.Draw(mask)
@@ -39,10 +39,10 @@ def draw_rotated_text(image, angle, xy, text, fill, *args, **kwargs):
         rotated_mask = mask.rotate(angle)
     else:
         # rotate an an enlarged mask to minimize jaggies
-        bigger_mask = mask.resize((max_dim * 8, max_dim * 8),
-                                  resample=Image.BICUBIC)
+        bigger_mask = mask.resize((max_dim * 8, max_dim * 8), resample=Image.BICUBIC)
         rotated_mask = bigger_mask.rotate(angle).resize(
-            mask_size, resample=Image.LANCZOS)
+            mask_size, resample=Image.LANCZOS
+        )
 
     # crop the mask to match image
     mask_xy = (max_dim - xy[0], max_dim - xy[1])
@@ -50,7 +50,7 @@ def draw_rotated_text(image, angle, xy, text, fill, *args, **kwargs):
     mask = rotated_mask.crop(b_box)
 
     # paste the appropriate color, with the text transparency mask
-    color_image = Image.new('RGBA', image.size, fill)
+    color_image = Image.new("RGBA", image.size, fill)
     image.paste(color_image, mask)
 
-    return draw.textsize(text=text, font=kwargs.get('font'))
+    return draw.textsize(text=text, font=kwargs.get("font"))

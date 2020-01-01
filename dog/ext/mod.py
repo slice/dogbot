@@ -13,14 +13,16 @@ from dog.utils import chained_decorators
 
 
 def guild_action(**perms):
-    return chained_decorators([
-        commands.guild_only(),
-        commands.bot_has_permissions(**perms),
-        commands.has_permissions(**perms),
-    ])
+    return chained_decorators(
+        [
+            commands.guild_only(),
+            commands.bot_has_permissions(**perms),
+            commands.has_permissions(**perms),
+        ]
+    )
 
 
-ActionVerb = collections.namedtuple('ActionVerb', ['present', 'past'])
+ActionVerb = collections.namedtuple("ActionVerb", ["present", "past"])
 
 
 class ModAction:
@@ -35,7 +37,7 @@ class ModAction:
     messages. (:meth:`lifesaver.Context.paginate` isn't called, however.)
     """
 
-    verb: ActionVerb = ActionVerb(present='do something', past='did something')
+    verb: ActionVerb = ActionVerb(present="do something", past="did something")
 
     def __init__(self, ctx: lifesaver.Context) -> None:
         self.ctx = ctx
@@ -43,23 +45,29 @@ class ModAction:
     def transform_reason(self, original_reason: Optional[str]) -> Optional[str]:
         """Transform the original reason supplied by the command invoker into
         the reason to be supplied by the bot."""
-        reason = f'{self.verb.past.capitalize()} by {represent(self.ctx.author)}'
+        reason = f"{self.verb.past.capitalize()} by {represent(self.ctx.author)}"
         if original_reason:
-            reason += f': {original_reason}'
+            reason += f": {original_reason}"
         return reason
 
-    async def perform_on_user(self, user: discord.abc.Snowflake, *, reason: Optional[str], **kwargs) -> None:
+    async def perform_on_user(
+        self, user: discord.abc.Snowflake, *, reason: Optional[str], **kwargs
+    ) -> None:
         """Perform the mod action on a user, returning a message to add to the
         outputted paginator."""
         raise NotImplementedError
 
-    async def perform(self, users: List[discord.abc.Snowflake], *, reason: Optional[str], **kwargs) -> None:
+    async def perform(
+        self, users: List[discord.abc.Snowflake], *, reason: Optional[str], **kwargs
+    ) -> None:
         """Perform the mod action on a list of users."""
         reason = self.transform_reason(reason)
 
         for user in users:
             user_repr = represent(user)
-            cant_prefix = f"{self.ctx.tick(False)} Can't {self.verb.present} {user_repr}"
+            cant_prefix = (
+                f"{self.ctx.tick(False)} Can't {self.verb.present} {user_repr}"
+            )
 
             try:
                 message = await self.perform_on_user(user, reason=reason, **kwargs)
@@ -71,29 +79,32 @@ class ModAction:
                 message = f"{cant_prefix}: `{error}`"
             else:
                 if not message:
-                    message = f"{self.ctx.tick()} {self.verb.past.capitalize()} {user_repr}."
+                    message = (
+                        f"{self.ctx.tick()} {self.verb.past.capitalize()} {user_repr}."
+                    )
 
             self.ctx.add_line(message)
 
 
 class Softban(ModAction):
-    verb = ActionVerb(present='softban', past='softbanned')
+    verb = ActionVerb(present="softban", past="softbanned")
 
     async def perform_on_user(self, user, *, reason, delete_message_days: int):
         await self.ctx.guild.ban(
-            user, reason=reason, delete_message_days=delete_message_days)
+            user, reason=reason, delete_message_days=delete_message_days
+        )
         await self.ctx.guild.unban(user, reason=reason)
 
 
 class Ban(ModAction):
-    verb = ActionVerb(present='ban', past='banned')
+    verb = ActionVerb(present="ban", past="banned")
 
     async def perform_on_user(self, user, *, reason):
         await self.ctx.guild.ban(user, reason=reason, delete_message_days=0)
 
 
 class Block(ModAction):
-    verb = ActionVerb(present='block', past='blocked')
+    verb = ActionVerb(present="block", past="blocked")
 
     async def perform_on_user(self, user, *, reason):
         overwrite = self.ctx.channel.overwrites_for(user)
@@ -102,7 +113,7 @@ class Block(ModAction):
 
 
 class Unblock(ModAction):
-    verb = ActionVerb(present='unblock', past='unblocked')
+    verb = ActionVerb(present="unblock", past="unblocked")
 
     async def perform_on_user(self, user, *, reason):
         overwrite = self.ctx.channel.overwrites_for(user)
@@ -117,25 +128,31 @@ class Unblock(ModAction):
         # if the resulting permission overwrite is empty, just delete the
         # overwrite entirely to prevent clutter.
         await self.ctx.channel.set_permissions(
-            user, overwrite=None if overwrite.is_empty() else overwrite, reason=reason)
+            user, overwrite=None if overwrite.is_empty() else overwrite, reason=reason
+        )
 
 
-def mod_action_command(action: Type[ModAction], *, args=None, help: str = None, **perms):
+def mod_action_command(
+    action: Type[ModAction], *, args=None, help: str = None, **perms
+):
     """Generate a command that performs a :class:`ModAction`."""
     args = args or {}
-    help = help or f'{action.verb.present.capitalize()} users.'
+    help = help or f"{action.verb.present.capitalize()} users."
 
     @lifesaver.command(name=action.verb.present, help=help)
     @guild_action(**perms)
-    async def generated_command(self, ctx: lifesaver.Context, users: commands.Greedy[SoftMember], *, reason=None):
+    async def generated_command(
+        self, ctx: lifesaver.Context, users: commands.Greedy[SoftMember], *, reason=None
+    ):
         if not users:  # commands.Greedy is optional
             raise commands.UserInputError(
-                f'No valid users were found to {action.verb.present}.')
+                f"No valid users were found to {action.verb.present}."
+            )
 
         await action(ctx).perform(users, reason=reason, **args)
         await ctx.paginate()
 
-    generated_command.__name__ = f'generated_mod_command_{action.verb.present}'
+    generated_command.__name__ = f"generated_mod_command_{action.verb.present}"
     return generated_command
 
 
@@ -147,7 +164,9 @@ class Mod(lifesaver.Cog):
         self.auto_cooldown = Ratelimiter(1, 3)
 
     ban = mod_action_command(Ban, ban_members=True)
-    softban = mod_action_command(Softban, args=dict(delete_message_days=1), ban_members=True)
+    softban = mod_action_command(
+        Softban, args=dict(delete_message_days=1), ban_members=True
+    )
     block = mod_action_command(Block, manage_roles=True)
     unblock = mod_action_command(Unblock, manage_roles=True)
 
@@ -159,11 +178,13 @@ class Mod(lifesaver.Cog):
         config = self.bot.guild_configs.get(message.guild)
         if not config:
             return
-        autoresponses = config.get('autoresponses', {})
+        autoresponses = config.get("autoresponses", {})
 
         for trigger, response in autoresponses.items():
             if trigger in message.content:
-                if self.auto_cooldown.is_rate_limited(message.author.id, message.channel.id):
+                if self.auto_cooldown.is_rate_limited(
+                    message.author.id, message.channel.id
+                ):
                     return
                 cleaned_response = clean_mentions(message.channel, response)
                 try:
@@ -173,7 +194,13 @@ class Mod(lifesaver.Cog):
 
     @lifesaver.command()
     @guild_action(manage_roles=True)
-    async def vanity(self, ctx: lifesaver.Context, name, color: discord.Color = None, *targets: discord.Member):
+    async def vanity(
+        self,
+        ctx: lifesaver.Context,
+        name,
+        color: discord.Color = None,
+        *targets: discord.Member,
+    ):
         """Creates a vanity role.
 
         A vanity role is a role that grants no additional permissions. This
@@ -185,25 +212,26 @@ class Mod(lifesaver.Cog):
                 name=name,
                 color=color or discord.Color.default(),
                 permissions=discord.Permissions.none(),
-                reason=f'Vanity role created by {represent(ctx.author)}',
+                reason=f"Vanity role created by {represent(ctx.author)}",
             )
         except discord.HTTPException as error:
-            await ctx.send(
-                f'{ctx.tick(False)} Failed to create vanity role: `{error}`')
+            await ctx.send(f"{ctx.tick(False)} Failed to create vanity role: `{error}`")
             return
 
         name = escape_backticks(role.name)
-        ctx.add_line(f'{ctx.tick()} Created vanity role `{name}`.')
+        ctx.add_line(f"{ctx.tick()} Created vanity role `{name}`.")
 
         for target in targets:
             try:
-                await target.add_roles(role, reason=f'Vanity role auto-assign by {represent(ctx.author)}')
+                await target.add_roles(
+                    role, reason=f"Vanity role auto-assign by {represent(ctx.author)}"
+                )
             except discord.HTTPException as error:
                 ctx.add_line(
-                    f'{ctx.tick(False)} Failed to add `{name}` to {represent(target)}: `{error}`')
+                    f"{ctx.tick(False)} Failed to add `{name}` to {represent(target)}: `{error}`"
+                )
             else:
-                ctx.add_line(
-                    f'{ctx.tick()} Added `{name}` to {represent(target)}.')
+                ctx.add_line(f"{ctx.tick()} Added `{name}` to {represent(target)}.")
 
         await ctx.paginate()
 

@@ -3,4 +3,5 @@ def chained_decorators(decorators):
         for decorator in decorators:
             func = decorator(func)
         return func
+
     return decorator

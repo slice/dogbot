@@ -1,7 +1,7 @@
 import discord
 from lifesaver.utils.formatting import clean_mentions, pluralize
 
-__all__ = ['stringify_message']
+__all__ = ["stringify_message"]
 
 
 def stringify_message(message: discord.Message) -> str:
@@ -13,6 +13,6 @@ def stringify_message(message: discord.Message) -> str:
         content += f' {" ".join(urls)}'
 
     if message.embeds:
-        content += f' ({pluralize(embed=len(message.embeds))})'
+        content += f" ({pluralize(embed=len(message.embeds))})"
 
-    return f'<{message.author.name}> {content}'
+    return f"<{message.author.name}> {content}"

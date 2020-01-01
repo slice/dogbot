@@ -22,7 +22,9 @@ log = logging.getLogger(__name__)
 def require_configuration():
     def predicate(ctx):
         if not ctx.cog.gatekeeper_config(ctx.guild):
-            raise commands.CheckFailure('Gatekeeper must be configured to use this command.')
+            raise commands.CheckFailure(
+                "Gatekeeper must be configured to use this command."
+            )
         return True
 
     return commands.check(predicate)
@@ -50,7 +52,7 @@ class Gatekeeper(lifesaver.Cog):
     def gatekeeper_config(self, guild: discord.Guild):
         """Return Gatekeeper gatekeeper_config for a guild."""
         config = self.bot.guild_configs.get(guild, {})
-        return config.get('gatekeeper', {})
+        return config.get("gatekeeper", {})
 
     def keeper(self, guild: discord.Guild) -> Keeper:
         """Return a long-lived Keeper instance for a guild.
@@ -65,7 +67,7 @@ class Gatekeeper(lifesaver.Cog):
 
         # create a new keeper instance for the guild
         config = self.gatekeeper_config(guild)
-        log.debug('creating a new keeper for guild %d (config=%r)', guild.id, config)
+        log.debug("creating a new keeper for guild %d (config=%r)", guild.id, config)
         keeper = Keeper(guild, config, bot=self.bot)
         self.keepers[guild.id] = keeper
         return keeper
@@ -73,41 +75,38 @@ class Gatekeeper(lifesaver.Cog):
     @lifesaver.Cog.listener()
     async def on_guild_config_edit(self, guild: discord.Guild, config):
         if guild.id not in self.keepers:
-            log.debug('received config edit for keeperless guild %d', guild.id)
+            log.debug("received config edit for keeperless guild %d", guild.id)
             return
 
-        log.debug('updating keeper config for guild %d', guild.id)
-        self.keepers[guild.id].update_config(config.get('gatekeeper', {}))
+        log.debug("updating keeper config for guild %d", guild.id)
+        self.keepers[guild.id].update_config(config.get("gatekeeper", {}))
 
     @contextlib.asynccontextmanager
     async def edit_config(self, guild: discord.Guild):
         config = self.bot.guild_configs.get(guild, {})
-        copied_gatekeeper_config = copy.deepcopy(config['gatekeeper'])
+        copied_gatekeeper_config = copy.deepcopy(config["gatekeeper"])
         yield copied_gatekeeper_config
 
         with io.StringIO() as buffer:
             self.yaml.indent(mapping=4, sequence=6, offset=4)
-            self.yaml.dump({
-                **config,
-                'gatekeeper': copied_gatekeeper_config,
-            }, buffer)
+            self.yaml.dump({**config, "gatekeeper": copied_gatekeeper_config,}, buffer)
             await self.bot.guild_configs.write(guild, buffer.getvalue())
 
     def is_being_allowed(self, guild: discord.Guild, user) -> bool:
         """Return whether a user is being specifically allowed."""
-        return user in self.gatekeeper_config(guild).get('allowed_users', [])
+        return user in self.gatekeeper_config(guild).get("allowed_users", [])
 
     async def allow_user(self, guild: discord.Guild, user):
         """Allow a user to bypass checks in a guild."""
         async with self.edit_config(guild) as config:
-            allowed_users = config.get('allowed_users', [])
+            allowed_users = config.get("allowed_users", [])
             # have to do manual replacement in case we get []
-            config['allowed_users'] = allowed_users + [user]
+            config["allowed_users"] = allowed_users + [user]
 
     async def disallow_user(self, guild: discord.Guild, user):
         """Disallow a user to bypass checks in a guild."""
         async with self.edit_config(guild) as config:
-            allowed_users = config.get('allowed_users', [])
+            allowed_users = config.get("allowed_users", [])
             allowed_users.remove(user)
 
     @lifesaver.Cog.listener()
@@ -116,14 +115,14 @@ class Gatekeeper(lifesaver.Cog):
 
         config = self.gatekeeper_config(member.guild)
 
-        if not config.get('enabled', False):
+        if not config.get("enabled", False):
             return
 
         # fetch the keeper instance for this guild, which manages gatekeeping,
         # check processing, and all of that good stuff.
         keeper = self.keeper(member.guild)
 
-        overridden = config.get('allowed_users', [])
+        overridden = config.get("allowed_users", [])
         is_whitelisted = str(member) in overridden or member.id in overridden
 
         if not is_whitelisted:
@@ -134,24 +133,26 @@ class Gatekeeper(lifesaver.Cog):
             if not is_allowed:
                 return
 
-        if config.get('quiet', False):
+        if config.get("quiet", False):
             return
 
         embed = discord.Embed(
             color=discord.Color.green(),
-            title=f'{represent(member)} has joined',
-            description='This user has passed all Gatekeeper checks.'
+            title=f"{represent(member)} has joined",
+            description="This user has passed all Gatekeeper checks.",
         )
 
         if is_whitelisted:
-            embed.description = 'This user has been specifically allowed into this server.'
+            embed.description = (
+                "This user has been specifically allowed into this server."
+            )
 
         embed.set_thumbnail(url=member.avatar_url)
         embed.timestamp = datetime.datetime.utcnow()
 
         await keeper.report(embed=embed)
 
-    @lifesaver.group(aliases=['gk'], hollow=True)
+    @lifesaver.group(aliases=["gk"], hollow=True)
     async def gatekeeper(self, ctx: lifesaver.Context):
         """
         Manages Gatekeeper.
@@ -161,7 +162,7 @@ class Gatekeeper(lifesaver.Cog):
         This is very useful when your server is undergoing raids, unwanted attention, unwanted members, etc.
         """
 
-    @gatekeeper.command(name='disallow', aliases=['deallow', 'unallow', 'unwhitelist'])
+    @gatekeeper.command(name="disallow", aliases=["deallow", "unallow", "unwhitelist"])
     @require_configuration()
     async def command_disallow(self, ctx: lifesaver.Context, *, user: UserReference):
         """Remove a user from the allowed users list."""
@@ -170,9 +171,9 @@ class Gatekeeper(lifesaver.Cog):
         except ValueError:
             await ctx.send(f"{ctx.tick(False)} That user isn't being allowed.")
         else:
-            await ctx.send(f'{ctx.tick()} Disallowed `{user}`.')
+            await ctx.send(f"{ctx.tick()} Disallowed `{user}`.")
 
-    @gatekeeper.group(name='allow', aliases=['whitelist'], invoke_without_command=True)
+    @gatekeeper.group(name="allow", aliases=["whitelist"], invoke_without_command=True)
     @require_configuration()
     async def group_allow(self, ctx: lifesaver.Context, *, user: UserReference):
         """Add a user to the allowed users list.
@@ -181,24 +182,26 @@ class Gatekeeper(lifesaver.Cog):
         allowing them to bypass checks.
         """
         if self.is_being_allowed(ctx.guild, user):
-            await ctx.send(f'{ctx.tick(False)} That user is already being allowed.')
+            await ctx.send(f"{ctx.tick(False)} That user is already being allowed.")
             return
 
         await self.allow_user(ctx.guild, user)
-        await ctx.send(f'{ctx.tick()} Allowed `{user}`.')
+        await ctx.send(f"{ctx.tick()} Allowed `{user}`.")
 
-    @group_allow.command(name='temp')
+    @group_allow.command(name="temp")
     @require_configuration()
-    async def command_allow_temp(self, ctx: lifesaver.Context, duration: int, *, user: UserReference):
+    async def command_allow_temp(
+        self, ctx: lifesaver.Context, duration: int, *, user: UserReference
+    ):
         """Temporarily allows a user to join for n minutes."""
         if duration > 60 * 24:
-            raise commands.BadArgument('The maximum time is 1 day.')
+            raise commands.BadArgument("The maximum time is 1 day.")
         if duration < 1:
-            raise commands.BadArgument('Invalid duration.')
+            raise commands.BadArgument("Invalid duration.")
 
         await self.allow_user(ctx.guild, user)
         minutes = pluralize(minute=duration)
-        await ctx.send(f'{ctx.tick()} Temporarily allowing `{user}` for {minutes}.')
+        await ctx.send(f"{ctx.tick()} Temporarily allowing `{user}` for {minutes}.")
 
         await asyncio.sleep(duration * 60)
 
@@ -208,7 +211,7 @@ class Gatekeeper(lifesaver.Cog):
             # was manually removed from allowed_users... by an admin?
             pass
 
-    @gatekeeper.command(name='lockdown', aliases=['ld'])
+    @gatekeeper.command(name="lockdown", aliases=["ld"])
     @require_configuration()
     async def command_lockdown(self, ctx: lifesaver.Context, *, enabled: bool = True):
         """Enables block_all.
@@ -217,55 +220,55 @@ class Gatekeeper(lifesaver.Cog):
         or disable the check as desired.
         """
         async with self.edit_config(ctx.guild) as config:
-            checks = config.get('checks', {})
-            checks['block_all'] = {'enabled': enabled}
-            config['checks'] = checks
+            checks = config.get("checks", {})
+            checks["block_all"] = {"enabled": enabled}
+            config["checks"] = checks
 
-        status = 'enabled' if enabled else 'disabled'
-        await ctx.send(f'{ctx.tick()} `block_all` is now {status}.')
+        status = "enabled" if enabled else "disabled"
+        await ctx.send(f"{ctx.tick()} `block_all` is now {status}.")
 
-    @gatekeeper.command(name='enable', aliases=['on'])
+    @gatekeeper.command(name="enable", aliases=["on"])
     @require_configuration()
     async def command_enable(self, ctx: lifesaver.Context):
         """Enables Gatekeeper."""
         async with self.edit_config(ctx.guild) as config:
-            config['enabled'] = True
+            config["enabled"] = True
 
-        await ctx.send(f'{ctx.tick()} Enabled Gatekeeper.')
+        await ctx.send(f"{ctx.tick()} Enabled Gatekeeper.")
 
-    @gatekeeper.command(name='disable', aliases=['off'])
+    @gatekeeper.command(name="disable", aliases=["off"])
     @require_configuration()
     async def command_disable(self, ctx: lifesaver.Context):
         """Disables Gatekeeper."""
         async with self.edit_config(ctx.guild) as config:
-            config['enabled'] = False
+            config["enabled"] = False
 
-        await ctx.send(f'{ctx.tick()} Disabled Gatekeeper.')
+        await ctx.send(f"{ctx.tick()} Disabled Gatekeeper.")
 
-    @gatekeeper.command(name='toggle', aliases=['flip'])
+    @gatekeeper.command(name="toggle", aliases=["flip"])
     @require_configuration()
     async def command_toggle(self, ctx: lifesaver.Context):
         """Toggles Gatekeeper."""
         async with self.edit_config(ctx.guild) as config:
-            config['enabled'] = not config['enabled']
+            config["enabled"] = not config["enabled"]
 
-        state = 'enabled' if config['enabled'] else 'disabled'
+        state = "enabled" if config["enabled"] else "disabled"
 
-        await ctx.send(f'{ctx.tick()} Gatekeeper is now {state}.')
+        await ctx.send(f"{ctx.tick()} Gatekeeper is now {state}.")
 
-    @gatekeeper.command(name='status')
+    @gatekeeper.command(name="status")
     @require_configuration()
     async def command_status(self, ctx: lifesaver.Context):
         """Views the current status of Gatekeeper."""
-        enabled = self.gatekeeper_config(ctx.guild).get('enabled', False)
+        enabled = self.gatekeeper_config(ctx.guild).get("enabled", False)
 
         if enabled:
-            description = 'Incoming members must pass Gatekeeper checks to join.'
+            description = "Incoming members must pass Gatekeeper checks to join."
         else:
-            description = 'Anyone can join.'
+            description = "Anyone can join."
 
-        link = f'{self.dashboard_link}/guilds/{ctx.guild.id}'
-        description += f'\n\nUse [the web dashboard]({link}) to configure gatekeeper.'
+        link = f"{self.dashboard_link}/guilds/{ctx.guild.id}"
+        description += f"\n\nUse [the web dashboard]({link}) to configure gatekeeper."
 
         if enabled:
             color = discord.Color.green()

@@ -1,5 +1,11 @@
-__all__ = ['gatekeeper_check', 'block_default_avatars', 'block_bots',
-           'minimum_creation_time', 'block_all', 'username_regex']
+__all__ = [
+    "gatekeeper_check",
+    "block_default_avatars",
+    "block_bots",
+    "minimum_creation_time",
+    "block_all",
+    "username_regex",
+]
 
 import datetime
 import functools
@@ -28,7 +34,7 @@ def convert_options(check, parameters, options: CheckOptions) -> List[Any]:
             if param.default is not inspect.Parameter.empty:
                 # this parameter is optional, continue
                 continue
-            raise Report(f'`{check.__name__}` is missing the `{name}` option.')
+            raise Report(f"`{check.__name__}` is missing the `{name}` option.")
 
         annotation = param.annotation
         if annotation is inspect.Parameter.empty or isinstance(value, annotation):
@@ -62,13 +68,13 @@ def gatekeeper_check(func):
 @gatekeeper_check
 def block_default_avatars(member: discord.Member):
     if member.avatar is None:
-        raise Bounce('Has no avatar')
+        raise Bounce("Has no avatar")
 
 
 @gatekeeper_check
 def block_bots(member: discord.Member):
     if member.bot:
-        raise Bounce('Is a bot')
+        raise Bounce("Is a bot")
 
 
 @gatekeeper_check
@@ -76,12 +82,12 @@ def minimum_creation_time(member: discord.Member, *, minimum_age: int):
     age = (datetime.datetime.utcnow() - member.created_at).total_seconds()
 
     if age < minimum_age:
-        raise Bounce(f'Account too young ({age} < {minimum_age})')
+        raise Bounce(f"Account too young ({age} < {minimum_age})")
 
 
 @gatekeeper_check
 def block_all(_member: discord.Member):
-    raise Bounce('Blocking all users')
+    raise Bounce("Blocking all users")
 
 
 @gatekeeper_check
@@ -90,6 +96,6 @@ def username_regex(member: discord.Member, *, regex: str, case_sensitive: bool =
 
     try:
         if re.search(regex, member.name, flags):
-            raise Bounce('Username matched regex')
+            raise Bounce("Username matched regex")
     except re.error as err:
         raise Report(f"Invalid regex. (`{err}`)")

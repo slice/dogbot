@@ -7,8 +7,8 @@ from quart import Blueprint, g
 from quart import jsonify as json
 from quart import redirect, request, session
 
-auth = Blueprint('auth', __name__)
-API_BASE = 'https://discordapp.com/api/v6'
+auth = Blueprint("auth", __name__)
+API_BASE = "https://discordapp.com/api/v6"
 
 
 def redirect_url() -> Tuple[str, str]:
@@ -19,12 +19,12 @@ def redirect_url() -> Tuple[str, str]:
     redirect_uri = g.bot.config.oauth.redirect_uri
 
     url = (
-        f'https://discordapp.com/oauth2/authorize'
-        f'?client_id={client_id}'
-        f'&redirect_uri={quote_plus(redirect_uri)}'
-        '&response_type=code'
-        '&scope=identify'
-        f'&state={state}'
+        f"https://discordapp.com/oauth2/authorize"
+        f"?client_id={client_id}"
+        f"&redirect_uri={quote_plus(redirect_uri)}"
+        "&response_type=code"
+        "&scope=identify"
+        f"&state={state}"
     )
 
     return state, url
@@ -32,72 +32,72 @@ def redirect_url() -> Tuple[str, str]:
 
 async def fetch_user(bearer: str) -> dict:
     """Fetch information about a user from their bearer token."""
-    headers = {'Authorization': f'Bearer {bearer}'}
+    headers = {"Authorization": f"Bearer {bearer}"}
     async with aiohttp.ClientSession(headers=headers, raise_for_status=True) as sess:
-        resp = await sess.get(f'{API_BASE}/users/@me')
+        resp = await sess.get(f"{API_BASE}/users/@me")
         return await resp.json()
 
 
 async def fetch_access_token(code: str, *, refresh: bool = False) -> str:
-    ENDPOINT = f'{API_BASE}/oauth2/token'
+    ENDPOINT = f"{API_BASE}/oauth2/token"
 
     data = {
-        'client_id': str(g.bot.config.oauth.client_id),
-        'client_secret': g.bot.config.oauth.client_secret,
-        'grant_type': 'authorization_code',
-        'redirect_uri': g.bot.config.oauth.redirect_uri,
+        "client_id": str(g.bot.config.oauth.client_id),
+        "client_secret": g.bot.config.oauth.client_secret,
+        "grant_type": "authorization_code",
+        "redirect_uri": g.bot.config.oauth.redirect_uri,
     }
 
     if refresh:
-        data['refresh_token'] = code
+        data["refresh_token"] = code
     else:
-        data['code'] = code
+        data["code"] = code
 
-    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
     async with aiohttp.ClientSession(raise_for_status=True) as sess:
         resp = await sess.post(ENDPOINT, data=data, headers=headers)
         data = await resp.json()
-        return data['access_token']
+        return data["access_token"]
 
 
-@auth.route('/redirect')
+@auth.route("/redirect")
 async def auth_redirect():
-    if session.get('oauth_state') != request.args.get('state'):
-        return 'invalid state', 401
+    if session.get("oauth_state") != request.args.get("state"):
+        return "invalid state", 401
 
-    if 'code' not in request.args:
-        return 'no code', 400
+    if "code" not in request.args:
+        return "no code", 400
 
-    access_token = await fetch_access_token(request.args['code'])
-    session['token'] = access_token
+    access_token = await fetch_access_token(request.args["code"])
+    session["token"] = access_token
 
     user = await fetch_user(access_token)
-    session['user'] = user
+    session["user"] = user
 
-    return redirect('/guilds')
+    return redirect("/guilds")
 
 
-@auth.route('/logout')
+@auth.route("/logout")
 def auth_logout():
-    if 'token' in session:
-        del session['token']
-        del session['user']
-    return redirect('/')
+    if "token" in session:
+        del session["token"]
+        del session["user"]
+    return redirect("/")
 
 
-@auth.route('/login')
+@auth.route("/login")
 def auth_login():
     state, url = redirect_url()
-    session['oauth_state'] = state
+    session["oauth_state"] = state
     return redirect(url)
 
 
-@auth.route('/profile')
+@auth.route("/profile")
 async def auth_profile():
-    active = 'token' in session
+    active = "token" in session
 
     if not active:
         return json(None)
 
-    return json(session['user'])
+    return json(session["user"])
