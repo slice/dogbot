@@ -73,7 +73,8 @@ def format_dt(
     if time_only:
         full_format = time_format
     else:
-        date_format = "%B %d"
+        # Manually interpolate the day to avoid leading zeroes.
+        date_format = f"%B {dt.day}"
 
         if dt.month == 1 and dt.day == 1:
             # Show the year on the first day of the year.
