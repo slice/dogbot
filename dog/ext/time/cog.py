@@ -16,9 +16,16 @@ from .formatting import format_dt
 from .converters import Timezone, hour_minute
 from .geocoder import Geocoder
 from .map import Map
+from .messages import (
+    UNABLE_TO_RESOLVE_LOCATION,
+    QUOTA_EXCEEDED,
+    TIMEZONE_SAVED,
+    NO_AUTHOR_TIMEZONE,
+    NO_TARGET_TIMEZONE,
+    NO_TIMEZONE_SO_NO_COMMAND,
+)
 
 TWELVEHOUR_COUNTRIES = ["US", "AU", "CA", "PH"]
-UNKNOWN_LOCATION = 'Unknown location. Examples: "Arizona", "London", and "California".'
 
 log = logging.getLogger(__name__)
 
@@ -83,15 +90,9 @@ class Time(lifesaver.Cog):
         formatted_time = self.get_formatted_time_for(who)
         if not formatted_time:
             await ctx.send(
-                (
-                    f"{ctx.tick(False)} You haven't set your timezone yet. "
-                    f"Use `{ctx.prefix}time set <location>` to set it. "
-                )
+                NO_AUTHOR_TIMEZONE.format(prefix=ctx.prefix)
                 if who == ctx.author
-                else (
-                    f"{ctx.tick(False)} {who.display_name} hasn't set their timezone yet. "
-                    f"They can set it with `{ctx.prefix}time set <location>`."
-                )
+                else NO_TARGET_TIMEZONE.format(other=who, prefix=ctx.prefix)
             )
             return
 
@@ -106,10 +107,7 @@ class Time(lifesaver.Cog):
         """View what time it is in another timezone compared to yours."""
         (source, other_tz) = timezone
         if not self.timezones.get(ctx.author.id):
-            await ctx.send(
-                f"{ctx.tick(False)} You don't have a timezone set, so you can't use this. Set one with "
-                f"`{ctx.prefix}t set`."
-            )
+            await ctx.send(NO_TIMEZONE_SO_NO_COMMAND.format(prefix=ctx.prefix))
             return
 
         if time is None:
@@ -186,11 +184,11 @@ class Time(lifesaver.Cog):
                 await self.timezones.delete(ctx.author.id)
             except KeyError:
                 pass
-            await ctx.send(f"{ctx.tick()} Done.")
+            await ctx.send(f"{ctx.tick()} Your timezone was removed.")
         else:
-            await ctx.send("Okay, cancelled.")
+            await ctx.send("Operation cancelled.")
 
-    @time.command(name="set", typing=True)
+    @time.command(name="set")
     @cooldown(1, 3, BucketType.user)
     async def time_set(self, ctx, *, location: commands.clean_content):
         """Sets your current timezone from location."""
@@ -207,37 +205,44 @@ class Time(lifesaver.Cog):
             # Geolocate the timezone code.
             # Resolves a human readable location description (like "Turkey")
             # into its timezone code (like "Europe/Istanbul").
+            failure_message = f"{ctx.tick(False)} {UNABLE_TO_RESOLVE_LOCATION}".format(
+                prefix=ctx.prefix
+            )
+
             try:
                 location = await self.geocoder.geocode(location)
                 if location is None:
-                    await ctx.send(f"{ctx.tick(False)} {UNKNOWN_LOCATION}")
+                    await ctx.send(failure_message)
                     return
 
                 timezone = await self.geocoder.timezone(location.point)
                 if timezone is None:
-                    await ctx.send(f"{ctx.tick(False)} {UNKNOWN_LOCATION}")
+                    await ctx.send(failure_message)
                     return
             except geopy_errors.GeocoderQuotaExceeded:
-                await ctx.send(
-                    f"{ctx.tick(False)} I can't locate you. Please try again later."
-                )
+                await ctx.send(QUOTA_EXCEEDED)
                 return
-            except geopy_errors.GeopyError as error:
-                await ctx.send(
-                    f"{ctx.tick(False)} I can't find your location: `{error}`"
-                )
+            except geopy_errors.GeopyError:
+                await ctx.send(failure_message)
                 return
 
         await self.timezones.put(ctx.author.id, str(timezone))
 
         time = self.get_time_for(ctx.author)
-        greeting = "Good evening!"
+        assert time is not None
 
         if 5 < time.hour < 13:
             greeting = "Good morning!"
         elif 13 <= time.hour < 19:
             greeting = "Good afternoon!"
+        else:
+            greeting = "Good evening!"
 
         await ctx.send(
-            f"{ctx.tick()} Your timezone is now set to `{timezone}`. {greeting}"
+            f"{ctx.tick()} "
+            + TIMEZONE_SAVED.format(
+                time=format_dt(time, time_only=True, include_postscript=False),
+                greeting=greeting,
+                prefix=ctx.prefix,
+            )
         )
