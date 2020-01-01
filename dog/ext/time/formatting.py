@@ -8,15 +8,15 @@ MatcherValue = T.Optional[T.Union[range, int]]
 Matcher = T.Tuple[MatcherValue, MatcherValue, MatcherValue, MatcherValue]
 
 POSTSCRIPTS: T.Dict[Matcher, T.Union[str, T.List[str]]] = {
-    # new year's day
+    # New Year's Day
     (1, 1, 0, range(31)): "\N{face with party horn and party hat} \N{party popper}",
-    # first day of the month
+    # First day of the month
     (None, 1, None, None): "\N{spiral calendar pad}\N{variation selector-16}",
-    # halloween
+    # Halloween
     (10, 31, None, None): "\N{jack-o-lantern}",
-    # valentine's day
+    # Valentine's Day
     (2, 14, None, None): "\N{two hearts}",
-    # earth day
+    # Earth Day
     (4, 22, None, None): [
         "\N{earth globe americas}",
         "\N{earth globe europe-africa}",
@@ -28,7 +28,7 @@ POSTSCRIPTS: T.Dict[Matcher, T.Union[str, T.List[str]]] = {
 def compute_postscript(dt: datetime.datetime) -> T.Optional[str]:
     def _match(value: int, matcher: MatcherValue) -> bool:
         if matcher is None:
-            # `None` means we don't care about the value, so always match
+            # `None` means we don't care about the value, so always match.
             return True
         if isinstance(matcher, range):
             return value in matcher
@@ -62,9 +62,9 @@ def format_dt(
     time_only: bool = False,
     include_postscript: bool = True,
 ) -> str:
-    # if `shorten` is `True`, we can omit the 12-hour representation
+    # If `shorten` is `True`, we can omit the 12-hour representation
     # before noon as it is redundant (they are the same under both clock
-    # representation systems)
+    # representation systems).
     if dt.hour < 12 and shorten:
         time_format = "%H:%M"
     else:
