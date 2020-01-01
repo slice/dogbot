@@ -74,6 +74,11 @@ def format_dt(
         full_format = time_format
     else:
         date_format = "%B %d"
+
+        if dt.month == 1 and dt.day == 1:
+            # Show the year on the first day of the year.
+            date_format += ", %Y"
+
         full_format = f"{date_format}  {time_format}"
 
     formatted = dt.strftime(full_format)
