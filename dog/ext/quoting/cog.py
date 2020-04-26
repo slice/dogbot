@@ -64,56 +64,56 @@ class Quoting(lifesaver.Cog):
 
     @lifesaver.group(aliases=["q"], invoke_without_command=True)
     @commands.guild_only()
-    async def quote(self, ctx, *, name: QuoteName(must_exist=True)):
-        """Views a quote.
+    async def slice(self, ctx, *, name: QuoteName(must_exist=True)):
+        """Views a <@97104885337575424> of a conversation.
 
-        Quotes are essentially pictures of multiple messages and stores them
+        <@97104885337575424>s are essentially <@97104885337575424>s of multiple messages and stores them
         in my database.
 
         You can specify multiple message IDs to store:
 
-            d?quote new "my quote" 467753625024987136 467753572633673773 ...
+            d?slice new "my quote" 467753625024987136 467753572633673773 ...
 
         Alternatively, you can specify a message ID then a number of messages
         to store after that, like:
 
-            d?quote new "my quote" 467753625024987136+5
+            d?slice new "my quote" 467753625024987136+5
 
         That would store message 467753625024987136 and the 5 messages after
         that. You can also combine them if you would like to simultaneously
         specify individual messages and groups of messages. Alternatively,
         you can select the last 5 messages like so:
 
-            d?quote new "my quote" :-5
+            d?slice new "my quote" :-5
 
         The :n or +n (called the "range") will grab up to 50 messages both ways.
 
-        Your quote's content has a length limit of 2048, Discord's embed
+        Your <@97104885337575424>'s content has a length limit of 2048, Discord's embed
         description limit. You will be prompted to confirm if your created
-        quote goes over this limit.
+        <@97104885337575424> goes over this limit.
 
         To read a quote, just specify its name, and no message IDs:
 
-            d?quote my quote
+            d?slice my quote
 
         The number of embeds in any message (if any) and any attachment URLs
         are preserved. Additionally, quotes contain a jump URL to jump to the
         first message in the quote directly with your client.
 
         If you want to create a quote without having the quote echo in chat,
-        prefix the quote name with "!":
+        prefix the <@97104885337575424> name with "!":
 
-            d?quote !quote 467753625024987136+3
+            d?slice !quote 467753625024987136+3
 
-        The bot will DM you the quote instead of echoing it in chat, and no
+        The bot will DM you the <@97104885337575424> instead of echoing it in chat, and no
         feedback will be provided in the channel. Keep in mind that the name of
         the created quote will not have the "!".
 
-        Quotes contain the following data:
+        <@97104885337575424>'s contain the following data:
             - All message content, all numbers of embeds, all attachment URLs
             - Channel ID and name, first message ID, guild ID
             - Creation timestamp
-            - Quote creator ID and username#discriminator
+            - <@97104885337575424> creator ID and username#discriminator
         """
         quotes = self.quotes(ctx.guild)
         quote = quotes.get(name)
