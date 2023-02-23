@@ -5,7 +5,7 @@ import aiohttp
 import discord
 import hypercorn
 import lifesaver
-from hypercorn.asyncio.run import Server
+import hypercorn.asyncio
 from lifesaver.bot.storage import AsyncJSONStorage
 
 from dog.web.server import app as webapp
@@ -16,31 +16,18 @@ from .help import HelpCommand
 log = logging.getLogger(__name__)
 
 
-async def _boot_hypercorn(app, config, *, loop):
-    """Manually creates a Hypercorn server.
-
-    We don't use Hypercorn's functions for server creation because it involves
-    modifying the loop in undesirable ways. It also silently devours all
-    KeyboardInterrupt exceptions.
-    """
-    socket = config.create_sockets()
-    server = await loop.create_server(
-        lambda: Server(app, loop, config),
-        backlog=config.backlog,
-        sock=socket.insecure_sockets[0],
-    )
-    return server
-
-
 class Dogbot(lifesaver.Bot):
     def __init__(self, cfg, **kwargs):
         super().__init__(cfg, help_command=HelpCommand(dm_help=cfg.dm_help), **kwargs)
 
-        self.session = aiohttp.ClientSession(loop=self.loop)
         self.blacklisted_storage = AsyncJSONStorage(
             "blacklisted_users.json", loop=self.loop
         )
         self.guild_configs = GuildConfigManager(self)
+        self.session = None
+
+    async def setup_hook(self):
+        self.session = aiohttp.ClientSession(loop=self.loop)
 
         # webapp (quart) setup
         webapp.config.from_mapping(self.config.web.app)
@@ -49,8 +36,7 @@ class Dogbot(lifesaver.Bot):
 
         # http server (hypercorn) setup
         self.http_server_config = hypercorn.Config.from_mapping(self.config.web.http)
-        self.http_server = None
-        self.loop.create_task(self._boot_http_server())
+        self.loop.create_task(self._serve_http())
 
     def dispatch(self, event_name, *args, **kwargs):
         """Modified version of the vanilla dispatch to fit disabled_cogs."""
@@ -100,22 +86,17 @@ class Dogbot(lifesaver.Bot):
 
     async def close(self):
         log.info("bot is exiting")
-        await self.session.close()
+        if self.session is not None:
+            await self.session.close()
         log.info("closing web server")
-        if self.http_server:
-            self.http_server.close()
-            await self.http_server.wait_closed()
         await super().close()
 
-    async def _boot_http_server(self):
-        log.info("creating http server")
+    async def _serve_http(self):
+        log.info("serving http")
         try:
-            self.http_server = await _boot_hypercorn(
-                self.webapp, self.http_server_config, loop=self.loop
-            )
-            log.info("created server: %r", self.http_server)
+            await hypercorn.asyncio.run(self.webapp, self.http_server_config)
         except Exception:
-            log.exception("failed to create server")
+            log.exception("failed to serve http")
 
     def is_blacklisted(self, user: discord.User) -> bool:
         return user.id in self.blacklisted_storage

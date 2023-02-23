@@ -1,0 +1,21 @@
+{
+  inputs = {
+    lifesaver.url = "path:/Users/slice/src/prj/lifesaver";
+    flake-utils.url = "github:numtide/flake-utils";
+  };
+
+  outputs = { lifesaver, flake-utils, ... }:
+    flake-utils.lib.eachDefaultSystem (system:
+      lifesaver.lib.${system}.mkFlake ({ python, pkgs, ... }: {
+        name = "s2";
+        path = ./.;
+        propagatedBuildInputs = with python.pkgs; [
+          asyncpg
+          hypercorn
+          (python.pkgs.callPackage ./nix/quart.nix { })
+          python-dateutil
+          geopy
+        ];
+        pythonPackageOptions.format = "pyproject";
+      }));
+}

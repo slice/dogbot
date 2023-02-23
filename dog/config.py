@@ -22,7 +22,6 @@ class DogAPIKeysConfig(lifesaver.config.Config):
 class DogConfig(lifesaver.bot.BotConfig):
     dashboard_link: str = "http://localhost:8080"
     server_invite: str = "https://discord.gg/invalid-invite"
-    oauth: DogOAuthConfig
 
     oauth: DogOAuthConfig
     web: DogWebConfig
