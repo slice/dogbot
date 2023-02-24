@@ -5,12 +5,12 @@ from .auth import auth
 from .quotes import quotes
 
 app = Quart(__name__)
-app.bot = None
+app.bot = None  # type: ignore
 
 
 @app.before_request
 def assign_globals():
-    g.bot = app.bot
+    g.bot = app.bot  # type: ignore
 
 
 app.register_blueprint(api, url_prefix="/api")
