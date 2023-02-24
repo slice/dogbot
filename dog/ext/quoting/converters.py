@@ -94,7 +94,9 @@ class Messages(commands.Converter):
                 # relative to the sent message instead of a message id, get the
                 # last n messages. have to get +1 because history will get the
                 # command message too.
-                history = await ctx.history(limit=abs(spec.range) + 1).flatten()
+                history = [
+                    message async for message in ctx.history(limit=abs(spec.range) + 1)
+                ]
                 rev = reversed(history[1:])
                 return list(rev)
 
@@ -103,10 +105,13 @@ class Messages(commands.Converter):
             if spec.range:
                 # relative to the specified message id, get the message and
                 # n messages after
-                after_messages = await ctx.history(
-                    after=discord.Object(id=spec.id),
-                    limit=spec.range,
-                ).flatten()
+                after_messages = [
+                    message
+                    async for message in ctx.history(
+                        after=discord.Object(id=spec.id),
+                        limit=spec.range,
+                    )
+                ]
                 return [message] + after_messages
 
             return message
