@@ -2,57 +2,29 @@ __all__ = ["compute_postscript", "format_dt"]
 
 import datetime
 import random
-import typing as T
+from typing import Optional
 
-MatcherValue = T.Optional[T.Union[range, int]]
-Matcher = T.Tuple[MatcherValue, MatcherValue, MatcherValue, MatcherValue]
-
-POSTSCRIPTS: T.Dict[Matcher, T.Union[str, T.List[str]]] = {
-    # New Year's Day
-    (1, 1, 0, range(31)): "\N{face with party horn and party hat} \N{party popper}",
-    # First day of the month
-    (None, 1, None, None): "\N{spiral calendar pad}\N{variation selector-16}",
-    # Halloween
-    (10, 31, None, None): "\N{jack-o-lantern}",
-    # Valentine's Day
-    (2, 14, None, None): "\N{two hearts}",
-    # Earth Day
-    (4, 22, None, None): [
-        "\N{earth globe americas}",
-        "\N{earth globe europe-africa}",
-        "\N{earth globe asia-australia}",
-    ],
-}
+GLOBES = (
+    "\N{EARTH GLOBE AMERICAS}",
+    "\N{EARTH GLOBE EUROPE-AFRICA}",
+    "\N{EARTH GLOBE ASIA-AUSTRALIA}",
+)
 
 
-def compute_postscript(dt: datetime.datetime) -> T.Optional[str]:
-    def _match(value: int, matcher: MatcherValue) -> bool:
-        if matcher is None:
-            # `None` means we don't care about the value, so always match.
-            return True
-        if isinstance(matcher, range):
-            return value in matcher
-        return value == matcher
+def compute_postscript(dt: datetime.datetime) -> Optional[str]:
+    match (dt.month, dt.day):
+        case (1, 1):  # New Year's Day
+            return "\N{FACE WITH PARTY HORN AND PARTY HAT} \N{PARTY POPPER}"
+        case (_, 1):  # First of the month
+            return "\N{SPIRAL CALENDAR PAD}\N{VARIATION SELECTOR-16}"
+        case (10, 31):  # Halloween
+            return "\N{JACK-O-LANTERN}"
+        case (2, 14):  # Valentine's Day
+            return "\N{TWO HEARTS}"
+        case (4, 22):  # Earth's Day
+            return random.choice(GLOBES)
 
-    postscript = next(
-        (
-            postscript
-            for ((month, day, hour, minute), postscript) in POSTSCRIPTS.items()
-            if _match(dt.month, month)
-            and _match(dt.day, day)
-            and _match(dt.hour, hour)
-            and _match(dt.minute, minute)
-        ),
-        None,
-    )
-
-    if postscript is None:
-        return None
-
-    if isinstance(postscript, list):
-        return random.choice(postscript)
-
-    return postscript
+    return None
 
 
 def format_dt(
