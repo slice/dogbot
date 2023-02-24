@@ -89,7 +89,13 @@ class Gatekeeper(lifesaver.Cog):
 
         with io.StringIO() as buffer:
             self.yaml.indent(mapping=4, sequence=6, offset=4)
-            self.yaml.dump({**config, "gatekeeper": copied_gatekeeper_config,}, buffer)
+            self.yaml.dump(
+                {
+                    **config,
+                    "gatekeeper": copied_gatekeeper_config,
+                },
+                buffer,
+            )
             await self.bot.guild_configs.write(guild, buffer.getvalue())
 
     def is_being_allowed(self, guild: discord.Guild, user) -> bool:

@@ -23,7 +23,10 @@ class Specifier(namedtuple("Specifier", ["id", "range"])):
         def convert(string):
             return None if string is None else int(string)
 
-        return cls(id=convert(message_id), range=convert(m_range),)
+        return cls(
+            id=convert(message_id),
+            range=convert(m_range),
+        )
 
     @property
     def relative(self):
@@ -36,7 +39,10 @@ class Specifier(namedtuple("Specifier", ["id", "range"])):
 
 class QuoteName(commands.Converter):
     def __init__(
-        self, *, must_exist: bool = False, must_not_exist: bool = False,
+        self,
+        *,
+        must_exist: bool = False,
+        must_not_exist: bool = False,
     ):
         super().__init__()
         self.must_exist = must_exist
@@ -98,7 +104,8 @@ class Messages(commands.Converter):
                 # relative to the specified message id, get the message and
                 # n messages after
                 after_messages = await ctx.history(
-                    after=discord.Object(id=spec.id), limit=spec.range,
+                    after=discord.Object(id=spec.id),
+                    limit=spec.range,
                 ).flatten()
                 return [message] + after_messages
 

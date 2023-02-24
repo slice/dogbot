@@ -60,9 +60,13 @@ SHORTLINKS = {
         "https://www.python.org/dev/peps/pep-{pep:04}",
         call_format=True,
     ),
-    "keybase": Shortlink(r"kb/(?P<username>\w+)", "https://keybase.io/\\g<username>",),
+    "keybase": Shortlink(
+        r"kb/(?P<username>\w+)",
+        "https://keybase.io/\\g<username>",
+    ),
     "osu": Shortlink(
-        r"osu/(?P<username>\w+)", "https://osu.ppy.sh/users/\\g<username>",
+        r"osu/(?P<username>\w+)",
+        "https://osu.ppy.sh/users/\\g<username>",
     ),
 }
 

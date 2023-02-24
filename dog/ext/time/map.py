@@ -140,7 +140,10 @@ class Map:
 
             # draw the header of the chunk
             draw.text(
-                (x_top - font_width_offset, y_top - font_height_offset,),
+                (
+                    x_top - font_width_offset,
+                    y_top - font_height_offset,
+                ),
                 time,
                 fill=(255, 255, 255, 255),
                 font=self.font,
