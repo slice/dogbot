@@ -43,6 +43,6 @@ def create_embed(
     embed.set_thumbnail(url=str(member.avatar))
     embed.add_field(
         name="Account Creation",
-        value=f"{human_delta(member.created_at)} ago\n{member.created_at}",
+        value=discord.utils.format_dt(member.created_at, "R"),
     )
     return embed
