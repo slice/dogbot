@@ -25,7 +25,7 @@ class Profile(lifesaver.Cog):
 
         embed = discord.Embed(title=f"{user} ({user.id})")
         embed.add_field(name="Account Creation", value=date(user.created_at))
-        embed.set_thumbnail(url=user.avatar_url)
+        embed.set_thumbnail(url=str(user.display_avatar))
 
         if isinstance(user, discord.Member) and user.guild is not None:
             embed.add_field(
@@ -43,7 +43,7 @@ class Profile(lifesaver.Cog):
     async def profile_avatar(self, ctx, user: HardMember = None):
         """Views the avatar of a user."""
         user = user or ctx.author
-        await ctx.send(user.avatar_url_as(static_format="png"))
+        await ctx.send(str(user.display_avatar.replace(static_format="png")))
 
     @lifesaver.command(aliases=["avatar_url"])
     async def avatar(self, ctx, user: HardMember = None):

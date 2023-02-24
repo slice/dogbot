@@ -23,14 +23,15 @@ class Info(lifesaver.Cog):
         embed.set_author(
             name=ctx.bot.user,
             url="https://github.com/slice/dogbot",
-            icon_url=ctx.bot.user.avatar_url,
+            icon_url=str(ctx.bot.user.display_avatar),
         )
         embed.description = ctx.bot.description
         embed.add_field(
             name="Created", value=human_delta(ctx.bot.user.created_at) + " ago"
         )
         embed.set_footer(
-            text=f"Owned by {app_info.owner}", icon_url=app_info.owner.avatar_url
+            text=f"Owned by {app_info.owner}",
+            icon_url=str(app_info.owner.display_avatar),
         )
         await ctx.send(embed=embed)
 
@@ -41,9 +42,9 @@ class Info(lifesaver.Cog):
     async def server(self, ctx: lifesaver.Context):
         """Views information about this server."""
         embed = discord.Embed(title=ctx.guild.name)
-        embed.set_thumbnail(url=ctx.guild.icon_url)
+        embed.set_thumbnail(url=str(ctx.guild.icon))
         embed.set_footer(
-            text=f"Owned by {ctx.guild.owner}", icon_url=ctx.guild.owner.avatar_url
+            text=f"Owned by {ctx.guild.owner}", icon_url=str(ctx.guild.owner.avatar)
         )
 
         g: discord.Guild = ctx.guild
@@ -74,11 +75,11 @@ class Info(lifesaver.Cog):
     @commands.guild_only()
     async def icon(self, ctx: lifesaver.Context):
         """Sends this server's icon."""
-        if not ctx.guild.icon_url:
-            await ctx.send("No server icon.")
+        if not ctx.guild.icon:
+            await ctx.send("This server doesn't have a custom icon.")
             return
 
-        await ctx.send(ctx.guild.icon_url_as(format="png"))
+        await ctx.send(ctx.guild.icon.replace(format="png"))
 
 
 async def setup(bot):
