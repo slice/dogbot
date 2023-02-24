@@ -16,6 +16,7 @@
           python-dateutil
           geopy
           pillow
+          timezonefinder
         ];
         pythonPackageOptions.format = "pyproject";
       }));

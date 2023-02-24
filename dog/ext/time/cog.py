@@ -12,14 +12,13 @@ from lifesaver.bot.storage import AsyncJSONStorage
 from lifesaver.utils import clean_mentions
 from lifesaver.utils.timing import Timer
 
-from .formatting import format_dt
+from . import messages
+from .formatting import format_dt, greeting
 from .converters import Timezone, hour_minute
-from .geocoder import Geocoder
+from .resolver import Resolver
 from .map import Map
 from .messages import (
-    UNABLE_TO_RESOLVE_LOCATION,
     QUOTA_EXCEEDED,
-    TIMEZONE_SAVED,
     NO_AUTHOR_TIMEZONE,
     NO_TARGET_TIMEZONE,
     NO_TIMEZONE_SO_NO_COMMAND,
@@ -50,10 +49,10 @@ log = logging.getLogger(__name__)
 class Time(lifesaver.Cog):
     def __init__(self, bot):
         super().__init__(bot)
-        self.geocoder = Geocoder(bot=bot, loop=bot.loop)
+        self.resolver = Resolver(bot=bot, loop=bot.loop)
         self.timezones = AsyncJSONStorage("timezones.json", loop=bot.loop)
 
-    def get_timezone_for(self, user: discord.User) -> T.Optional[datetime.tzinfo]:
+    def get_timezone_for(self, user: discord.abc.User) -> T.Optional[datetime.tzinfo]:
         """Return a user's timezone as a :class:`datetime.tzinfo`."""
         timezone = self.timezones.get(user.id)
 
@@ -62,7 +61,7 @@ class Time(lifesaver.Cog):
 
         return dateutil.tz.gettz(timezone)
 
-    def get_time_for(self, user: discord.User) -> T.Optional[datetime.datetime]:
+    def get_time_for(self, user: discord.abc.User) -> T.Optional[datetime.datetime]:
         """Return the current :class:`datetime.datetime` for a user.
 
         If they have no timezone, then ``None`` is returned.
@@ -74,7 +73,9 @@ class Time(lifesaver.Cog):
 
         return datetime.datetime.now(tz=timezone)
 
-    def get_formatted_time_for(self, user: discord.User, **kwargs) -> T.Optional[str]:
+    def get_formatted_time_for(
+        self, user: discord.abc.User, **kwargs
+    ) -> T.Optional[str]:
         """Return the formatted time for a user."""
         time = self.get_time_for(user)
 
@@ -216,8 +217,17 @@ class Time(lifesaver.Cog):
             await ctx.send("Operation cancelled.")
 
     @time.command(name="set")
-    @cooldown(1, 3, BucketType.user)
-    async def time_set(self, ctx, *, location: commands.clean_content):
+    @cooldown(1, 2, BucketType.user)
+    async def time_set(
+        self,
+        ctx: lifesaver.Context,
+        *,
+        location: str = commands.parameter(
+            converter=commands.clean_content,
+            description="your current location",
+            displayed_default="New York",
+        ),
+    ):
         """Sets your timezone.
 
         The location you provide will be resolved into a timezone through
@@ -268,57 +278,45 @@ class Time(lifesaver.Cog):
             )
             return
 
-        timezone = None
-        parsed_timezone = dateutil.tz.gettz(location)
+        failed_message = f"{ctx.tick(False)} {messages.UNKNOWN_LOCATION}".format(prefix=ctx.prefix)  # fmt: skip
 
-        if parsed_timezone is not None:
-            # The user provided a timezone that is directly resolvable by
-            # ``dateutil.tz``, just use it.
-            timezone = location
-        else:
-            # Geolocate the timezone code from a place name.
-            #
-            # Resolves a human readable location description (like "Turkey")
-            # into its timezone code (Europe/Istanbul).
+        try:
+            resolution = await self.resolver.resolve_timezone(location)
 
-            failure_message = f"{ctx.tick(False)} {UNABLE_TO_RESOLVE_LOCATION}".format(
-                prefix=ctx.prefix
-            )
-
-            try:
-                location = await self.geocoder.geocode(location)
-                if location is None:
-                    await ctx.send(failure_message)
-                    return
-
-                timezone = await self.geocoder.timezone(location.point)
-                if timezone is None:
-                    await ctx.send(failure_message)
-                    return
-            except geopy_errors.GeocoderQuotaExceeded:
-                await ctx.send(QUOTA_EXCEEDED)
+            if resolution is None:
+                await ctx.send(failed_message)
                 return
-            except geopy_errors.GeopyError:
-                await ctx.send(failure_message)
-                return
+        except geopy_errors.GeocoderQuotaExceeded:
+            await ctx.send(QUOTA_EXCEEDED)
+            return
+        except geopy_errors.GeopyError:
+            self.log.exception("failed to geolocate")
+            await ctx.send(failed_message)
+            return
 
-        await self.timezones.put(ctx.author.id, str(timezone))
+        await self.timezones.put(ctx.author.id, str(resolution.timezone))
 
         time = self.get_time_for(ctx.author)
         assert time is not None
 
-        if 5 < time.hour < 13:
-            greeting = "Good morning!"
-        elif 13 <= time.hour < 19:
-            greeting = "Good afternoon!"
-        else:
-            greeting = "Good evening!"
+        formatted_time = format_dt(time, time_only=True, include_postscript=False)
+        appropriate_greeting = greeting(time)
 
-        await ctx.send(
-            f"{ctx.tick()} "
-            + TIMEZONE_SAVED.format(
-                time=format_dt(time, time_only=True, include_postscript=False),
-                greeting=greeting,
-                prefix=ctx.prefix,
+        if ctx.can_send_embeds:
+            message = messages.TIMEZONE_SAVED_EMBED.format(prefix=ctx.prefix)
+            embed = discord.Embed(
+                title=f"{appropriate_greeting} It's {formatted_time}.",
+                color=discord.Color.green(),
+                description=message,
             )
-        )
+            if resolution.did_geolocate:
+                embed.set_footer(text=messages.OPENSTREETMAP_ATTRIBUTION)
+            await ctx.send(embed=embed)
+        else:
+            message = messages.TIMEZONE_SAVED.format(
+                time=formatted_time, prefix=ctx.prefix
+            )
+            await ctx.send(
+                f"{ctx.tick()} {appropriate_greeting}\n\n{message}\n\n"
+                + messages.OPENSTREETMAP_ATTRIBUTION
+            )

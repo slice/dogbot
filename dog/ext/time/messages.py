@@ -7,8 +7,8 @@ TIME_SET_EXAMPLE = (
 
 TIME_SET_EXAMPLE_THIRD_PERSON = TIME_SET_EXAMPLE.replace("You can", "They can")
 
-UNABLE_TO_RESOLVE_LOCATION = (
-    "Can't resolve that location. Please give a location as if you were "
+UNKNOWN_LOCATION = (
+    "I couldn't find that place. Please give a location as if you were "
     "searching for something on Google Maps.\n\n" + TIME_SET_EXAMPLE
 )
 
@@ -26,10 +26,14 @@ NO_TARGET_TIMEZONE = (
     "`{prefix}t set <location>`. " + TIME_SET_EXAMPLE_THIRD_PERSON
 )
 
+TIMEZONE_SAVED_EMBED = (
+    "Saved your timezone.\n\n"
+    "Use `{prefix}t` to show others your time, or use `{prefix}t <user>` to check someone else's time."
+)
+
 TIMEZONE_SAVED = (
-    "Saved your timezone. It is {time} right now. {greeting}\n\n"
-    "Use `{prefix}t` to check the time, "
-    "or `{prefix}t <user>` to check what time it is for someone else."
+    "Saved your timezone. The current time is **{time}**.\n\n"
+    "Use `{prefix}t` to show others your time, or use `{prefix}t <user>` to check someone else's time."
 )
 
 QUOTA_EXCEEDED = "Can't resolve that location right now. Please try again later."
@@ -50,4 +54,8 @@ DEPRECATED_TIMEZONE = (
 DIFFERENCE = (
     "You and {source} are **{difference}** hours away from each other.\n\n"
     "When it's {our_time} for you it would be {their_time} {possessive} {source}."
+)
+
+OPENSTREETMAP_ATTRIBUTION = (
+    "Geolocation powered by OpenStreetMap (openstreetmap.org/copyright)"
 )

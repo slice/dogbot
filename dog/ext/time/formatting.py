@@ -1,4 +1,4 @@
-__all__ = ["compute_postscript", "format_dt"]
+__all__ = ("compute_postscript", "greeting", "format_dt")
 
 import datetime
 import random
@@ -27,6 +27,16 @@ def compute_postscript(dt: datetime.datetime) -> Optional[str]:
     return None
 
 
+def greeting(dt: datetime.datetime) -> str:
+    """Return an appropriate greeting corresponding to the hour of a datetime."""
+    if 5 < dt.hour < 13:
+        return "\N{SUNSET OVER BUILDINGS} Good morning!"
+    elif 13 <= dt.hour < 19:
+        return "\N{CITYSCAPE}\N{VARIATION SELECTOR-16} Good afternoon!"
+    else:
+        return "\N{NIGHT WITH STARS} Good evening!"
+
+
 def format_dt(
     dt: datetime.datetime,
     *,
@@ -34,6 +44,7 @@ def format_dt(
     time_only: bool = False,
     include_postscript: bool = True,
 ) -> str:
+    """Format a datetime in a user friendly manner."""
     # If `shorten` is `True`, we can omit the 12-hour representation
     # before noon as it is redundant (they are the same under both clock
     # representation systems).
