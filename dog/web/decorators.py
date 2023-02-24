@@ -61,7 +61,7 @@ def guild_resolver(func):
 
 def require_auth(func):
     @functools.wraps(func)
-    def wrapped(*args, **kwargs):
+    async def wrapped(*args, **kwargs):
         if "user" not in session:
             return (
                 json(
@@ -93,6 +93,6 @@ def require_auth(func):
             )
 
         g.user = user_object
-        return func(*args, **kwargs)
+        return await func(*args, **kwargs)
 
     return wrapped

@@ -51,5 +51,5 @@ class Profile(lifesaver.Cog):
         await ctx.invoke(self.profile_avatar, user)
 
 
-def setup(bot):
-    bot.add_cog(Profile(bot))
+async def setup(bot):
+    await bot.add_cog(Profile(bot))

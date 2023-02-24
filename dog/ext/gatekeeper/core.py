@@ -39,8 +39,8 @@ def create_embed(
 ) -> discord.Embed:
     """Create a Gatekeeper bounce or ban embed."""
     embed = discord.Embed(color=color, title=title, description=reason)
-    embed.timestamp = datetime.datetime.utcnow()
-    embed.set_thumbnail(url=member.avatar_url)
+    embed.timestamp = discord.utils.utcnow()
+    embed.set_thumbnail(url=str(member.avatar))
     embed.add_field(
         name="Account Creation",
         value=f"{human_delta(member.created_at)} ago\n{member.created_at}",

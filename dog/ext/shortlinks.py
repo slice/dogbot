@@ -98,5 +98,5 @@ class Shortlinks(lifesaver.Cog):
             pass
 
 
-def setup(bot):
-    bot.add_cog(Shortlinks(bot))
+async def setup(bot):
+    await bot.add_cog(Shortlinks(bot))

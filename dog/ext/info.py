@@ -81,5 +81,5 @@ class Info(lifesaver.Cog):
         await ctx.send(ctx.guild.icon_url_as(format="png"))
 
 
-def setup(bot):
-    bot.add_cog(Info(bot))
+async def setup(bot):
+    await bot.add_cog(Info(bot))

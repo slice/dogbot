@@ -1,9 +1,8 @@
 import discord
 
 
-def represent(entity: discord.Object) -> str:
+def represent(entity: discord.abc.Snowflake) -> str:
     if isinstance(entity, (discord.User, discord.Member)):
         return f"{entity} (`{entity.id}`)"
 
-    if isinstance(entity, discord.Object):
-        return f"`{entity.id}`"
+    return f"`{entity.id}`"

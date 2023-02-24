@@ -1,3 +1,6 @@
+from typing import Any
+
+import discord
 from quart import Blueprint, g
 from quart import jsonify as json
 from quart import request
@@ -9,18 +12,22 @@ api = Blueprint("api", __name__)
 yaml = YAML(typ="safe")
 
 
-def inflate_guild(g):
+def inflate_guild(guild: discord.Guild) -> dict[str, Any]:
+    icon = guild.icon
+    if icon is not None:
+        icon = icon.replace(size=64, format="png")
+
     return {
-        "id": str(g.id),
-        "name": g.name,
-        "members": g.member_count,
-        "owner": {"id": str(g.owner.id), "tag": str(g.owner)},
-        "icon_url": str(g.icon_url_as(format="png", size=64)),
+        "id": str(guild.id),
+        "name": guild.name,
+        "members": guild.member_count,
+        "owner": {"id": str(guild.owner.id), "tag": str(guild.owner)},
+        "icon_url": str(icon),
     }
 
 
 @api.route("/status")
-def api_ping():
+async def api_ping():
     return json(
         {"ready": g.bot.is_ready(), "ping": g.bot.latency, "guilds": len(g.bot.guilds)}
     )
@@ -34,7 +41,11 @@ async def api_guild(guild_id):
     if guild is None or not g.bot.guild_configs.can_edit(g.user, guild_id):
         return (
             json(
-                {"error": True, "message": "Unknown guild.", "code": "UNKNOWN_GUILD",}
+                {
+                    "error": True,
+                    "message": "Unknown guild.",
+                    "code": "UNKNOWN_GUILD",
+                }
             ),
             404,
         )
@@ -50,13 +61,17 @@ async def api_guild_config(guild_id):
     if guild is None or not g.bot.guild_configs.can_edit(g.user, guild_id):
         return (
             json(
-                {"error": True, "message": "Unknown guild.", "code": "UNKNOWN_GUILD",}
+                {
+                    "error": True,
+                    "message": "Unknown guild.",
+                    "code": "UNKNOWN_GUILD",
+                }
             ),
             404,
         )
 
     if request.method == "PATCH":
-        text = await request.get_data(raw=False)
+        text = await request.get_data(as_text=True)
 
         try:
             yml = yaml.load(text)
@@ -107,7 +122,7 @@ async def api_guild_config(guild_id):
 
 @api.route("/guilds")
 @require_auth
-def api_guilds():
+async def api_guilds():
     guilds = sorted(
         [
             inflate_guild(guild)

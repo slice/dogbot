@@ -147,8 +147,8 @@ class Gatekeeper(lifesaver.Cog):
                 "This user has been specifically allowed into this server."
             )
 
-        embed.set_thumbnail(url=member.avatar_url)
-        embed.timestamp = datetime.datetime.utcnow()
+        embed.set_thumbnail(url=str(member.avatar))
+        embed.timestamp = discord.utils.utcnow()
 
         await keeper.report(embed=embed)
 

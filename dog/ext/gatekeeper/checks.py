@@ -7,7 +7,6 @@ __all__ = [
     "username_regex",
 ]
 
-import datetime
 import functools
 import inspect
 import re
@@ -79,7 +78,7 @@ def block_bots(member: discord.Member):
 
 @gatekeeper_check
 def minimum_creation_time(member: discord.Member, *, minimum_age: int):
-    age = (datetime.datetime.utcnow() - member.created_at).total_seconds()
+    age = (discord.utils.utcnow() - member.created_at).total_seconds()
 
     if age < minimum_age:
         raise Bounce(f"Account too young ({age} < {minimum_age})")

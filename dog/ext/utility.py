@@ -117,5 +117,5 @@ class Utility(lifesaver.Cog):
             await msg.edit(content=f"Failed to upload the emoji: {exc}")
 
 
-def setup(bot):
-    bot.add_cog(Utility(bot))
+async def setup(bot):
+    await bot.add_cog(Utility(bot))

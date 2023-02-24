@@ -37,8 +37,8 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1677066786,
-        "narHash": "sha256-IOyJpCnke1wtMxLlQE90cKMkay0ZoFilim2Bm/RIoNM=",
+        "lastModified": 1677196320,
+        "narHash": "sha256-iWYi0xsvzWPZveAzRASScCurzOoWq1Qn2Lr2z40YOks=",
         "path": "/Users/slice/src/prj/lifesaver",
         "type": "path"
       },

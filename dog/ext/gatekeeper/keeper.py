@@ -1,5 +1,5 @@
 import asyncio
-import collections
+import collections.abc
 import logging
 import typing as T
 
@@ -339,7 +339,7 @@ class Keeper:
             if check_options is None:
                 continue
 
-            if isinstance(check_options, collections.Mapping):
+            if isinstance(check_options, collections.abc.Mapping):
                 # enabled subkey of check options
                 if not check_options.get("enabled", False):
                     continue

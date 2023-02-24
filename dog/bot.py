@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import TYPE_CHECKING, Optional
 
 import aiohttp
 import discord
@@ -15,23 +16,30 @@ from .help import HelpCommand
 
 log = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from dog.config import DogConfig
+
 
 class Dogbot(lifesaver.Bot):
+    config: "DogConfig"
+
     def __init__(self, cfg, **kwargs):
         super().__init__(cfg, help_command=HelpCommand(dm_help=cfg.dm_help), **kwargs)
+        self.blacklisted_storage: Optional[AsyncJSONStorage] = None
+        self.guild_configs: Optional[GuildConfigManager] = None
+        self.session: Optional[aiohttp.ClientSession] = None
 
+    async def setup_hook(self):
+        # Accesses to the asyncio loop have to happen in this method.
         self.blacklisted_storage = AsyncJSONStorage(
             "blacklisted_users.json", loop=self.loop
         )
-        self.guild_configs = GuildConfigManager(self)
-        self.session = None
-
-    async def setup_hook(self):
         self.session = aiohttp.ClientSession(loop=self.loop)
+        self.guild_configs = GuildConfigManager(self)
 
         # webapp (quart) setup
         webapp.config.from_mapping(self.config.web.app)
-        webapp.bot = self
+        webapp.bot = self  # type: ignore
         self.webapp = webapp
 
         # http server (hypercorn) setup
@@ -92,13 +100,23 @@ class Dogbot(lifesaver.Bot):
         await super().close()
 
     async def _serve_http(self):
-        log.info("serving http")
-        try:
-            await hypercorn.asyncio.run(self.webapp, self.http_server_config)
-        except Exception:
-            log.exception("failed to serve http")
+        # Keep the event on the bot object so it doesn't get garbage
+        # collected (?) and ``GeneratorExit`` isn't thrown, which kills the web
+        # server.
+        self._forever = asyncio.Event()
 
-    def is_blacklisted(self, user: discord.User) -> bool:
+        log.info("serving webapp")
+
+        await hypercorn.asyncio.serve(
+            self.webapp,
+            self.http_server_config,
+            # Don't let hypercorn trap SIGINT and friends, because it makes
+            # it impossible to use CTRL-C to terminate the bot. Alleviate
+            # this by passing a shutdown trigger that never completes.
+            shutdown_trigger=self._forever.wait,  # type: ignore
+        )
+
+    def is_blacklisted(self, user: discord.abc.Snowflake) -> bool:
         return user.id in self.blacklisted_storage
 
     async def on_message(self, message: discord.Message):

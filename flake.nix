@@ -15,6 +15,7 @@
           (python.pkgs.callPackage ./nix/quart.nix { })
           python-dateutil
           geopy
+          pillow
         ];
         pythonPackageOptions.format = "pyproject";
       }));
