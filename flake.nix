@@ -7,7 +7,7 @@
   outputs = { lifesaver, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       lifesaver.lib.${system}.mkFlake ({ python, pkgs, ... }: {
-        name = "s2";
+        name = "dogbot";
         path = ./.;
         propagatedBuildInputs = with python.pkgs; [
           asyncpg
