@@ -1,4 +1,4 @@
-from typing import Any
+from typing import cast, Any
 
 import discord
 from quart import Blueprint, g
@@ -6,16 +6,26 @@ from quart import jsonify as json
 from quart import request
 from ruamel.yaml import YAML, YAMLError
 
+from dog.bot import TYPE_CHECKING
+
 from .decorators import require_auth
+
+if TYPE_CHECKING:
+    from dog.bot import Dogbot
 
 api = Blueprint("api", __name__)
 yaml = YAML(typ="safe")
+
+
+def global_bot() -> "Dogbot":
+    return cast("Dogbot", g.bot)
 
 
 def inflate_guild(guild: discord.Guild) -> dict[str, Any]:
     icon = guild.icon
     if icon is not None:
         icon = icon.replace(size=64, format="png")
+    assert guild.owner is not None  # when can this be None, though?
 
     return {
         "id": str(guild.id),
@@ -28,17 +38,20 @@ def inflate_guild(guild: discord.Guild) -> dict[str, Any]:
 
 @api.route("/status")
 async def api_ping():
+    bot = global_bot()
+
     return json(
-        {"ready": g.bot.is_ready(), "ping": g.bot.latency, "guilds": len(g.bot.guilds)}
+        {"ready": bot.is_ready(), "ping": bot.latency, "guilds": len(bot.guilds)}
     )
 
 
 @api.route("/guild/<int:guild_id>", methods=["GET"])
 @require_auth
 async def api_guild(guild_id):
-    guild = g.bot.get_guild(guild_id)
+    bot = global_bot()
+    guild = bot.get_guild(guild_id)
 
-    if guild is None or not g.bot.guild_configs.can_edit(g.user, guild_id):
+    if guild is None or not bot.guild_configs.can_edit(g.user, guild_id):
         return (
             json(
                 {
@@ -56,7 +69,7 @@ async def api_guild(guild_id):
 @api.route("/guild/<int:guild_id>/config", methods=["GET", "PATCH"])
 @require_auth
 async def api_guild_config(guild_id):
-    guild = g.bot.get_guild(guild_id)
+    guild = global_bot().get_guild(guild_id)
 
     if guild is None or not g.bot.guild_configs.can_edit(g.user, guild_id):
         return (
