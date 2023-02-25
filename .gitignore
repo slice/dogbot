@@ -2,6 +2,7 @@
 /avatar_cache
 /*.sh
 /*.json
+/result
 
 node_modules
 /web/dist
