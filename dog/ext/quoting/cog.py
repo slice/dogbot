@@ -1,11 +1,12 @@
 import datetime
 import time
 from random import choice
+from typing import Any
 
 import discord
 import lifesaver
 from discord.ext import commands
-from lifesaver.bot.storage import AsyncJSONStorage
+from lifesaver.bot.storage import Storage
 from lifesaver.utils import (
     ListPaginator,
     clean_mentions,
@@ -36,7 +37,7 @@ def embed_quote(quote) -> discord.Embed:
 class Quoting(lifesaver.Cog):
     def __init__(self, bot, *args, **kwargs):
         super().__init__(bot, *args, **kwargs)
-        self.storage = AsyncJSONStorage("quotes.json", loop=bot.loop)
+        self.storage = Storage[dict[str, dict[str, Any]]]("quotes.json")
 
     def quotes(self, guild: discord.Guild):
         return self.storage.get(str(guild.id), {})

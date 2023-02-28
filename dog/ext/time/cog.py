@@ -8,7 +8,7 @@ import dateutil.tz
 from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
 from geopy import exc as geopy_errors
-from lifesaver.bot.storage import AsyncJSONStorage
+from lifesaver.bot.storage import Storage
 from lifesaver.utils import clean_mentions
 from lifesaver.utils.timing import Timer
 
@@ -50,11 +50,11 @@ class Time(lifesaver.Cog):
     def __init__(self, bot):
         super().__init__(bot)
         self.resolver = Resolver(bot=bot, loop=bot.loop)
-        self.timezones = AsyncJSONStorage("timezones.json", loop=bot.loop)
+        self.timezones = Storage[str]("timezones.json")
 
     def get_timezone_for(self, user: discord.abc.User) -> T.Optional[datetime.tzinfo]:
         """Return a user's timezone as a :class:`datetime.tzinfo`."""
-        timezone = self.timezones.get(user.id)
+        timezone = self.timezones.get(str(user.id))
 
         if not timezone:
             return None
@@ -135,7 +135,7 @@ class Time(lifesaver.Cog):
         """View what time it is in another timezone compared to yours."""
         (source, other_tz) = timezone
 
-        if not self.timezones.get(ctx.author.id):
+        if not self.timezones.get(str(ctx.author.id)):
             await ctx.send(
                 f"{ctx.tick(False)} "
                 + NO_TIMEZONE_SO_NO_COMMAND.format(prefix=ctx.prefix)
@@ -188,7 +188,7 @@ class Time(lifesaver.Cog):
         map = Map(session=self.session, twelve_hour=False, loop=self.bot.loop)
 
         for member in ctx.guild.members:
-            tz = self.timezones.get(member.id)
+            tz = self.timezones.get(str(member.id))
             if not tz:
                 continue
             map.add_member(member, tz)
@@ -209,7 +209,7 @@ class Time(lifesaver.Cog):
             title="Are you sure?", message="Your timezone will be removed."
         ):
             try:
-                await self.timezones.delete(ctx.author.id)
+                await self.timezones.delete(str(ctx.author.id))
             except KeyError:
                 pass
             await ctx.send(f"{ctx.tick()} Your timezone was removed.")
@@ -294,7 +294,7 @@ class Time(lifesaver.Cog):
             await ctx.send(failed_message)
             return
 
-        await self.timezones.put(ctx.author.id, str(resolution.timezone))
+        await self.timezones.put(str(ctx.author.id), str(resolution.timezone))
 
         time = self.get_time_for(ctx.author)
         assert time is not None

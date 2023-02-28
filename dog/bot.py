@@ -7,7 +7,7 @@ import discord
 import hypercorn
 import lifesaver
 import hypercorn.asyncio
-from lifesaver.bot.storage import AsyncJSONStorage
+from lifesaver.bot.storage import Storage
 
 from dog.web.server import app as webapp
 
@@ -25,15 +25,18 @@ class Dogbot(lifesaver.Bot):
 
     def __init__(self, cfg, **kwargs):
         super().__init__(cfg, help_command=HelpCommand(dm_help=cfg.dm_help), **kwargs)
-        self.blacklisted_storage: Optional[AsyncJSONStorage] = None
-        self.guild_configs: Optional[GuildConfigManager] = None
-        self.session: Optional[aiohttp.ClientSession] = None
+
+        # These properties are given values in `setup_hook`, which completes
+        # before the bot connects to the Discord gateway. It's more practical
+        # to pretend that these are never `None`, so we don't have to pepper
+        # checks everywhere in the code.
+        self.blacklisted_storage: Storage[str] = None  # type: ignore
+        self.guild_configs: GuildConfigManager = None  # type: ignore
+        self.session: aiohttp.ClientSession = None  # type: ignore
 
     async def setup_hook(self):
         # Accesses to the asyncio loop have to happen in this method.
-        self.blacklisted_storage = AsyncJSONStorage(
-            "blacklisted_users.json", loop=self.loop
-        )
+        self.blacklisted_storage = Storage("blacklisted_users.json")
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.guild_configs = GuildConfigManager(self)
 
@@ -117,7 +120,7 @@ class Dogbot(lifesaver.Bot):
         )
 
     def is_blacklisted(self, user: discord.abc.Snowflake) -> bool:
-        return user.id in self.blacklisted_storage
+        return str(user.id) in self.blacklisted_storage
 
     async def on_message(self, message: discord.Message):
         await self.wait_until_ready()

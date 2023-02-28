@@ -4,8 +4,9 @@ import logging
 from typing import Optional, TypeVar, Union
 
 import discord
-from lifesaver.bot.storage import AsyncJSONStorage
-from ruamel.yaml import YAML, YAMLError
+from lifesaver.bot.storage import Storage
+from ruamel.yaml.error import YAMLError
+from ruamel.yaml import YAML
 
 T = TypeVar("T")
 GuildOrGuildID = Union[discord.Guild, int]
@@ -23,7 +24,7 @@ class GuildConfigManager:
     def __init__(self, bot) -> None:
         self.bot = bot
         self.yaml = YAML()
-        self.persistent = AsyncJSONStorage("guild_configs.json", loop=bot.loop)
+        self.persistent = Storage[str]("guild_configs.json")
         self.parsed_cache = {}
 
     def resolve_guild(self, guild_or_id: GuildOrGuildID) -> Optional[discord.Guild]:
