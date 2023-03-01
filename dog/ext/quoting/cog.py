@@ -21,14 +21,16 @@ from .utils import stringify_message
 __all__ = ["Quoting"]
 
 
-def embed_quote(quote) -> discord.Embed:
-    embed = discord.Embed()
-    embed.description = quote["content"]
-    embed.add_field(name="Jump", value=quote["jump_url"], inline=False)
+def embed_quote(*, name, quote) -> discord.Embed:
+    embed = discord.Embed(title=name, description=quote["content"])
+    embed.url = quote["jump_url"]
 
     creator = quote["created_by"]["tag"]
     channel = quote["created_in"]["name"]
-    ago = human_delta(datetime.datetime.utcfromtimestamp(quote["created"]))
+
+    ago = human_delta(
+        datetime.datetime.fromtimestamp(quote["created"], tz=datetime.timezone.utc)
+    )
     embed.set_footer(text=f"Created by {creator} in #{channel} {ago} ago")
 
     return embed
@@ -57,7 +59,7 @@ class Quoting(lifesaver.Cog):
             return
 
         (name, quote) = choice(list(quotes.items()))
-        embed = embed_quote(quote)
+        embed = embed_quote(name=name, quote=quote)
 
         name = clean_mentions(ctx.channel, name)
 
@@ -119,7 +121,7 @@ class Quoting(lifesaver.Cog):
         quotes = self.quotes(ctx.guild)
         quote = quotes.get(name)
 
-        embed = embed_quote(quote)
+        embed = embed_quote(name=name, quote=quote)
         await ctx.send(embed=embed)
 
     @quote.command(aliases=["new"])
@@ -173,7 +175,7 @@ class Quoting(lifesaver.Cog):
 
         await self.storage.put(str(ctx.guild.id), quotes)
 
-        embed = embed_quote(quote)
+        embed = embed_quote(name=name, quote=quote)
         await (ctx.author if silent else ctx).send(
             f'Created quote "{name}".', embed=embed
         )
