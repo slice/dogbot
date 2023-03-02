@@ -10,9 +10,8 @@
         "type": "github"
       },
       "original": {
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "type": "github"
+        "id": "flake-utils",
+        "type": "indirect"
       }
     },
     "flake-utils_2": {
@@ -37,8 +36,8 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1677196320,
-        "narHash": "sha256-iWYi0xsvzWPZveAzRASScCurzOoWq1Qn2Lr2z40YOks=",
+        "lastModified": 1677650408,
+        "narHash": "sha256-V1IPMGSNEL3hsAFnREEwBHsrM7zSzGC1l/zaBWdZyIA=",
         "path": "/Users/slice/src/prj/lifesaver",
         "type": "path"
       },
@@ -54,6 +53,21 @@
         "owner": "numtide",
         "repo": "nix-filter",
         "rev": "1a3b735e13e90a8d2fd5629f2f8363bd7ffbbec7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "nix-filter",
+        "type": "github"
+      }
+    },
+    "nix-filter_2": {
+      "locked": {
+        "lastModified": 1676294984,
+        "narHash": "sha256-hdLUa/3RH1VJ+gMUysQE0JGM4F2Q/tIIFbtoxAOurJQ=",
+        "owner": "numtide",
+        "repo": "nix-filter",
+        "rev": "fc282c5478e4141842f9644c239a41cfe9586732",
         "type": "github"
       },
       "original": {
@@ -80,7 +94,12 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "lifesaver": "lifesaver"
+        "lifesaver": "lifesaver",
+        "nix-filter": "nix-filter_2",
+        "nixpkgs": [
+          "lifesaver",
+          "nixpkgs"
+        ]
       }
     }
   },
