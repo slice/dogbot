@@ -1,6 +1,6 @@
 {
   inputs = {
-    lifesaver.url = "path:/Users/slice/src/prj/lifesaver";
+    lifesaver.url = "github:slice/lifesaver";
     nix-filter.url = "github:numtide/nix-filter";
     nixpkgs.follows = "lifesaver/nixpkgs";
   };

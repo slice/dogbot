@@ -36,14 +36,17 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1677650408,
-        "narHash": "sha256-V1IPMGSNEL3hsAFnREEwBHsrM7zSzGC1l/zaBWdZyIA=",
-        "path": "/Users/slice/src/prj/lifesaver",
-        "type": "path"
+        "lastModified": 1677629476,
+        "narHash": "sha256-d3fDynQaKthEj5OPHGAwYOwFy6xh2qZFAkX1hV+7yhA=",
+        "owner": "slice",
+        "repo": "lifesaver",
+        "rev": "6e6417f4afa80f54fecbb7fe46cf11e98d746cca",
+        "type": "github"
       },
       "original": {
-        "path": "/Users/slice/src/prj/lifesaver",
-        "type": "path"
+        "owner": "slice",
+        "repo": "lifesaver",
+        "type": "github"
       }
     },
     "nix-filter": {
