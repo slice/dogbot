@@ -31,8 +31,8 @@ buildPythonPackage rec {
   src = fetchFromGitHub {
     owner = "pallets";
     repo = pname;
-    rev = version;
-    sha256 = "sha256-tEhWrQbLwx5nmMkWk28NbqU+HGcD0gx1c84+/CMGOGE=";
+    rev = "b0676aa80487dcdf559f7169aba89a016e529c3b";
+    sha256 = "sha256-aQM8kEhienBG+/zQQ8C/DKiDIMF3l9rq8HSAvg7wvLM=";
   };
 
   prePatch = ''
