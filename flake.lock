@@ -36,11 +36,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1677795526,
-        "narHash": "sha256-FgvR/n3f6KfrFBbYBBughjOAGcYOPEeRHHtNsmmuNTs=",
+        "lastModified": 1677801282,
+        "narHash": "sha256-U7Jx1J87cgwtNX1ljjOrYgtGvyuxyI5GWz7bd7LuToY=",
         "owner": "slice",
         "repo": "lifesaver",
-        "rev": "25327f4a60245746a2a1f7e85031bf4c08fd1f43",
+        "rev": "cf51edea0456c471c965979792c35508d4223f7c",
         "type": "github"
       },
       "original": {
