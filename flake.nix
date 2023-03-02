@@ -27,6 +27,17 @@
             config_class = "dog.config:DogConfig";
             extensions_path = "./dog/ext";
           };
+          loadList = [
+            "dog.ext.admin"
+            "dog.ext.gatekeeper"
+            "dog.ext.info"
+            "dog.ext.mod"
+            "dog.ext.profile"
+            "dog.ext.quoting"
+            "dog.ext.shortlinks"
+            "dog.ext.time"
+            "dog.ext.utility"
+          ];
         })) {
           packages.web = nixpkgs.legacyPackages.${system}.buildNpmPackage rec {
             name = "dogbot-web";
