@@ -2,9 +2,10 @@ import React from 'react'
 import styled from 'styled-components'
 import { lighten } from 'polished'
 import AceEditor from 'react-ace'
-import 'brace/mode/yaml'
-import 'brace/theme/twilight'
-import 'brace/theme/dawn'
+
+import 'ace-builds/src-noconflict/mode-yaml'
+import 'ace-builds/src-noconflict/theme-twilight'
+import 'ace-builds/src-noconflict/theme-dawn'
 
 const StyledAceEditor = styled(AceEditor).attrs((props) => ({
   theme: props.theme.name === 'dark' ? 'twilight' : 'dawn',
