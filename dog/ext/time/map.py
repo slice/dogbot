@@ -1,6 +1,8 @@
 __all__ = ["Map"]
 
 import datetime
+import os
+import inspect
 import logging
 from collections import defaultdict
 from io import BytesIO
@@ -13,17 +15,32 @@ import dateutil.tz
 import discord
 from PIL import Image, ImageDraw, ImageFont
 
+import dog
 from dog.ext.time.drawing import draw_text_cropped
 
 log = logging.getLogger(__name__)
+
+
+def bot_package_path() -> Path:
+    dog_init_path = Path(inspect.getfile(dog))
+    return dog_init_path.parent
+
+
+# XXX: This shouldn't be _here_.
+def state_dir() -> Path:
+    if (data_directory := os.environ.get("DATA_DIRECTORY")) is not None:
+        return Path(data_directory)
+    return Path.cwd()
 
 
 class Map:
     def __init__(
         self, *, session: aiohttp.ClientSession, twelve_hour: bool = False, loop
     ):
-        self.font = ImageFont.truetype("assets/SourceSansPro-Semibold.otf", size=64)
-        self.tag_font = ImageFont.truetype("assets/SourceSansPro-Black.otf", size=14)
+        font_path = bot_package_path() / "assets" / "SourceSansPro-Semibold.otf"
+        tag_font_path = bot_package_path() / "assets" / "SourceSansPro-Black.otf"
+        self.font = ImageFont.truetype(str(font_path), size=64)
+        self.tag_font = ImageFont.truetype(str(tag_font_path), size=14)
 
         self.session = session
         self.twelve_hour = twelve_hour
@@ -31,7 +48,7 @@ class Map:
         self.image = None
         self.timezones = defaultdict(list)
 
-        self.cache = Path.cwd() / "avatar_cache"
+        self.cache = state_dir() / "avatar_cache"
         self.cache.mkdir(exist_ok=True)
 
     @property

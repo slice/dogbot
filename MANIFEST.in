@@ -1,2 +1,2 @@
-graft assets/
-graft db/
+graft dog/assets
+graft dog/db
