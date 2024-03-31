@@ -1,6 +1,6 @@
 {
   inputs = {
-    lifesaver.url = "github:slice/lifesaver";
+    lifesaver.url = "github:slice/lifesaver/nine-nines";
     nix-filter.url = "github:numtide/nix-filter";
     nixpkgs.follows = "lifesaver/nixpkgs";
   };
